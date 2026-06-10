@@ -2,6 +2,11 @@
   "name": "dku-track-diagnosis",
   "private": true,
   "version": "0.1.0",
+  "homepage": "https://dku-track-diagnosis.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Suya020504/dku-track-diagnosis.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",

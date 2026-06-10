@@ -4,6 +4,19 @@
 
 ## 2026-06-11
 
+### Add production deployment URL to repository docs
+
+- README 상단에 Vercel 프로덕션 URL을 추가했습니다.
+- `package.json`에 `homepage`와 GitHub 저장소 URL을 추가해 저장소 메타 정보로도 배포 주소를 남겼습니다.
+
+배포 URL:
+
+- https://dku-track-diagnosis.vercel.app
+
+검증:
+
+- 배포 URL 응답 확인
+
 ### Fix Vercel install configuration
 
 - Vercel 배포 중 `pnpm install --frozen-lockfile` 단계가 실패해 lockfile을 `package.json` 기준으로 재생성했습니다.

@@ -2,6 +2,10 @@
 
 2026학년도 단국대학교 식품자원경제학과 모듈형 트랙제 교육과정을 기준으로, 학생이 관심 트랙과 이수 과목을 체크하면 부족 모듈, 남은 학점, 추천 과목을 확인할 수 있는 정적 웹앱입니다.
 
+## 배포 URL
+
+[https://dku-track-diagnosis.vercel.app](https://dku-track-diagnosis.vercel.app)
+
 ![배포 첫 화면](docs/assets/readme-home.png)
 
 ## 사이트 목적
@@ -50,6 +54,7 @@ pnpm run build
 
 ## Vercel 배포 설정
 
+- Production URL: `https://dku-track-diagnosis.vercel.app`
 - Framework Preset: `Vite`
 - Install Command: `npm install`
 - Build Command: `npm run build`
