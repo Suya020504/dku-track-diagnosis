@@ -51,10 +51,10 @@ pnpm run build
 ## Vercel 배포 설정
 
 - Framework Preset: `Vite`
-- Install Command: `pnpm install --frozen-lockfile`
-- Build Command: `pnpm run build`
+- Install Command: `npm install`
+- Build Command: `npm run build`
 - Output Directory: `dist`
-- Development Command: `pnpm run dev`
+- Development Command: `npm run dev`
 
 위 설정은 `vercel.json`에도 고정되어 있습니다.
 

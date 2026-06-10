@@ -7,8 +7,7 @@
 ### Fix Vercel install configuration
 
 - Vercel 배포 중 `pnpm install --frozen-lockfile` 단계가 실패해 lockfile을 `package.json` 기준으로 재생성했습니다.
-- Vercel 빌드 서버가 같은 패키지 매니저를 쓰도록 `packageManager`를 `pnpm@11.5.2`로 고정했습니다.
-- Vercel 원격 빌드에서도 같은 pnpm 버전이 실행되도록 install command를 `npx --yes pnpm@11.5.2 install --frozen-lockfile`로 고정했습니다.
+- Vercel 원격 설치 단계의 pnpm 실행 문제가 반복되어 Vercel 배포 설정을 `npm install` / `npm run build` 기준으로 전환했습니다.
 - 로컬 Vercel 연결 폴더가 저장소에 올라가지 않도록 `.vercel`을 `.gitignore`에 추가했습니다.
 
 검증:
