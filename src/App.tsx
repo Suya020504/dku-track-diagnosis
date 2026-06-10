@@ -32,6 +32,7 @@ import type {
   EnrollmentType,
   ModuleId,
   ModuleProgress,
+  PlanningSemester,
   SavedDiagnosisState,
   Track,
   TrackDiagnosisResult,
@@ -43,6 +44,15 @@ import type {
 type ViewId = "overview" | "resources" | "modules" | "diagnosis" | "lab" | "result" | "contact";
 type GradeFilter = "all" | "1" | "2" | "3" | "4" | "unknown";
 type SemesterFilter = "all" | "1" | "2" | "unknown";
+type LabPlanningSemester = PlanningSemester | "unselected";
+type SharedModuleSuggestion = {
+  label: string;
+  trackNames: string[];
+};
+type SharedCourseSuggestion = {
+  course: Course;
+  trackNames: string[];
+};
 
 const viewItems: Array<{ id: ViewId; label: string; icon: typeof FileText }> = [
   { id: "overview", label: "설명", icon: FileText },
@@ -154,6 +164,7 @@ function App() {
   const [gradeFilter, setGradeFilter] = useState<GradeFilter>("all");
   const [semesterFilter, setSemesterFilter] = useState<SemesterFilter>("all");
   const [lastManualSaveAt, setLastManualSaveAt] = useState("");
+  const [labPlanningSemester, setLabPlanningSemester] = useState<LabPlanningSemester>("unselected");
   const selectedTracks = useMemo(() => getTracks(savedState.trackIds), [savedState.trackIds]);
   const result = useMemo(
     () =>
@@ -169,8 +180,9 @@ function App() {
       calculateTrackRecommendations({
         completedCourseIds: savedState.completedCourseIds,
         enrollmentType: savedState.enrollmentType,
+        currentSemester: labPlanningSemester === "unselected" ? undefined : labPlanningSemester,
       }),
-    [savedState.completedCourseIds, savedState.enrollmentType],
+    [labPlanningSemester, savedState.completedCourseIds, savedState.enrollmentType],
   );
 
   useEffect(() => {
@@ -218,6 +230,7 @@ function App() {
     setSavedState(emptyState());
     setGradeFilter("all");
     setSemesterFilter("all");
+    setLabPlanningSemester("unselected");
     setLastManualSaveAt("");
     setActiveView(nextView);
   }
@@ -331,9 +344,11 @@ function App() {
               recommendations={labRecommendations}
               completedCourseIds={savedState.completedCourseIds}
               enrollmentType={savedState.enrollmentType}
+              planningSemester={labPlanningSemester}
               gradeFilter={gradeFilter}
               semesterFilter={semesterFilter}
               onEnrollmentTypeChange={changeEnrollmentType}
+              onPlanningSemesterChange={setLabPlanningSemester}
               onGradeFilterChange={setGradeFilter}
               onSemesterFilterChange={setSemesterFilter}
               onToggleCourse={toggleCourse}
@@ -372,6 +387,20 @@ function OverviewView() {
             <span>2026학년도 모듈형 교육과정 기준으로,</span>
             <span>내가 선택한 트랙에서 남은 과목과 부족 학점을 바로 확인합니다.</span>
           </p>
+          <div className="hero-feature-strip" aria-label="서비스 핵심 정보">
+            <span>
+              <strong>5</strong>
+              트랙
+            </span>
+            <span>
+              <strong>15</strong>
+              모듈
+            </span>
+            <span>
+              <strong>2026</strong>
+              교육과정 기준
+            </span>
+          </div>
         </div>
         <div className="hero-side">
           <div className="department-mark-card">
@@ -982,9 +1011,11 @@ function LabView({
   recommendations,
   completedCourseIds,
   enrollmentType,
+  planningSemester,
   gradeFilter,
   semesterFilter,
   onEnrollmentTypeChange,
+  onPlanningSemesterChange,
   onGradeFilterChange,
   onSemesterFilterChange,
   onToggleCourse,
@@ -993,9 +1024,11 @@ function LabView({
   recommendations: TrackRecommendation[];
   completedCourseIds: string[];
   enrollmentType: EnrollmentType;
+  planningSemester: LabPlanningSemester;
   gradeFilter: GradeFilter;
   semesterFilter: SemesterFilter;
   onEnrollmentTypeChange: (enrollmentType: EnrollmentType) => void;
+  onPlanningSemesterChange: (semester: LabPlanningSemester) => void;
   onGradeFilterChange: (grade: GradeFilter) => void;
   onSemesterFilterChange: (semester: SemesterFilter) => void;
   onToggleCourse: (courseId: string) => void;
@@ -1003,6 +1036,7 @@ function LabView({
 }) {
   const completedSet = useMemo(() => new Set(completedCourseIds), [completedCourseIds]);
   const bestRecommendation = recommendations[0];
+  const sharedSuggestions = useMemo(() => getSharedLabSuggestions(recommendations), [recommendations]);
   const allTrackIds = tracks.map((track) => track.id);
 
   return (
@@ -1026,6 +1060,10 @@ function LabView({
             <strong>{bestRecommendation.completionRate}%</strong>
             <span>{getRecommendationStatusLabel(bestRecommendation.status)}</span>
           </div>
+          <div className={getFeasibilityClassName(bestRecommendation.feasibility.status)}>
+            <strong>{bestRecommendation.feasibility.label}</strong>
+            <span>{bestRecommendation.feasibility.detail}</span>
+          </div>
           <div className="track-progress-line lab-progress-line">
             <span style={{ width: `${bestRecommendation.completionRate}%` }} />
           </div>
@@ -1034,6 +1072,15 @@ function LabView({
             <ResultMetric label="남은 학점" value={`${bestRecommendation.missingTotalCredits}학점`} compact />
             <ResultMetric label="부족 모듈" value={`${bestRecommendation.missingModuleCount}개`} compact />
             <ResultMetric label="필수 누락" value={`${bestRecommendation.missingRequiredCount}개`} compact />
+            <ResultMetric
+              label="남은 정규학기"
+              value={
+                bestRecommendation.feasibility.remainingRegularSemesters === null
+                  ? "입력 필요"
+                  : `${bestRecommendation.feasibility.remainingRegularSemesters}학기`
+              }
+              compact
+            />
           </div>
           <div className="lab-next-courses">
             <strong>먼저 볼 과목</strong>
@@ -1064,15 +1111,77 @@ function LabView({
               </label>
             ))}
           </div>
+          <label className="lab-semester-select">
+            현재 학년/학기
+            <select
+              value={planningSemester}
+              onChange={(event) => onPlanningSemesterChange(event.target.value as LabPlanningSemester)}
+            >
+              <option value="unselected">선택 안 함</option>
+              {curriculumSlots.map((slot) => (
+                <option value={slot.key} key={slot.key}>
+                  {slot.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <div className="lab-help-box">
             <strong>활용법</strong>
-            <span>수강한 과목을 많이 넣을수록 추천 순위가 정확해집니다. 상위 트랙의 부족 모듈과 추천 과목을 보고 신청 방향을 정리하세요.</span>
+            <span>
+              수강한 과목과 현재 학기를 넣으면, 학기당 트랙 과목 2개 정도를 보완한다는 기준으로 정규학기 안에
+              가능한지 가늠합니다.
+            </span>
           </div>
           <button className="icon-button reset-track-button lab-reset-button" type="button" onClick={onReset}>
             <RotateCcw aria-hidden="true" size={18} />
             <span>입력 초기화</span>
           </button>
         </aside>
+      </div>
+
+      <div className="lab-overlap-panel">
+        <div className="lab-section-head">
+          <div>
+            <span>공통 보완 추천</span>
+            <h3>여러 트랙에 동시에 도움 되는 모듈과 과목</h3>
+          </div>
+          <p>추천 트랙들이 공유하는 부족 모듈과 과목을 먼저 보면, 나중에 트랙을 바꿔도 활용도가 높습니다.</p>
+        </div>
+        <div className="lab-overlap-grid">
+          <article className="lab-overlap-card">
+            <h4>겹치는 부족 모듈</h4>
+            <div className="lab-overlap-list">
+              {sharedSuggestions.modules.map((module) => (
+                <div className="lab-overlap-item" key={module.label}>
+                  <strong>{module.label}</strong>
+                  <span>{formatTrackNamesShort(module.trackNames)} 공통</span>
+                </div>
+              ))}
+              {sharedSuggestions.modules.length === 0 && (
+                <p className="empty-text">현재 추천 결과에서는 2개 이상 트랙이 동시에 부족한 모듈이 없습니다.</p>
+              )}
+            </div>
+          </article>
+          <article className="lab-overlap-card">
+            <h4>공통 수강 추천 과목</h4>
+            <div className="lab-overlap-list course-overlap-list">
+              {sharedSuggestions.courses.map((suggestion) => (
+                <div className="lab-overlap-item" key={suggestion.course.id}>
+                  <strong>
+                    {suggestion.course.code} {suggestion.course.name}
+                  </strong>
+                  <span>
+                    {getModuleLabel(suggestion.course.moduleId)} · {formatSemester(suggestion.course.recommendedSemester)}
+                  </span>
+                  <em>{formatTrackNamesShort(suggestion.trackNames)} 공통</em>
+                </div>
+              ))}
+              {sharedSuggestions.courses.length === 0 && (
+                <p className="empty-text">겹치는 추천 과목이 없으면, 부족 모듈이 많이 겹치는 쪽부터 확인하세요.</p>
+              )}
+            </div>
+          </article>
+        </div>
       </div>
 
       <div className="lab-ranking-section">
@@ -1166,10 +1275,19 @@ function LabRecommendationCard({ recommendation }: { recommendation: TrackRecomm
       <div className="track-progress-line">
         <span style={{ width: `${recommendation.completionRate}%` }} />
       </div>
+      <span className={getFeasibilityClassName(recommendation.feasibility.status)}>
+        <strong>{recommendation.feasibility.label}</strong>
+      </span>
       <div className="lab-rank-meta">
         <small>남은 {recommendation.missingTotalCredits}학점</small>
         <small>부족 모듈 {recommendation.missingModuleCount}개</small>
         <small>필수 {recommendation.missingRequiredCount}개</small>
+        <small>
+          정규{" "}
+          {recommendation.feasibility.remainingRegularSemesters === null
+            ? "입력필요"
+            : `${recommendation.feasibility.remainingRegularSemesters}학기`}
+        </small>
       </div>
       <p>{getRecommendationReason(recommendation)}</p>
     </article>
@@ -1839,6 +1957,56 @@ function getRecommendationStatusLabel(status: TrackRecommendationStatus): string
   if (status === "close") return "조금만 보완";
   if (status === "possible") return "계획하면 가능";
   return "장기 계획 필요";
+}
+
+function getFeasibilityClassName(status: TrackRecommendation["feasibility"]["status"]): string {
+  return `lab-feasibility lab-feasibility-${status}`;
+}
+
+function getSharedLabSuggestions(recommendations: TrackRecommendation[]): {
+  modules: SharedModuleSuggestion[];
+  courses: SharedCourseSuggestion[];
+} {
+  const moduleMap = new Map<string, Set<string>>();
+  const courseMap = new Map<string, { course: Course; trackNames: Set<string> }>();
+
+  recommendations.forEach((recommendation) => {
+    recommendation.missingModuleLabels.forEach((label) => {
+      const trackNames = moduleMap.get(label) ?? new Set<string>();
+      trackNames.add(recommendation.trackName);
+      moduleMap.set(label, trackNames);
+    });
+
+    recommendation.recommendedCourses.forEach((course) => {
+      const entry = courseMap.get(course.id) ?? { course, trackNames: new Set<string>() };
+      entry.trackNames.add(recommendation.trackName);
+      courseMap.set(course.id, entry);
+    });
+  });
+
+  const modules = [...moduleMap.entries()]
+    .map(([label, trackNames]) => ({ label, trackNames: [...trackNames] }))
+    .filter((suggestion) => suggestion.trackNames.length >= 2)
+    .sort((a, b) => b.trackNames.length - a.trackNames.length || a.label.localeCompare(b.label))
+    .slice(0, 6);
+
+  const courses = [...courseMap.values()]
+    .map((entry) => ({ course: entry.course, trackNames: [...entry.trackNames] }))
+    .filter((suggestion) => suggestion.trackNames.length >= 2)
+    .sort(
+      (a, b) =>
+        b.trackNames.length - a.trackNames.length ||
+        semesterRankForView(a.course.recommendedSemester) - semesterRankForView(b.course.recommendedSemester) ||
+        a.course.code.localeCompare(b.course.code),
+    )
+    .slice(0, 8);
+
+  return { modules, courses };
+}
+
+function formatTrackNamesShort(trackNames: string[]): string {
+  if (trackNames.length <= 2) return trackNames.join(" · ");
+  return `${trackNames.slice(0, 2).join(" · ")} 외 ${trackNames.length - 2}개`;
 }
 
 function getRecommendationReason(recommendation: TrackRecommendation, completedCount?: number): string {

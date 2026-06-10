@@ -6,8 +6,10 @@ import type {
   EnrollmentType,
   ModuleId,
   ModuleProgress,
+  PlanningSemester,
   Track,
   TrackDiagnosisResult,
+  TrackFeasibility,
   TrackId,
   TrackRecommendation,
   TrackRecommendationStatus,
@@ -16,6 +18,8 @@ import type {
 const courseById = new Map(courses.map((course) => [course.id, course]));
 const moduleById = new Map(modules.map((module) => [module.id, module]));
 const trackById = new Map(tracks.map((track) => [track.id, track]));
+const TRACK_PLANNING_CREDITS_PER_SEMESTER = 6;
+const EXTRA_PLANNING_SEMESTERS = 2;
 
 export function calculateDiagnosis(input: DiagnosisInput): DiagnosisResult {
   const selectedTrackIds = uniqueTrackIds(input.trackIds);
@@ -102,7 +106,9 @@ export function calculateDiagnosis(input: DiagnosisInput): DiagnosisResult {
 }
 
 export function calculateTrackRecommendations(
-  input: Pick<DiagnosisInput, "completedCourseIds" | "enrollmentType">,
+  input: Pick<DiagnosisInput, "completedCourseIds" | "enrollmentType"> & {
+    currentSemester?: PlanningSemester;
+  },
 ): TrackRecommendation[] {
   const enrollmentType = input.enrollmentType ?? "primary";
   const completedIds = uniqueKnownCourseIds(input.completedCourseIds);
@@ -144,6 +150,7 @@ export function calculateTrackRecommendations(
         missingModuleLabels,
         recommendedCourses: trackResult.recommendedCourses,
         status: getRecommendationStatus(trackResult.passed, trackResult.completionRate, missingTotalCredits),
+        feasibility: calculateTrackFeasibility(trackResult, missingTotalCredits, input.currentSemester),
       };
     })
     .sort(compareTrackRecommendations)
@@ -407,6 +414,102 @@ function getRecommendationStatus(
   if (completionRate >= 75 || missingTotalCredits <= 9) return "close";
   if (completionRate >= 50 || missingTotalCredits <= 18) return "possible";
   return "long-term";
+}
+
+function calculateTrackFeasibility(
+  trackResult: TrackDiagnosisResult,
+  missingTotalCredits: number,
+  currentSemester?: PlanningSemester,
+): TrackFeasibility {
+  const neededCredits = Math.max(0, missingTotalCredits);
+  const neededCourseCount = Math.ceil(neededCredits / 3);
+
+  if (trackResult.passed || neededCredits === 0) {
+    const remainingRegularSemesters = currentSemester ? getRemainingRegularSemesters(currentSemester) : null;
+
+    return {
+      status: "complete",
+      label: "이미 충족",
+      detail: "현재 체크 기준으로 트랙 이수 조건을 충족했습니다.",
+      currentSemester,
+      remainingRegularSemesters,
+      neededCredits: 0,
+      neededCourseCount: 0,
+      regularCapacityCredits:
+        remainingRegularSemesters === null
+          ? null
+          : remainingRegularSemesters * TRACK_PLANNING_CREDITS_PER_SEMESTER,
+      extraSemesterCapacityCredits:
+        remainingRegularSemesters === null
+          ? null
+          : (remainingRegularSemesters + EXTRA_PLANNING_SEMESTERS) * TRACK_PLANNING_CREDITS_PER_SEMESTER,
+    };
+  }
+
+  if (!currentSemester) {
+    return {
+      status: "needs-current-semester",
+      label: "학기 입력 필요",
+      detail: "현재 학년과 학기를 선택하면 정규학기 안에 가능한지 계산합니다.",
+      remainingRegularSemesters: null,
+      neededCredits,
+      neededCourseCount,
+      regularCapacityCredits: null,
+      extraSemesterCapacityCredits: null,
+    };
+  }
+
+  const remainingRegularSemesters = getRemainingRegularSemesters(currentSemester);
+  const regularCapacityCredits = remainingRegularSemesters * TRACK_PLANNING_CREDITS_PER_SEMESTER;
+  const extraSemesterCapacityCredits =
+    (remainingRegularSemesters + EXTRA_PLANNING_SEMESTERS) * TRACK_PLANNING_CREDITS_PER_SEMESTER;
+  const averageCoursesPerSemester = Math.ceil(neededCourseCount / Math.max(1, remainingRegularSemesters));
+
+  if (neededCredits <= regularCapacityCredits) {
+    return {
+      status: "regular",
+      label: "정규학기 안에 가능",
+      detail: `남은 ${remainingRegularSemesters}학기 동안 학기당 약 ${averageCoursesPerSemester}과목을 보완하면 가능합니다.`,
+      currentSemester,
+      remainingRegularSemesters,
+      neededCredits,
+      neededCourseCount,
+      regularCapacityCredits,
+      extraSemesterCapacityCredits,
+    };
+  }
+
+  if (neededCredits <= extraSemesterCapacityCredits) {
+    return {
+      status: "extra-semester",
+      label: "초과학기 진행시 가능",
+      detail: `정규학기 기준으로는 ${neededCredits - regularCapacityCredits}학점 정도가 부족해 초과학기나 계절학기 계획이 필요합니다.`,
+      currentSemester,
+      remainingRegularSemesters,
+      neededCredits,
+      neededCourseCount,
+      regularCapacityCredits,
+      extraSemesterCapacityCredits,
+    };
+  }
+
+  return {
+    status: "long-term",
+    label: "장기 계획 필요",
+    detail: "초과학기 2학기까지 가정해도 여유가 적어 학과 상담과 우선순위 조정이 필요합니다.",
+    currentSemester,
+    remainingRegularSemesters,
+    neededCredits,
+    neededCourseCount,
+    regularCapacityCredits,
+    extraSemesterCapacityCredits,
+  };
+}
+
+function getRemainingRegularSemesters(currentSemester: PlanningSemester): number {
+  const [grade, term] = currentSemester.split("-").map(Number);
+  const semesterIndex = (grade - 1) * 2 + (term - 1);
+  return Math.max(1, 8 - semesterIndex);
 }
 
 function compareTrackRecommendations(a: TrackRecommendation, b: TrackRecommendation): number {

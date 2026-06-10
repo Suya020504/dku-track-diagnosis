@@ -156,4 +156,22 @@ describe("calculateTrackRecommendations", () => {
     expect(recommendations[0].missingTotalCredits).toBeLessThanOrEqual(recommendations[1].missingTotalCredits);
     expect(recommendations[0].matchedModuleLabels.length).toBeGreaterThan(0);
   });
+
+  it("asks for current semester before feasibility classification", () => {
+    const recommendations = calculateTrackRecommendations({ completedCourseIds: [] });
+
+    expect(recommendations[0].feasibility.status).toBe("needs-current-semester");
+    expect(recommendations[0].feasibility.remainingRegularSemesters).toBeNull();
+  });
+
+  it("classifies feasibility from remaining regular semesters", () => {
+    const recommendations = calculateTrackRecommendations({
+      completedCourseIds: [...requiredIds, "f-1", "h-1", "i-1", "j-1"],
+      currentSemester: "4-2",
+    });
+
+    expect(recommendations[0].feasibility.remainingRegularSemesters).toBe(1);
+    expect(["extra-semester", "long-term"]).toContain(recommendations[0].feasibility.status);
+    expect(recommendations[0].feasibility.regularCapacityCredits).toBe(6);
+  });
 });

@@ -7,6 +7,16 @@ export type TrackId =
 
 export type EnrollmentType = "primary" | "double-major" | "minor";
 
+export type PlanningSemester =
+  | "1-1"
+  | "1-2"
+  | "2-1"
+  | "2-2"
+  | "3-1"
+  | "3-2"
+  | "4-1"
+  | "4-2";
+
 export type ModuleId =
   | "A"
   | "B"
@@ -128,6 +138,25 @@ export type DiagnosisResult = {
 
 export type TrackRecommendationStatus = "ready" | "close" | "possible" | "long-term";
 
+export type TrackFeasibilityStatus =
+  | "needs-current-semester"
+  | "complete"
+  | "regular"
+  | "extra-semester"
+  | "long-term";
+
+export type TrackFeasibility = {
+  status: TrackFeasibilityStatus;
+  label: string;
+  detail: string;
+  currentSemester?: PlanningSemester;
+  remainingRegularSemesters: number | null;
+  neededCredits: number;
+  neededCourseCount: number;
+  regularCapacityCredits: number | null;
+  extraSemesterCapacityCredits: number | null;
+};
+
 export type TrackRecommendation = {
   rank: number;
   trackId: TrackId;
@@ -145,4 +174,5 @@ export type TrackRecommendation = {
   missingModuleLabels: string[];
   recommendedCourses: Course[];
   status: TrackRecommendationStatus;
+  feasibility: TrackFeasibility;
 };
