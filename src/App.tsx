@@ -4,16 +4,18 @@ import {
   BookOpenCheck,
   CheckCircle2,
   ClipboardCheck,
+  Compass,
   ExternalLink,
   FileText,
   FlaskConical,
+  HelpCircle,
   Instagram,
   Mail,
   PlayCircle,
   Printer,
   RotateCcw,
   Save,
-  Table2,
+  X,
 } from "lucide-react";
 import { courses, CURRICULUM_YEAR, modules, tracks } from "./data/curriculumData";
 import {
@@ -41,7 +43,7 @@ import type {
   TrackRecommendationStatus,
 } from "./types";
 
-type ViewId = "overview" | "resources" | "modules" | "diagnosis" | "lab" | "result" | "contact";
+type ViewId = "overview" | "resources" | "modules" | "diagnosis" | "lab" | "experiment" | "result" | "contact";
 type GradeFilter = "all" | "1" | "2" | "3" | "4" | "unknown";
 type SemesterFilter = "all" | "1" | "2" | "unknown";
 type LabPlanningSemester = PlanningSemester | "unselected";
@@ -53,15 +55,114 @@ type SharedCourseSuggestion = {
   course: Course;
   trackNames: string[];
 };
+type TrackNeededCoursePlan = {
+  trackId: TrackId;
+  trackName: string;
+  trackKind: Track["kind"];
+  passed: boolean;
+  completionRate: number;
+  neededCourses: number;
+  rows: TrackNeededCourseRow[];
+};
+type TrackNeededCourseRow = {
+  label: string;
+  neededCourses: number;
+  missingCredits: number;
+  note: string;
+  candidates: Course[];
+};
+type ExperimentInsight = {
+  label: string;
+  title: string;
+  detail: string;
+  tone: "good" | "notice" | "warning";
+};
+type ExperimentPlan = {
+  loadLabel: string;
+  loadDetail: string;
+  remainingSemesterText: string;
+  perSemesterText: string;
+  priorityCourses: Course[];
+  insights: ExperimentInsight[];
+  actions: string[];
+};
+type GuideStep = {
+  title: string;
+  body: string;
+  items?: string[];
+  action: string;
+  viewId: ViewId;
+};
 
 const viewItems: Array<{ id: ViewId; label: string; icon: typeof FileText }> = [
   { id: "overview", label: "설명", icon: FileText },
-  { id: "resources", label: "도구&정보", icon: PlayCircle },
-  { id: "modules", label: "트랙/모듈", icon: Table2 },
   { id: "diagnosis", label: "자가진단", icon: ClipboardCheck },
-  { id: "lab", label: "실험실", icon: FlaskConical },
   { id: "result", label: "결과", icon: BookOpenCheck },
+  { id: "lab", label: "트랙 추천", icon: Compass },
+  { id: "resources", label: "도구&정보", icon: PlayCircle },
+  { id: "experiment", label: "실험실", icon: FlaskConical },
   { id: "contact", label: "문의사항", icon: Mail },
+];
+
+const GUIDE_STORAGE_KEY = "track-sim:guide:v1";
+
+const guideSteps: GuideStep[] = [
+  {
+    title: "1. 설명 탭에서 트랙제를 먼저 이해합니다",
+    body: "설명 탭은 모듈형 트랙제가 무엇인지, 왜 운영되는지, 어떤 장점이 있는지 한눈에 확인하는 시작 화면입니다.",
+    items: ["트랙제의 의미와 구성 방식", "학과전공과 융합전공의 차이", "이수 사실이 증명서에 표시되는 의미"],
+    action: "설명 보기",
+    viewId: "overview",
+  },
+  {
+    title: "2. 자가진단 탭에서 내 정보를 입력합니다",
+    body: "자가진단 탭은 이수유형, 관심 트랙, 이미 수강했거나 이수 예정인 과목을 입력하는 핵심 화면입니다.",
+    items: ["주전공·복수전공·부전공 선택", "관심 트랙 복수 선택", "학년·학기별 전공 이수 표에서 과목 체크"],
+    action: "자가진단 열기",
+    viewId: "diagnosis",
+  },
+  {
+    title: "3. 결과 탭에서 부족한 부분을 확인합니다",
+    body: "결과 탭은 선택한 트랙별로 진행률, 부족 모듈, 필수 누락, 남은 과목을 구분해서 보여줍니다.",
+    items: ["전체 진행률과 남은 과목 수", "트랙별 충족·부족 상태", "어느 모듈에서 몇 과목이 더 필요한지 확인"],
+    action: "결과 보기",
+    viewId: "result",
+  },
+  {
+    title: "4. 트랙 추천 탭에서 가능한 트랙을 비교합니다",
+    body: "트랙 추천 탭은 지금까지 체크한 과목을 기준으로 달성 가능성이 높은 트랙과 남은 학기 안에서 가능한 정도를 보여줍니다.",
+    items: ["현재 수강 이력 기준 가까운 트랙", "정규학기 안에 가능한지 여부", "여러 트랙에 함께 도움 되는 공통 과목"],
+    action: "트랙 추천 보기",
+    viewId: "lab",
+  },
+  {
+    title: "5. 도구&정보 탭에서 공식 자료를 확인합니다",
+    body: "도구&정보 탭은 학과 홈페이지, 학과 유튜브, 트랙제 안내 영상, 트랙별 모듈·과목표를 모아둔 참고 화면입니다.",
+    items: ["학과 홈페이지와 유튜브 바로가기", "트랙제 안내 영상", "트랙별 모듈 및 교육과정표"],
+    action: "도구&정보 보기",
+    viewId: "resources",
+  },
+  {
+    title: "6. 실험실 탭에서 수강신청 전략을 확인합니다",
+    body: "실험실 탭은 트랙 추천 결과와 현재 학년·학기를 묶어서, 앞으로 어떤 순서로 과목을 채우면 좋은지 보여주는 전략 화면입니다.",
+    items: ["남은 정규학기와 필요 과목 수", "학기당 부담 정도", "다음 수강신청 우선순위와 공통 추천 과목"],
+    action: "실험실 열기",
+    viewId: "experiment",
+  },
+  {
+    title: "7. 자가진단은 이 순서로 진행합니다",
+    body: "정확한 결과를 보려면 아래 순서대로 입력하세요. 체크한 내용은 브라우저에 저장되어 새로고침 후에도 유지됩니다.",
+    items: [
+      "이수유형을 먼저 선택합니다.",
+      "관심 트랙을 하나 이상 선택합니다.",
+      "학년·학기별 표에서 수강 완료 또는 이수 예정 과목을 체크합니다.",
+      "결과 탭에서 부족 모듈과 남은 과목을 확인합니다.",
+      "트랙 추천 탭에서 다른 트랙도 달성 가능한지 비교합니다.",
+      "실험실 탭에서 현재 학년 기준 수강신청 전략을 확인합니다.",
+    ],
+    action: "자가진단 시작하기",
+    viewId: "diagnosis",
+  },
 ];
 
 const videoResources = [
@@ -160,11 +261,13 @@ const trackKindGuides = [
 
 function App() {
   const [savedState, setSavedState] = useState<SavedDiagnosisState>(() => loadSavedState());
-  const [activeView, setActiveView] = useState<ViewId>("diagnosis");
+  const [activeView, setActiveView] = useState<ViewId>("overview");
   const [gradeFilter, setGradeFilter] = useState<GradeFilter>("all");
   const [semesterFilter, setSemesterFilter] = useState<SemesterFilter>("all");
   const [lastManualSaveAt, setLastManualSaveAt] = useState("");
   const [labPlanningSemester, setLabPlanningSemester] = useState<LabPlanningSemester>("unselected");
+  const [guideOpen, setGuideOpen] = useState(() => !loadGuideDismissed());
+  const [guideStepIndex, setGuideStepIndex] = useState(0);
   const selectedTracks = useMemo(() => getTracks(savedState.trackIds), [savedState.trackIds]);
   const result = useMemo(
     () =>
@@ -240,6 +343,24 @@ function App() {
     setLastManualSaveAt(formatSaveTime(new Date()));
   }
 
+  function openGuide() {
+    setGuideStepIndex(0);
+    setGuideOpen(true);
+  }
+
+  function closeGuide() {
+    saveGuideDismissed();
+    setGuideOpen(false);
+  }
+
+  function moveGuideStep(nextIndex: number) {
+    setGuideStepIndex(Math.min(Math.max(nextIndex, 0), guideSteps.length - 1));
+  }
+
+  function goToGuideStepView(viewId: ViewId) {
+    setActiveView(viewId);
+  }
+
   return (
     <div className="app-shell">
       <aside className="side-rail" aria-label="주요 화면">
@@ -267,6 +388,11 @@ function App() {
             );
           })}
         </nav>
+
+        <button className="guide-open-button" type="button" onClick={openGuide}>
+          <HelpCircle aria-hidden="true" size={18} />
+          <span>사이트 사용법</span>
+        </button>
 
         <div className="rail-note">
           <span>학생용 비공식 도구</span>
@@ -345,14 +471,21 @@ function App() {
               completedCourseIds={savedState.completedCourseIds}
               enrollmentType={savedState.enrollmentType}
               planningSemester={labPlanningSemester}
-              gradeFilter={gradeFilter}
-              semesterFilter={semesterFilter}
               onEnrollmentTypeChange={changeEnrollmentType}
               onPlanningSemesterChange={setLabPlanningSemester}
-              onGradeFilterChange={setGradeFilter}
-              onSemesterFilterChange={setSemesterFilter}
-              onToggleCourse={toggleCourse}
               onReset={() => resetState("lab")}
+            />
+          </section>
+        )}
+
+        {activeView === "experiment" && (
+          <section className="primary-panel full-panel">
+            <ExperimentView
+              recommendations={labRecommendations}
+              completedCourseIds={savedState.completedCourseIds}
+              planningSemester={labPlanningSemester}
+              onPlanningSemesterChange={setLabPlanningSemester}
+              onGoToDiagnosis={() => setActiveView("diagnosis")}
             />
           </section>
         )}
@@ -369,6 +502,91 @@ function App() {
           </section>
         )}
       </main>
+      {guideOpen && (
+        <GuideDialog
+          activeStepIndex={guideStepIndex}
+          onClose={closeGuide}
+          onMoveStep={moveGuideStep}
+          onGoToView={goToGuideStepView}
+        />
+      )}
+    </div>
+  );
+}
+
+function GuideDialog({
+  activeStepIndex,
+  onClose,
+  onMoveStep,
+  onGoToView,
+}: {
+  activeStepIndex: number;
+  onClose: () => void;
+  onMoveStep: (nextIndex: number) => void;
+  onGoToView: (viewId: ViewId) => void;
+}) {
+  const activeStep = guideSteps[activeStepIndex];
+  const isFirst = activeStepIndex === 0;
+  const isLast = activeStepIndex === guideSteps.length - 1;
+
+  return (
+    <div className="guide-dialog-backdrop" role="presentation">
+      <section className="guide-dialog" role="dialog" aria-modal="true" aria-labelledby="guide-dialog-title">
+        <div className="guide-dialog-top">
+          <div>
+            <span>처음 사용하는 학생을 위한 안내</span>
+            <h2 id="guide-dialog-title">사이트 사용방법</h2>
+          </div>
+          <button className="guide-close-button" type="button" aria-label="사용법 닫기" onClick={onClose}>
+            <X aria-hidden="true" size={18} />
+          </button>
+        </div>
+
+        <div className="guide-stepper" aria-label="사용 단계">
+          {guideSteps.map((step, index) => (
+            <button
+              className={index === activeStepIndex ? "guide-step active" : "guide-step"}
+              type="button"
+              key={step.title}
+              onClick={() => onMoveStep(index)}
+            >
+              <span>{index + 1}</span>
+              <strong>{step.title.replace(`${index + 1}. `, "")}</strong>
+            </button>
+          ))}
+        </div>
+
+        <article className="guide-step-card">
+          <small>{activeStepIndex + 1} / {guideSteps.length}</small>
+          <h3>{activeStep.title}</h3>
+          <p>{activeStep.body}</p>
+          {activeStep.items && (
+            <ul>
+              {activeStep.items.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          )}
+          <button className="primary-button guide-action-button" type="button" onClick={() => onGoToView(activeStep.viewId)}>
+            <span>{activeStep.action}</span>
+          </button>
+        </article>
+
+        <div className="guide-dialog-actions">
+          <button className="icon-button" type="button" disabled={isFirst} onClick={() => onMoveStep(activeStepIndex - 1)}>
+            이전
+          </button>
+          {isLast ? (
+            <button className="primary-button" type="button" onClick={onClose}>
+              시작하기
+            </button>
+          ) : (
+            <button className="primary-button" type="button" onClick={() => onMoveStep(activeStepIndex + 1)}>
+              다음 단계
+            </button>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
@@ -423,22 +641,22 @@ function OverviewView() {
         <article className="info-card">
           <h3>트랙제가 무엇인가요?</h3>
           <p>
-            진로와 관심 분야에 맞춰 전공 과목을 묶어 듣는 학습 경로입니다.
-            5개 트랙 중 내 방향을 고르고, 필요한 모듈을 얼마나 채웠는지 확인합니다.
+            전공 과목을 진로별 묶음으로 듣는 학습 경로입니다.
+            내 관심 트랙과 부족 모듈을 확인합니다.
           </p>
         </article>
         <article className="info-card">
           <h3>어떤 혜택이 있나요?</h3>
           <p>
-            내가 들은 과목이 어떤 진로와 연결되는지 한눈에 볼 수 있습니다.
-            다음 학기에 먼저 들을 과목을 고르기 쉽고, 이수 이력도 더 분명하게 설명할 수 있습니다.
+            다음 학기에 들을 과목을 고르기 쉽고,
+            내 이수 이력을 진로와 연결해 설명할 수 있습니다.
           </p>
         </article>
         <article className="info-card">
           <h3>어떻게 구성되어 있나요?</h3>
           <p>
-            학과전공 트랙은 선택된 5개 모듈에서 각 6학점을 채우는 구조입니다.
-            푸드바이오경제는 학과 모듈과 융합 모듈을 함께 충족해야 합니다.
+            학과전공은 5개 모듈별 6학점,
+            푸드바이오경제는 학과·융합 모듈을 함께 봅니다.
           </p>
         </article>
       </div>
@@ -501,22 +719,22 @@ function OverviewView() {
           <article>
             <strong>진로 중심 전공 설계</strong>
             <p>
-              관심 진로에 맞는 과목 묶음을 선택해 내 전공 학습 방향을 분명하게 정리할 수 있습니다.
-              흩어진 과목을 푸드마케팅, 유통, 지역개발, 경제학, 푸드바이오경제 같은 학습 경로로 연결합니다.
+              관심 진로에 맞는 과목 묶음으로
+              전공 학습 방향을 정리합니다.
             </p>
           </article>
           <article>
             <strong>이수 이력 표시</strong>
             <p>
-              트랙을 이수하면 관련 이수 사실이 증명서에 표시되는 방향으로 안내됩니다.
-              내가 어떤 분야를 중심으로 공부했는지 외부에 설명할 때 도움이 됩니다.
+              트랙 이수 사실이 증명서에 표시되는 방향으로 안내됩니다.
+              내 전공 방향을 설명할 때 도움이 됩니다.
             </p>
           </article>
           <article>
             <strong>복수전공·부전공 지원</strong>
             <p>
-              복수전공·부전공 학생은 1학년 필수 과목을 필수 누락 계산에서 제외하는 모드를 선택할 수 있습니다.
-              주전공 학생과 다른 기준으로 남은 과목을 더 현실적으로 확인합니다.
+              복수전공·부전공은 1학년 필수 과목을
+              필수 누락에서 제외할 수 있습니다.
             </p>
           </article>
         </div>
@@ -547,11 +765,12 @@ function ResourcesView() {
     <div className="view-stack">
       <SectionHeader
         eyebrow="도구 & 정보"
-        title="학과 영상과 교육과정표를 한 곳에서 확인하세요."
-        body="트랙제를 이해하는 데 필요한 공식 링크, 트랙제 안내 영상, 2026 교육과정표를 따로 모았습니다."
+        title="트랙 확인 자료와 교육과정표를 한 곳에서 확인하세요."
+        body="자가진단 전에 참고할 수 있는 공식 링크, 트랙제 안내 영상, 트랙별 모듈/과목표, 2026 교육과정표를 모았습니다."
       />
       <DepartmentLinkSection />
       <ToolsInfoSection />
+      <TrackModuleReference />
       <CurriculumBoard />
     </div>
   );
@@ -664,6 +883,60 @@ function CurriculumBoard() {
             <CoursePill course={course} key={course.id} />
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+function TrackModuleReference() {
+  return (
+    <section className="resource-section track-reference-section">
+      <div className="resource-head">
+        <span>트랙별 모듈/과목표</span>
+        <h3>5개 트랙에서 요구하는 모듈과 과목</h3>
+        <p>자가진단에서 트랙을 선택하기 전에, 각 트랙이 어떤 모듈과 과목으로 구성되는지 먼저 비교할 수 있습니다.</p>
+      </div>
+      <div className="track-reference-grid">
+        {tracks.map((track) => (
+          <article className={`track-reference-card ${track.kind === "융합전공" ? "convergence" : ""}`} key={track.id}>
+            <div className="track-reference-head">
+              <div>
+                <span className={getTrackBadgeClass(track.id)}>{track.kind}</span>
+                <h4>{track.name}</h4>
+                <p>{getTrackQuickMeta(track)}</p>
+              </div>
+              <strong>{track.rule.totalTrackCredits}학점</strong>
+            </div>
+            <div className="track-reference-modules">
+              {getTrackModuleIds(track).map((moduleId) => {
+                const moduleInfo = modules.find((module) => module.id === moduleId);
+                const moduleCourses = getCoursesByModule(moduleId);
+                return (
+                  <div className="track-reference-module" key={`${track.id}-${moduleId}`}>
+                    <div className="track-reference-module-head">
+                      <strong>
+                        {moduleId}. {moduleInfo?.name ?? "모듈"}
+                      </strong>
+                      <span>{moduleCourses.length}과목</span>
+                    </div>
+                    <ul>
+                      {moduleCourses.map((course) => (
+                        <li key={course.id}>
+                          <span>
+                            {course.code} {course.name}
+                          </span>
+                          <small>
+                            {formatSemester(course.recommendedSemester)} · {course.credits}학점
+                          </small>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          </article>
+        ))}
       </div>
     </section>
   );
@@ -933,7 +1206,7 @@ function DiagnosisView({
   onSaveCourses: () => void;
   lastManualSaveAt: string;
 }) {
-  const completedSet = new Set(completedCourseIds);
+  const completedSet = useMemo(() => new Set(completedCourseIds), [completedCourseIds]);
 
   return (
     <div className="view-stack">
@@ -956,53 +1229,16 @@ function DiagnosisView({
         </button>
       </div>
       <EnrollmentPolicyNotice enrollmentType={enrollmentType} />
-      <div className="filter-bar">
-        <label>
-          학년
-          <select value={gradeFilter} onChange={(event) => onGradeFilterChange(event.target.value as GradeFilter)}>
-            <option value="all">전체 학년</option>
-            <option value="1">1학년</option>
-            <option value="2">2학년</option>
-            <option value="3">3학년</option>
-            <option value="4">4학년</option>
-            <option value="unknown">학기 미정</option>
-          </select>
-        </label>
-        <label>
-          학기
-          <select
-            value={semesterFilter}
-            onChange={(event) => onSemesterFilterChange(event.target.value as SemesterFilter)}
-          >
-            <option value="all">전체 학기</option>
-            <option value="1">1학기</option>
-            <option value="2">2학기</option>
-            <option value="unknown">학기 미정</option>
-          </select>
-        </label>
-      </div>
-      <div className="course-groups">
-        {modules
-          .filter((module) => module.category !== "liberal")
-          .map((module) => {
-            const moduleCourses = getCoursesByModule(module.id).filter((course) =>
-              matchesSemesterFilter(course, gradeFilter, semesterFilter),
-            );
-            if (moduleCourses.length === 0) return null;
-            const trackModule = isModuleInAnyTrack(selectedTrackIds, module.id);
-            return (
-              <CourseGroup
-                key={module.id}
-                moduleId={module.id}
-                trackModule={trackModule}
-                courses={moduleCourses}
-                enrollmentType={enrollmentType}
-                completedSet={completedSet}
-                onToggleCourse={onToggleCourse}
-              />
-            );
-          })}
-      </div>
+      <SemesterCourseTable
+        completedSet={completedSet}
+        selectedTrackIds={selectedTrackIds}
+        enrollmentType={enrollmentType}
+        gradeFilter={gradeFilter}
+        semesterFilter={semesterFilter}
+        onGradeFilterChange={onGradeFilterChange}
+        onSemesterFilterChange={onSemesterFilterChange}
+        onToggleCourse={onToggleCourse}
+      />
     </div>
   );
 }
@@ -1012,38 +1248,26 @@ function LabView({
   completedCourseIds,
   enrollmentType,
   planningSemester,
-  gradeFilter,
-  semesterFilter,
   onEnrollmentTypeChange,
   onPlanningSemesterChange,
-  onGradeFilterChange,
-  onSemesterFilterChange,
-  onToggleCourse,
   onReset,
 }: {
   recommendations: TrackRecommendation[];
   completedCourseIds: string[];
   enrollmentType: EnrollmentType;
   planningSemester: LabPlanningSemester;
-  gradeFilter: GradeFilter;
-  semesterFilter: SemesterFilter;
   onEnrollmentTypeChange: (enrollmentType: EnrollmentType) => void;
   onPlanningSemesterChange: (semester: LabPlanningSemester) => void;
-  onGradeFilterChange: (grade: GradeFilter) => void;
-  onSemesterFilterChange: (semester: SemesterFilter) => void;
-  onToggleCourse: (courseId: string) => void;
   onReset: () => void;
 }) {
-  const completedSet = useMemo(() => new Set(completedCourseIds), [completedCourseIds]);
   const bestRecommendation = recommendations[0];
   const sharedSuggestions = useMemo(() => getSharedLabSuggestions(recommendations), [recommendations]);
-  const allTrackIds = tracks.map((track) => track.id);
 
   return (
     <div className="view-stack lab-view">
       <SectionHeader
-        eyebrow="트랙 추천 실험실"
-        title="수강한 과목 기준으로 가장 가까운 트랙을 추천합니다."
+        eyebrow="트랙 추천"
+        title="수강 이력 기준으로 달성 가능한 트랙을 추천합니다."
         body="트랙을 아직 정하지 않았거나 나중에 신청하려는 학생을 위해, 현재 체크한 과목으로 5개 트랙 전체의 달성 가능성을 비교합니다."
       />
 
@@ -1128,8 +1352,7 @@ function LabView({
           <div className="lab-help-box">
             <strong>활용법</strong>
             <span>
-              수강한 과목과 현재 학기를 넣으면, 학기당 트랙 과목 2개 정도를 보완한다는 기준으로 정규학기 안에
-              가능한지 가늠합니다.
+              체크 과목과 현재 학기로 정규학기 안 가능성을 가늠합니다.
             </span>
           </div>
           <button className="icon-button reset-track-button lab-reset-button" type="button" onClick={onReset}>
@@ -1198,64 +1421,6 @@ function LabView({
           ))}
         </div>
       </div>
-
-      <div className="lab-input-panel">
-        <div className="lab-section-head">
-          <div>
-            <span>과목 입력</span>
-            <h3>수강한 과목을 체크하세요</h3>
-          </div>
-          <p>자가진단 탭과 같은 체크 상태를 공유합니다.</p>
-        </div>
-        <div className="filter-bar">
-          <label>
-            학년
-            <select value={gradeFilter} onChange={(event) => onGradeFilterChange(event.target.value as GradeFilter)}>
-              <option value="all">전체 학년</option>
-              <option value="1">1학년</option>
-              <option value="2">2학년</option>
-              <option value="3">3학년</option>
-              <option value="4">4학년</option>
-              <option value="unknown">학기 미정</option>
-            </select>
-          </label>
-          <label>
-            학기
-            <select
-              value={semesterFilter}
-              onChange={(event) => onSemesterFilterChange(event.target.value as SemesterFilter)}
-            >
-              <option value="all">전체 학기</option>
-              <option value="1">1학기</option>
-              <option value="2">2학기</option>
-              <option value="unknown">학기 미정</option>
-            </select>
-          </label>
-        </div>
-        <div className="course-groups lab-course-groups">
-          {modules
-            .filter((module) => module.category !== "liberal")
-            .map((module) => {
-              const moduleCourses = getCoursesByModule(module.id).filter((course) =>
-                matchesSemesterFilter(course, gradeFilter, semesterFilter),
-              );
-              if (moduleCourses.length === 0) return null;
-
-              return (
-                <CourseGroup
-                  key={module.id}
-                  moduleId={module.id}
-                  trackModule={isModuleInAnyTrack(allTrackIds, module.id)}
-                  moduleBadgeLabel="트랙 인정 모듈"
-                  courses={moduleCourses}
-                  enrollmentType={enrollmentType}
-                  completedSet={completedSet}
-                  onToggleCourse={onToggleCourse}
-                />
-              );
-            })}
-        </div>
-      </div>
     </div>
   );
 }
@@ -1294,56 +1459,461 @@ function LabRecommendationCard({ recommendation }: { recommendation: TrackRecomm
   );
 }
 
-function CourseGroup({
-  moduleId,
-  trackModule,
-  moduleBadgeLabel = "선택 트랙 모듈",
-  courses: moduleCourses,
-  enrollmentType,
+function ExperimentView({
+  recommendations,
+  completedCourseIds,
+  planningSemester,
+  onPlanningSemesterChange,
+  onGoToDiagnosis,
+}: {
+  recommendations: TrackRecommendation[];
+  completedCourseIds: string[];
+  planningSemester: LabPlanningSemester;
+  onPlanningSemesterChange: (semester: LabPlanningSemester) => void;
+  onGoToDiagnosis: () => void;
+}) {
+  const bestRecommendation = recommendations[0];
+  const sharedSuggestions = useMemo(() => getSharedLabSuggestions(recommendations), [recommendations]);
+  const plan = useMemo(
+    () => getExperimentPlan(bestRecommendation, sharedSuggestions.courses, planningSemester, completedCourseIds.length),
+    [bestRecommendation, sharedSuggestions.courses, planningSemester, completedCourseIds.length],
+  );
+  const priorityCourseGroups = groupCoursesByTerm(plan.priorityCourses);
+
+  return (
+    <div className="view-stack experiment-view">
+      <SectionHeader
+        eyebrow="실험실"
+        title="현재 학년 기준 수강신청 전략을 확인하세요."
+        body="트랙 추천 결과에 본인의 현재 학년·학기를 더해, 남은 정규학기 안에서 어떤 과목을 먼저 챙기면 좋은지 정리합니다."
+      />
+
+      <div className="experiment-intro-panel">
+        <div className="experiment-intro-copy">
+          <span>이 탭의 역할</span>
+          <h3>자가진단 결과를 수강신청 계획으로 바꾸는 보조 화면입니다.</h3>
+          <p>
+            이미 체크한 과목과 트랙 추천 결과를 기준으로 현재 학년·학기에서 남은 정규학기, 필요한 과목 수,
+            학기당 부담, 다음 수강신청 우선순위를 계산합니다.
+          </p>
+        </div>
+        <div className="experiment-intro-steps">
+          <span>1. 현재 학년 입력</span>
+          <span>2. 남은 학기 계산</span>
+          <span>3. 우선 과목 추천</span>
+        </div>
+      </div>
+
+      <div className="experiment-top-grid">
+        <article className="experiment-strategy-card">
+          <div className="lab-card-head">
+            <div>
+              <span>전략 기준 트랙</span>
+              <h3>{bestRecommendation.trackName}</h3>
+            </div>
+            <small className={getTrackBadgeClass(bestRecommendation.trackId)}>{bestRecommendation.trackKind}</small>
+          </div>
+          <div className="experiment-status-line">
+            <strong>{plan.loadLabel}</strong>
+            <span>{bestRecommendation.feasibility.label}</span>
+          </div>
+          <p>{plan.loadDetail}</p>
+          <div className="track-progress-line lab-progress-line">
+            <span style={{ width: `${bestRecommendation.completionRate}%` }} />
+          </div>
+          <div className="lab-metric-grid experiment-metric-grid">
+            <ResultMetric label="체크 과목" value={`${completedCourseIds.length}개`} compact />
+            <ResultMetric label="남은 정규학기" value={plan.remainingSemesterText} compact />
+            <ResultMetric label="필요 과목" value={`${bestRecommendation.feasibility.neededCourseCount}개`} compact />
+            <ResultMetric label="학기당 목표" value={plan.perSemesterText} compact />
+          </div>
+        </article>
+
+        <aside className="experiment-control-card">
+          <div className="lab-control-head">
+            <strong>현재 위치 입력</strong>
+            <span>전략 계산 기준</span>
+          </div>
+          <label className="lab-semester-select">
+            현재 학년/학기
+            <select
+              value={planningSemester}
+              onChange={(event) => onPlanningSemesterChange(event.target.value as LabPlanningSemester)}
+            >
+              <option value="unselected">선택 안 함</option>
+              {curriculumSlots.map((slot) => (
+                <option value={slot.key} key={slot.key}>
+                  {slot.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="lab-help-box">
+            <strong>계산 방식</strong>
+            <span>
+              학기당 보완 과목 2개, 초과학기 2학기까지 가정한 참고 계산입니다.
+            </span>
+          </div>
+          <button className="secondary-button experiment-diagnosis-button" type="button" onClick={onGoToDiagnosis}>
+            수강 과목 다시 체크
+          </button>
+        </aside>
+      </div>
+
+      <div className="experiment-insight-grid">
+        {plan.insights.map((insight) => (
+          <article className={`experiment-insight-card ${insight.tone}`} key={insight.title}>
+            <span>{insight.label}</span>
+            <h3>{insight.title}</h3>
+            <p>{insight.detail}</p>
+          </article>
+        ))}
+      </div>
+
+      <div className="experiment-plan-panel">
+        <div className="lab-section-head">
+          <div>
+            <span>수강신청 우선순위</span>
+            <h3>남은 과목을 학기별로 나눠 먼저 확인하세요.</h3>
+          </div>
+          <p>1학기 과목을 먼저 배치하고, 2학기 과목은 다음 묶음으로 분리했습니다.</p>
+        </div>
+        <div className="experiment-plan-grid">
+          <div className="experiment-course-groups">
+            {priorityCourseGroups.map((group) => (
+              <section className={`experiment-term-card term-${group.key}`} key={group.key}>
+                <div className="experiment-term-head">
+                  <strong>{group.label}</strong>
+                  <span>{group.courses.length}개</span>
+                </div>
+                <div className="experiment-course-list">
+                  {group.courses.map((course) => (
+                    <div className="experiment-course-item" key={course.id}>
+                      <strong>
+                        {course.code} {course.name}
+                      </strong>
+                      <span>
+                        {getModuleLabel(course.moduleId)} · {formatSemester(course.recommendedSemester)} · {course.credits}학점
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ))}
+            {priorityCourseGroups.length === 0 && (
+              <div className="empty-state">
+                <strong>현재 기준으로 우선 보완 과목이 없습니다</strong>
+                <span>이미 조건을 충족했거나, 자가진단에서 수강 과목을 더 체크하면 추천이 세분화됩니다.</span>
+              </div>
+            )}
+          </div>
+
+          <aside className="experiment-action-card">
+            <h3>다음 행동</h3>
+            <ol>
+              {plan.actions.map((action) => (
+                <li key={action}>{action}</li>
+              ))}
+            </ol>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SemesterCourseTable({
   completedSet,
+  selectedTrackIds,
+  enrollmentType,
+  gradeFilter,
+  semesterFilter,
+  onGradeFilterChange,
+  onSemesterFilterChange,
+  onToggleCourse,
+  tableTitle = "학년·학기별 전공 이수 표",
+  tableDescription = "학년과 학기 흐름대로 과목을 보면서 이미 들었거나 수강 예정인 과목을 체크하세요.",
+}: {
+  completedSet: Set<string>;
+  selectedTrackIds: TrackId[];
+  enrollmentType: EnrollmentType;
+  gradeFilter: GradeFilter;
+  semesterFilter: SemesterFilter;
+  onGradeFilterChange: (grade: GradeFilter) => void;
+  onSemesterFilterChange: (semester: SemesterFilter) => void;
+  onToggleCourse: (courseId: string) => void;
+  tableTitle?: string;
+  tableDescription?: string;
+}) {
+  const visibleCourses = useMemo(
+    () =>
+      courses
+        .filter((course) => course.moduleId !== "A")
+        .filter((course) => matchesSemesterFilter(course, gradeFilter, semesterFilter))
+        .sort(
+          (a, b) =>
+            semesterRankForView(a.recommendedSemester) - semesterRankForView(b.recommendedSemester) ||
+            a.moduleId.localeCompare(b.moduleId) ||
+            a.code.localeCompare(b.code),
+        ),
+    [gradeFilter, semesterFilter],
+  );
+  const selectedVisibleCount = visibleCourses.filter((course) => completedSet.has(course.id)).length;
+  const selectedTrackCourseCount = visibleCourses.filter((course) => isModuleInAnyTrack(selectedTrackIds, course.moduleId)).length;
+  const gradeRows = ["1", "2", "3", "4"].filter((grade) => gradeFilter === "all" || gradeFilter === grade);
+  const semesterRows = ["1", "2"].filter((semester) => semesterFilter === "all" || semesterFilter === semester);
+  const unknownCourses = visibleCourses.filter((course) => !course.recommendedSemester);
+  const semesterCourseCount = visibleCourses.length - unknownCourses.length;
+
+  return (
+    <section className="semester-course-panel">
+      <div className="semester-course-head">
+        <div>
+          <span>전공 이수 선택표</span>
+          <h3>{tableTitle}</h3>
+          <p>{tableDescription}</p>
+        </div>
+        <div className="semester-course-stats" aria-label="과목 선택 요약">
+          <strong>{selectedVisibleCount}/{visibleCourses.length}</strong>
+          <span>현재 표에서 체크</span>
+          <strong>{selectedTrackCourseCount}개</strong>
+          <span>선택 트랙 관련 과목</span>
+        </div>
+      </div>
+
+      <SemesterCourseQuickFilters
+        gradeFilter={gradeFilter}
+        semesterFilter={semesterFilter}
+        onGradeFilterChange={onGradeFilterChange}
+        onSemesterFilterChange={onSemesterFilterChange}
+      />
+
+      <div className="semester-legend" aria-label="표시 기준">
+        <span className="legend-selected">체크 완료</span>
+        <span className="legend-track">선택 트랙 모듈</span>
+        <span className="legend-required">필수 과목</span>
+      </div>
+
+      {visibleCourses.length === 0 ? (
+        <div className="empty-state">
+          <strong>조건에 맞는 과목이 없습니다</strong>
+          <span>학년 또는 학기 필터를 전체로 바꾸면 다시 전체 표를 볼 수 있습니다.</span>
+        </div>
+      ) : (
+        <>
+          {semesterCourseCount > 0 && (
+            <div
+              className={`semester-table transposed grade-count-${Math.max(1, gradeRows.length)}`}
+              role="table"
+              aria-label="학년·학기별 전공 이수 선택 표"
+            >
+              <div className="semester-table-header grade-heading" role="columnheader">
+                학기
+              </div>
+              {gradeRows.map((grade) => (
+                <div className="semester-table-header" role="columnheader" key={grade}>
+                  {grade}학년
+                </div>
+              ))}
+              {semesterRows.map((semester) => {
+                const semesterCourses = gradeRows.flatMap((grade) =>
+                  visibleCourses.filter((course) => course.recommendedSemester === `${grade}-${semester}`),
+                );
+                const semesterSelectedCount = semesterCourses.filter((course) => completedSet.has(course.id)).length;
+
+                if (semesterFilter !== "all" && semesterCourses.length === 0) return null;
+
+                return (
+                  <Fragment key={semester}>
+                    <div className="semester-grade-cell" role="rowheader">
+                      <strong>{semester}학기</strong>
+                      <span>
+                        {semesterSelectedCount}/{semesterCourses.length}개 체크
+                      </span>
+                    </div>
+                    {gradeRows.map((grade) => {
+                      const termCourses = visibleCourses.filter((course) => course.recommendedSemester === `${grade}-${semester}`);
+
+                      return (
+                        <SemesterCourseCell
+                          label={`${grade}학년 ${semester}학기`}
+                          courses={termCourses}
+                          completedSet={completedSet}
+                          selectedTrackIds={selectedTrackIds}
+                          enrollmentType={enrollmentType}
+                          onToggleCourse={onToggleCourse}
+                          key={`${grade}-${semester}`}
+                        />
+                      );
+                    })}
+                  </Fragment>
+                );
+              })}
+            </div>
+          )}
+
+          {unknownCourses.length > 0 && (
+            <div className="semester-unknown-panel">
+              <div className="semester-unknown-head">
+                <strong>학기 미정·융합 모듈 과목</strong>
+                <span>{unknownCourses.length}개</span>
+              </div>
+              <div className="semester-unknown-grid">
+                {unknownCourses.map((course) => (
+                  <CourseCheckTile
+                    course={course}
+                    key={course.id}
+                    completed={completedSet.has(course.id)}
+                    trackModule={isModuleInAnyTrack(selectedTrackIds, course.moduleId)}
+                    enrollmentType={enrollmentType}
+                    onToggleCourse={onToggleCourse}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+function SemesterCourseQuickFilters({
+  gradeFilter,
+  semesterFilter,
+  onGradeFilterChange,
+  onSemesterFilterChange,
+}: {
+  gradeFilter: GradeFilter;
+  semesterFilter: SemesterFilter;
+  onGradeFilterChange: (grade: GradeFilter) => void;
+  onSemesterFilterChange: (semester: SemesterFilter) => void;
+}) {
+  const gradeOptions: Array<{ value: GradeFilter; label: string }> = [
+    { value: "all", label: "전체 학년" },
+    { value: "1", label: "1학년" },
+    { value: "2", label: "2학년" },
+    { value: "3", label: "3학년" },
+    { value: "4", label: "4학년" },
+    { value: "unknown", label: "학기 미정" },
+  ];
+  const semesterOptions: Array<{ value: SemesterFilter; label: string }> = [
+    { value: "all", label: "전체 학기" },
+    { value: "1", label: "1학기" },
+    { value: "2", label: "2학기" },
+    { value: "unknown", label: "학기 미정" },
+  ];
+
+  return (
+    <div className="semester-filter-toolbar" aria-label="학년과 학기 빠른 선택">
+      <div className="filter-chip-group" aria-label="학년 선택">
+        <strong>학년</strong>
+        {gradeOptions.map((option) => (
+          <button
+            className={gradeFilter === option.value ? "filter-chip active" : "filter-chip"}
+            type="button"
+            key={option.value}
+            onClick={() => onGradeFilterChange(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+      <div className="filter-chip-group" aria-label="학기 선택">
+        <strong>학기</strong>
+        {semesterOptions.map((option) => (
+          <button
+            className={semesterFilter === option.value ? "filter-chip active" : "filter-chip"}
+            type="button"
+            key={option.value}
+            onClick={() => onSemesterFilterChange(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SemesterCourseCell({
+  label,
+  courses: termCourses,
+  completedSet,
+  selectedTrackIds,
+  enrollmentType,
   onToggleCourse,
 }: {
-  moduleId: ModuleId;
-  trackModule: boolean;
-  moduleBadgeLabel?: string;
+  label: string;
   courses: Course[];
-  enrollmentType: EnrollmentType;
   completedSet: Set<string>;
+  selectedTrackIds: TrackId[];
+  enrollmentType: EnrollmentType;
   onToggleCourse: (courseId: string) => void;
 }) {
   return (
-    <section className={trackModule ? "course-group track-module" : "course-group"}>
-      <div className="course-group-head">
-        <h3>{getModuleLabel(moduleId)}</h3>
-        <span>{trackModule ? moduleBadgeLabel : "공통/비선택 모듈"}</span>
-      </div>
-      <div className="course-list">
-        {moduleCourses.map((course) => {
-          const requiredForEnrollment = isRequiredCourseApplicable(course, enrollmentType);
-          const excludedRequired = course.required && !requiredForEnrollment;
-          const rowClassName = requiredForEnrollment
-            ? "course-row required"
-            : excludedRequired
-              ? "course-row optionalized"
-              : "course-row";
-          return (
-            <label className={rowClassName} key={course.id}>
-              <input
-                type="checkbox"
-                checked={completedSet.has(course.id)}
-                onChange={() => onToggleCourse(course.id)}
-              />
-              <span className="course-code">{course.code}</span>
-              <span className="course-name">{course.name}</span>
-              {requiredForEnrollment && <strong>필수</strong>}
-              {excludedRequired && <strong className="optionalized-badge">필수 제외</strong>}
-              <small>{formatSemester(course.recommendedSemester)}</small>
-              <em>{course.credits}학점</em>
-            </label>
-          );
-        })}
-      </div>
-    </section>
+    <div className="semester-course-cell" role="cell">
+      <strong className="semester-cell-label">{label}</strong>
+      {termCourses.length === 0 ? (
+        <span className="semester-empty">해당 과목 없음</span>
+      ) : (
+        termCourses.map((course) => (
+          <CourseCheckTile
+            course={course}
+            key={course.id}
+            completed={completedSet.has(course.id)}
+            trackModule={isModuleInAnyTrack(selectedTrackIds, course.moduleId)}
+            enrollmentType={enrollmentType}
+            onToggleCourse={onToggleCourse}
+          />
+        ))
+      )}
+    </div>
+  );
+}
+
+function CourseCheckTile({
+  course,
+  completed,
+  trackModule,
+  enrollmentType,
+  onToggleCourse,
+}: {
+  course: Course;
+  completed: boolean;
+  trackModule: boolean;
+  enrollmentType: EnrollmentType;
+  onToggleCourse: (courseId: string) => void;
+}) {
+  const requiredForEnrollment = isRequiredCourseApplicable(course, enrollmentType);
+  const excludedRequired = course.required && !requiredForEnrollment;
+  const className = [
+    "semester-course-tile",
+    completed ? "checked" : "",
+    trackModule ? "track-module" : "",
+    requiredForEnrollment ? "required" : "",
+    excludedRequired ? "optionalized" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <label className={className}>
+      <input type="checkbox" checked={completed} onChange={() => onToggleCourse(course.id)} />
+      <span className="tile-main">
+        <strong>{course.code}</strong>
+        <span>{course.name}</span>
+      </span>
+      <span className="tile-meta">
+        <small title={getModuleLabel(course.moduleId)}>{getModuleLabel(course.moduleId)}</small>
+        <small>{course.credits}학점</small>
+      </span>
+      <span className="tile-badges">
+        {requiredForEnrollment && <em>필수</em>}
+        {excludedRequired && <em className="optionalized-badge">필수 제외</em>}
+        {trackModule && <em className="track-module-badge">트랙 관련</em>}
+      </span>
+    </label>
   );
 }
 
@@ -1363,6 +1933,8 @@ function EnrollmentPolicyNotice({ enrollmentType }: { enrollmentType: Enrollment
 }
 
 function ResultDetailView({ result }: { result: DiagnosisResult }) {
+  const neededCoursePlans = getTrackNeededCoursePlans(result.trackResults);
+
   if (result.trackResults.length === 0) {
     return (
       <div className="view-stack">
@@ -1390,6 +1962,7 @@ function ResultDetailView({ result }: { result: DiagnosisResult }) {
         <div className="result-top-summary">
           <div className="result-grid">
             <ResultMetric label="전체 진행률" value={`${result.completionRate}%`} />
+            <ResultMetric label="남은 과목" value={formatNeededCourseRange(neededCoursePlans)} />
             <ResultMetric label="트랙 인정 학점" value={`${result.trackCredits}학점`} />
             <ResultMetric label="필수 과목" value={`${result.requiredCreditsCompleted}/${result.requiredCreditsTotal}학점`} />
           </div>
@@ -1406,6 +1979,7 @@ function ResultDetailView({ result }: { result: DiagnosisResult }) {
           </button>
         </div>
       </div>
+      <TrackNeededCourseSummary plans={neededCoursePlans} />
       <ModuleProgressBoard trackResults={result.trackResults} />
       <div className="result-support-grid">
         {result.excludedRequiredCourses.length > 0 && (
@@ -1421,7 +1995,62 @@ function ResultDetailView({ result }: { result: DiagnosisResult }) {
           courses={result.missingRequiredCourses}
           emptyText="필수 과목 누락 없음"
           compact
+          tone="danger"
         />
+      </div>
+    </div>
+  );
+}
+
+function TrackNeededCourseSummary({ plans }: { plans: TrackNeededCoursePlan[] }) {
+  return (
+    <div className="needed-course-panel">
+      <div className="needed-course-head">
+        <div>
+          <span>3학점 기준 남은 과목 계산</span>
+          <h3>트랙별로 어디에서 몇 과목을 더 들어야 하는지 확인하세요.</h3>
+        </div>
+        <p>부족 학점을 3학점 과목 단위로 환산했습니다. 실제 과목 학점이 다른 융합 모듈은 공식 과목표와 함께 확인하세요.</p>
+      </div>
+      <div className="needed-course-grid">
+        {plans.map((plan) => (
+          <article className={`needed-course-card track-tone-${plan.trackId}`} key={plan.trackId}>
+            <div className="needed-course-title">
+              <div>
+                <span className={getTrackBadgeClass(plan.trackId)}>{plan.trackName}</span>
+                <small>{plan.trackKind}</small>
+              </div>
+              <strong>{plan.passed ? "충족" : `${plan.neededCourses}과목`}</strong>
+            </div>
+            <div className="track-progress-line">
+              <span style={{ width: `${plan.completionRate}%` }} />
+            </div>
+            {plan.rows.length === 0 ? (
+              <p className="empty-text compact-status">현재 체크 기준으로 더 채워야 할 모듈이 없습니다.</p>
+            ) : (
+              <div className="needed-course-row-list">
+                {plan.rows.map((row) => (
+                  <div className="needed-course-row" key={`${plan.trackId}-${row.label}`}>
+                    <div>
+                      <strong>{row.label}</strong>
+                      <small>{row.note}</small>
+                      {row.candidates.length > 0 && (
+                        <em>
+                          후보:{" "}
+                          {row.candidates
+                            .slice(0, 3)
+                            .map((course) => `${course.code} ${course.name}`)
+                            .join(", ")}
+                        </em>
+                      )}
+                    </div>
+                    <span>{row.neededCourses}과목</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </article>
+        ))}
       </div>
     </div>
   );
@@ -1813,14 +2442,23 @@ function CourseSummaryList({
   courses: summaryCourses,
   emptyText,
   compact = false,
+  tone = "default",
 }: {
   title: string;
   courses: Course[];
   emptyText: string;
   compact?: boolean;
+  tone?: "default" | "danger";
 }) {
+  const className = [
+    compact ? "table-panel compact-summary-panel" : "table-panel",
+    tone === "danger" ? "danger-summary-panel" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div className={compact ? "table-panel compact-summary-panel" : "table-panel"}>
+    <div className={className}>
       <div className="summary-panel-head">
         <h3>{title}</h3>
         <span>{summaryCourses.length}개</span>
@@ -2025,6 +2663,198 @@ function getRecommendationReason(recommendation: TrackRecommendation, completedC
   return "아직 겹치는 모듈이 적어 추천 과목부터 단계적으로 채우는 편이 좋습니다.";
 }
 
+function getExperimentPlan(
+  recommendation: TrackRecommendation,
+  sharedCourses: SharedCourseSuggestion[],
+  planningSemester: LabPlanningSemester,
+  completedCourseCount: number,
+): ExperimentPlan {
+  const feasibility = recommendation.feasibility;
+  const remainingSemesterText =
+    feasibility.remainingRegularSemesters === null ? "입력 필요" : `${feasibility.remainingRegularSemesters}학기`;
+  const perSemesterCourseCount =
+    feasibility.remainingRegularSemesters === null || feasibility.neededCourseCount === 0
+      ? 0
+      : Math.ceil(feasibility.neededCourseCount / Math.max(1, feasibility.remainingRegularSemesters));
+  const perSemesterText =
+    feasibility.remainingRegularSemesters === null
+      ? "입력 필요"
+      : feasibility.neededCourseCount === 0
+        ? "추가 없음"
+        : `약 ${perSemesterCourseCount}과목`;
+  const priorityCourses = uniqueCourseList([
+    ...recommendation.recommendedCourses,
+    ...sharedCourses.map((suggestion) => suggestion.course),
+  ]).slice(0, 10);
+  const hasCurrentSemester = planningSemester !== "unselected";
+
+  let loadLabel = "현재 학기 입력 필요";
+  let loadDetail = "현재 학년·학기를 선택하면 남은 정규학기 기준으로 수강신청 부담을 계산합니다.";
+
+  if (feasibility.status === "complete") {
+    loadLabel = "현재 충족 상태";
+    loadDetail = "체크한 과목 기준으로 가장 가까운 트랙의 주요 조건을 충족했습니다. 다른 트랙 확장 가능성을 비교해도 좋습니다.";
+  } else if (feasibility.status === "regular") {
+    loadLabel = perSemesterCourseCount <= 2 ? "정규학기 안 안정권" : "정규학기 안 가능";
+    loadDetail =
+      perSemesterCourseCount <= 2
+        ? "남은 학기마다 트랙 관련 과목을 무리 없이 섞어 넣으면 정규학기 안에 달성 가능성이 높습니다."
+        : "정규학기 안에 가능하지만 학기당 보완 과목 수가 많아 수강신청 우선순위를 분명히 잡아야 합니다.";
+  } else if (feasibility.status === "extra-semester") {
+    loadLabel = "초과학기 또는 계절학기 고려";
+    loadDetail = "정규학기만으로는 여유가 적습니다. 필수 과목과 공통 활용 과목을 먼저 배치하고, 초과학기 가능성도 함께 열어두세요.";
+  } else if (feasibility.status === "long-term") {
+    loadLabel = "학과 상담 권장";
+    loadDetail = "남은 학기 대비 필요한 과목 수가 많습니다. 트랙 우선순위, 복수전공·부전공 기준, 대체 가능 과목을 학과 안내와 함께 확인하세요.";
+  } else if (hasCurrentSemester) {
+    loadLabel = "수강 계획 계산 중";
+    loadDetail = feasibility.detail;
+  }
+
+  const insights: ExperimentInsight[] = [
+    {
+      label: "우선순위 1",
+      title:
+        recommendation.missingRequiredCount > 0
+          ? "필수 과목을 먼저 확보하세요"
+          : recommendation.missingModuleCount > 0
+            ? "부족 모듈부터 채우세요"
+            : "확장 트랙을 비교하세요",
+      detail:
+        recommendation.missingRequiredCount > 0
+          ? `필수 누락 ${recommendation.missingRequiredCount}개가 남아 있어 트랙 과목보다 먼저 시간표에 넣는 편이 안전합니다.`
+          : recommendation.missingModuleCount > 0
+            ? `부족 모듈 ${recommendation.missingModuleCount}개가 남아 있습니다. 같은 모듈 안에서 개설 학기를 보고 순서대로 채우세요.`
+            : "가장 가까운 트랙은 충족권입니다. 공통 추천 과목을 활용해 다른 트랙까지 확장할 수 있는지 비교하세요.",
+      tone: recommendation.missingRequiredCount > 0 ? "warning" : "notice",
+    },
+    {
+      label: "학기 부담",
+      title:
+        !hasCurrentSemester
+          ? "현재 학년·학기 입력 필요"
+          : perSemesterCourseCount <= 2
+            ? "학기당 부담이 낮습니다"
+            : perSemesterCourseCount <= 3
+              ? "수강신청 우선순위가 필요합니다"
+              : "한 학기 부담이 큽니다",
+      detail:
+        !hasCurrentSemester
+          ? "현재 위치를 넣어야 정규학기 안 가능 여부와 학기당 목표 과목 수가 계산됩니다."
+          : perSemesterCourseCount <= 2
+            ? `남은 ${remainingSemesterText} 동안 학기당 ${perSemesterText} 정도를 보완하면 됩니다.`
+            : perSemesterCourseCount <= 3
+              ? `학기당 ${perSemesterText} 수준입니다. 전공필수와 트랙 공통 과목을 먼저 잡아야 합니다.`
+              : `학기당 ${perSemesterText} 이상이 필요합니다. 초과학기나 트랙 목표 조정을 같이 검토하세요.`,
+      tone: !hasCurrentSemester || perSemesterCourseCount > 3 ? "warning" : "good",
+    },
+    {
+      label: "공통 활용",
+      title: sharedCourses.length > 0 ? "겹치는 과목을 먼저 보세요" : "트랙별 후보를 따로 보세요",
+      detail:
+        sharedCourses.length > 0
+          ? `${sharedCourses[0].course.code} ${sharedCourses[0].course.name}처럼 여러 트랙에 동시에 도움 되는 과목이 있습니다.`
+          : "현재 추천 결과에서는 공통 후보가 적습니다. 가장 가까운 트랙의 부족 모듈부터 좁혀 보는 편이 좋습니다.",
+      tone: sharedCourses.length > 0 ? "good" : "notice",
+    },
+  ];
+
+  const actions = [
+    completedCourseCount === 0
+      ? "자가진단 탭에서 이미 들었거나 이수 예정인 과목을 먼저 체크합니다."
+      : `${completedCourseCount}개 체크 과목을 기준으로 가장 가까운 트랙은 ${recommendation.trackName}입니다.`,
+    recommendation.missingRequiredCount > 0
+      ? "필수 누락 과목을 다음 수강신청 1순위로 둡니다."
+      : "부족 모듈 과목을 학기별로 나눠 시간표 후보에 넣습니다.",
+    sharedCourses.length > 0
+      ? "여러 트랙에 겹치는 공통 추천 과목을 먼저 확인합니다."
+      : "트랙별 추천 순위를 보고 목표 트랙을 1개로 좁힙니다.",
+    "최종 인정 여부와 실제 개설 학기는 학과 공식 안내와 수강신청 시스템에서 확인합니다.",
+  ];
+
+  return {
+    loadLabel,
+    loadDetail,
+    remainingSemesterText,
+    perSemesterText,
+    priorityCourses,
+    insights,
+    actions,
+  };
+}
+
+function getTrackNeededCoursePlans(trackResults: TrackDiagnosisResult[]): TrackNeededCoursePlan[] {
+  return trackResults.map((trackResult) => {
+    const remainingCourseIds = new Set(trackResult.remainingCourses.map((course) => course.id));
+    const missingModuleProgress = trackResult.moduleProgress.filter((progress) => progress.missingCredits > 0);
+    const missingModuleCourseIds = new Set(missingModuleProgress.flatMap((progress) => progress.courseIds));
+    const rows: TrackNeededCourseRow[] = missingModuleProgress.map((progress) => {
+      const neededCourses = creditsToCourseCount(progress.missingCredits);
+      const candidates = progress.courseIds
+        .map((courseId) => courses.find((course) => course.id === courseId))
+        .filter((course): course is Course => course !== undefined && remainingCourseIds.has(course.id))
+        .sort(compareCoursesForView);
+
+      return {
+        label: formatModuleProgressLabel(progress.label, trackResult.trackName),
+        neededCourses,
+        missingCredits: progress.missingCredits,
+        note: `${progress.missingCredits}학점 부족 · 3학점 기준 ${neededCourses}과목`,
+        candidates,
+      };
+    });
+
+    const requiredOnlyCourses = trackResult.missingRequiredCourses.filter(
+      (course) => !missingModuleCourseIds.has(course.id),
+    );
+    const requiredOnlyCredits = requiredOnlyCourses.reduce((sum, course) => sum + course.credits, 0);
+
+    if (requiredOnlyCredits > 0) {
+      const neededCourses = creditsToCourseCount(requiredOnlyCredits);
+      rows.push({
+        label: "공통 필수 과목",
+        neededCourses,
+        missingCredits: requiredOnlyCredits,
+        note: `${requiredOnlyCredits}학점 부족 · 모듈 부족과 중복되지 않는 필수 과목`,
+        candidates: requiredOnlyCourses.sort(compareCoursesForView),
+      });
+    }
+
+    return {
+      trackId: trackResult.trackId,
+      trackName: trackResult.trackName,
+      trackKind: trackResult.trackKind,
+      passed: trackResult.passed,
+      completionRate: trackResult.completionRate,
+      neededCourses: rows.reduce((sum, row) => sum + row.neededCourses, 0),
+      rows,
+    };
+  });
+}
+
+function uniqueCourseList(courseList: Course[]): Course[] {
+  return [...new Map(courseList.map((course) => [course.id, course])).values()].sort(compareCoursesForView);
+}
+
+function formatNeededCourseRange(plans: TrackNeededCoursePlan[]): string {
+  if (plans.length === 0) return "0개";
+  if (plans.length === 1) return `${plans[0].neededCourses}개`;
+
+  const counts = plans.map((plan) => plan.neededCourses);
+  const min = Math.min(...counts);
+  const max = Math.max(...counts);
+
+  return min === max ? `${max}개` : `${min}~${max}개`;
+}
+
+function creditsToCourseCount(credits: number): number {
+  return Math.ceil(Math.max(0, credits) / 3);
+}
+
+function compareCoursesForView(a: Course, b: Course): number {
+  return semesterRankForView(a.recommendedSemester) - semesterRankForView(b.recommendedSemester) || a.code.localeCompare(b.code);
+}
+
 function groupCoursesBySemester(courseList: Course[]): Array<{ key: string; label: string; courses: Course[] }> {
   const grouped = new Map<string, Course[]>();
   courseList.forEach((course) => {
@@ -2095,6 +2925,16 @@ function printResultReport() {
 
 function getEnrollmentLabel(enrollmentType: EnrollmentType): string {
   return enrollmentOptions.find((option) => option.id === enrollmentType)?.label ?? "주전공";
+}
+
+function loadGuideDismissed(): boolean {
+  if (typeof localStorage === "undefined") return false;
+  return localStorage.getItem(GUIDE_STORAGE_KEY) === "dismissed";
+}
+
+function saveGuideDismissed(): void {
+  if (typeof localStorage === "undefined") return;
+  localStorage.setItem(GUIDE_STORAGE_KEY, "dismissed");
 }
 
 export default App;
