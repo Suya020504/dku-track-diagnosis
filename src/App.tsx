@@ -259,6 +259,36 @@ const trackKindGuides = [
   },
 ];
 
+const updateHistory = [
+  {
+    date: "2026.06.18",
+    title: "수강신청 전략과 가독성 보강",
+    items: [
+      "실험실 탭을 추가해 현재 학년·학기 기준 남은 학기와 학기당 목표 과목을 계산합니다.",
+      "설명, 자가진단, 결과, 트랙 추천 화면의 긴 문장을 줄이고 모바일 텍스트 잘림을 정리했습니다.",
+      "필수 과목 누락, 트랙별 부족 과목, 3학점 기준 남은 과목 계산을 더 눈에 띄게 다듬었습니다.",
+    ],
+  },
+  {
+    date: "2026.06.11",
+    title: "배포 준비와 협업 문서 정리",
+    items: [
+      "GitHub 저장소와 Vercel 배포 설정을 정리하고 배포 URL을 README에 기록했습니다.",
+      "README, CHANGELOG, CONTRIBUTING 문서를 추가해 변경 이유와 검증 방법을 남기기 쉽게 만들었습니다.",
+      "트랙 추천에서 현재 학년·학기를 입력하면 정규학기 가능 여부를 계산하는 기반을 추가했습니다.",
+    ],
+  },
+  {
+    date: "2026.06.10",
+    title: "MVP 초기 구현",
+    items: [
+      "Vite, React, TypeScript 기반의 정적 웹앱을 구성했습니다.",
+      "2026학년도 식품자원경제학과 트랙, 모듈, 과목 데이터를 구조화했습니다.",
+      "자가진단, 결과 확인, 브라우저 저장, 기본 테스트와 빌드 검증 구조를 만들었습니다.",
+    ],
+  },
+];
+
 function App() {
   const [savedState, setSavedState] = useState<SavedDiagnosisState>(() => loadSavedState());
   const [activeView, setActiveView] = useState<ViewId>("overview");
@@ -2339,6 +2369,28 @@ function ContactView() {
         <br />
         자세한 최종 졸업·트랙 인정 여부는 학과 공식 안내로 확인하세요.
       </p>
+      <section className="update-history-panel" aria-label="날짜별 업데이트 내역">
+        <div className="update-history-head">
+          <span>업데이트 기록</span>
+          <h3>날짜별 개선 내역</h3>
+          <p>사이트가 어떤 방향으로 보강됐는지 한눈에 확인할 수 있도록 주요 변경 사항만 정리했습니다.</p>
+        </div>
+        <div className="update-history-list">
+          {updateHistory.map((entry) => (
+            <article className="update-history-item" key={entry.date}>
+              <time>{entry.date}</time>
+              <div>
+                <h4>{entry.title}</h4>
+                <ul>
+                  {entry.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
