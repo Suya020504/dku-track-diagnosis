@@ -17,6 +17,7 @@ import {
   Save,
   X,
 } from "lucide-react";
+import { Analytics } from "@vercel/analytics/react";
 import { courses, CURRICULUM_YEAR, modules, tracks } from "./data/curriculumData";
 import {
   calculateDiagnosis,
@@ -540,6 +541,7 @@ function App() {
           onGoToView={goToGuideStepView}
         />
       )}
+      <Analytics />
     </div>
   );
 }
