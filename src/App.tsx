@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -540,6 +541,7 @@ function App() {
           onGoToView={goToGuideStepView}
         />
       )}
+      <Analytics />
     </div>
   );
 }
