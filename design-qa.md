@@ -83,3 +83,84 @@ The source first-viewport crop (`864 × 614`) and the desktop implementation cap
 - `pnpm run build`: passed.
 
 No actionable P0, P1, or P2 visual mismatches remain. The implementation was faithfully verified against the accepted design, with the intentional deviations above retained for accessibility and the user's explicit content requirement.
+
+---
+
+## Internal service redesign QA — 2026-08-25
+
+### Comparison target
+
+- Approved visual language: `C:\Users\HAPPY\.codex\generated_images\01a03522-bcb6-7732-bed8-7daf20230593\exec-430980e9-b7ae-4edf-8abf-b7edca1ec5a2.png`
+- Before state: `C:\Users\HAPPY\.codex\visualizations\2026\08\25\dku-track-internal-audit\03-result-top.png`
+- After state: `C:\Users\HAPPY\.codex\visualizations\2026\08\25\dku-track-internal-redesign\17-result-desktop-final.png`
+- Combined comparison input: `C:\Users\HAPPY\.codex\visualizations\2026\08\25\dku-track-internal-redesign\19-reference-before-after-comparison.png`
+- Diagnosis desktop: `C:\Users\HAPPY\.codex\visualizations\2026\08\25\dku-track-internal-redesign\16-diagnosis-desktop-final.png`
+- Diagnosis mobile: `C:\Users\HAPPY\.codex\visualizations\2026\08\25\dku-track-internal-redesign\10-diagnosis-mobile-final.png`
+- Course list mobile: `C:\Users\HAPPY\.codex\visualizations\2026\08\25\dku-track-internal-redesign\12-course-table-mobile-fixed.png`
+- Result mobile: `C:\Users\HAPPY\.codex\visualizations\2026\08\25\dku-track-internal-redesign\14-result-mobile-final.png`
+- Planning desktop: `C:\Users\HAPPY\.codex\visualizations\2026\08\25\dku-track-internal-redesign\18-plan-desktop-final.png`
+
+The before and after captures use the same `1440 × 1024` browser viewport, the same selected track, and the same three checked courses. The approved landing concept crop, before result, and after result were placed in one normalized comparison image.
+
+### Iteration findings and fixes
+
+#### P2 — mobile course cells collapsed and overlapped inside the bounded table
+
+- Evidence: the first mobile table pass compressed each semester cell to about 39px while its content overflowed into following rows.
+- Cause: the bounded grid allowed automatic rows to shrink because the mobile cells had `min-height: 0`.
+- Fix: set `grid-auto-rows: max-content` for the mobile transposed semester table.
+- Post-fix evidence: each semester cell height now matches its content and the table scrolls internally without overlap.
+
+#### P2 — mobile icon-only header buttons lost their accessible names
+
+- Evidence: when visible text was hidden at the mobile breakpoint, the Browser accessibility snapshot exposed unnamed buttons.
+- Fix: added `aria-label="사이트 사용법 열기"` and `aria-label="더보기 메뉴"`.
+- Post-fix evidence: the usage guide and secondary menu can be targeted by accessible name.
+
+#### P2 — course selection and result pages remained unnecessarily long
+
+- Evidence: the first mobile redesign still measured 3,766px and showed all twelve semester-unassigned courses by default.
+- Fix: collapse completed track setup, contain the timetable in a viewport-relative scroll area, move semester-unassigned courses into disclosure, limit summary recommendations, and divide result details into three tabs.
+- Post-fix evidence: the mobile diagnosis page dropped to 2,995px while keeping the full course dataset available on demand; the result's first screen is now focused on four metrics and one detail tab.
+
+### Fidelity ledger
+
+| Comparison point | Evidence | Result |
+| --- | --- | --- |
+| Navigation | Seven-item gradient sidebar replaced with three numbered primary steps and a secondary menu | Matches the approved task-first structure |
+| Palette | Decorative cyan/lime gradients removed; white, cool gray, navy, blue and forest green tokens used | Matches the landing visual language |
+| Typography | Large navy task heading, green contextual label, restrained body copy and deliberate control text | Matches the approved hierarchy |
+| Container model | Large repeated cards reduced to open bands, bounded work surfaces, rows and disclosures | Matches the reference's visual economy |
+| Tabs | Result and planning tabs use selected underline, clear labels, `role="tab"`, `aria-selected` and panel relationships | Matches TDS-inspired behavior |
+| Course selection | Desktop keeps a readable timetable; mobile changes to stacked semester rows; both preserve real checkboxes and filters | Functional responsive extension |
+| Results | Summary, module status and required courses no longer render as one long stack | Matches `One thing per one page` intent |
+| Secondary content | Guidance, official resources, full curriculum and additional videos remain available without competing with the main flow | Intentional progressive disclosure |
+
+### Required fidelity surfaces
+
+- Fonts and typography: the landing font stack and navy/green hierarchy are reused across header, headings, tabs, filters, metrics, table cells and buttons. Desktop and mobile wrapping were inspected.
+- Spacing and layout rhythm: 1240px internal canvas, 14–18px component gaps, 44–46px primary controls, 12–14px radii, and bounded table height create a consistent service rhythm without nested-card accumulation.
+- Colors and visual tokens: foreground, background and stroke roles are separated. Green is reserved for active/complete/primary actions, blue for secondary information, orange for warning, and cool gray for neutral surfaces.
+- Image quality and asset fidelity: the DKU seal remains sharp at both header sizes. Video embeds retain a stable `16:9` aspect ratio and do not exceed their container.
+- Copy and content: primary labels were intentionally shortened to `자가진단`, `결과`, and `학기 계획`; the detailed explanation and official sources remain available through the secondary menu.
+
+### Core interaction verification
+
+- Track setup expands, accepts selections, and collapses into a compact summary.
+- Desktop and mobile course filters remain interactive.
+- Existing course selections and local browser persistence remain intact.
+- Result tabs switch among summary, missing modules and required courses.
+- Planning tabs switch between track recommendation and semester plan.
+- More menu opens official resources, track guidance and contact pages.
+- The four-step usage guide opens and closes.
+- Browser error/warning log is empty.
+- `pnpm run test`: 20 tests passed.
+- `pnpm run build`: passed.
+
+### Intentional deviations
+
+- Status surfaces keep restrained blue, green and warning tints where color communicates meaning; decorative page gradients were removed.
+- The internal app uses a desktop table because the task is comparison-heavy, while mobile uses list rows rather than shrinking the desktop grid.
+- Long reference material is not deleted; it is moved behind explicit disclosures so the primary task stays short.
+
+No actionable P0, P1, or P2 visual or interaction issues remain in the inspected states. The internal service was visually checked against the approved landing language and functionally checked through the complete diagnosis, result and planning path.

@@ -10,13 +10,13 @@ import {
   Compass,
   ExternalLink,
   FileText,
-  FlaskConical,
   GraduationCap,
   HelpCircle,
   Instagram,
   Layers3,
   ListChecks,
   Mail,
+  MoreHorizontal,
   PlayCircle,
   Printer,
   RotateCcw,
@@ -103,13 +103,15 @@ type GuideStep = {
   viewId: ViewId;
 };
 
-const viewItems: Array<{ id: ViewId; label: string; icon: typeof FileText }> = [
-  { id: "overview", label: "설명", icon: FileText },
-  { id: "diagnosis", label: "자가진단", icon: ClipboardCheck },
-  { id: "result", label: "결과", icon: BookOpenCheck },
-  { id: "lab", label: "트랙 추천", icon: Compass },
-  { id: "resources", label: "도구&정보", icon: PlayCircle },
-  { id: "experiment", label: "실험실", icon: FlaskConical },
+const primaryViewItems: Array<{ id: ViewId; label: string; step: string; icon: typeof FileText }> = [
+  { id: "diagnosis", label: "자가진단", step: "1", icon: ClipboardCheck },
+  { id: "result", label: "결과", step: "2", icon: BookOpenCheck },
+  { id: "lab", label: "학기 계획", step: "3", icon: CalendarDays },
+];
+
+const secondaryViewItems: Array<{ id: ViewId; label: string; icon: typeof FileText }> = [
+  { id: "overview", label: "트랙제 안내", icon: FileText },
+  { id: "resources", label: "공식 자료", icon: PlayCircle },
   { id: "contact", label: "문의사항", icon: Mail },
 ];
 
@@ -120,60 +122,32 @@ const DEPARTMENT_URL = "https://cms.dankook.ac.kr/web/ere";
 
 const guideSteps: GuideStep[] = [
   {
-    title: "1. 설명 탭에서 트랙제를 먼저 이해합니다",
-    body: "설명 탭은 모듈형 트랙제가 무엇인지, 왜 운영되는지, 어떤 장점이 있는지 한눈에 확인하는 시작 화면입니다.",
-    items: ["트랙제의 의미와 구성 방식", "학과전공과 융합전공의 차이", "이수 사실이 증명서에 표시되는 의미"],
-    action: "설명 보기",
-    viewId: "overview",
-  },
-  {
-    title: "2. 자가진단 탭에서 내 정보를 입력합니다",
-    body: "자가진단 탭은 이수유형, 관심 트랙, 이미 수강했거나 이수 예정인 과목을 입력하는 핵심 화면입니다.",
+    title: "1. 자가진단에서 내 이수 정보를 입력합니다",
+    body: "이수유형과 관심 트랙을 고른 뒤, 이미 수강했거나 이수 예정인 과목을 체크합니다.",
     items: ["주전공·복수전공·부전공 선택", "관심 트랙 복수 선택", "학년·학기별 전공 이수 표에서 과목 체크"],
     action: "자가진단 열기",
     viewId: "diagnosis",
   },
   {
-    title: "3. 결과 탭에서 부족한 부분을 확인합니다",
-    body: "결과 탭은 선택한 트랙별로 진행률, 부족 모듈, 필수 누락, 남은 과목을 구분해서 보여줍니다.",
+    title: "2. 결과에서 지금 상태를 확인합니다",
+    body: "선택한 트랙별 진행률과 남은 과목, 부족 모듈, 필수 누락을 필요한 순서대로 확인합니다.",
     items: ["전체 진행률과 남은 과목 수", "트랙별 충족·부족 상태", "어느 모듈에서 몇 과목이 더 필요한지 확인"],
     action: "결과 보기",
     viewId: "result",
   },
   {
-    title: "4. 트랙 추천 탭에서 가능한 트랙을 비교합니다",
-    body: "트랙 추천 탭은 지금까지 체크한 과목을 기준으로 달성 가능성이 높은 트랙과 남은 학기 안에서 가능한 정도를 보여줍니다.",
-    items: ["현재 수강 이력 기준 가까운 트랙", "정규학기 안에 가능한지 여부", "여러 트랙에 함께 도움 되는 공통 과목"],
-    action: "트랙 추천 보기",
+    title: "3. 학기 계획에서 다음 행동을 정합니다",
+    body: "현재 수강 이력과 학년·학기를 바탕으로 가까운 트랙과 다음 수강신청 우선순위를 정리합니다.",
+    items: ["현재 이력 기준 가까운 트랙", "정규학기 안에 가능한지 여부", "여러 트랙에 함께 도움 되는 공통 과목"],
+    action: "학기 계획 보기",
     viewId: "lab",
   },
   {
-    title: "5. 도구&정보 탭에서 공식 자료를 확인합니다",
-    body: "도구&정보 탭은 학과 홈페이지, 학과 유튜브, 트랙제 안내 영상, 트랙별 모듈·과목표를 모아둔 참고 화면입니다.",
-    items: ["학과 홈페이지와 유튜브 바로가기", "트랙제 안내 영상", "트랙별 모듈 및 교육과정표"],
-    action: "도구&정보 보기",
+    title: "4. 더보기에서 공식 자료를 확인합니다",
+    body: "트랙제 안내, 학과 홈페이지, 안내 영상, 교육과정표는 필요할 때 더보기 메뉴에서 확인할 수 있습니다.",
+    items: ["트랙제 안내와 이용 방법", "학과 홈페이지와 유튜브", "트랙별 모듈 및 교육과정표"],
+    action: "공식 자료 보기",
     viewId: "resources",
-  },
-  {
-    title: "6. 실험실 탭에서 수강신청 전략을 확인합니다",
-    body: "실험실 탭은 트랙 추천 결과와 현재 학년·학기를 묶어서, 앞으로 어떤 순서로 과목을 채우면 좋은지 보여주는 전략 화면입니다.",
-    items: ["남은 정규학기와 필요 과목 수", "학기당 부담 정도", "다음 수강신청 우선순위와 공통 추천 과목"],
-    action: "실험실 열기",
-    viewId: "experiment",
-  },
-  {
-    title: "7. 자가진단은 이 순서로 진행합니다",
-    body: "정확한 결과를 보려면 아래 순서대로 입력하세요. 체크한 내용은 브라우저에 저장되어 새로고침 후에도 유지됩니다.",
-    items: [
-      "이수유형을 먼저 선택합니다.",
-      "관심 트랙을 하나 이상 선택합니다.",
-      "학년·학기별 표에서 수강 완료 또는 이수 예정 과목을 체크합니다.",
-      "결과 탭에서 부족 모듈과 남은 과목을 확인합니다.",
-      "트랙 추천 탭에서 다른 트랙도 달성 가능한지 비교합니다.",
-      "실험실 탭에서 현재 학년 기준 수강신청 전략을 확인합니다.",
-    ],
-    action: "자가진단 시작하기",
-    viewId: "diagnosis",
   },
 ];
 
@@ -303,6 +277,7 @@ const updateHistory = [
 
 function App() {
   const [savedState, setSavedState] = useState<SavedDiagnosisState>(() => loadSavedState());
+  const [trackSetupOpen, setTrackSetupOpen] = useState(() => savedState.trackIds.length === 0);
   const [activeView, setActiveView] = useState<ViewId>("landing");
   const [gradeFilter, setGradeFilter] = useState<GradeFilter>("all");
   const [semesterFilter, setSemesterFilter] = useState<SemesterFilter>("all");
@@ -412,27 +387,31 @@ function App() {
     return <LandingPage onStart={() => enterApp("diagnosis")} />;
   }
 
+  const activePrimaryViewId = activeView === "experiment" ? "lab" : activeView;
+
   return (
-    <div className="app-shell">
-      <aside className="side-rail" aria-label="주요 화면">
-        <button className="brand-mark brand-button" type="button" onClick={() => setActiveView("landing")}>
+    <div className="app-shell service-shell">
+      <header className="service-header">
+        <button className="brand-mark brand-button service-brand" type="button" onClick={() => setActiveView("landing")}>
           <img className="brand-seal" src="/dku-seal.svg" alt="" aria-hidden="true" />
           <div>
             <strong>단국대학교</strong>
-            <span>식품자원경제학과 트랙제</span>
+            <span>식품자원경제학과 트랙진단</span>
           </div>
         </button>
 
-        <nav className="rail-nav">
-          {viewItems.map((item) => {
+        <nav className="service-primary-nav" aria-label="자가진단 주요 단계">
+          {primaryViewItems.map((item) => {
             const Icon = item.icon;
             return (
               <button
                 key={item.id}
-                className={activeView === item.id ? "nav-button active" : "nav-button"}
+                className={activePrimaryViewId === item.id ? "service-nav-button active" : "service-nav-button"}
                 type="button"
+                aria-current={activePrimaryViewId === item.id ? "step" : undefined}
                 onClick={() => setActiveView(item.id)}
               >
+                <small>{item.step}</small>
                 <Icon aria-hidden="true" size={18} />
                 <span>{item.label}</span>
               </button>
@@ -440,18 +419,40 @@ function App() {
           })}
         </nav>
 
-        <button className="guide-open-button" type="button" onClick={openGuide}>
-          <HelpCircle aria-hidden="true" size={18} />
-          <span>사이트 사용법</span>
-        </button>
-
-        <div className="rail-note">
-          <span>학생용 비공식 도구</span>
-          <strong>단국대 식자경 기준</strong>
+        <div className="service-header-actions">
+          <button className="service-help-button" type="button" aria-label="사이트 사용법 열기" onClick={openGuide}>
+            <HelpCircle aria-hidden="true" size={18} />
+            <span>사용법</span>
+          </button>
+          <details className="service-more-menu">
+            <summary aria-label="더보기 메뉴">
+              <MoreHorizontal aria-hidden="true" size={20} />
+              <span>더보기</span>
+            </summary>
+            <div className="service-more-popover">
+              {secondaryViewItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    className={activeView === item.id ? "active" : ""}
+                    key={item.id}
+                    type="button"
+                    onClick={(event) => {
+                      setActiveView(item.id);
+                      event.currentTarget.closest("details")?.removeAttribute("open");
+                    }}
+                  >
+                    <Icon aria-hidden="true" size={18} />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </details>
         </div>
-      </aside>
+      </header>
 
-      <main className="workspace">
+      <main className="workspace service-workspace">
         {activeView === "overview" && (
           <section className="primary-panel full-panel">
             <OverviewView />
@@ -481,13 +482,22 @@ function App() {
 
         {activeView === "diagnosis" && (
           <div className="view-layout">
-            <TrackPicker
-              selectedTrackIds={savedState.trackIds}
-              enrollmentType={savedState.enrollmentType}
-              onToggleTrack={toggleTrack}
-              onEnrollmentTypeChange={changeEnrollmentType}
-              onReset={resetState}
-            />
+            {trackSetupOpen ? (
+              <TrackPicker
+                selectedTrackIds={savedState.trackIds}
+                enrollmentType={savedState.enrollmentType}
+                onToggleTrack={toggleTrack}
+                onEnrollmentTypeChange={changeEnrollmentType}
+                onReset={resetState}
+                onContinue={() => setTrackSetupOpen(false)}
+              />
+            ) : (
+              <TrackSetupSummary
+                selectedTrackNames={selectedTracks.map((track) => track.name)}
+                enrollmentType={savedState.enrollmentType}
+                onEdit={() => setTrackSetupOpen(true)}
+              />
+            )}
             <div className="content-grid">
               <section className="primary-panel">
                 <DiagnosisView
@@ -517,27 +527,33 @@ function App() {
 
         {activeView === "lab" && (
           <section className="primary-panel full-panel">
-            <LabView
-              recommendations={labRecommendations}
-              completedCourseIds={savedState.completedCourseIds}
-              enrollmentType={savedState.enrollmentType}
-              planningSemester={labPlanningSemester}
-              onEnrollmentTypeChange={changeEnrollmentType}
-              onPlanningSemesterChange={setLabPlanningSemester}
-              onReset={() => resetState("lab")}
-            />
+            <PlanningModeTabs activeMode="recommendation" onChange={(mode) => setActiveView(mode === "recommendation" ? "lab" : "experiment")} />
+            <div id="planning-panel-recommendation" role="tabpanel" aria-labelledby="planning-tab-recommendation">
+              <LabView
+                recommendations={labRecommendations}
+                completedCourseIds={savedState.completedCourseIds}
+                enrollmentType={savedState.enrollmentType}
+                planningSemester={labPlanningSemester}
+                onEnrollmentTypeChange={changeEnrollmentType}
+                onPlanningSemesterChange={setLabPlanningSemester}
+                onReset={() => resetState("lab")}
+              />
+            </div>
           </section>
         )}
 
         {activeView === "experiment" && (
           <section className="primary-panel full-panel">
-            <ExperimentView
-              recommendations={labRecommendations}
-              completedCourseIds={savedState.completedCourseIds}
-              planningSemester={labPlanningSemester}
-              onPlanningSemesterChange={setLabPlanningSemester}
-              onGoToDiagnosis={() => setActiveView("diagnosis")}
-            />
+            <PlanningModeTabs activeMode="semester" onChange={(mode) => setActiveView(mode === "recommendation" ? "lab" : "experiment")} />
+            <div id="planning-panel-semester" role="tabpanel" aria-labelledby="planning-tab-semester">
+              <ExperimentView
+                recommendations={labRecommendations}
+                completedCourseIds={savedState.completedCourseIds}
+                planningSemester={labPlanningSemester}
+                onPlanningSemesterChange={setLabPlanningSemester}
+                onGoToDiagnosis={() => setActiveView("diagnosis")}
+              />
+            </div>
           </section>
         )}
 
@@ -1033,6 +1049,39 @@ function PreviewModuleProgress({
   );
 }
 
+function PlanningModeTabs({
+  activeMode,
+  onChange,
+}: {
+  activeMode: "recommendation" | "semester";
+  onChange: (mode: "recommendation" | "semester") => void;
+}) {
+  const items = [
+    { id: "recommendation" as const, label: "트랙 추천", description: "현재 이수 이력으로 비교" },
+    { id: "semester" as const, label: "학기별 계획", description: "다음 수강 우선순위 정리" },
+  ];
+
+  return (
+    <div className="planning-mode-tabs" role="tablist" aria-label="학기 계획 보기 방식">
+      {items.map((item) => (
+        <button
+          className={activeMode === item.id ? "active" : ""}
+          id={`planning-tab-${item.id}`}
+          key={item.id}
+          role="tab"
+          aria-controls={`planning-panel-${item.id}`}
+          aria-selected={activeMode === item.id}
+          type="button"
+          onClick={() => onChange(item.id)}
+        >
+          <strong>{item.label}</strong>
+          <span>{item.description}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function GuideDialog({
   activeStepIndex,
   onClose,
@@ -1289,8 +1338,20 @@ function ResourcesView() {
       />
       <DepartmentLinkSection />
       <ToolsInfoSection />
-      <TrackModuleReference />
-      <CurriculumBoard />
+      <details className="service-disclosure resource-disclosure">
+        <summary>
+          <span><small>트랙 구성</small><strong>트랙별 모듈·과목표 보기</strong></span>
+          <small>5개 트랙 비교</small>
+        </summary>
+        <TrackModuleReference />
+      </details>
+      <details className="service-disclosure resource-disclosure">
+        <summary>
+          <span><small>2026 교육과정</small><strong>전체 학년·학기 과목표 보기</strong></span>
+          <small>학년별 개설 흐름</small>
+        </summary>
+        <CurriculumBoard />
+      </details>
     </div>
   );
 }
@@ -1330,37 +1391,47 @@ function ToolsInfoSection() {
         <p>트랙제를 처음 접하는 학생이 모듈형 교육과정과 트랙 신청 흐름을 빠르게 이해할 수 있도록 영상 자료를 모았습니다.</p>
       </div>
       <div className="video-grid">
-        {videoResources.map((video) => {
-          const embedUrl = `https://www.youtube-nocookie.com/embed/${video.id}${video.start ? `?start=${video.start}` : ""}`;
-          const watchUrl = `https://www.youtube.com/watch?v=${video.id}${video.start ? `&t=${video.start}s` : ""}`;
-          return (
-            <article className="video-card" key={video.id}>
-              <div className="video-frame">
-                <iframe
-                  title={video.title}
-                  src={embedUrl}
-                  loading="lazy"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                />
-              </div>
-              <div className="video-copy">
-                <span>
-                  <PlayCircle aria-hidden="true" size={16} />
-                  YouTube
-                </span>
-                <h4>{video.title}</h4>
-                <p>{video.description}</p>
-                <a href={watchUrl} target="_blank" rel="noreferrer">
-                  YouTube에서 보기
-                  <ExternalLink aria-hidden="true" size={15} />
-                </a>
-              </div>
-            </article>
-          );
-        })}
+        {videoResources.slice(0, 2).map((video) => <VideoResourceCard video={video} key={video.id} />)}
       </div>
+      {videoResources.length > 2 && (
+        <details className="service-disclosure video-disclosure">
+          <summary>
+            <span><small>추가 영상</small><strong>안내영상 {videoResources.length - 2}개 더 보기</strong></span>
+            <small>필요할 때 펼쳐보세요</small>
+          </summary>
+          <div className="video-grid">
+            {videoResources.slice(2).map((video) => <VideoResourceCard video={video} key={video.id} />)}
+          </div>
+        </details>
+      )}
     </section>
+  );
+}
+
+function VideoResourceCard({ video }: { video: (typeof videoResources)[number] }) {
+  const embedUrl = `https://www.youtube-nocookie.com/embed/${video.id}${video.start ? `?start=${video.start}` : ""}`;
+  const watchUrl = `https://www.youtube.com/watch?v=${video.id}${video.start ? `&t=${video.start}s` : ""}`;
+
+  return (
+    <article className="video-card">
+      <div className="video-frame">
+        <iframe
+          title={video.title}
+          src={embedUrl}
+          loading="lazy"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+        />
+      </div>
+      <div className="video-copy">
+        <span><PlayCircle aria-hidden="true" size={16} />YouTube</span>
+        <h4>{video.title}</h4>
+        <p>{video.description}</p>
+        <a href={watchUrl} target="_blank" rel="noreferrer">
+          YouTube에서 보기 <ExternalLink aria-hidden="true" size={15} />
+        </a>
+      </div>
+    </article>
   );
 }
 
@@ -1480,21 +1551,20 @@ function TrackPicker({
   onToggleTrack,
   onEnrollmentTypeChange,
   onReset,
+  onContinue,
 }: {
   selectedTrackIds: TrackId[];
   enrollmentType: EnrollmentType;
   onToggleTrack: (trackId: TrackId) => void;
   onEnrollmentTypeChange: (enrollmentType: EnrollmentType) => void;
   onReset: () => void;
+  onContinue?: () => void;
 }) {
   return (
     <section className="track-picker" aria-label="트랙 복수 선택">
       <div className="track-picker-copy">
-        <strong>트랙 복수 선택</strong>
-        <span>
-          관심 있는 트랙을 여러 개 선택하면 남은 과목을 통합해서 진단합니다. 모든 선택을 해제한 뒤 다시 고를 수도
-          있습니다.
-        </span>
+        <strong>1. 이수 유형과 관심 트랙을 선택하세요</strong>
+        <span>여러 트랙을 선택하면 겹치는 과목까지 함께 계산합니다.</span>
       </div>
       <button className="icon-button reset-track-button" type="button" onClick={() => onReset()} title="입력 초기화">
         <RotateCcw aria-hidden="true" size={18} />
@@ -1552,6 +1622,37 @@ function TrackPicker({
           );
         })}
       </div>
+      {onContinue && (
+        <button
+          className="primary-button track-picker-continue"
+          type="button"
+          disabled={selectedTrackIds.length === 0}
+          onClick={onContinue}
+        >
+          과목 선택으로 이동 <ArrowRight aria-hidden="true" size={17} />
+        </button>
+      )}
+    </section>
+  );
+}
+
+function TrackSetupSummary({
+  selectedTrackNames,
+  enrollmentType,
+  onEdit,
+}: {
+  selectedTrackNames: string[];
+  enrollmentType: EnrollmentType;
+  onEdit: () => void;
+}) {
+  return (
+    <section className="track-setup-summary" aria-label="선택한 이수 유형과 트랙">
+      <div>
+        <span>1단계 입력 완료</span>
+        <strong>{getEnrollmentLabel(enrollmentType)} · {selectedTrackNames.length}개 트랙</strong>
+        <p>{selectedTrackNames.join(" · ") || "선택한 트랙 없음"}</p>
+      </div>
+      <button className="icon-button" type="button" onClick={onEdit}>선택 수정</button>
     </section>
   );
 }
@@ -1730,21 +1831,19 @@ function DiagnosisView({
   return (
     <div className="view-stack">
       <SectionHeader
-        eyebrow="수강 과목 체크"
+        eyebrow="2. 수강 과목 체크"
         title="이미 수강했거나 이수 예정인 과목을 체크하세요."
         body="필수 과목과 선택한 트랙에 포함된 모듈은 강조됩니다. 학년·학기 필터를 이용해 다음 수강신청 후보를 좁힐 수 있습니다."
       />
       <div className="course-save-panel">
         <div>
-          <strong>내 이수 과목 저장</strong>
-          <span>
-            체크한 과목은 이 브라우저에 저장됩니다. 새로고침 후에도 같은 기기에서는 이어서 확인할 수 있습니다.
-          </span>
+          <strong>{completedCourseIds.length}개 과목 선택됨</strong>
+          <span>선택 상태는 이 브라우저에 보관되어 같은 기기에서 이어서 확인할 수 있습니다.</span>
           <small>{lastManualSaveAt ? `마지막 직접 저장: ${lastManualSaveAt}` : "아직 직접 저장하지 않았습니다."}</small>
         </div>
         <button className="primary-button save-course-button" type="button" onClick={onSaveCourses}>
           <Save aria-hidden="true" size={18} />
-          <span>이수 과목 저장</span>
+          <span>선택 저장</span>
         </button>
       </div>
       <EnrollmentPolicyNotice enrollmentType={enrollmentType} />
@@ -1785,7 +1884,7 @@ function LabView({
   return (
     <div className="view-stack lab-view">
       <SectionHeader
-        eyebrow="트랙 추천"
+        eyebrow="학기 계획 · 트랙 추천"
         title="수강 이력 기준으로 달성 가능한 트랙을 추천합니다."
         body="트랙을 아직 정하지 않았거나 나중에 신청하려는 학생을 위해, 현재 체크한 과목으로 5개 트랙 전체의 달성 가능성을 비교합니다."
       />
@@ -1907,7 +2006,7 @@ function LabView({
           <article className="lab-overlap-card">
             <h4>공통 수강 추천 과목</h4>
             <div className="lab-overlap-list course-overlap-list">
-              {sharedSuggestions.courses.map((suggestion) => (
+              {sharedSuggestions.courses.slice(0, 4).map((suggestion) => (
                 <div className="lab-overlap-item" key={suggestion.course.id}>
                   <strong>
                     {suggestion.course.code} {suggestion.course.name}
@@ -1926,20 +2025,20 @@ function LabView({
         </div>
       </div>
 
-      <div className="lab-ranking-section">
-        <div className="lab-section-head">
-          <div>
-            <span>추천 순위</span>
-            <h3>5개 트랙 달성 가능성 비교</h3>
-          </div>
-          <p>진행률이 높고, 남은 학점과 부족 모듈이 적은 트랙일수록 위에 배치됩니다.</p>
-        </div>
+      <details className="service-disclosure lab-ranking-section">
+        <summary>
+          <span>
+            <small>추천 순위</small>
+            <strong>5개 트랙 상세 비교 보기</strong>
+          </span>
+          <small>진행률·남은 학점·부족 모듈</small>
+        </summary>
         <div className="lab-ranking-grid">
           {recommendations.map((recommendation) => (
             <LabRecommendationCard recommendation={recommendation} key={recommendation.trackId} />
           ))}
         </div>
-      </div>
+      </details>
     </div>
   );
 }
@@ -2002,7 +2101,7 @@ function ExperimentView({
   return (
     <div className="view-stack experiment-view">
       <SectionHeader
-        eyebrow="실험실"
+        eyebrow="학기 계획 · 수강 전략"
         title="현재 학년 기준 수강신청 전략을 확인하세요."
         body="트랙 추천 결과에 본인의 현재 학년·학기를 더해, 남은 정규학기 안에서 어떤 과목을 먼저 챙기면 좋은지 정리합니다."
       />
@@ -2272,11 +2371,11 @@ function SemesterCourseTable({
           )}
 
           {unknownCourses.length > 0 && (
-            <div className="semester-unknown-panel">
-              <div className="semester-unknown-head">
-                <strong>학기 미정·융합 모듈 과목</strong>
-                <span>{unknownCourses.length}개</span>
-              </div>
+            <details className="service-disclosure semester-unknown-panel semester-unknown-disclosure">
+              <summary>
+                <span><small>학기 미정</small><strong>융합 모듈 과목 보기</strong></span>
+                <small>{unknownCourses.length}개</small>
+              </summary>
               <div className="semester-unknown-grid">
                 {unknownCourses.map((course) => (
                   <CourseCheckTile
@@ -2289,7 +2388,7 @@ function SemesterCourseTable({
                   />
                 ))}
               </div>
-            </div>
+            </details>
           )}
         </>
       )}
@@ -2453,6 +2552,7 @@ function EnrollmentPolicyNotice({ enrollmentType }: { enrollmentType: Enrollment
 
 function ResultDetailView({ result }: { result: DiagnosisResult }) {
   const neededCoursePlans = getTrackNeededCoursePlans(result.trackResults);
+  const [activeResultTab, setActiveResultTab] = useState<"summary" | "modules" | "required">("summary");
 
   if (result.trackResults.length === 0) {
     return (
@@ -2498,24 +2598,67 @@ function ResultDetailView({ result }: { result: DiagnosisResult }) {
           </button>
         </div>
       </div>
-      <TrackNeededCourseSummary plans={neededCoursePlans} />
-      <ModuleProgressBoard trackResults={result.trackResults} />
-      <div className="result-support-grid">
-        {result.excludedRequiredCourses.length > 0 && (
-          <CourseSummaryList
-            title="이수유형 기준 필수 제외"
-            courses={result.excludedRequiredCourses}
-            emptyText="이수유형 때문에 제외된 필수 과목 없음"
-            compact
-          />
-        )}
-        <CourseSummaryList
-          title="필수 과목 누락"
-          courses={result.missingRequiredCourses}
-          emptyText="필수 과목 누락 없음"
-          compact
-          tone="danger"
-        />
+      <div className="result-detail-tabs" role="tablist" aria-label="진단 결과 상세 보기">
+        <button
+          className={activeResultTab === "summary" ? "active" : ""}
+          id="result-tab-summary"
+          role="tab"
+          aria-controls="result-panel-summary"
+          aria-selected={activeResultTab === "summary"}
+          type="button"
+          onClick={() => setActiveResultTab("summary")}
+        >
+          한눈에 보기
+        </button>
+        <button
+          className={activeResultTab === "modules" ? "active" : ""}
+          id="result-tab-modules"
+          role="tab"
+          aria-controls="result-panel-modules"
+          aria-selected={activeResultTab === "modules"}
+          type="button"
+          onClick={() => setActiveResultTab("modules")}
+        >
+          부족 모듈
+        </button>
+        <button
+          className={activeResultTab === "required" ? "active" : ""}
+          id="result-tab-required"
+          role="tab"
+          aria-controls="result-panel-required"
+          aria-selected={activeResultTab === "required"}
+          type="button"
+          onClick={() => setActiveResultTab("required")}
+        >
+          필수 과목
+        </button>
+      </div>
+      <div className="result-detail-panel">
+        <div className="result-tab-panel" id="result-panel-summary" role="tabpanel" aria-labelledby="result-tab-summary" hidden={activeResultTab !== "summary"}>
+          <TrackNeededCourseSummary plans={neededCoursePlans} />
+        </div>
+        <div className="result-tab-panel" id="result-panel-modules" role="tabpanel" aria-labelledby="result-tab-modules" hidden={activeResultTab !== "modules"}>
+          <ModuleProgressBoard trackResults={result.trackResults} />
+        </div>
+        <div className="result-tab-panel" id="result-panel-required" role="tabpanel" aria-labelledby="result-tab-required" hidden={activeResultTab !== "required"}>
+          <div className="result-support-grid">
+            {result.excludedRequiredCourses.length > 0 && (
+              <CourseSummaryList
+                title="이수유형 기준 필수 제외"
+                courses={result.excludedRequiredCourses}
+                emptyText="이수유형 때문에 제외된 필수 과목 없음"
+                compact
+              />
+            )}
+            <CourseSummaryList
+              title="필수 과목 누락"
+              courses={result.missingRequiredCourses}
+              emptyText="필수 과목 누락 없음"
+              compact
+              tone="danger"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -2949,7 +3092,7 @@ function DiagnosisPanel({
       </div>
       <div className="mini-section">
         <h3>추천 수강 과목</h3>
-        {result.recommendedCourses.slice(0, 5).map((course) => (
+        {result.recommendedCourses.slice(0, 3).map((course) => (
           <div className="recommend-row" key={course.id}>
             <span>{course.name}</span>
             <small>
