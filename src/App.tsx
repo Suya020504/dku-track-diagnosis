@@ -1,20 +1,29 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
+  ArrowRight,
   BookOpenCheck,
+  CalendarDays,
   CheckCircle2,
   ClipboardCheck,
+  Clock3,
   Compass,
   ExternalLink,
   FileText,
   FlaskConical,
+  GraduationCap,
   HelpCircle,
   Instagram,
+  Layers3,
+  ListChecks,
   Mail,
   PlayCircle,
   Printer,
   RotateCcw,
   Save,
+  Scale,
+  ShieldCheck,
+  UserRound,
   X,
 } from "lucide-react";
 import { courses, CURRICULUM_YEAR, modules, tracks } from "./data/curriculumData";
@@ -43,7 +52,7 @@ import type {
   TrackRecommendationStatus,
 } from "./types";
 
-type ViewId = "overview" | "resources" | "modules" | "diagnosis" | "lab" | "experiment" | "result" | "contact";
+type ViewId = "landing" | "overview" | "resources" | "modules" | "diagnosis" | "lab" | "experiment" | "result" | "contact";
 type GradeFilter = "all" | "1" | "2" | "3" | "4" | "unknown";
 type SemesterFilter = "all" | "1" | "2" | "unknown";
 type LabPlanningSemester = PlanningSemester | "unselected";
@@ -105,6 +114,9 @@ const viewItems: Array<{ id: ViewId; label: string; icon: typeof FileText }> = [
 ];
 
 const GUIDE_STORAGE_KEY = "track-sim:guide:v1";
+const OFFICIAL_CURRICULUM_URL = "https://www.dankook.ac.kr/documents/d/kor/2026-1-_-260119-pdf?download=true";
+const OFFICIAL_TRACK_VIDEO_URL = "https://www.youtube.com/watch?v=osc9yOuq0IU";
+const DEPARTMENT_URL = "https://cms.dankook.ac.kr/web/ere";
 
 const guideSteps: GuideStep[] = [
   {
@@ -291,7 +303,7 @@ const updateHistory = [
 
 function App() {
   const [savedState, setSavedState] = useState<SavedDiagnosisState>(() => loadSavedState());
-  const [activeView, setActiveView] = useState<ViewId>("overview");
+  const [activeView, setActiveView] = useState<ViewId>("landing");
   const [gradeFilter, setGradeFilter] = useState<GradeFilter>("all");
   const [semesterFilter, setSemesterFilter] = useState<SemesterFilter>("all");
   const [lastManualSaveAt, setLastManualSaveAt] = useState("");
@@ -391,16 +403,25 @@ function App() {
     setActiveView(viewId);
   }
 
+  function enterApp(viewId: Exclude<ViewId, "landing">) {
+    setGuideOpen(false);
+    setActiveView(viewId);
+  }
+
+  if (activeView === "landing") {
+    return <LandingPage onStart={() => enterApp("diagnosis")} />;
+  }
+
   return (
     <div className="app-shell">
       <aside className="side-rail" aria-label="주요 화면">
-        <div className="brand-mark">
+        <button className="brand-mark brand-button" type="button" onClick={() => setActiveView("landing")}>
           <img className="brand-seal" src="/dku-seal.svg" alt="" aria-hidden="true" />
           <div>
             <strong>단국대학교</strong>
             <span>식품자원경제학과 트랙제</span>
           </div>
-        </div>
+        </button>
 
         <nav className="rail-nav">
           {viewItems.map((item) => {
@@ -540,6 +561,474 @@ function App() {
           onGoToView={goToGuideStepView}
         />
       )}
+    </div>
+  );
+}
+
+function LandingPage({ onStart }: { onStart: () => void }) {
+  const [activeTrackId, setActiveTrackId] = useState<TrackId>("food-marketing");
+  const [activePreviewTab, setActivePreviewTab] = useState<"summary" | "modules" | "courses" | "recommendations">("summary");
+  const activeTrack = tracks.find((track) => track.id === activeTrackId) ?? tracks[0];
+  const activeModuleIds = getTrackModuleIds(activeTrack);
+  const heroCourseNames = [
+    "식품유통경제학",
+    "마케팅조사분석",
+    "농식품정책론",
+    "식품가격분석",
+    "계량경제학",
+    "온라인유통 및 물류",
+    "푸드테크와 경제",
+    "지역발전론",
+  ];
+  const problemItems = [
+    {
+      title: "내가 들은 과목은 어느 트랙에 들어갈까?",
+      body: "과목과 모듈, 트랙의 연결 관계를 직접 대조하기 어렵습니다.",
+    },
+    {
+      title: "필수 과목과 모듈 학점은 얼마나 남았을까?",
+      body: "각 모듈의 이수 기준과 현재 상태를 일일이 계산해야 합니다.",
+    },
+    {
+      title: "다음 학기에는 무엇을 먼저 들어야 할까?",
+      body: "부족한 부분을 채우는 수강 우선순위가 명확하지 않습니다.",
+    },
+  ];
+  const relationRows = [
+    ["식품유통경제학", "F. 유통무역"],
+    ["마케팅조사분석", "H. 머천다이징"],
+    ["농식품정책론", "I. 농식품정책"],
+    ["식품가격분석", "J. 프라이싱"],
+    ["계량경제학", "L. 경제성평가"],
+  ];
+  const benefitItems = [
+    {
+      icon: GraduationCap,
+      title: "진로에 맞는 전문성을 키울 수 있어요",
+      body: "졸업 후 진로를 고려해 구성된 트랙을 기준으로 관심 분야의 과목을 체계적으로 선택할 수 있습니다.",
+    },
+    {
+      icon: Layers3,
+      title: "공부한 세부 분야를 분명하게 보여줄 수 있어요",
+      body: "학과 공식 안내는 이수 트랙을 세부적으로 드러낼 수 있다고 설명합니다.",
+    },
+    {
+      icon: Scale,
+      title: "여러 트랙을 유연하게 설계할 수 있어요",
+      body: "겹치는 모듈을 활용해 복수 트랙으로 확장하고, 희망 트랙도 학기별로 조정할 수 있습니다.",
+    },
+  ];
+  const previewModules = [
+    { label: "F. 유통무역", value: 80, status: "충족" },
+    { label: "H. 머천다이징", value: 60, status: "충족" },
+    { label: "I. 농식품정책", value: 40, status: "부족" },
+    { label: "J. 프라이싱", value: 75, status: "충족" },
+    { label: "L. 경제성평가", value: 20, status: "부족" },
+  ];
+  const previewTabs = [
+    { id: "summary" as const, label: "요약" },
+    { id: "modules" as const, label: "모듈 현황" },
+    { id: "courses" as const, label: "과목 현황" },
+    { id: "recommendations" as const, label: "다음 수강 추천" },
+  ];
+
+  return (
+    <div className="landing-page" id="landing-top">
+      <header className="landing-header">
+        <a className="landing-brand" href="#landing-top" aria-label="랜딩페이지 처음으로">
+          <img src="/dku-logo.png" alt="단국대학교" />
+          <span>
+            <strong>식품자원경제학과</strong>
+            <small>트랙제 자가진단</small>
+          </span>
+        </a>
+        <nav className="landing-nav" aria-label="랜딩페이지 주요 메뉴">
+          <a href="#landing-why">왜 필요한가요</a>
+          <a href="#landing-track-system">트랙제 이해</a>
+          <a href="#landing-preview">진단 화면</a>
+          <a href="#landing-how">이용 방법</a>
+        </nav>
+        <button className="landing-header-cta" type="button" onClick={onStart}>
+          진단 시작
+        </button>
+      </header>
+
+      <main>
+        <section className="landing-section landing-hero" aria-labelledby="landing-title">
+          <div className="landing-container landing-hero-grid">
+            <div className="landing-hero-copy">
+              <p className="landing-context">수강신청 전에</p>
+              <h1 id="landing-title">무엇을 더 들어야 할지, 과목표만 보고 계산하고 있나요?</h1>
+              <p className="landing-lead">
+                내가 들은 과목이 어떤 트랙과 모듈에 연결되는지 확인하고, 부족한 학점과 다음 학기 우선 과목까지
+                한 번에 정리하세요.
+              </p>
+              <div className="landing-actions">
+                <button className="landing-primary-button" type="button" onClick={onStart}>
+                  내 이수 현황 확인하기
+                  <ArrowRight aria-hidden="true" size={18} />
+                </button>
+                <a className="landing-secondary-button" href="#landing-track-system">
+                  트랙제 먼저 이해하기
+                </a>
+              </div>
+              <div className="landing-trust-line" aria-label="서비스 이용 정보">
+                <span><Clock3 aria-hidden="true" size={16} />약 3분</span>
+                <span><UserRound aria-hidden="true" size={16} />로그인 없음</span>
+                <span><ShieldCheck aria-hidden="true" size={16} />이 브라우저에 저장</span>
+              </div>
+            </div>
+
+            <div className="landing-before-after" aria-label="자가진단 전후 예시">
+              <article className="landing-before-panel">
+                <span>Before</span>
+                <strong>과목표 직접 비교</strong>
+                <div className="landing-course-cloud">
+                  {heroCourseNames.map((courseName) => <small key={courseName}>{courseName}</small>)}
+                </div>
+                <p>어디에 연결되는지 직접 찾아야 해요.</p>
+              </article>
+              <ArrowRight className="landing-transform-arrow" aria-hidden="true" size={28} />
+              <article className="landing-after-panel">
+                <span>After</span>
+                <strong>결과 한눈에 보기</strong>
+                <div className="landing-after-main">
+                  <p>푸드마케팅</p>
+                  <strong>60%</strong>
+                  <progress max="100" value="60" aria-label="예시 진행률 60퍼센트" />
+                </div>
+                <dl>
+                  <div><dt>남은 과목</dt><dd>4개</dd></div>
+                  <div><dt>다음 우선순위</dt><dd>식품유통경제학</dd></div>
+                </dl>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-question-band" id="landing-why" aria-labelledby="landing-question-title">
+          <div className="landing-container">
+            <h2 id="landing-question-title" className="sr-only">수강신청 때 헷갈리는 점</h2>
+            <ol className="landing-question-list">
+              {problemItems.map((item, index) => (
+                <li key={item.title}>
+                  <span>{index + 1}</span>
+                  <div>
+                    <strong>{item.title}</strong>
+                    <p>{item.body}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <section className="landing-section" id="landing-track-system" aria-labelledby="landing-relation-title">
+          <div className="landing-container landing-copy-layout">
+            <div className="landing-section-copy">
+              <p className="landing-section-index">트랙제 이해</p>
+              <h2 id="landing-relation-title">과목 하나는 모듈에, 모듈은 트랙에 연결됩니다.</h2>
+              <p>관심 진로에 맞는 과목을 모듈 단위로 이수하며 나만의 전공 방향을 설계하는 방식입니다.</p>
+            </div>
+            <div className="landing-relation-board" aria-label="푸드마케팅 과목과 모듈 관계 예시">
+              <div className="landing-relation-head" aria-hidden="true">
+                <span>과목</span><ArrowRight size={16} /><span>모듈</span><ArrowRight size={16} /><span>트랙</span>
+              </div>
+              <div className="landing-relation-body">
+                <div className="landing-relation-rows">
+                  {relationRows.map(([courseName, moduleName]) => (
+                    <div className="landing-relation-row" key={courseName}>
+                      <span>{courseName}</span>
+                      <ArrowRight aria-hidden="true" size={16} />
+                      <strong>{moduleName}</strong>
+                    </div>
+                  ))}
+                </div>
+                <ArrowRight className="landing-relation-final-arrow" aria-hidden="true" size={22} />
+                <div className="landing-relation-track">
+                  <Compass aria-hidden="true" size={30} />
+                  <strong>푸드마케팅</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-section landing-benefit-section" aria-labelledby="landing-benefit-title">
+          <div className="landing-container">
+            <div className="landing-section-copy landing-benefit-heading">
+              <p className="landing-section-index">공식 안내로 확인한 이유</p>
+              <h2 id="landing-benefit-title">트랙제를 선택하면 전공 공부가 더 선명해져요.</h2>
+              <p>
+                식품자원경제학과 트랙은 졸업 후 진로를 고려해 구성된 선택형 교육과정입니다. 관심 분야에 맞춰 과목과
+                모듈을 이수하며 전공 방향을 설계할 수 있습니다.
+              </p>
+            </div>
+            <div className="landing-benefit-list">
+              {benefitItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <article key={item.title}>
+                    <Icon aria-hidden="true" size={25} />
+                    <strong>{item.title}</strong>
+                    <p>{item.body}</p>
+                  </article>
+                );
+              })}
+            </div>
+            <div className="landing-benefit-source">
+              <p>트랙은 선택 사항이며, 복수 트랙·변경·중복 모듈 인정의 세부 기준은 학과의 최신 안내를 따릅니다.</p>
+              <div>
+                <a href={OFFICIAL_CURRICULUM_URL} target="_blank" rel="noreferrer">
+                  2026 공식 교육과정 <ExternalLink aria-hidden="true" size={14} />
+                </a>
+                <a href={OFFICIAL_TRACK_VIDEO_URL} target="_blank" rel="noreferrer">
+                  학과 공식 트랙제 영상 <ExternalLink aria-hidden="true" size={14} />
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-section" aria-labelledby="landing-track-title">
+          <div className="landing-container landing-track-layout">
+            <div className="landing-section-copy">
+              <p className="landing-section-index">학과전공 4개 · 융합전공 1개</p>
+              <h2 id="landing-track-title">다섯 개 트랙은 이렇게 달라요.</h2>
+              <p>진로 방향에 맞는 트랙을 선택하고, 필요한 모듈을 비교해보세요.</p>
+            </div>
+            <div className="landing-track-explorer">
+              <div className="landing-track-tabs" role="tablist" aria-label="트랙 선택">
+                {tracks.map((track) => (
+                  <button
+                    role="tab"
+                    aria-selected={track.id === activeTrack.id}
+                    className={track.id === activeTrack.id ? "active" : ""}
+                    type="button"
+                    key={track.id}
+                    onClick={() => setActiveTrackId(track.id)}
+                  >
+                    {track.id === "regional-development-consulting" ? "지역개발·컨설팅" : track.name}
+                  </button>
+                ))}
+              </div>
+              <div className="landing-track-panel" role="tabpanel">
+                <div className="landing-track-summary">
+                  <Compass aria-hidden="true" size={30} />
+                  <span>{activeTrack.kind}</span>
+                  <h3>{activeTrack.name}</h3>
+                </div>
+                <div>
+                  <strong>관련 모듈</strong>
+                  <ul className="landing-module-list">
+                    {activeModuleIds.map((moduleId) => (
+                      <li key={moduleId}>
+                        <span>{moduleId}</span>
+                        <small>{getModuleLabel(moduleId).replace(`${moduleId}. `, "")}</small>
+                      </li>
+                    ))}
+                  </ul>
+                  <strong>진로 방향</strong>
+                  <p>{activeTrack.description}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-section landing-how-section" id="landing-how" aria-labelledby="landing-how-title">
+          <div className="landing-container landing-copy-layout">
+            <div className="landing-section-copy">
+              <p className="landing-section-index">이용 방법</p>
+              <h2 id="landing-how-title">그래서 이 서비스는 계산보다 선택에 집중하게 도와줍니다.</h2>
+            </div>
+            <ol className="landing-process">
+              <li>
+                <ListChecks aria-hidden="true" size={24} />
+                <span>1</span>
+                <strong>관심 트랙 선택</strong>
+                <p>복수 트랙도 선택해 함께 비교할 수 있습니다.</p>
+              </li>
+              <li>
+                <ClipboardCheck aria-hidden="true" size={24} />
+                <span>2</span>
+                <strong>이수·예정 과목 체크</strong>
+                <p>학년과 학기별 전공 과목을 한눈에 확인합니다.</p>
+              </li>
+              <li>
+                <BookOpenCheck aria-hidden="true" size={24} />
+                <span>3</span>
+                <strong>부족 과목과 우선순위 확인</strong>
+                <p>부족 모듈과 다음 학기 수강 후보를 정리합니다.</p>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <section className="landing-section" id="landing-preview" aria-labelledby="landing-preview-title">
+          <div className="landing-container landing-preview-layout">
+            <div className="landing-section-copy">
+              <p className="landing-section-index">예시 화면</p>
+              <h2 id="landing-preview-title">설명만 읽지 말고, 실제 결과 화면을 먼저 확인하세요.</h2>
+              <a href="#landing-how">진단 흐름 다시 보기 <ArrowRight aria-hidden="true" size={15} /></a>
+            </div>
+            <div className="landing-result-preview" aria-label="푸드마케팅 진단 결과 예시">
+              <div className="landing-preview-tabs" role="tablist" aria-label="결과 예시 메뉴">
+                {previewTabs.map((tab) => (
+                  <button
+                    className={activePreviewTab === tab.id ? "active" : ""}
+                    id={`landing-preview-tab-${tab.id}`}
+                    key={tab.id}
+                    role="tab"
+                    aria-controls={`landing-preview-panel-${tab.id}`}
+                    aria-selected={activePreviewTab === tab.id}
+                    type="button"
+                    onClick={() => setActivePreviewTab(tab.id)}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+              <div className="landing-preview-body">
+                <aside>
+                  <strong>푸드마케팅</strong>
+                  {previewTabs.map((tab) => (
+                    <button
+                      className={activePreviewTab === tab.id ? "active" : ""}
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActivePreviewTab(tab.id)}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </aside>
+                <div
+                  className="landing-preview-main"
+                  id={`landing-preview-panel-${activePreviewTab}`}
+                  role="tabpanel"
+                  aria-labelledby={`landing-preview-tab-${activePreviewTab}`}
+                >
+                  {activePreviewTab === "summary" && (
+                    <>
+                      <div className="landing-preview-metrics">
+                        <div><span>진행률</span><strong>60%</strong></div>
+                        <div><span>남은 과목</span><strong>4개</strong></div>
+                        <div><span>필수 모듈 충족</span><strong>3 / 5</strong></div>
+                        <div><span>다음 학기 우선순위</span><strong>식품유통경제학</strong></div>
+                      </div>
+                      <PreviewModuleProgress items={previewModules} />
+                    </>
+                  )}
+                  {activePreviewTab === "modules" && (
+                    <div className="landing-preview-detail">
+                      <div>
+                        <span>모듈 현황</span>
+                        <strong>충족한 모듈과 더 채워야 할 모듈을 구분해요.</strong>
+                      </div>
+                      <PreviewModuleProgress items={previewModules} />
+                    </div>
+                  )}
+                  {activePreviewTab === "courses" && (
+                    <div className="landing-preview-detail">
+                      <div>
+                        <span>과목 현황</span>
+                        <strong>과목별 이수 상태를 한 줄씩 확인해요.</strong>
+                      </div>
+                      <ul className="landing-preview-course-list">
+                        <li><span>식품유통경제학</span><small>이수 예정</small></li>
+                        <li><span>마케팅조사분석</span><small className="complete">이수</small></li>
+                        <li><span>농식품정책론</span><small>미이수</small></li>
+                        <li><span>식품가격분석</span><small className="complete">이수</small></li>
+                      </ul>
+                    </div>
+                  )}
+                  {activePreviewTab === "recommendations" && (
+                    <div className="landing-preview-detail">
+                      <div>
+                        <span>다음 수강 추천</span>
+                        <strong>부족한 모듈을 채우는 과목부터 보여줘요.</strong>
+                      </div>
+                      <div className="landing-preview-recommendation">
+                        <span>1순위</span>
+                        <strong>식품유통경제학</strong>
+                        <p>F. 유통무역 모듈을 보완하고 푸드마케팅 트랙 진행률을 높일 수 있는 과목입니다.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <aside className="landing-next-action">
+                  <strong>다음 행동 제안</strong>
+                  <ul>
+                    <li>부족한 모듈 과목 우선 수강</li>
+                    <li>추천 과목을 다음 학기에 배치</li>
+                    <li>복수 트랙 비교도 함께 확인</li>
+                  </ul>
+                  <button type="button" onClick={onStart}>트랙 비교하기</button>
+                </aside>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-usecase-band" aria-labelledby="landing-usecase-title">
+          <div className="landing-container">
+            <h2 id="landing-usecase-title" className="sr-only">추천 이용 상황</h2>
+            <div className="landing-usecase-list">
+              <div><CalendarDays aria-hidden="true" size={24} /><span>수강신청 전<br />이수 현황을 점검할 때</span></div>
+              <div><Scale aria-hidden="true" size={24} /><span>복수 트랙을<br />비교하고 싶을 때</span></div>
+              <div><RotateCcw aria-hidden="true" size={24} /><span>복학·편입 후<br />남은 과목을 다시 정리할 때</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-section landing-final-section" aria-labelledby="landing-final-title">
+          <div className="landing-container landing-final-card">
+            <div className="landing-final-copy">
+              <h2 id="landing-final-title">정답을 대신하는 서비스가 아니라, 학과 상담 전 내 상태를 정리하는 도구입니다.</h2>
+              <div className="landing-final-actions">
+                <button className="landing-primary-button" type="button" onClick={onStart}>
+                  3분 자가진단 시작하기 <ArrowRight aria-hidden="true" size={18} />
+                </button>
+                <a className="landing-secondary-button" href={DEPARTMENT_URL} target="_blank" rel="noreferrer">
+                  학과 공식 자료 보기 <ExternalLink aria-hidden="true" size={16} />
+                </a>
+              </div>
+            </div>
+            <div className="landing-trust-grid">
+              <article><CalendarDays aria-hidden="true" size={24} /><strong>2026학년도 교육과정 기준</strong><p>공식 교육과정표를 기준으로 진단합니다.</p></article>
+              <article><ShieldCheck aria-hidden="true" size={24} /><strong>자가진단 결과는 참고용</strong><p>학업 계획을 돕기 위한 확인 자료입니다.</p></article>
+              <article><GraduationCap aria-hidden="true" size={24} /><strong>최종 인정 여부는 학과 확인</strong><p>트랙 인정과 변경은 최신 공식 안내를 따릅니다.</p></article>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="landing-footer">
+        <div className="landing-container">
+          <span>단국대학교 식품자원경제학과 트랙제 자가진단</span>
+          <small>학생이 만든 비공식 보조 도구입니다.</small>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+function PreviewModuleProgress({
+  items,
+}: {
+  items: Array<{ label: string; value: number; status: string }>;
+}) {
+  return (
+    <div className="landing-module-progress">
+      <strong>모듈별 진행 현황</strong>
+      {items.map((item) => (
+        <div className="landing-progress-row" key={item.label}>
+          <span>{item.label}</span>
+          <progress max="100" value={item.value} aria-label={`${item.label} ${item.value}퍼센트`} />
+          <strong className={item.status === "충족" ? "complete" : "short"}>{item.status}</strong>
+        </div>
+      ))}
     </div>
   );
 }
