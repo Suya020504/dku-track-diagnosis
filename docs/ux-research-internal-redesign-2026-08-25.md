@@ -21,16 +21,19 @@
 - [복잡한 업무용 테이블 개선 사례](https://toss.tech/article/tablecenter): 화면 구성과 위계 구조를 정돈하고, 사용자가 원하는 정보를 찾는 시간을 줄이는 것을 성과 기준으로 삼습니다.
 - [TDS Tab](https://tossmini-docs.toss.im/tds-mobile/components/tab/): 선택 상태가 분명하고 `role="tab"`, `aria-selected`를 갖는 탭을 사용합니다.
 - [TDS ListRow](https://tossmini-docs.toss.im/tds-mobile/components/ListRow/list-row-overview/): 왼쪽 상태, 중앙 핵심 정보, 오른쪽 부가 행동으로 행의 역할을 분리하고 여백으로 밀도를 조절합니다.
+- [TDS Colors](https://tossmini-docs.toss.im/tds-mobile/foundation/colors/): 회색 단계를 배경·경계·보조 텍스트에 나눠 쓰고, 강조색은 선택과 핵심 행동에 제한합니다.
 
 ### 당근
 
 - [SEED V3](https://seed-design.io/updates/how-seed-evolved): 색을 전경·배경·테두리 역할로 나누고, 타이포 단계와 터치 영역을 줄이고 명확하게 정의합니다.
+- [당근 검색 버튼 위치 실험](https://medium.com/daangn/%EC%A7%81%EA%B4%80%EB%A7%8C-%EB%AF%BF%EA%B3%A0-%EA%B9%8C%EB%B6%88%EC%97%88%EB%8B%A4%EA%B0%80-%EB%A7%9D%ED%95%9C-pm%EC%9D%98-%EC%82%AC%EC%97%B0-61946dc969eb): 핵심 행동을 화면 아래로 옮겼을 때 발견성이 크게 낮아진 사례를 참고해, 주요 단계와 결과 이동 버튼을 고정된 위치와 명확한 대비로 유지합니다.
 - 화면마다 다른 판단을 반복하지 않도록 같은 컴포넌트와 토큰을 사용합니다.
 - 접근성을 선택 사항이 아니라 색 대비, 포커스, 터치 영역의 기본 기준으로 적용합니다.
 
 ### 접근성과 반응형
 
 - [WCAG 2.2 Target Size](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html): 주요 조작 영역은 최소 24×24 CSS px 이상이며, 이 서비스에서는 주요 버튼과 탭을 42~46px 높이로 설계합니다.
+- [Material touch targets](https://m1.material.io/usability/accessibility.html): 모바일에서 주요 탭과 체크 행은 48px 이상의 조작 영역을 사용하고 인접 조작 간 간격을 확보합니다.
 - [Responsive images](https://web.dev/learn/design/responsive-images): 영상과 이미지의 비율을 고정하고 컨테이너 너비를 넘지 않게 해 모바일 가로 스크롤과 레이아웃 이동을 막습니다.
 
 ### AI로 만든 화면처럼 보이는 이유에 대한 커뮤니티 신호
@@ -39,19 +42,22 @@
 
 - [No-code 커뮤니티 논의](https://www.reddit.com/r/nocode/comments/1txeeg2/how_do_you_stop_aibuilt_websites_from_looking/): 모든 요소를 같은 둥근 카드와 중간 강도의 여백으로 처리하면 브랜드와 위계가 사라진다는 의견이 반복됩니다.
 - [UI Design 커뮤니티 논의](https://www.reddit.com/r/UI_Design/comments/1uchh8o/how_can_you_tell_a_design_is_ai/): 빈 공간을 모두 채우는 구성, 작은 글자와 불규칙한 여백, 기존 시스템과 다른 새 컴포넌트 발명이 AI 화면의 흔한 문제로 지적됩니다.
+- [AI 템플릿 화면의 반복 패턴 정리](https://www.joshuasnoddy.com/blog/why-ai-websites-look-the-same/): 보라색 그라데이션, 유리 카드, 가운데 정렬 히어로, 동일한 3개 카드 배열처럼 제품 맥락 없이 반복되는 장식을 피합니다.
 
 ## 서비스에 적용한 결정
 
 1. 7개 사이드 메뉴를 3단계 상단 내비게이션으로 축소했습니다.
 2. 랜딩과 중복되는 설명은 더보기의 `트랙제 안내`로 이동했습니다.
 3. 트랙 선택을 완료하면 입력 영역을 접고 과목 선택에 집중하도록 만들었습니다.
-4. 데스크톱 과목표는 제한된 높이 안에서 스크롤하고, 헤더와 필터를 명확히 유지합니다.
-5. 모바일 과목표는 학기별 세로 목록으로 전환하고, 학기 미정 과목은 접어서 제공합니다.
-6. 결과는 `한눈에 보기 · 부족 모듈 · 필수 과목` 탭으로 분리했습니다.
+4. 큰 시간표 대신 학년·학기별 행 목록을 기본으로 하고, 모듈별 보기와 과목 검색을 같은 작업 영역에 제공합니다.
+5. 과목 목록은 제한된 높이 안에서 스크롤하며 학기·모듈 머리글을 고정해 현재 위치를 유지합니다.
+6. 결과는 `한눈에 보기 · 맞춤 트랙 추천 · 부족 모듈 · 필수 과목` 탭으로 분리했습니다.
 7. 트랙 추천과 실험실을 `학기 계획` 아래의 두 탭으로 통합했습니다.
 8. 5개 트랙 상세 순위, 추가 영상, 전체 교육과정표는 필요할 때 펼치는 상세 정보로 이동했습니다.
 9. 하늘색·연두색 그라데이션을 제거하고 흰색·쿨그레이·네이비·포레스트 그린 토큰을 적용했습니다.
 10. 모바일 아이콘 버튼에 접근 가능한 이름을 추가하고, 탭의 선택 상태를 보조기기에 전달하도록 구성했습니다.
+11. 학기 계획을 실제 이수와 분리해 저장하고, `계획 포함`을 사용자가 직접 선택한 경우에만 추천에 반영합니다.
+12. 추천 과목을 다음 학기·다다음 학기·나중으로 배치하는 가벼운 계획 보드를 추가했습니다.
 
 ## 검증할 지표 제안
 

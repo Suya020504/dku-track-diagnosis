@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -20,6 +20,7 @@ import {
   Printer,
   RotateCcw,
   Save,
+  Search,
   Scale,
   ShieldCheck,
   X,
@@ -41,6 +42,7 @@ import type {
   EnrollmentType,
   ModuleId,
   ModuleProgress,
+  PlanTerm,
   PlanningSemester,
   SavedDiagnosisState,
   Track,
@@ -302,6 +304,19 @@ function App() {
       }),
     [labPlanningSemester, savedState.completedCourseIds, savedState.enrollmentType],
   );
+  const plannedCourseIds = useMemo(
+    () => Object.keys(savedState.plannedCourseTerms),
+    [savedState.plannedCourseTerms],
+  );
+  const plannedRecommendations = useMemo(
+    () =>
+      calculateTrackRecommendations({
+        completedCourseIds: [...savedState.completedCourseIds, ...plannedCourseIds],
+        enrollmentType: savedState.enrollmentType,
+        currentSemester: labPlanningSemester === "unselected" ? undefined : labPlanningSemester,
+      }),
+    [labPlanningSemester, plannedCourseIds, savedState.completedCourseIds, savedState.enrollmentType],
+  );
 
   useEffect(() => {
     saveState(savedState);
@@ -328,12 +343,24 @@ function App() {
   function toggleCourse(courseId: string) {
     setSavedState((current) => {
       const exists = current.completedCourseIds.includes(courseId);
+      const nextPlannedCourseTerms = { ...current.plannedCourseTerms };
+      if (!exists) delete nextPlannedCourseTerms[courseId];
       return {
         ...current,
         completedCourseIds: exists
           ? current.completedCourseIds.filter((id) => id !== courseId)
           : [...current.completedCourseIds, courseId],
+        plannedCourseTerms: nextPlannedCourseTerms,
       };
+    });
+  }
+
+  function changePlannedCourseTerm(courseId: string, term: PlanTerm | null) {
+    setSavedState((current) => {
+      const plannedCourseTerms = { ...current.plannedCourseTerms };
+      if (term) plannedCourseTerms[courseId] = term;
+      else delete plannedCourseTerms[courseId];
+      return { ...current, plannedCourseTerms };
     });
   }
 
@@ -547,8 +574,10 @@ function App() {
               <ExperimentView
                 recommendations={labRecommendations}
                 completedCourseIds={savedState.completedCourseIds}
+                plannedCourseTerms={savedState.plannedCourseTerms}
                 planningSemester={labPlanningSemester}
                 onPlanningSemesterChange={setLabPlanningSemester}
+                onPlannedCourseTermChange={changePlannedCourseTerm}
                 onGoToDiagnosis={() => setActiveView("diagnosis")}
               />
             </div>
@@ -557,7 +586,13 @@ function App() {
 
         {activeView === "result" && (
           <section className="primary-panel full-panel">
-            <ResultDetailView result={result} />
+            <ResultDetailView
+              result={result}
+              recommendations={labRecommendations}
+              plannedRecommendations={plannedRecommendations}
+              plannedCourseTerms={savedState.plannedCourseTerms}
+              onGoToPlan={() => setActiveView("experiment")}
+            />
           </section>
         )}
 
@@ -580,6 +615,158 @@ function App() {
 }
 
 function LandingPage({ onStart }: { onStart: () => void }) {
+  const questions = [
+    { title: "내 과목은 어느 트랙에 가까울까?", value: "푸드마케팅", meta: "현재 예시 60%" },
+    { title: "앞으로 무엇을 더 들어야 할까?", value: "4과목", meta: "부족 모듈 2개" },
+    { title: "다음 학기는 어떻게 짤까?", value: "식품유통경제학", meta: "우선 추천 과목" },
+  ];
+  const [activeQuestion, setActiveQuestion] = useState(0);
+  const [previewProgress, setPreviewProgress] = useState(0);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setPreviewProgress(60);
+      return;
+    }
+    setPreviewProgress(0);
+    const startedAt = performance.now();
+    let frameId = 0;
+    const tick = (now: number) => {
+      const ratio = Math.min((now - startedAt) / 480, 1);
+      setPreviewProgress(Math.round((1 - Math.pow(1 - ratio, 3)) * 60));
+      if (ratio < 1) frameId = window.requestAnimationFrame(tick);
+    };
+    frameId = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [activeQuestion]);
+
+  return (
+    <div className="v2-landing" id="landing-top">
+      <header className="v2-landing-header">
+        <a className="v2-landing-brand" href="#landing-top" aria-label="처음으로">
+          <img src="/dku-seal.svg" alt="" aria-hidden="true" />
+          <span><strong>식품자원경제학과</strong><small>트랙제 자가진단</small></span>
+        </a>
+        <nav aria-label="랜딩페이지 안내">
+          <a href="#track-system">트랙제란?</a>
+          <a href="#service-flow">이용 방법</a>
+          <button type="button" onClick={onStart}>자가진단 시작</button>
+        </nav>
+      </header>
+
+      <main>
+        <section className="v2-hero" aria-labelledby="v2-hero-title">
+          <div className="v2-container v2-hero-grid">
+            <div className="v2-hero-copy">
+              <p className="v2-eyebrow">2026 식품자원경제학과 교육과정 기준</p>
+              <h1 id="v2-hero-title">이수 과목을 체크하고,<br />남은 전공 방향은<br /><span>한눈에 확인하세요.</span></h1>
+              <p>트랙제를 처음 접해도 괜찮아요. 현재 이수 과목부터 입력하면 가까운 트랙과 부족한 모듈, 다음 수강 우선순위를 차례대로 보여드립니다.</p>
+              <div className="v2-hero-actions">
+                <button type="button" onClick={onStart}>3분 자가진단 시작하기 <ArrowRight aria-hidden="true" size={19} /></button>
+                <a href="#track-system">트랙제부터 알아보기</a>
+              </div>
+              <p className="v2-privacy"><ShieldCheck aria-hidden="true" size={16} /> 로그인 없이 이용 · 입력은 현재 브라우저에만 저장</p>
+            </div>
+
+            <div className="v2-hero-demo" aria-label="자가진단 결과 미리보기">
+              <div className="v2-demo-top">
+                <span>내 트랙 찾기</span>
+                <small>예시 화면</small>
+              </div>
+              <div className="v2-demo-questions" role="tablist" aria-label="궁금한 내용 선택">
+                {questions.map((question, index) => (
+                  <button
+                    className={activeQuestion === index ? "active" : ""}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeQuestion === index}
+                    key={question.title}
+                    onClick={() => setActiveQuestion(index)}
+                  >
+                    <span>{index + 1}</span>{question.title}
+                  </button>
+                ))}
+              </div>
+              <div className="v2-demo-result" aria-live="polite">
+                <div>
+                  <small>{questions[activeQuestion].meta}</small>
+                  <strong>{questions[activeQuestion].value}</strong>
+                </div>
+                <span>{previewProgress}%</span>
+                <progress max="100" value={previewProgress} aria-label={`예시 진행률 ${previewProgress}%`} />
+              </div>
+              <ul className="v2-demo-course-list">
+                <li><span>식품유통경제학</span><small>이수 완료</small></li>
+                <li><span>마케팅조사분석</span><small>이수 완료</small></li>
+                <li className="next"><span>농식품정책론</span><small>다음 추천</small></li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section className="v2-track-explainer" id="track-system" aria-labelledby="v2-track-title">
+          <div className="v2-container">
+            <div className="v2-section-heading">
+              <p className="v2-eyebrow">트랙제 이해</p>
+              <h2 id="v2-track-title">과목을 모듈로 묶고,<br />모듈을 진로 방향으로 연결해요.</h2>
+              <p>트랙은 관심 분야에 맞는 전공 과목을 체계적으로 선택하도록 돕는 교육과정입니다. 과목 하나가 모듈을 채우고, 관련 모듈들이 하나의 트랙을 만듭니다.</p>
+            </div>
+            <div className="v2-relation-flow" aria-label="과목에서 트랙으로 이어지는 예시">
+              <div><small>과목</small><strong>식품유통경제학</strong></div>
+              <ArrowRight aria-hidden="true" size={22} />
+              <div><small>모듈</small><strong>F. 유통무역</strong></div>
+              <ArrowRight aria-hidden="true" size={22} />
+              <div className="highlight"><small>트랙</small><strong>푸드마케팅</strong></div>
+            </div>
+            <div className="v2-official-note">
+              <span>트랙은 선택형 교육과정이며 세부 인정 기준은 최신 학과 안내를 따릅니다.</span>
+              <a href={OFFICIAL_CURRICULUM_URL} target="_blank" rel="noreferrer">2026 공식 교육과정 <ExternalLink aria-hidden="true" size={14} /></a>
+            </div>
+          </div>
+        </section>
+
+        <section className="v2-benefits" aria-labelledby="v2-benefit-title">
+          <div className="v2-container v2-benefit-layout">
+            <div className="v2-section-heading">
+              <p className="v2-eyebrow">왜 확인해야 할까요?</p>
+              <h2 id="v2-benefit-title">수강신청을 하기 전에<br />전공의 방향을 먼저 정할 수 있어요.</h2>
+            </div>
+            <div className="v2-benefit-rows">
+              <article><span>01</span><div><strong>진로에 맞는 전문성</strong><p>관심 분야와 연결된 과목을 모듈 단위로 골라 전공 공부의 방향을 선명하게 만듭니다.</p></div></article>
+              <article><span>02</span><div><strong>내가 채운 조건의 가시화</strong><p>복잡한 교육과정표 대신 충족한 모듈과 부족한 과목을 내 이력 기준으로 확인합니다.</p></div></article>
+              <article><span>03</span><div><strong>바뀌어도 이어지는 계획</strong><p>공통 모듈과 겹치는 과목을 확인해 복수 트랙이나 진로 변경에도 유연하게 대비합니다.</p></div></article>
+            </div>
+          </div>
+        </section>
+
+        <section className="v2-service-flow" id="service-flow" aria-labelledby="v2-flow-title">
+          <div className="v2-container">
+            <div className="v2-section-heading centered">
+              <p className="v2-eyebrow">서비스 이용 흐름</p>
+              <h2 id="v2-flow-title">한 번에 하나씩만 확인하세요.</h2>
+              <p>긴 표를 모두 이해할 필요 없이, 현재 상태에서 필요한 다음 단계만 이어서 보여드립니다.</p>
+            </div>
+            <ol className="v2-flow-list">
+              <li><span>1</span><ClipboardCheck aria-hidden="true" size={22} /><div><strong>이수 과목 체크</strong><p>학년·학기 또는 모듈별로 들은 과목을 선택합니다.</p></div></li>
+              <li><span>2</span><Compass aria-hidden="true" size={22} /><div><strong>맞춤 트랙 진단</strong><p>충족 여부와 가까운 추가 트랙을 비교합니다.</p></div></li>
+              <li><span>3</span><CalendarDays aria-hidden="true" size={22} /><div><strong>학기 계획 연결</strong><p>부족한 과목을 다음·다다음 학기로 나눠 봅니다.</p></div></li>
+            </ol>
+          </div>
+        </section>
+
+        <section className="v2-final-cta" aria-labelledby="v2-final-title">
+          <div className="v2-container">
+            <div><small>학생이 만든 비공식 보조 도구</small><h2 id="v2-final-title">다음 수강신청,<br />내 상태를 알고 시작하세요.</h2></div>
+            <button type="button" onClick={onStart}>자가진단 시작하기 <ArrowRight aria-hidden="true" size={20} /></button>
+          </div>
+        </section>
+      </main>
+      <footer className="v2-footer"><div className="v2-container"><span>단국대학교 식품자원경제학과 트랙제 자가진단</span><small>최종 이수 인정 여부는 학과 공식 안내로 확인하세요.</small></div></footer>
+    </div>
+  );
+}
+
+function LegacyLandingPage({ onStart }: { onStart: () => void }) {
   const [activeTrackId, setActiveTrackId] = useState<TrackId>("food-marketing");
   const [activePreviewTab, setActivePreviewTab] = useState<"summary" | "modules" | "courses" | "recommendations">("summary");
   const [activeHeroQuestion, setActiveHeroQuestion] = useState(0);
@@ -1859,27 +2046,42 @@ function DiagnosisView({
   lastManualSaveAt: string;
 }) {
   const completedSet = useMemo(() => new Set(completedCourseIds), [completedCourseIds]);
+  const [selectionMode, setSelectionMode] = useState<"semester" | "module">("semester");
+  const [courseQuery, setCourseQuery] = useState("");
 
   return (
-    <div className="view-stack">
+    <div className="view-stack diagnosis-v2">
       <SectionHeader
         eyebrow="2. 수강 과목 체크"
-        title="이미 수강했거나 이수 예정인 과목을 체크하세요."
-        body="필수 과목과 선택한 트랙에 포함된 모듈은 강조됩니다. 학년·학기 필터를 이용해 다음 수강신청 후보를 좁힐 수 있습니다."
+        title="지금까지 이수한 과목을 선택하세요."
+        body="과목을 찾기 편한 방식으로 전환할 수 있습니다. 체크한 과목만 실제 이수 내역으로 계산하고, 앞으로 들을 과목은 학기 계획에서 따로 관리합니다."
       />
-      <div className="course-save-panel">
+      <div className="course-save-panel diagnosis-save-bar">
         <div>
           <strong>{completedCourseIds.length}개 과목 선택됨</strong>
-          <span>선택 상태는 이 브라우저에 보관되어 같은 기기에서 이어서 확인할 수 있습니다.</span>
-          <small>{lastManualSaveAt ? `마지막 직접 저장: ${lastManualSaveAt}` : "아직 직접 저장하지 않았습니다."}</small>
+          <span>자동 저장되어 같은 브라우저에서 이어서 볼 수 있어요.</span>
+          <small>{lastManualSaveAt ? `직접 저장: ${lastManualSaveAt}` : "입력 즉시 자동 저장 중"}</small>
         </div>
         <button className="primary-button save-course-button" type="button" onClick={onSaveCourses}>
           <Save aria-hidden="true" size={18} />
-          <span>선택 저장</span>
+          <span>지금 저장</span>
         </button>
       </div>
       <EnrollmentPolicyNotice enrollmentType={enrollmentType} />
-      <SemesterCourseTable
+      <div className="course-view-toolbar">
+        <div className="course-view-tabs" role="tablist" aria-label="과목 보기 방식">
+          <button className={selectionMode === "semester" ? "active" : ""} type="button" role="tab" aria-selected={selectionMode === "semester"} onClick={() => setSelectionMode("semester")}>학년·학기별</button>
+          <button className={selectionMode === "module" ? "active" : ""} type="button" role="tab" aria-selected={selectionMode === "module"} onClick={() => setSelectionMode("module")}>모듈별</button>
+        </div>
+        <label className="course-search-field">
+          <Search aria-hidden="true" size={18} />
+          <span className="sr-only">과목 검색</span>
+          <input value={courseQuery} onChange={(event) => setCourseQuery(event.target.value)} placeholder="과목명 또는 과목코드 검색" />
+        </label>
+      </div>
+      <CourseSelectionList
+        mode={selectionMode}
+        query={courseQuery}
         completedSet={completedSet}
         selectedTrackIds={selectedTrackIds}
         enrollmentType={enrollmentType}
@@ -1890,6 +2092,109 @@ function DiagnosisView({
         onToggleCourse={onToggleCourse}
       />
     </div>
+  );
+}
+
+function CourseSelectionList({
+  mode,
+  query,
+  completedSet,
+  selectedTrackIds,
+  enrollmentType,
+  gradeFilter,
+  semesterFilter,
+  onGradeFilterChange,
+  onSemesterFilterChange,
+  onToggleCourse,
+}: {
+  mode: "semester" | "module";
+  query: string;
+  completedSet: Set<string>;
+  selectedTrackIds: TrackId[];
+  enrollmentType: EnrollmentType;
+  gradeFilter: GradeFilter;
+  semesterFilter: SemesterFilter;
+  onGradeFilterChange: (grade: GradeFilter) => void;
+  onSemesterFilterChange: (semester: SemesterFilter) => void;
+  onToggleCourse: (courseId: string) => void;
+}) {
+  const normalizedQuery = query.trim().toLocaleLowerCase("ko");
+  const visibleCourses = useMemo(
+    () =>
+      courses
+        .filter((course) => course.moduleId !== "A")
+        .filter((course) => matchesSemesterFilter(course, gradeFilter, semesterFilter))
+        .filter((course) => !normalizedQuery || `${course.code} ${course.name} ${getModuleLabel(course.moduleId)}`.toLocaleLowerCase("ko").includes(normalizedQuery))
+        .sort((a, b) => semesterRankForView(a.recommendedSemester) - semesterRankForView(b.recommendedSemester) || a.code.localeCompare(b.code)),
+    [gradeFilter, normalizedQuery, semesterFilter],
+  );
+  const semesterGroups = curriculumSlots
+    .map((slot) => ({ ...slot, courses: visibleCourses.filter((course) => course.recommendedSemester === slot.key) }))
+    .filter((group) => group.courses.length > 0);
+  const unknownCourses = visibleCourses.filter((course) => !course.recommendedSemester);
+  const moduleIds = [...new Set(visibleCourses.map((course) => course.moduleId))];
+  const orderedModuleIds = moduleIds.sort((a, b) => a.localeCompare(b));
+  const relatedCount = visibleCourses.filter((course) => isModuleInAnyTrack(selectedTrackIds, course.moduleId)).length;
+
+  return (
+    <section className="course-selection-list" aria-label="이수 과목 선택">
+      {mode === "semester" && (
+        <SemesterCourseQuickFilters
+          gradeFilter={gradeFilter}
+          semesterFilter={semesterFilter}
+          onGradeFilterChange={onGradeFilterChange}
+          onSemesterFilterChange={onSemesterFilterChange}
+        />
+      )}
+      <div className="course-selection-summary">
+        <span><strong>{visibleCourses.length}</strong>개 과목</span>
+        <span><strong>{visibleCourses.filter((course) => completedSet.has(course.id)).length}</strong>개 체크</span>
+        <span><strong>{relatedCount}</strong>개 선택 트랙 관련</span>
+      </div>
+      {visibleCourses.length === 0 ? (
+        <div className="empty-state"><strong>찾는 과목이 없습니다.</strong><span>검색어나 학년·학기 필터를 바꿔보세요.</span></div>
+      ) : (
+        <div className="course-group-scroll">
+          {mode === "semester" && semesterGroups.map((group) => (
+            <CourseRowGroup title={group.label} subtitle={`${group.courses.filter((course) => completedSet.has(course.id)).length}/${group.courses.length}개 이수`} key={group.key}>
+              {group.courses.map((course) => <CourseCheckRow course={course} completed={completedSet.has(course.id)} trackModule={isModuleInAnyTrack(selectedTrackIds, course.moduleId)} enrollmentType={enrollmentType} onToggleCourse={onToggleCourse} key={course.id} />)}
+            </CourseRowGroup>
+          ))}
+          {mode === "semester" && unknownCourses.length > 0 && (
+            <CourseRowGroup title="학기 미정" subtitle={`${unknownCourses.length}개 과목`}>
+              {unknownCourses.map((course) => <CourseCheckRow course={course} completed={completedSet.has(course.id)} trackModule={isModuleInAnyTrack(selectedTrackIds, course.moduleId)} enrollmentType={enrollmentType} onToggleCourse={onToggleCourse} key={course.id} />)}
+            </CourseRowGroup>
+          )}
+          {mode === "module" && orderedModuleIds.map((moduleId) => {
+            const moduleCourses = visibleCourses.filter((course) => course.moduleId === moduleId);
+            const related = isModuleInAnyTrack(selectedTrackIds, moduleId);
+            return (
+              <CourseRowGroup title={getModuleLabel(moduleId)} subtitle={related ? "선택 트랙 관련 모듈" : `${moduleCourses.length}개 과목`} highlight={related} key={moduleId}>
+                {moduleCourses.map((course) => <CourseCheckRow course={course} completed={completedSet.has(course.id)} trackModule={related} enrollmentType={enrollmentType} onToggleCourse={onToggleCourse} key={course.id} />)}
+              </CourseRowGroup>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function CourseRowGroup({ title, subtitle, highlight = false, children }: { title: string; subtitle: string; highlight?: boolean; children: ReactNode }) {
+  return <section className={highlight ? "course-row-group highlight" : "course-row-group"}><header><h3>{title}</h3><span>{subtitle}</span></header><div>{children}</div></section>;
+}
+
+function CourseCheckRow({ course, completed, trackModule, enrollmentType, onToggleCourse }: { course: Course; completed: boolean; trackModule: boolean; enrollmentType: EnrollmentType; onToggleCourse: (courseId: string) => void }) {
+  const required = isRequiredCourseApplicable(course, enrollmentType);
+  return (
+    <label className={["course-check-row", completed ? "checked" : "", trackModule ? "related" : ""].filter(Boolean).join(" ")}>
+      <input type="checkbox" checked={completed} onChange={() => onToggleCourse(course.id)} />
+      <span className="course-row-check" aria-hidden="true">{completed && <CheckCircle2 size={17} />}</span>
+      <span className="course-row-main"><strong>{course.name}</strong><small>{course.code} · {getModuleLabel(course.moduleId)}</small></span>
+      <span className="course-row-term">{formatSemester(course.recommendedSemester)}</span>
+      <span className="course-row-credit">{course.credits}학점</span>
+      <span className="course-row-badges">{required && <em>필수</em>}{trackModule && <em className="related">트랙 관련</em>}</span>
+    </label>
   );
 }
 
@@ -2112,14 +2417,18 @@ function LabRecommendationCard({ recommendation }: { recommendation: TrackRecomm
 function ExperimentView({
   recommendations,
   completedCourseIds,
+  plannedCourseTerms,
   planningSemester,
   onPlanningSemesterChange,
+  onPlannedCourseTermChange,
   onGoToDiagnosis,
 }: {
   recommendations: TrackRecommendation[];
   completedCourseIds: string[];
+  plannedCourseTerms: Record<string, PlanTerm>;
   planningSemester: LabPlanningSemester;
   onPlanningSemesterChange: (semester: LabPlanningSemester) => void;
+  onPlannedCourseTermChange: (courseId: string, term: PlanTerm | null) => void;
   onGoToDiagnosis: () => void;
 }) {
   const bestRecommendation = recommendations[0];
@@ -2129,6 +2438,18 @@ function ExperimentView({
     [bestRecommendation, sharedSuggestions.courses, planningSemester, completedCourseIds.length],
   );
   const priorityCourseGroups = groupCoursesByTerm(plan.priorityCourses);
+  const planTermOptions: Array<{ id: PlanTerm; label: string; description: string }> = [
+    { id: "next", label: "다음 학기", description: "가장 먼저 확인" },
+    { id: "following", label: "다다음 학기", description: "연계 과목 이어가기" },
+    { id: "later", label: "나중에", description: "졸업 전 후보" },
+  ];
+  const plannedColumns = planTermOptions.map((term) => ({
+    ...term,
+    courses: Object.entries(plannedCourseTerms)
+      .filter(([, plannedTerm]) => plannedTerm === term.id)
+      .map(([courseId]) => courses.find((course) => course.id === courseId))
+      .filter((course): course is Course => Boolean(course)),
+  }));
 
   return (
     <div className="view-stack experiment-view">
@@ -2137,22 +2458,6 @@ function ExperimentView({
         title="현재 학년 기준 수강신청 전략을 확인하세요."
         body="트랙 추천 결과에 본인의 현재 학년·학기를 더해, 남은 정규학기 안에서 어떤 과목을 먼저 챙기면 좋은지 정리합니다."
       />
-
-      <div className="experiment-intro-panel">
-        <div className="experiment-intro-copy">
-          <span>이 탭의 역할</span>
-          <h3>자가진단 결과를 수강신청 계획으로 바꾸는 보조 화면입니다.</h3>
-          <p>
-            이미 체크한 과목과 트랙 추천 결과를 기준으로 현재 학년·학기에서 남은 정규학기, 필요한 과목 수,
-            학기당 부담, 다음 수강신청 우선순위를 계산합니다.
-          </p>
-        </div>
-        <div className="experiment-intro-steps">
-          <span>1. 현재 학년 입력</span>
-          <span>2. 남은 학기 계산</span>
-          <span>3. 우선 과목 추천</span>
-        </div>
-      </div>
 
       <div className="experiment-top-grid">
         <article className="experiment-strategy-card">
@@ -2239,12 +2544,11 @@ function ExperimentView({
                 <div className="experiment-course-list">
                   {group.courses.map((course) => (
                     <div className="experiment-course-item" key={course.id}>
-                      <strong>
-                        {course.code} {course.name}
-                      </strong>
-                      <span>
-                        {getModuleLabel(course.moduleId)} · {formatSemester(course.recommendedSemester)} · {course.credits}학점
-                      </span>
+                      <div><strong>{course.code} {course.name}</strong><span>{getModuleLabel(course.moduleId)} · {formatSemester(course.recommendedSemester)} · {course.credits}학점</span></div>
+                      <select aria-label={`${course.name} 계획 학기`} value={plannedCourseTerms[course.id] ?? ""} onChange={(event) => onPlannedCourseTermChange(course.id, event.target.value ? event.target.value as PlanTerm : null)}>
+                        <option value="">계획에 담기</option>
+                        {planTermOptions.map((term) => <option value={term.id} key={term.id}>{term.label}</option>)}
+                      </select>
                     </div>
                   ))}
                 </div>
@@ -2268,6 +2572,32 @@ function ExperimentView({
           </aside>
         </div>
       </div>
+
+      <section className="semester-plan-board" aria-labelledby="semester-plan-title">
+        <div className="lab-section-head semester-plan-head">
+          <div><span>내 학기 계획</span><h3 id="semester-plan-title">추천 과목을 시기별로 나눠보세요.</h3></div>
+          <p>계획에 담은 과목은 실제 이수와 분리해 저장되며, 결과의 ‘계획 포함’ 추천에서만 반영됩니다.</p>
+        </div>
+        <div className="semester-plan-columns">
+          {plannedColumns.map((column) => (
+            <section className={`semester-plan-column plan-${column.id}`} key={column.id}>
+              <header><div><strong>{column.label}</strong><small>{column.description}</small></div><span>{column.courses.length}개</span></header>
+              <div>
+                {column.courses.map((course) => (
+                  <article key={course.id}>
+                    <div><strong>{course.name}</strong><small>{getModuleLabel(course.moduleId)} · {course.credits}학점</small></div>
+                    <select aria-label={`${course.name} 계획 변경`} value={column.id} onChange={(event) => onPlannedCourseTermChange(course.id, event.target.value ? event.target.value as PlanTerm : null)}>
+                      {planTermOptions.map((term) => <option value={term.id} key={term.id}>{term.label}</option>)}
+                      <option value="">계획에서 빼기</option>
+                    </select>
+                  </article>
+                ))}
+                {column.courses.length === 0 && <p>추천 과목 위의 선택 메뉴에서 이 칸에 담아보세요.</p>}
+              </div>
+            </section>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
@@ -2582,9 +2912,21 @@ function EnrollmentPolicyNotice({ enrollmentType }: { enrollmentType: Enrollment
   );
 }
 
-function ResultDetailView({ result }: { result: DiagnosisResult }) {
+function ResultDetailView({
+  result,
+  recommendations,
+  plannedRecommendations,
+  plannedCourseTerms,
+  onGoToPlan,
+}: {
+  result: DiagnosisResult;
+  recommendations: TrackRecommendation[];
+  plannedRecommendations: TrackRecommendation[];
+  plannedCourseTerms: Record<string, PlanTerm>;
+  onGoToPlan: () => void;
+}) {
   const neededCoursePlans = getTrackNeededCoursePlans(result.trackResults);
-  const [activeResultTab, setActiveResultTab] = useState<"summary" | "modules" | "required">("summary");
+  const [activeResultTab, setActiveResultTab] = useState<"summary" | "recommendation" | "modules" | "required">("summary");
 
   if (result.trackResults.length === 0) {
     return (
@@ -2643,6 +2985,17 @@ function ResultDetailView({ result }: { result: DiagnosisResult }) {
           한눈에 보기
         </button>
         <button
+          className={activeResultTab === "recommendation" ? "active" : ""}
+          id="result-tab-recommendation"
+          role="tab"
+          aria-controls="result-panel-recommendation"
+          aria-selected={activeResultTab === "recommendation"}
+          type="button"
+          onClick={() => setActiveResultTab("recommendation")}
+        >
+          맞춤 트랙 추천
+        </button>
+        <button
           className={activeResultTab === "modules" ? "active" : ""}
           id="result-tab-modules"
           role="tab"
@@ -2669,6 +3022,14 @@ function ResultDetailView({ result }: { result: DiagnosisResult }) {
         <div className="result-tab-panel" id="result-panel-summary" role="tabpanel" aria-labelledby="result-tab-summary" hidden={activeResultTab !== "summary"}>
           <TrackNeededCourseSummary plans={neededCoursePlans} />
         </div>
+        <div className="result-tab-panel" id="result-panel-recommendation" role="tabpanel" aria-labelledby="result-tab-recommendation" hidden={activeResultTab !== "recommendation"}>
+          <PersonalizedTrackRecommendation
+            recommendations={recommendations}
+            plannedRecommendations={plannedRecommendations}
+            plannedCourseCount={Object.keys(plannedCourseTerms).length}
+            onGoToPlan={onGoToPlan}
+          />
+        </div>
         <div className="result-tab-panel" id="result-panel-modules" role="tabpanel" aria-labelledby="result-tab-modules" hidden={activeResultTab !== "modules"}>
           <ModuleProgressBoard trackResults={result.trackResults} />
         </div>
@@ -2692,6 +3053,74 @@ function ResultDetailView({ result }: { result: DiagnosisResult }) {
           </div>
         </div>
       </div>
+
+    </div>
+  );
+}
+
+function PersonalizedTrackRecommendation({ recommendations, plannedRecommendations, plannedCourseCount, onGoToPlan }: { recommendations: TrackRecommendation[]; plannedRecommendations: TrackRecommendation[]; plannedCourseCount: number; onGoToPlan: () => void }) {
+  const [includePlan, setIncludePlan] = useState(false);
+  const visibleRecommendations = includePlan ? plannedRecommendations : recommendations;
+  const best = visibleRecommendations[0];
+  const alternatives = visibleRecommendations.slice(1, 3);
+  const shared = getSharedLabSuggestions(visibleRecommendations.slice(0, 3));
+
+  return (
+    <div className="personal-recommendation">
+      <div className="personal-recommendation-head">
+        <div>
+          <span>현재 입력을 기준으로 비교했어요</span>
+          <h3>{best.trackName} 트랙이 가장 가까워요.</h3>
+          <p>{getRecommendationReason(best)}</p>
+        </div>
+        <div className="plan-include-switch" role="group" aria-label="추천 계산 기준">
+          <button className={!includePlan ? "active" : ""} type="button" onClick={() => setIncludePlan(false)}>이수 과목 기준</button>
+          <button className={includePlan ? "active" : ""} type="button" disabled={plannedCourseCount === 0} onClick={() => setIncludePlan(true)}>계획 포함 {plannedCourseCount > 0 && `(${plannedCourseCount})`}</button>
+        </div>
+      </div>
+
+      <article className={`personal-primary track-tone-${best.trackId}`}>
+        <div className="personal-primary-title">
+          <div><small>{best.trackKind} · 1순위</small><h4>{best.trackName}</h4></div>
+          <strong>{best.completionRate}%</strong>
+        </div>
+        <div className="track-progress-line"><span style={{ width: `${best.completionRate}%` }} /></div>
+        <div className="personal-match-row">
+          <span>이미 연결된 모듈</span>
+          <div>{best.matchedModuleLabels.slice(0, 5).map((label) => <em key={label}>{label}</em>)}{best.matchedModuleLabels.length === 0 && <em>아직 없음</em>}</div>
+        </div>
+        <div className="personal-metrics">
+          <div><span>남은 학점</span><strong>{best.missingTotalCredits}학점</strong></div>
+          <div><span>부족 모듈</span><strong>{best.missingModuleCount}개</strong></div>
+          <div><span>필수 누락</span><strong>{best.missingRequiredCount}개</strong></div>
+        </div>
+        <div className="personal-next-courses">
+          <strong>먼저 확인할 과목</strong>
+          <div>{best.recommendedCourses.slice(0, 4).map((course) => <span key={course.id}>{course.name}<small>{formatSemester(course.recommendedSemester)} · {course.credits}학점</small></span>)}</div>
+        </div>
+        <button type="button" className="primary-button personal-plan-button" onClick={onGoToPlan}>추천 과목을 학기 계획에 담기 <ArrowRight aria-hidden="true" size={18} /></button>
+      </article>
+
+      <section className="personal-alternatives" aria-labelledby="personal-alternative-title">
+        <div className="personal-section-title"><span>함께 고려할 수 있어요</span><h4 id="personal-alternative-title">추가 트랙 후보</h4></div>
+        <div>
+          {alternatives.map((recommendation) => (
+            <article key={recommendation.trackId}>
+              <div><small>{recommendation.rank}순위 · {recommendation.trackKind}</small><strong>{recommendation.trackName}</strong></div>
+              <span>{recommendation.completionRate}%</span>
+              <p>{recommendation.matchedModuleLabels.length > 0 ? `${recommendation.matchedModuleLabels.slice(0, 2).join(", ")} 모듈 이력이 연결돼요.` : "공통 기초 과목부터 연결할 수 있어요."}</p>
+              <small>남은 {recommendation.missingTotalCredits}학점 · 부족 모듈 {recommendation.missingModuleCount}개</small>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="personal-shared-courses">
+        <div className="personal-section-title"><span>선택지를 넓히는 과목</span><h4>여러 트랙에 함께 도움 되는 과목</h4></div>
+        <div>{shared.courses.slice(0, 4).map((suggestion) => <span key={suggestion.course.id}><strong>{suggestion.course.name}</strong><small>{formatTrackNamesShort(suggestion.trackNames)} 공통 · {formatSemester(suggestion.course.recommendedSemester)}</small></span>)}</div>
+        {shared.courses.length === 0 && <p className="empty-text">현재 입력에서는 공통 추천 과목보다 1순위 트랙의 부족 모듈을 먼저 확인해보세요.</p>}
+      </section>
+      <p className="personal-disclaimer"><ShieldCheck aria-hidden="true" size={16} /> 이 추천은 입력한 이수 이력을 기준으로 한 자가진단입니다. 실제 트랙 신청과 인정 여부는 학과 공식 안내로 확인하세요.</p>
     </div>
   );
 }

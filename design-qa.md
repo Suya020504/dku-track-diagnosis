@@ -1,65 +1,64 @@
-# Landing redesign design QA
+# Production redesign design QA
 
-## Comparison target
+## 기준과 증거
 
-- Source visual truth: `C:\Users\HAPPY\.codex\generated_images\01a03522-bcb6-7732-bed8-7daf20230593\exec-f181ea14-9e28-4185-879a-2033d69cc952.png`
-- Rendered implementation: `C:\Users\HAPPY\.codex\visualizations\2026\08\25\dku-landing-redesign-round2\05-implementation-1254.png`
-- Side-by-side comparison: `C:\Users\HAPPY\.codex\visualizations\2026\08\25\dku-landing-redesign-round2\07-source-vs-implementation.png`
-- Responsive evidence: `C:\Users\HAPPY\.codex\visualizations\2026\08\25\dku-landing-redesign-round2\06-implementation-mobile-390.png`
-- Route and state: `http://127.0.0.1:5173/#landing-top`, first question selected, preview progress settled at 60%.
+- 승인된 통합 시안: `C:\Users\HAPPY\.codex\generated_images\01a03522-bcb6-7732-bed8-7daf20230593\exec-952cec6e-2a4d-4ee5-8b59-aba99e0686f6.png`
+- 맞춤 추천 시안: `C:\Users\HAPPY\.codex\generated_images\01a03522-bcb6-7732-bed8-7daf20230593\exec-3be161b7-ea12-4dc3-8cd0-75f8abd423b3.png`
+- 최종 캡처 폴더: `C:\Users\HAPPY\.codex\visualizations\2026\08\25\dku-production-redesign-final`
+- 데스크톱: 1440×1024, 모바일: 390×844, Chromium 기반 인앱 브라우저
 
-## Viewport and normalization
+## 적용한 시각 원칙
 
-- Source pixels: 1254 × 1254.
-- Implementation pixels: 1254 × 1254, device scale factor 1.
-- The in-app browser override was 1269 × 1269; its visible content capture was 1254 × 1254 because of browser scrollbar allocation. The implementation capture therefore matched the source pixel dimensions directly.
-- Mobile responsive check: 390 × 844 override, 375 × 844 visible capture, no horizontal overflow (`scrollWidth === clientWidth === 375`).
+- 흰색, 쿨그레이, 딥 네이비, 포레스트 그린을 역할별로 사용했습니다.
+- 선택·완료는 녹색, 트랙 관련은 파란색, 부족·주의는 절제된 주황색으로 구분했습니다.
+- 그라데이션, 유리 효과, 장식용 글로우, 동일한 3개 카드 반복을 제거했습니다.
+- 목록은 `상태 → 과목명·모듈 → 학기·학점 → 배지` 순으로 읽히게 정렬했습니다.
+- 탭과 주요 조작은 모바일에서 48px 안팎의 터치 영역을 확보했습니다.
 
-## Full-view comparison evidence
+## 화면별 검수
 
-- Composition: the same two-column hero is preserved—editorial student image and headline on the left, one interactive diagnostic surface on the right, and a four-item value strip below.
-- Typography: the Korean headline keeps the three-line rhythm, dark navy weight, green final line, and restrained supporting copy. UI text uses the existing Pretendard/SUIT/system stack and explicit control sizes.
-- Colors and tokens: true white background, deep navy, forest green, cool gray borders, and pale green selected states match the approved concept. No gradients, glow, glass effects, or decorative card grid were introduced.
-- Image treatment: the photo remains a natural campus-study scene with no overlay or tint. The crop keeps the student, laptop, books, and campus background visible.
-- Container and spacing: the diagnostic panel begins and ends with the photo column, with the stepper, questions, result, CTA, and note distributed through the panel rather than leaving a dead lower region.
-- Copy: the approved headline, question prompt, three questions, three result values, and primary CTA are present and ordered correctly.
+### 랜딩
 
-## Focused-region evidence
+- 첫 화면에서 서비스 가치, 실제로 묻게 될 3개 질문, 즉시 시작 행동이 함께 보입니다.
+- 긴 트랙 탐색·결과 예시·이용 상황 반복을 제거해 전체 높이를 약 3.3개 데스크톱 뷰포트로 줄였습니다.
+- 트랙제의 `과목 → 모듈 → 트랙` 관계와 공식 자료 링크를 유지했습니다.
+- 모바일은 헤드라인, CTA, 실제 진단 미리보기 순서로 쌓이며 가로 넘침이 없습니다.
 
-- Question picker: each row has a numbered state, native button semantics, `aria-pressed`, hover/press feedback, and the selected green outline.
-- Live preview: selecting question 2 changed pressed states to `[false, true, false]` and moved the active emphasis to the `남은 과목` metric; the progress count-up completed at 60%.
-- CTA: `내 이수 현황 확인하기` opened the real diagnosis workspace, where the diagnosis navigation item exposed `aria-current="step"`.
-- Accessibility and runtime: the page has one H1, labelled regions and controls, meaningful photo alt text, focus-visible treatment, reduced-motion handling, and no relevant console warnings or errors.
-- Mobile: the hero stacks as headline → image → diagnostic preview, exposes the diagnostic heading within the first viewport, and has no clipping or horizontal overflow.
+### 자가진단
 
-## Above-the-fold copy diff
+- 큰 시간표 대신 학년·학기별 행 목록을 기본으로 제공하고 모듈별 보기와 검색을 추가했습니다.
+- 목록 자체만 제한된 높이에서 스크롤해 페이지 전체가 지나치게 길어지지 않습니다.
+- 실제 이수와 앞으로의 계획을 문구와 저장 구조 모두에서 분리했습니다.
+- 오른쪽 요약은 데스크톱에서 고정되고 모바일에서는 본문 아래로 자연스럽게 이동합니다.
 
-- Exact matches: headline, interactive prompt, all three questions, `푸드마케팅 60%`, `남은 과목 4개`, `다음 우선순위 식품유통경제학`, and `내 이수 현황 확인하기`.
-- Intentional factual adjustment: the concept note said the history was not saved, but the existing app stores diagnosis state locally. The implementation correctly says `입력 내용은 이 브라우저에만 저장돼요`.
-- Intentional editorial adjustment: supporting copy was shortened slightly so the diagnostic preview begins within the mobile first viewport.
+### 결과와 맞춤 추천
 
-## Comparison history
+- `한눈에 보기 · 맞춤 트랙 추천 · 부족 모듈 · 필수 과목`을 한 단계 탭으로 정리했습니다.
+- 가장 가까운 트랙은 진행률, 연결 모듈, 남은 학점, 우선 과목을 한 덩어리로 보여줍니다.
+- 추가 후보와 여러 트랙 공통 과목은 하위 위계로 낮춰 1순위 판단을 방해하지 않습니다.
+- 계획이 없을 때 `계획 포함` 버튼은 비활성화되고, 계획 저장 후에만 비교할 수 있습니다.
 
-1. P2 — the first desktop render let the right panel stretch below its content, producing a large dead region. Fixed by setting a measured 500px media slot and distributing the diagnostic sections through the shared hero height. The final panel and photo both end at 957px in the normalized capture.
-2. P2 — the first mobile render pushed the diagnostic preview entirely below the 844px first viewport. Fixed by reducing mobile display type, tightening supporting copy, and using a 260px editorial image crop. The diagnostic now begins at approximately 643px.
-3. P2 — the result icons lacked the visual weight of the concept. Fixed with consistent pale-green circular icon containers and a taller result row.
+### 학기 계획
 
-## Findings
+- 추천 과목에서 바로 다음 학기·다다음 학기·나중을 선택할 수 있습니다.
+- 계획 보드는 세 시기를 열로 보여주고 과목을 이동하거나 제거할 수 있습니다.
+- 계획은 브라우저에 저장되지만 실제 이수 판정에는 포함되지 않습니다.
+- 기존의 밝은 하늘색·연두색 그라데이션을 제거하고 상태선과 명암으로 우선순위를 표현했습니다.
 
-- No actionable P0, P1, or P2 mismatches remain.
-- P3 intentional deviation: the generated concept contained invented university marks on clothing and the laptop. The production asset uses an unbranded navy sweatshirt and laptop while preserving the approved scene and crop.
-- P3 intentional deviation: the concept used a hand-drawn curved underline. The implementation uses a native text underline to avoid shipping an unnecessary decorative raster or custom-drawn asset.
-- P3 test gap: Firefox and Safari were not run; Chromium-based in-app browser coverage passed.
+## 상호작용과 런타임 확인
 
-## Implementation checklist
+- 랜딩 → 자가진단 → 트랙 선택 → 과목 체크 → 결과 → 맞춤 추천 → 학기 계획 흐름 통과
+- 학년·학기별/모듈별 전환 통과
+- 추천 과목을 `다음 학기`에 배치 후 localStorage의 `plannedCourseTerms` 저장 확인
+- 모바일 `document.documentElement.scrollWidth === window.innerWidth === 390`
+- 브라우저 오류 0건, 경고 0건
+- `npm test`: 23개 통과
+- `npm run build`: TypeScript와 Vite 프로덕션 빌드 통과
 
-- [x] Approved 1:1 source resolved and inspected.
-- [x] Standalone hero asset generated and optimized to 162KB JPEG.
-- [x] Desktop 1254 × 1254 visual comparison completed.
-- [x] Question selection and active-result state verified.
-- [x] Primary CTA-to-diagnosis flow verified.
-- [x] Mobile overflow and first-viewport continuity verified.
-- [x] Browser console checked with no relevant errors or warnings.
-- [x] Unit tests and production build passed.
+## 남은 범위
+
+- Safari와 Firefox 실기기 검수는 이번 범위에 포함하지 않았습니다.
+- 실제 학생 대상 과업 성공 시간과 이탈률은 배포 후 사용성 테스트가 필요합니다.
+- 과목 개설 학기와 트랙 인정 여부는 학과 공식 안내가 최종 기준입니다.
 
 final result: passed

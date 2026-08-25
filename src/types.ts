@@ -17,6 +17,8 @@ export type PlanningSemester =
   | "4-1"
   | "4-2";
 
+export type PlanTerm = "next" | "following" | "later";
+
 export type ModuleId =
   | "A"
   | "B"
@@ -117,6 +119,7 @@ export type SavedDiagnosisState = {
   trackIds: TrackId[];
   completedCourseIds: string[];
   enrollmentType: EnrollmentType;
+  plannedCourseTerms: Record<string, PlanTerm>;
 };
 
 export type DiagnosisResult = {
