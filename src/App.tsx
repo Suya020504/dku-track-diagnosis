@@ -6,7 +6,6 @@ import {
   CalendarDays,
   CheckCircle2,
   ClipboardCheck,
-  Clock3,
   Compass,
   ExternalLink,
   FileText,
@@ -23,7 +22,6 @@ import {
   Save,
   Scale,
   ShieldCheck,
-  UserRound,
   X,
 } from "lucide-react";
 import { courses, CURRICULUM_YEAR, modules, tracks } from "./data/curriculumData";
@@ -584,32 +582,24 @@ function App() {
 function LandingPage({ onStart }: { onStart: () => void }) {
   const [activeTrackId, setActiveTrackId] = useState<TrackId>("food-marketing");
   const [activePreviewTab, setActivePreviewTab] = useState<"summary" | "modules" | "courses" | "recommendations">("summary");
+  const [activeHeroQuestion, setActiveHeroQuestion] = useState(0);
+  const [heroProgress, setHeroProgress] = useState(0);
   const activeTrack = tracks.find((track) => track.id === activeTrackId) ?? tracks[0];
   const activeModuleIds = getTrackModuleIds(activeTrack);
-  const heroCourseNames = [
-    "식품유통경제학",
-    "마케팅조사분석",
-    "농식품정책론",
-    "식품가격분석",
-    "계량경제학",
-    "온라인유통 및 물류",
-    "푸드테크와 경제",
-    "지역발전론",
-  ];
-  const problemItems = [
+  const heroQuestions = [
     {
       title: "내가 들은 과목은 어느 트랙에 들어갈까?",
-      body: "과목과 모듈, 트랙의 연결 관계를 직접 대조하기 어렵습니다.",
+      focus: "track",
     },
     {
-      title: "필수 과목과 모듈 학점은 얼마나 남았을까?",
-      body: "각 모듈의 이수 기준과 현재 상태를 일일이 계산해야 합니다.",
+      title: "필수 과목은 얼마나 남았을까?",
+      focus: "remaining",
     },
     {
       title: "다음 학기에는 무엇을 먼저 들어야 할까?",
-      body: "부족한 부분을 채우는 수강 우선순위가 명확하지 않습니다.",
+      focus: "priority",
     },
-  ];
+  ] as const;
   const relationRows = [
     ["식품유통경제학", "F. 유통무역"],
     ["마케팅조사분석", "H. 머천다이징"],
@@ -648,6 +638,25 @@ function LandingPage({ onStart }: { onStart: () => void }) {
     { id: "recommendations" as const, label: "다음 수강 추천" },
   ];
 
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setHeroProgress(60);
+      return;
+    }
+
+    setHeroProgress(0);
+    const startedAt = performance.now();
+    let frameId = 0;
+    const updateProgress = (time: number) => {
+      const ratio = Math.min((time - startedAt) / 520, 1);
+      const easedRatio = 1 - Math.pow(1 - ratio, 3);
+      setHeroProgress(Math.round(easedRatio * 60));
+      if (ratio < 1) frameId = window.requestAnimationFrame(updateProgress);
+    };
+    frameId = window.requestAnimationFrame(updateProgress);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [activeHeroQuestion]);
+
   return (
     <div className="landing-page" id="landing-top">
       <header className="landing-header">
@@ -658,84 +667,107 @@ function LandingPage({ onStart }: { onStart: () => void }) {
             <small>트랙제 자가진단</small>
           </span>
         </a>
-        <nav className="landing-nav" aria-label="랜딩페이지 주요 메뉴">
-          <a href="#landing-why">왜 필요한가요</a>
-          <a href="#landing-track-system">트랙제 이해</a>
-          <a href="#landing-preview">진단 화면</a>
-          <a href="#landing-how">이용 방법</a>
-        </nav>
-        <button className="landing-header-cta" type="button" onClick={onStart}>
-          진단 시작
-        </button>
       </header>
 
       <main>
         <section className="landing-section landing-hero" aria-labelledby="landing-title">
           <div className="landing-container landing-hero-grid">
-            <div className="landing-hero-copy">
-              <p className="landing-context">수강신청 전에</p>
-              <h1 id="landing-title">무엇을 더 들어야 할지, 과목표만 보고 계산하고 있나요?</h1>
-              <p className="landing-lead">
-                내가 들은 과목이 어떤 트랙과 모듈에 연결되는지 확인하고, 부족한 학점과 다음 학기 우선 과목까지
-                한 번에 정리하세요.
-              </p>
-              <div className="landing-actions">
-                <button className="landing-primary-button" type="button" onClick={onStart}>
-                  내 이수 현황 확인하기
-                  <ArrowRight aria-hidden="true" size={18} />
-                </button>
-                <a className="landing-secondary-button" href="#landing-track-system">
-                  트랙제 먼저 이해하기
-                </a>
+            <div className="landing-hero-story">
+              <div className="landing-hero-copy">
+                <h1 id="landing-title">
+                  수강신청 전에,<br />
+                  내 전공 방향부터<br />
+                  <span>확인하세요</span>
+                </h1>
+                <p className="landing-lead">
+                  식품자원경제학과 트랙은 졸업 후 진로와 연결됩니다. 교과과정을 이해하고 나에게 맞는 과목을
+                  선택해 학업 계획을 세워보세요.
+                </p>
               </div>
-              <div className="landing-trust-line" aria-label="서비스 이용 정보">
-                <span><Clock3 aria-hidden="true" size={16} />약 3분</span>
-                <span><UserRound aria-hidden="true" size={16} />로그인 없음</span>
-                <span><ShieldCheck aria-hidden="true" size={16} />이 브라우저에 저장</span>
-              </div>
+              <figure className="landing-hero-media">
+                <img
+                  src="/landing-student.jpg"
+                  alt="교내 학습 공간에서 노트북으로 수강 계획을 확인하는 학생"
+                  fetchPriority="high"
+                />
+              </figure>
             </div>
 
-            <div className="landing-before-after" aria-label="자가진단 전후 예시">
-              <article className="landing-before-panel">
-                <span>Before</span>
-                <strong>과목표 직접 비교</strong>
-                <div className="landing-course-cloud">
-                  {heroCourseNames.map((courseName) => <small key={courseName}>{courseName}</small>)}
+            <section className="landing-diagnostic" aria-labelledby="landing-diagnostic-title">
+              <ol className="landing-diagnostic-stepper" aria-label="진단 진행 단계">
+                <li className="active"><span>1</span><strong>질문 선택</strong></li>
+                <li><span>2</span><strong>이수·연계 과목 체크</strong></li>
+                <li><span>3</span><strong>결과 확인</strong></li>
+              </ol>
+
+              <div className="landing-question-picker">
+                <h2 id="landing-diagnostic-title">지금 가장 궁금한 건 무엇인가요?</h2>
+                <div className="landing-question-options">
+                  {heroQuestions.map((question, index) => (
+                    <button
+                      className={activeHeroQuestion === index ? "active" : ""}
+                      type="button"
+                      key={question.title}
+                      aria-pressed={activeHeroQuestion === index}
+                      onClick={() => setActiveHeroQuestion(index)}
+                    >
+                      <span>{index + 1}</span>
+                      <strong>{question.title}</strong>
+                      <ArrowRight aria-hidden="true" size={19} />
+                    </button>
+                  ))}
                 </div>
-                <p>어디에 연결되는지 직접 찾아야 해요.</p>
-              </article>
-              <ArrowRight className="landing-transform-arrow" aria-hidden="true" size={28} />
-              <article className="landing-after-panel">
-                <span>After</span>
-                <strong>결과 한눈에 보기</strong>
-                <div className="landing-after-main">
-                  <p>푸드마케팅</p>
-                  <strong>60%</strong>
-                  <progress max="100" value="60" aria-label="예시 진행률 60퍼센트" />
+              </div>
+
+              <div className="landing-live-result" aria-live="polite">
+                <div className="landing-live-result-head">
+                  <strong>진단 결과 미리보기</strong>
+                  <span><i aria-hidden="true" />실시간 분석</span>
                 </div>
-                <dl>
-                  <div><dt>남은 과목</dt><dd>4개</dd></div>
-                  <div><dt>다음 우선순위</dt><dd>식품유통경제학</dd></div>
-                </dl>
-              </article>
-            </div>
+                <div className="landing-live-metrics" key={activeHeroQuestion}>
+                  <div className={heroQuestions[activeHeroQuestion].focus === "track" ? "active" : ""}>
+                    <span>푸드마케팅</span>
+                    <strong>{heroProgress}%</strong>
+                    <progress max="100" value={heroProgress} aria-label={`푸드마케팅 예시 진행률 ${heroProgress}퍼센트`} />
+                  </div>
+                  <div className={heroQuestions[activeHeroQuestion].focus === "remaining" ? "active" : ""}>
+                    <span>남은 과목</span>
+                    <strong>4<small>개</small></strong>
+                    <ClipboardCheck aria-hidden="true" size={25} />
+                  </div>
+                  <div className={heroQuestions[activeHeroQuestion].focus === "priority" ? "active" : ""}>
+                    <span>다음 우선순위</span>
+                    <strong>식품유통경제학</strong>
+                    <BookOpenCheck aria-hidden="true" size={25} />
+                  </div>
+                </div>
+              </div>
+
+              <button className="landing-diagnostic-cta" type="button" onClick={onStart}>
+                내 이수 현황 확인하기
+                <ArrowRight aria-hidden="true" size={21} />
+              </button>
+              <p className="landing-diagnostic-note">
+                <ShieldCheck aria-hidden="true" size={15} />
+                로그인 없이 이용 가능 · 입력 내용은 이 브라우저에만 저장돼요
+              </p>
+            </section>
           </div>
         </section>
 
-        <section className="landing-question-band" id="landing-why" aria-labelledby="landing-question-title">
+        <section className="landing-service-strip" id="landing-why" aria-labelledby="landing-service-strip-title">
           <div className="landing-container">
-            <h2 id="landing-question-title" className="sr-only">수강신청 때 헷갈리는 점</h2>
-            <ol className="landing-question-list">
-              {problemItems.map((item, index) => (
-                <li key={item.title}>
-                  <span>{index + 1}</span>
-                  <div>
-                    <strong>{item.title}</strong>
-                    <p>{item.body}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
+            <h2 id="landing-service-strip-title" className="sr-only">자가진단에서 확인할 수 있는 내용</h2>
+            <div className="landing-service-strip-list">
+              <div><Compass aria-hidden="true" size={27} /><strong>내 트랙 적합도<br />한눈에 확인</strong></div>
+              <div><ClipboardCheck aria-hidden="true" size={27} /><strong>필요 과목과 이수 현황<br />실시간 분석</strong></div>
+              <div><CalendarDays aria-hidden="true" size={27} /><strong>다음 학기 수강 계획까지<br />맞춤 추천</strong></div>
+              <div><ShieldCheck aria-hidden="true" size={27} /><strong>공식 교육과정 기준으로<br />정확하게 진단</strong></div>
+            </div>
+            <a className="landing-scroll-cue" href="#landing-track-system">
+              <span>아래에서 트랙별 커리큘럼과 진로를 더 알아보세요</span>
+              <ArrowRight aria-hidden="true" size={18} />
+            </a>
           </div>
         </section>
 
