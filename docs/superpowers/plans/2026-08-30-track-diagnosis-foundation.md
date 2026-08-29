@@ -669,7 +669,7 @@ git commit -m "feat: add path-aware progress engine"
 - Modify: `src/types.ts`
 
 **Interfaces:**
-- Produces: `SavedAppStateV2`, `DiagnosisSnapshot`
+- Produces: `SavedAppStateV2`, `DiagnosisSnapshot`, `createEmptyAppState()`
 - Produces: `loadAppState(storage?)`, `saveAppState(state, storage?)`
 - Produces: `migrateV1State(value): SavedAppStateV2`
 - Consumes: existing `loadSavedState`, `saveState`, remote `plannedCourseTerms`
@@ -677,6 +677,18 @@ git commit -m "feat: add path-aware progress engine"
 - [ ] **Step 1: Write failing migration and recovery tests**
 
 ```ts
+function makeStorage(initial: Record<string, string>): Storage {
+  const values = new Map(Object.entries(initial));
+  return {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => void values.set(key, value),
+    removeItem: (key) => void values.delete(key),
+    clear: () => values.clear(),
+    key: (index) => [...values.keys()][index] ?? null,
+    get length() { return values.size; },
+  };
+}
+
 it("migrates v1 completed courses and remote planned terms without loss", () => {
   const migrated = migrateV1State({
     curriculumYear: 2026,
@@ -696,12 +708,15 @@ it("migrates v1 completed courses and remote planned terms without loss", () => 
 });
 
 it("keeps only the newest twelve diagnosis snapshots", () => {
-  const state = makeStateWithSnapshots(13);
-  expect(normalizeSnapshotHistory(state.snapshots)).toHaveLength(12);
-  expect(normalizeSnapshotHistory(state.snapshots)[0].id).toBe("snapshot-2");
+  const snapshots = Array.from({ length: 13 }, (_, index) => ({
+    id: `snapshot-${index + 1}`,
+  })) as DiagnosisSnapshot[];
+  expect(normalizeSnapshotHistory(snapshots)).toHaveLength(12);
+  expect(normalizeSnapshotHistory(snapshots)[0].id).toBe("snapshot-2");
 });
 
 it("returns the last valid state when the active payload is corrupt", () => {
+  const validState = createEmptyAppState();
   const storage = makeStorage({
     "track-sim:v2": "{broken",
     "track-sim:v2:last-valid": JSON.stringify(validState),
@@ -757,6 +772,20 @@ In `storage.ts`:
 ```ts
 export const STORAGE_KEY_V2 = "track-sim:v2";
 export const STORAGE_LAST_VALID_KEY_V2 = "track-sim:v2:last-valid";
+
+export function createEmptyAppState(): SavedAppStateV2 {
+  return {
+    version: 2,
+    profile: undefined,
+    profileDraft: undefined,
+    courseSelections: [],
+    additionalMajorCredits: [],
+    courseInputReviewedAt: undefined,
+    targetTrackId: undefined,
+    comparisonTrackIds: [],
+    snapshots: [],
+  };
+}
 
 export function normalizeSnapshotHistory(items: DiagnosisSnapshot[]): DiagnosisSnapshot[] {
   return items.slice(-12);
@@ -888,9 +917,9 @@ export function loadAppState(storage: Storage = window.localStorage): SavedAppSt
   }
   try {
     const legacyRaw = storage.getItem(STORAGE_KEY);
-    return legacyRaw ? migrateV1State(JSON.parse(legacyRaw)) : migrateV1State(undefined);
+    return legacyRaw ? migrateV1State(JSON.parse(legacyRaw)) : createEmptyAppState();
   } catch {
-    return migrateV1State(undefined);
+    return createEmptyAppState();
   }
 }
 
@@ -1174,6 +1203,47 @@ git commit -m "feat: add student path setup"
 - [ ] **Step 1: Write failing result contract tests**
 
 ```tsx
+import { renderToStaticMarkup } from "react-dom/server";
+import { expect, it } from "vitest";
+import type { PathProgressResult, StudentProfile } from "../../types";
+import { PathProgressSummary } from "./PathProgressSummary";
+
+const externalMinor: StudentProfile = {
+  goal: "check-progress",
+  affiliation: "external-student",
+  studyPath: "minor",
+  entryYear: 2026,
+  curriculumRuleVersion: "2026-provided-final-plan",
+  ruleApplicability: "officially-verified",
+};
+
+const referenceAdvancedMajor: StudentProfile = {
+  goal: "check-progress",
+  affiliation: "department-student",
+  studyPath: "advanced-major",
+  entryYear: 2026,
+  curriculumRuleVersion: "2026-provided-final-plan",
+  ruleApplicability: "reference-only",
+};
+
+const referenceSatisfiedResult: PathProgressResult = {
+  requiredProgress: {
+    completedCredits: 18,
+    requiredCredits: 18,
+    missingCredits: 0,
+    completedCourseIds: ["b-2", "c-1", "c-2", "c-3", "f-1", "h-1"],
+    missingCourseIds: [],
+  },
+  trackProgress: "not-applicable",
+  totalMajorProgress: { completedCredits: 63, requiredCredits: 63, missingCredits: 0 },
+  reviewItems: [{
+    code: "rule-source",
+    message: "제공된 2026 최종안 기준의 참고 계산입니다.",
+    evidence: "provided-final-plan",
+  }],
+  status: "reference-calculation-satisfied",
+};
+
 it("shows 21-credit progress without track progress for a minor", () => {
   const markup = renderToStaticMarkup(
     <PathProgressSummary
@@ -1330,6 +1400,35 @@ git commit -m "feat: show path-aware progress results"
 - [ ] **Step 1: Write failing route tests**
 
 ```ts
+import { expect, it } from "vitest";
+import type { SavedAppStateV2 } from "../types";
+import { createEmptyAppState } from "./storage";
+import { resolveDiagnosisStep } from "./viewRouting";
+
+const emptyV2State = createEmptyAppState();
+const minorV2State: SavedAppStateV2 = {
+  ...createEmptyAppState(),
+  profile: {
+    goal: "check-progress",
+    affiliation: "external-student",
+    studyPath: "minor",
+    entryYear: 2026,
+    curriculumRuleVersion: "2026-provided-final-plan",
+    ruleApplicability: "reference-only",
+  },
+};
+const trackMajorWithoutTrackState: SavedAppStateV2 = {
+  ...createEmptyAppState(),
+  profile: {
+    goal: "check-progress",
+    affiliation: "department-student",
+    studyPath: "track-major",
+    entryYear: 2026,
+    curriculumRuleVersion: "2026-provided-final-plan",
+    ruleApplicability: "reference-only",
+  },
+};
+
 it("keeps the profile step when no valid profile is saved", () => {
   expect(resolveDiagnosisStep("?view=diagnosis&step=courses", emptyV2State)).toBe("profile");
 });
@@ -1373,10 +1472,11 @@ export function resolveDiagnosisStep(
 ): DiagnosisStep {
   if (!hasValidProfile(state)) return "profile";
   if (state.profile!.studyPath === "track-major" && !state.targetTrackId) return "profile";
-  const rawStep = new URLSearchParams(search).get("step");
+  const params = new URLSearchParams(search);
+  const rawStep = params.get("step");
   const requested = rawStep && DIAGNOSIS_STEPS.has(rawStep as DiagnosisStep)
     ? rawStep as DiagnosisStep
-    : "courses";
+    : params.get("view") === "result" ? "result" : "courses";
   if (requested === "result" && !state.courseInputReviewedAt) return "courses";
   return requested;
 }
