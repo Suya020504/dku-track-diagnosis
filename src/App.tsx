@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -26,6 +26,7 @@ import {
   X,
 } from "lucide-react";
 import { courses, CURRICULUM_YEAR, modules, tracks } from "./data/curriculumData";
+import { StudyPathSetup } from "./features/profile/StudyPathSetup";
 import {
   calculateDiagnosis,
   calculateTrackRecommendations,
@@ -35,7 +36,12 @@ import {
   isRequiredCourseApplicable,
   isModuleInAnyTrack,
 } from "./lib/diagnosis";
-import { emptyState, loadSavedState, saveState } from "./lib/storage";
+import { createEmptyAppState, loadAppState, saveAppState } from "./lib/storage";
+import {
+  resolveDiagnosisStep,
+  writeDiagnosisStepToHistory,
+  type DiagnosisStep,
+} from "./lib/viewRouting";
 import type {
   Course,
   DiagnosisResult,
@@ -44,7 +50,8 @@ import type {
   ModuleProgress,
   PlanTerm,
   PlanningSemester,
-  SavedDiagnosisState,
+  SavedAppStateV2,
+  StudentProfile,
   Track,
   TrackDiagnosisResult,
   TrackId,
@@ -275,114 +282,255 @@ const updateHistory = [
   },
 ];
 
+function getSelectedTrackIds(state: SavedAppStateV2): TrackId[] {
+  return [...new Set([
+    ...(state.targetTrackId ? [state.targetTrackId] : []),
+    ...state.comparisonTrackIds,
+  ])];
+}
+
+function getEnrollmentTypeForProfile(profile?: StudentProfile): EnrollmentType {
+  if (profile?.studyPath === "double-major") return "double-major";
+  if (profile?.studyPath === "minor") return "minor";
+  return "primary";
+}
+
+function getProfileForEnrollmentType(
+  current: StudentProfile | undefined,
+  enrollmentType: EnrollmentType,
+): StudentProfile {
+  const base = {
+    goal: current?.goal ?? "check-progress",
+    entryYear: current?.entryYear,
+    curriculumRuleVersion: "2026-provided-final-plan" as const,
+    ruleApplicability: current?.ruleApplicability ?? "reference-only",
+  };
+
+  if (enrollmentType === "double-major") {
+    return { ...base, affiliation: "external-student", studyPath: "double-major" };
+  }
+  if (enrollmentType === "minor") {
+    return { ...base, affiliation: "external-student", studyPath: "minor" };
+  }
+
+  const studyPath = current?.affiliation === "department-student" &&
+    ["advanced-major", "track-major", "department-with-other-major"].includes(current.studyPath)
+    ? current.studyPath
+    : "advanced-major";
+  return { ...base, affiliation: "department-student", studyPath };
+}
+
 function App() {
-  const [savedState, setSavedState] = useState<SavedDiagnosisState>(() => loadSavedState());
-  const [trackSetupOpen, setTrackSetupOpen] = useState(() => savedState.trackIds.length === 0);
-  const [activeView, setActiveView] = useState<ViewId>("landing");
+  const [savedState, setSavedState] = useState<SavedAppStateV2>(() => loadAppState());
+  const [storageError, setStorageError] = useState(false);
+  const [diagnosisStep, setDiagnosisStep] = useState<DiagnosisStep>(() =>
+    resolveDiagnosisStep(window.location.search, savedState),
+  );
+  const [activeView, setActiveView] = useState<ViewId>(() => {
+    const view = new URLSearchParams(window.location.search).get("view");
+    if (view === "diagnosis") return "diagnosis";
+    if (view === "result") return "result";
+    return "landing";
+  });
+  const selectedTrackIds = useMemo(() => getSelectedTrackIds(savedState), [savedState]);
+  const [trackSetupOpen, setTrackSetupOpen] = useState(() => selectedTrackIds.length === 0);
   const [gradeFilter, setGradeFilter] = useState<GradeFilter>("all");
   const [semesterFilter, setSemesterFilter] = useState<SemesterFilter>("all");
   const [lastManualSaveAt, setLastManualSaveAt] = useState("");
-  const [labPlanningSemester, setLabPlanningSemester] = useState<LabPlanningSemester>("unselected");
   const [guideOpen, setGuideOpen] = useState(() => !loadGuideDismissed());
   const [guideStepIndex, setGuideStepIndex] = useState(0);
-  const selectedTracks = useMemo(() => getTracks(savedState.trackIds), [savedState.trackIds]);
+  const stepHeadingRef = useRef<HTMLHeadingElement>(null);
+  const completedCourseIds = useMemo(
+    () => savedState.courseSelections
+      .filter((selection) => selection.status === "completed" || selection.status === "in-progress")
+      .map((selection) => selection.courseId),
+    [savedState.courseSelections],
+  );
+  const plannedCourseTerms = useMemo(
+    () => Object.fromEntries(
+      savedState.courseSelections
+        .filter((selection) => selection.status === "planned" && selection.plannedTerm)
+        .map((selection) => [selection.courseId, selection.plannedTerm as PlanTerm]),
+    ) as Record<string, PlanTerm>,
+    [savedState.courseSelections],
+  );
+  const enrollmentType = getEnrollmentTypeForProfile(savedState.profile);
+  const labPlanningSemester: LabPlanningSemester = savedState.currentSemester ?? "unselected";
+  const requiresTrack = savedState.profile?.studyPath === "track-major";
+  const selectedTracks = useMemo(() => getTracks(selectedTrackIds), [selectedTrackIds]);
   const result = useMemo(
     () =>
       calculateDiagnosis({
-        trackIds: savedState.trackIds,
-        completedCourseIds: savedState.completedCourseIds,
-        enrollmentType: savedState.enrollmentType,
+        trackIds: selectedTrackIds,
+        completedCourseIds,
+        enrollmentType,
       }),
-    [savedState.completedCourseIds, savedState.enrollmentType, savedState.trackIds],
+    [completedCourseIds, enrollmentType, selectedTrackIds],
   );
   const labRecommendations = useMemo(
     () =>
       calculateTrackRecommendations({
-        completedCourseIds: savedState.completedCourseIds,
-        enrollmentType: savedState.enrollmentType,
+        completedCourseIds,
+        enrollmentType,
         currentSemester: labPlanningSemester === "unselected" ? undefined : labPlanningSemester,
       }),
-    [labPlanningSemester, savedState.completedCourseIds, savedState.enrollmentType],
+    [completedCourseIds, enrollmentType, labPlanningSemester],
   );
   const plannedCourseIds = useMemo(
-    () => Object.keys(savedState.plannedCourseTerms),
-    [savedState.plannedCourseTerms],
+    () => Object.keys(plannedCourseTerms),
+    [plannedCourseTerms],
   );
   const plannedRecommendations = useMemo(
     () =>
       calculateTrackRecommendations({
-        completedCourseIds: [...savedState.completedCourseIds, ...plannedCourseIds],
-        enrollmentType: savedState.enrollmentType,
+        completedCourseIds: [...completedCourseIds, ...plannedCourseIds],
+        enrollmentType,
         currentSemester: labPlanningSemester === "unselected" ? undefined : labPlanningSemester,
       }),
-    [labPlanningSemester, plannedCourseIds, savedState.completedCourseIds, savedState.enrollmentType],
+    [completedCourseIds, enrollmentType, labPlanningSemester, plannedCourseIds],
   );
 
   useEffect(() => {
-    saveState(savedState);
+    function syncFromLocation() {
+      const next = resolveDiagnosisStep(window.location.search, savedState);
+      if (new URLSearchParams(window.location.search).get("step") !== next) {
+        writeDiagnosisStepToHistory(next, "replace");
+      }
+      setDiagnosisStep(next);
+      setActiveView(next === "result" ? "result" : "diagnosis");
+    }
+
+    window.addEventListener("popstate", syncFromLocation);
+    return () => window.removeEventListener("popstate", syncFromLocation);
   }, [savedState]);
+
+  useEffect(() => {
+    stepHeadingRef.current?.focus();
+  }, [diagnosisStep]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [activeView]);
 
-  function toggleTrack(trackId: TrackId) {
+  function persist(updater: (current: SavedAppStateV2) => SavedAppStateV2) {
     setSavedState((current) => {
-      const exists = current.trackIds.includes(trackId);
+      const next = updater(current);
+      setStorageError(!saveAppState(next));
+      return next;
+    });
+  }
+
+  function updateProfileDraft(profileDraft: Partial<StudentProfile>) {
+    persist((current) => ({ ...current, profileDraft }));
+  }
+
+  function completeProfile(profile: StudentProfile) {
+    persist((current) => {
+      const targetTrackId = profile.studyPath === "track-major"
+        ? current.targetTrackId
+        : undefined;
+      return { ...current, profile, profileDraft: undefined, targetTrackId };
+    });
+    navigateDiagnosisStep("courses");
+  }
+
+  function navigateDiagnosisStep(step: DiagnosisStep) {
+    writeDiagnosisStepToHistory(step, "push");
+    setDiagnosisStep(step);
+    setActiveView(step === "result" ? "result" : "diagnosis");
+  }
+
+  function toggleTrack(trackId: TrackId) {
+    persist((current) => {
+      const currentTrackIds = getSelectedTrackIds(current);
+      const exists = currentTrackIds.includes(trackId);
       const nextTrackIds = exists
-        ? current.trackIds.filter((id) => id !== trackId)
-        : [...current.trackIds, trackId];
+        ? currentTrackIds.filter((id) => id !== trackId)
+        : [...currentTrackIds, trackId];
 
       return {
         ...current,
-        trackIds: nextTrackIds,
+        targetTrackId: nextTrackIds[0],
+        comparisonTrackIds: nextTrackIds.slice(1),
       };
     });
   }
 
   function toggleCourse(courseId: string) {
-    setSavedState((current) => {
-      const exists = current.completedCourseIds.includes(courseId);
-      const nextPlannedCourseTerms = { ...current.plannedCourseTerms };
-      if (!exists) delete nextPlannedCourseTerms[courseId];
+    persist((current) => {
+      const exists = current.courseSelections.some(
+        (selection) => selection.courseId === courseId &&
+          (selection.status === "completed" || selection.status === "in-progress"),
+      );
+      const remaining = current.courseSelections.filter((selection) => selection.courseId !== courseId);
       return {
         ...current,
-        completedCourseIds: exists
-          ? current.completedCourseIds.filter((id) => id !== courseId)
-          : [...current.completedCourseIds, courseId],
-        plannedCourseTerms: nextPlannedCourseTerms,
+        courseSelections: exists
+          ? remaining
+          : [...remaining, { courseId, status: "completed" }],
       };
     });
   }
 
   function changePlannedCourseTerm(courseId: string, term: PlanTerm | null) {
-    setSavedState((current) => {
-      const plannedCourseTerms = { ...current.plannedCourseTerms };
-      if (term) plannedCourseTerms[courseId] = term;
-      else delete plannedCourseTerms[courseId];
-      return { ...current, plannedCourseTerms };
+    persist((current) => {
+      const remaining = current.courseSelections.filter(
+        (selection) => !(selection.courseId === courseId && selection.status === "planned"),
+      );
+      return {
+        ...current,
+        courseSelections: term
+          ? [...remaining, { courseId, status: "planned", plannedTerm: term }]
+          : remaining,
+      };
     });
   }
 
   function changeEnrollmentType(enrollmentType: EnrollmentType) {
-    setSavedState((current) => ({
+    persist((current) => {
+      const profile = getProfileForEnrollmentType(current.profile, enrollmentType);
+      return {
+        ...current,
+        profile,
+        profileDraft: undefined,
+        targetTrackId: profile.studyPath === "track-major" ? current.targetTrackId : undefined,
+      };
+    });
+  }
+
+  function changePlanningSemester(semester: LabPlanningSemester) {
+    persist((current) => ({
       ...current,
-      enrollmentType,
+      currentSemester: semester === "unselected" ? undefined : semester,
     }));
   }
 
   function resetState(nextView: ViewId = activeView) {
-    setSavedState(emptyState());
+    const next = createEmptyAppState();
+    setStorageError(!saveAppState(next));
+    setSavedState(next);
     setGradeFilter("all");
     setSemesterFilter("all");
-    setLabPlanningSemester("unselected");
     setLastManualSaveAt("");
     setActiveView(nextView);
+    navigateDiagnosisStep("profile");
   }
 
   function saveCompletedCoursesNow() {
-    saveState(savedState);
+    setStorageError(!saveAppState(savedState));
     setLastManualSaveAt(formatSaveTime(new Date()));
+  }
+
+  function confirmCourseInput() {
+    if (requiresTrack && !savedState.targetTrackId) {
+      setTrackSetupOpen(true);
+      return;
+    }
+    persist((current) => ({
+      ...current,
+      courseInputReviewedAt: new Date().toISOString(),
+    }));
+    navigateDiagnosisStep("result");
   }
 
   function openGuide() {
@@ -400,12 +548,55 @@ function App() {
   }
 
   function goToGuideStepView(viewId: ViewId) {
+    if (viewId === "diagnosis") {
+      navigateDiagnosisStep(resolveDiagnosisStep("?view=diagnosis&step=courses", savedState));
+      return;
+    }
+    if (viewId === "result") {
+      navigateDiagnosisStep(resolveDiagnosisStep("?view=result&step=result", savedState));
+      return;
+    }
     setActiveView(viewId);
   }
 
   function enterApp(viewId: Exclude<ViewId, "landing">) {
     setGuideOpen(false);
+    if (viewId === "diagnosis") {
+      navigateDiagnosisStep(resolveDiagnosisStep("?view=diagnosis&step=courses", savedState));
+      return;
+    }
     setActiveView(viewId);
+  }
+
+  if (diagnosisStep === "profile" || !savedState.profile) {
+    return (
+      <div className="profile-step-shell">
+        {storageError && (
+          <p className="storage-error" role="alert">
+            이 브라우저에 변경 내용을 저장하지 못했습니다. 탭을 닫기 전에 입력 내용을 확인해 주세요.
+          </p>
+        )}
+        <StudyPathSetup
+          profile={savedState.profile}
+          initialDraft={savedState.profileDraft}
+          headingRef={stepHeadingRef}
+          onChange={updateProfileDraft}
+          onComplete={completeProfile}
+        />
+        {savedState.profile?.studyPath === "track-major" && !savedState.targetTrackId && (
+          <div className="profile-track-setup">
+            <TrackPicker
+              selectedTrackIds={selectedTrackIds}
+              enrollmentType={enrollmentType}
+              onToggleTrack={toggleTrack}
+              onEnrollmentTypeChange={changeEnrollmentType}
+              onReset={resetState}
+              onContinue={() => navigateDiagnosisStep("courses")}
+            />
+          </div>
+        )}
+      </div>
+    );
   }
 
   if (activeView === "landing") {
@@ -434,7 +625,15 @@ function App() {
                 className={activePrimaryViewId === item.id ? "service-nav-button active" : "service-nav-button"}
                 type="button"
                 aria-current={activePrimaryViewId === item.id ? "step" : undefined}
-                onClick={() => setActiveView(item.id)}
+                onClick={() => {
+                  if (item.id === "diagnosis") {
+                    navigateDiagnosisStep(resolveDiagnosisStep("?view=diagnosis&step=courses", savedState));
+                  } else if (item.id === "result") {
+                    navigateDiagnosisStep(resolveDiagnosisStep("?view=result&step=result", savedState));
+                  } else {
+                    setActiveView(item.id);
+                  }
+                }}
               >
                 <small>{item.step}</small>
                 <Icon aria-hidden="true" size={18} />
@@ -477,6 +676,12 @@ function App() {
         </div>
       </header>
 
+      {storageError && (
+        <p className="storage-error service-storage-error" role="alert">
+          이 브라우저에 변경 내용을 저장하지 못했습니다. 탭을 닫기 전에 입력 내용을 확인해 주세요.
+        </p>
+      )}
+
       <main className="workspace service-workspace">
         {activeView === "overview" && (
           <section className="primary-panel full-panel">
@@ -493,14 +698,14 @@ function App() {
         {activeView === "modules" && (
           <div className="view-layout">
             <TrackPicker
-              selectedTrackIds={savedState.trackIds}
-              enrollmentType={savedState.enrollmentType}
+              selectedTrackIds={selectedTrackIds}
+              enrollmentType={enrollmentType}
               onToggleTrack={toggleTrack}
               onEnrollmentTypeChange={changeEnrollmentType}
               onReset={resetState}
             />
             <section className="primary-panel">
-              <ModulesView selectedTrackIds={savedState.trackIds} />
+              <ModulesView selectedTrackIds={selectedTrackIds} />
             </section>
           </div>
         )}
@@ -509,8 +714,8 @@ function App() {
           <div className="view-layout">
             {trackSetupOpen ? (
               <TrackPicker
-                selectedTrackIds={savedState.trackIds}
-                enrollmentType={savedState.enrollmentType}
+                selectedTrackIds={selectedTrackIds}
+                enrollmentType={enrollmentType}
                 onToggleTrack={toggleTrack}
                 onEnrollmentTypeChange={changeEnrollmentType}
                 onReset={resetState}
@@ -519,16 +724,17 @@ function App() {
             ) : (
               <TrackSetupSummary
                 selectedTrackNames={selectedTracks.map((track) => track.name)}
-                enrollmentType={savedState.enrollmentType}
+                enrollmentType={enrollmentType}
                 onEdit={() => setTrackSetupOpen(true)}
               />
             )}
             <div className="content-grid">
               <section className="primary-panel">
                 <DiagnosisView
-                  completedCourseIds={savedState.completedCourseIds}
-                  selectedTrackIds={savedState.trackIds}
-                  enrollmentType={savedState.enrollmentType}
+                  completedCourseIds={completedCourseIds}
+                  selectedTrackIds={selectedTrackIds}
+                  enrollmentType={enrollmentType}
+                  headingRef={stepHeadingRef}
                   gradeFilter={gradeFilter}
                   semesterFilter={semesterFilter}
                   onGradeFilterChange={setGradeFilter}
@@ -542,9 +748,9 @@ function App() {
               <DiagnosisPanel
                 result={result}
                 selectedTrackNames={selectedTracks.map((track) => track.name)}
-                enrollmentType={savedState.enrollmentType}
-                completedCount={savedState.completedCourseIds.length}
-                onShowResult={() => setActiveView("result")}
+                enrollmentType={enrollmentType}
+                completedCount={completedCourseIds.length}
+                onShowResult={confirmCourseInput}
               />
             </div>
           </div>
@@ -556,11 +762,11 @@ function App() {
             <div id="planning-panel-recommendation" role="tabpanel" aria-labelledby="planning-tab-recommendation">
               <LabView
                 recommendations={labRecommendations}
-                completedCourseIds={savedState.completedCourseIds}
-                enrollmentType={savedState.enrollmentType}
+                completedCourseIds={completedCourseIds}
+                enrollmentType={enrollmentType}
                 planningSemester={labPlanningSemester}
                 onEnrollmentTypeChange={changeEnrollmentType}
-                onPlanningSemesterChange={setLabPlanningSemester}
+                onPlanningSemesterChange={changePlanningSemester}
                 onReset={() => resetState("lab")}
               />
             </div>
@@ -573,12 +779,12 @@ function App() {
             <div id="planning-panel-semester" role="tabpanel" aria-labelledby="planning-tab-semester">
               <ExperimentView
                 recommendations={labRecommendations}
-                completedCourseIds={savedState.completedCourseIds}
-                plannedCourseTerms={savedState.plannedCourseTerms}
+                completedCourseIds={completedCourseIds}
+                plannedCourseTerms={plannedCourseTerms}
                 planningSemester={labPlanningSemester}
-                onPlanningSemesterChange={setLabPlanningSemester}
+                onPlanningSemesterChange={changePlanningSemester}
                 onPlannedCourseTermChange={changePlannedCourseTerm}
-                onGoToDiagnosis={() => setActiveView("diagnosis")}
+                onGoToDiagnosis={() => navigateDiagnosisStep("courses")}
               />
             </div>
           </section>
@@ -590,7 +796,8 @@ function App() {
               result={result}
               recommendations={labRecommendations}
               plannedRecommendations={plannedRecommendations}
-              plannedCourseTerms={savedState.plannedCourseTerms}
+              plannedCourseTerms={plannedCourseTerms}
+              headingRef={stepHeadingRef}
               onGoToPlan={() => setActiveView("experiment")}
             />
           </section>
@@ -2026,6 +2233,7 @@ function DiagnosisView({
   completedCourseIds,
   selectedTrackIds,
   enrollmentType,
+  headingRef,
   gradeFilter,
   semesterFilter,
   onGradeFilterChange,
@@ -2037,6 +2245,7 @@ function DiagnosisView({
   completedCourseIds: string[];
   selectedTrackIds: TrackId[];
   enrollmentType: EnrollmentType;
+  headingRef: RefObject<HTMLHeadingElement | null>;
   gradeFilter: GradeFilter;
   semesterFilter: SemesterFilter;
   onGradeFilterChange: (grade: GradeFilter) => void;
@@ -2055,6 +2264,7 @@ function DiagnosisView({
         eyebrow="2. 수강 과목 체크"
         title="지금까지 이수한 과목을 선택하세요."
         body="과목을 찾기 편한 방식으로 전환할 수 있습니다. 체크한 과목만 실제 이수 내역으로 계산하고, 앞으로 들을 과목은 학기 계획에서 따로 관리합니다."
+        headingRef={headingRef}
       />
       <div className="course-save-panel diagnosis-save-bar">
         <div>
@@ -2917,12 +3127,14 @@ function ResultDetailView({
   recommendations,
   plannedRecommendations,
   plannedCourseTerms,
+  headingRef,
   onGoToPlan,
 }: {
   result: DiagnosisResult;
   recommendations: TrackRecommendation[];
   plannedRecommendations: TrackRecommendation[];
   plannedCourseTerms: Record<string, PlanTerm>;
+  headingRef: RefObject<HTMLHeadingElement | null>;
   onGoToPlan: () => void;
 }) {
   const neededCoursePlans = getTrackNeededCoursePlans(result.trackResults);
@@ -2935,6 +3147,7 @@ function ResultDetailView({
           eyebrow="진단 결과"
           title="진단할 트랙을 먼저 선택하세요."
           body="트랙을 모두 해제한 상태입니다. 자가진단 탭에서 관심 있는 트랙을 하나 이상 선택하면 트랙별 부족 모듈과 추천 과목을 확인할 수 있습니다."
+          headingRef={headingRef}
         />
         <div className="empty-state">
           <strong>현재 선택된 트랙 없음</strong>
@@ -2950,6 +3163,7 @@ function ResultDetailView({
         eyebrow="진단 결과"
         title={result.passed ? "선택한 트랙 조건을 모두 충족했습니다." : "선택한 트랙 중 보완해야 할 조건이 있습니다."}
         body="복수 트랙을 선택한 경우 어느 트랙이 충족됐고 어느 트랙이 부족한지 먼저 구분해서 보여줍니다."
+        headingRef={headingRef}
       />
       <div className="result-top-grid">
         <div className="result-top-summary">
@@ -3659,11 +3873,27 @@ function SemesterCourseSummary({ title, courses: summaryCourses }: { title: stri
   );
 }
 
-function SectionHeader({ eyebrow, title, body }: { eyebrow: string; title: string; body: string }) {
+function SectionHeader({
+  eyebrow,
+  title,
+  body,
+  headingRef,
+}: {
+  eyebrow: string;
+  title: string;
+  body: string;
+  headingRef?: RefObject<HTMLHeadingElement | null>;
+}) {
   return (
     <div className="section-header">
       <span>{eyebrow}</span>
-      <h2>{title}</h2>
+      <h2
+        className={headingRef ? "step-focus-heading" : undefined}
+        ref={headingRef}
+        tabIndex={headingRef ? -1 : undefined}
+      >
+        {title}
+      </h2>
       <p>{body}</p>
     </div>
   );
