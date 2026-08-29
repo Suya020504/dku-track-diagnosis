@@ -1,9 +1,12 @@
 import { useState, type RefObject } from "react";
+import { tracks } from "../../data/curriculumData";
 import { getAllowedStudyPaths } from "../../data/requirementRules2026";
 import type {
   ServiceGoal,
   StudentAffiliation,
   StudentProfile,
+  StudyPath,
+  TrackId,
 } from "../../types";
 
 const AFFILIATION_LABELS = {
@@ -32,7 +35,9 @@ type DraftProfile = Partial<StudentProfile> &
 type StudyPathSetupProps = {
   profile?: StudentProfile;
   initialDraft?: Partial<StudentProfile>;
+  targetTrackId?: TrackId;
   headingRef?: RefObject<HTMLHeadingElement | null>;
+  onTargetTrackChange?: (trackId: TrackId | undefined) => void;
   onChange: (draft: DraftProfile) => void;
   onComplete: (profile: StudentProfile) => void;
 };
@@ -40,7 +45,9 @@ type StudyPathSetupProps = {
 export function StudyPathSetup({
   profile,
   initialDraft,
+  targetTrackId,
   headingRef,
+  onTargetTrackChange,
   onChange,
   onComplete,
 }: StudyPathSetupProps) {
@@ -51,10 +58,17 @@ export function StudyPathSetup({
     ...initialDraft,
     ...profile,
   });
+  const [draftTargetTrackId, setDraftTargetTrackId] = useState<TrackId | undefined>(targetTrackId);
   const allowedPaths = draft.affiliation
     ? getAllowedStudyPaths(draft.affiliation)
     : [];
-  const valid = Boolean(draft.affiliation && draft.studyPath);
+  const pathValid = Boolean(
+    draft.affiliation &&
+      draft.studyPath &&
+      allowedPaths.includes(draft.studyPath),
+  );
+  const valid = pathValid &&
+    (draft.studyPath !== "track-major" || Boolean(draftTargetTrackId));
 
   function update(patch: Partial<DraftProfile>) {
     const next = { ...draft, ...patch };
@@ -63,7 +77,27 @@ export function StudyPathSetup({
   }
 
   function changeAffiliation(affiliation: StudentAffiliation) {
+    changeTargetTrack(undefined);
     update({ affiliation, studyPath: undefined });
+  }
+
+  function changeStudyPath(studyPath: StudyPath) {
+    if (studyPath !== "track-major") changeTargetTrack(undefined);
+    update({ studyPath });
+  }
+
+  function changeTargetTrack(trackId: TrackId | undefined) {
+    setDraftTargetTrackId(trackId);
+    onTargetTrackChange?.(trackId);
+  }
+
+  function complete() {
+    if (!valid || !draft.affiliation || !draft.studyPath) return;
+    onComplete({
+      ...draft,
+      affiliation: draft.affiliation,
+      studyPath: draft.studyPath,
+    });
   }
 
   return (
@@ -131,9 +165,31 @@ export function StudyPathSetup({
                     type="radio"
                     name="studyPath"
                     checked={draft.studyPath === studyPath}
-                    onChange={() => update({ studyPath })}
+                    onChange={() => changeStudyPath(studyPath)}
                   />
                   <span>{STUDY_PATH_LABELS[studyPath]}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
+
+        {draft.studyPath === "track-major" && (
+          <fieldset className="study-path-fieldset">
+            <legend>진단할 트랙</legend>
+            <div className="study-path-option-grid track-options">
+              {tracks.map((track) => (
+                <label className="study-path-option" key={track.id}>
+                  <input
+                    type="radio"
+                    name="targetTrackId"
+                    checked={draftTargetTrackId === track.id}
+                    onChange={() => changeTargetTrack(track.id)}
+                  />
+                  <span>
+                    <strong>{track.name}</strong>
+                    <small>{track.kind}</small>
+                  </span>
                 </label>
               ))}
             </div>
@@ -166,7 +222,7 @@ export function StudyPathSetup({
           className="primary-button study-path-complete"
           type="button"
           disabled={!valid}
-          onClick={() => valid && onComplete(draft as StudentProfile)}
+          onClick={complete}
         >
           이수 과목 선택으로 이동
         </button>

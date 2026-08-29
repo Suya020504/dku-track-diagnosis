@@ -295,29 +295,29 @@ function getEnrollmentTypeForProfile(profile?: StudentProfile): EnrollmentType {
   return "primary";
 }
 
-function getProfileForEnrollmentType(
-  current: StudentProfile | undefined,
-  enrollmentType: EnrollmentType,
-): StudentProfile {
-  const base = {
-    goal: current?.goal ?? "check-progress",
-    entryYear: current?.entryYear,
-    curriculumRuleVersion: "2026-provided-final-plan" as const,
-    ruleApplicability: current?.ruleApplicability ?? "reference-only",
+export function completeProfileTransition(
+  current: SavedAppStateV2,
+  profile: StudentProfile,
+): { state: SavedAppStateV2; step: DiagnosisStep } {
+  const trackMajor = profile.studyPath === "track-major";
+  const state: SavedAppStateV2 = {
+    ...current,
+    profile,
+    profileDraft: undefined,
+    targetTrackId: trackMajor ? current.targetTrackId : undefined,
+    comparisonTrackIds: trackMajor ? current.comparisonTrackIds : [],
   };
+  return {
+    state,
+    step: resolveDiagnosisStep("?view=diagnosis&step=courses", state),
+  };
+}
 
-  if (enrollmentType === "double-major") {
-    return { ...base, affiliation: "external-student", studyPath: "double-major" };
-  }
-  if (enrollmentType === "minor") {
-    return { ...base, affiliation: "external-student", studyPath: "minor" };
-  }
-
-  const studyPath = current?.affiliation === "department-student" &&
-    ["advanced-major", "track-major", "department-with-other-major"].includes(current.studyPath)
-    ? current.studyPath
-    : "advanced-major";
-  return { ...base, affiliation: "department-student", studyPath };
+export function reviewCourseInputTransition(
+  current: SavedAppStateV2,
+  courseInputReviewedAt: string,
+): SavedAppStateV2 {
+  return { ...current, courseInputReviewedAt };
 }
 
 function App() {
@@ -425,13 +425,21 @@ function App() {
   }
 
   function completeProfile(profile: StudentProfile) {
-    persist((current) => {
-      const targetTrackId = profile.studyPath === "track-major"
-        ? current.targetTrackId
-        : undefined;
-      return { ...current, profile, profileDraft: undefined, targetTrackId };
-    });
-    navigateDiagnosisStep("courses");
+    const transition = completeProfileTransition(savedState, profile);
+    setStorageError(!saveAppState(transition.state));
+    setSavedState(transition.state);
+    setTrackSetupOpen(false);
+    navigateDiagnosisStep(transition.step);
+  }
+
+  function changeTargetTrack(targetTrackId: TrackId | undefined) {
+    persist((current) => ({
+      ...current,
+      targetTrackId,
+      comparisonTrackIds: targetTrackId
+        ? current.comparisonTrackIds.filter((trackId) => trackId !== targetTrackId)
+        : [],
+    }));
   }
 
   function navigateDiagnosisStep(step: DiagnosisStep) {
@@ -486,18 +494,6 @@ function App() {
     });
   }
 
-  function changeEnrollmentType(enrollmentType: EnrollmentType) {
-    persist((current) => {
-      const profile = getProfileForEnrollmentType(current.profile, enrollmentType);
-      return {
-        ...current,
-        profile,
-        profileDraft: undefined,
-        targetTrackId: profile.studyPath === "track-major" ? current.targetTrackId : undefined,
-      };
-    });
-  }
-
   function changePlanningSemester(semester: LabPlanningSemester) {
     persist((current) => ({
       ...current,
@@ -523,14 +519,17 @@ function App() {
 
   function confirmCourseInput() {
     if (requiresTrack && !savedState.targetTrackId) {
-      setTrackSetupOpen(true);
+      navigateDiagnosisStep("profile");
       return;
     }
-    persist((current) => ({
-      ...current,
-      courseInputReviewedAt: new Date().toISOString(),
-    }));
-    navigateDiagnosisStep("result");
+    const next = reviewCourseInputTransition(savedState, new Date().toISOString());
+    setStorageError(!saveAppState(next));
+    setSavedState(next);
+    navigateDiagnosisStep(resolveDiagnosisStep("?view=result&step=result", next));
+  }
+
+  function editProfile() {
+    navigateDiagnosisStep("profile");
   }
 
   function openGuide() {
@@ -579,22 +578,12 @@ function App() {
         <StudyPathSetup
           profile={savedState.profile}
           initialDraft={savedState.profileDraft}
+          targetTrackId={savedState.targetTrackId}
           headingRef={stepHeadingRef}
+          onTargetTrackChange={changeTargetTrack}
           onChange={updateProfileDraft}
           onComplete={completeProfile}
         />
-        {savedState.profile?.studyPath === "track-major" && !savedState.targetTrackId && (
-          <div className="profile-track-setup">
-            <TrackPicker
-              selectedTrackIds={selectedTrackIds}
-              enrollmentType={enrollmentType}
-              onToggleTrack={toggleTrack}
-              onEnrollmentTypeChange={changeEnrollmentType}
-              onReset={resetState}
-              onContinue={() => navigateDiagnosisStep("courses")}
-            />
-          </div>
-        )}
       </div>
     );
   }
@@ -701,7 +690,7 @@ function App() {
               selectedTrackIds={selectedTrackIds}
               enrollmentType={enrollmentType}
               onToggleTrack={toggleTrack}
-              onEnrollmentTypeChange={changeEnrollmentType}
+              onEditProfile={editProfile}
               onReset={resetState}
             />
             <section className="primary-panel">
@@ -712,12 +701,12 @@ function App() {
 
         {activeView === "diagnosis" && (
           <div className="view-layout">
-            {trackSetupOpen ? (
+            {requiresTrack && (trackSetupOpen ? (
               <TrackPicker
                 selectedTrackIds={selectedTrackIds}
                 enrollmentType={enrollmentType}
                 onToggleTrack={toggleTrack}
-                onEnrollmentTypeChange={changeEnrollmentType}
+                onEditProfile={editProfile}
                 onReset={resetState}
                 onContinue={() => setTrackSetupOpen(false)}
               />
@@ -727,7 +716,7 @@ function App() {
                 enrollmentType={enrollmentType}
                 onEdit={() => setTrackSetupOpen(true)}
               />
-            )}
+            ))}
             <div className="content-grid">
               <section className="primary-panel">
                 <DiagnosisView
@@ -750,6 +739,7 @@ function App() {
                 selectedTrackNames={selectedTracks.map((track) => track.name)}
                 enrollmentType={enrollmentType}
                 completedCount={completedCourseIds.length}
+                allowResult={!requiresTrack || Boolean(savedState.targetTrackId)}
                 onShowResult={confirmCourseInput}
               />
             </div>
@@ -765,7 +755,7 @@ function App() {
                 completedCourseIds={completedCourseIds}
                 enrollmentType={enrollmentType}
                 planningSemester={labPlanningSemester}
-                onEnrollmentTypeChange={changeEnrollmentType}
+                onEditProfile={editProfile}
                 onPlanningSemesterChange={changePlanningSemester}
                 onReset={() => resetState("lab")}
               />
@@ -798,6 +788,7 @@ function App() {
               plannedRecommendations={plannedRecommendations}
               plannedCourseTerms={plannedCourseTerms}
               headingRef={stepHeadingRef}
+              allowTracklessResult={!requiresTrack}
               onGoToPlan={() => setActiveView("experiment")}
             />
           </section>
@@ -1971,50 +1962,53 @@ function CoursePill({ course }: { course: Course }) {
   );
 }
 
+export function EnrollmentProfileSummary({
+  enrollmentType,
+  onEditProfile,
+}: {
+  enrollmentType: EnrollmentType;
+  onEditProfile: () => void;
+}) {
+  const selected = enrollmentOptions.find((option) => option.id === enrollmentType) ?? enrollmentOptions[0];
+  return (
+    <div className="study-mode-panel enrollment-profile-summary" aria-label="현재 이수 경로">
+      <div className="study-mode-head">
+        <strong>{selected.title}</strong>
+        <span>{selected.description}</span>
+      </div>
+      <button className="icon-button" type="button" onClick={onEditProfile}>
+        이수 경로 변경
+      </button>
+    </div>
+  );
+}
+
 function TrackPicker({
   selectedTrackIds,
   enrollmentType,
   onToggleTrack,
-  onEnrollmentTypeChange,
+  onEditProfile,
   onReset,
   onContinue,
 }: {
   selectedTrackIds: TrackId[];
   enrollmentType: EnrollmentType;
   onToggleTrack: (trackId: TrackId) => void;
-  onEnrollmentTypeChange: (enrollmentType: EnrollmentType) => void;
+  onEditProfile: () => void;
   onReset: () => void;
   onContinue?: () => void;
 }) {
   return (
     <section className="track-picker" aria-label="트랙 복수 선택">
       <div className="track-picker-copy">
-        <strong>1. 이수 유형과 관심 트랙을 선택하세요</strong>
+        <strong>관심 트랙을 선택하세요</strong>
         <span>여러 트랙을 선택하면 겹치는 과목까지 함께 계산합니다.</span>
       </div>
       <button className="icon-button reset-track-button" type="button" onClick={() => onReset()} title="입력 초기화">
         <RotateCcw aria-hidden="true" size={18} />
         <span>입력 초기화</span>
       </button>
-      <div className="study-mode-panel" aria-label="이수 유형 필터">
-        <div className="study-mode-head">
-          <strong>이수 유형</strong>
-          <span>복수전공·부전공은 1학년 필수 과목을 필수 누락에서 제외합니다.</span>
-        </div>
-        <div className="study-mode-options">
-          {enrollmentOptions.map((option) => (
-            <label className={enrollmentType === option.id ? "study-mode active" : "study-mode"} key={option.id}>
-              <input
-                type="radio"
-                name="enrollment-type"
-                checked={enrollmentType === option.id}
-                onChange={() => onEnrollmentTypeChange(option.id)}
-              />
-              <span>{option.label}</span>
-            </label>
-          ))}
-        </div>
-      </div>
+      <EnrollmentProfileSummary enrollmentType={enrollmentType} onEditProfile={onEditProfile} />
       <div className="track-kind-groups">
         {trackKindGuides.map((guide) => {
           const groupedTracks = tracks.filter((track) => track.kind === guide.kind);
@@ -2413,7 +2407,7 @@ function LabView({
   completedCourseIds,
   enrollmentType,
   planningSemester,
-  onEnrollmentTypeChange,
+  onEditProfile,
   onPlanningSemesterChange,
   onReset,
 }: {
@@ -2421,7 +2415,7 @@ function LabView({
   completedCourseIds: string[];
   enrollmentType: EnrollmentType;
   planningSemester: LabPlanningSemester;
-  onEnrollmentTypeChange: (enrollmentType: EnrollmentType) => void;
+  onEditProfile: () => void;
   onPlanningSemesterChange: (semester: LabPlanningSemester) => void;
   onReset: () => void;
 }) {
@@ -2487,19 +2481,7 @@ function LabView({
             <strong>입력 기준</strong>
             <span>{completedCourseIds.length}개 과목 체크됨</span>
           </div>
-          <div className="study-mode-options">
-            {enrollmentOptions.map((option) => (
-              <label className={enrollmentType === option.id ? "study-mode active" : "study-mode"} key={option.id}>
-                <input
-                  type="radio"
-                  name="lab-enrollment-type"
-                  checked={enrollmentType === option.id}
-                  onChange={() => onEnrollmentTypeChange(option.id)}
-                />
-                <span>{option.label}</span>
-              </label>
-            ))}
-          </div>
+          <EnrollmentProfileSummary enrollmentType={enrollmentType} onEditProfile={onEditProfile} />
           <label className="lab-semester-select">
             현재 학년/학기
             <select
@@ -3128,6 +3110,7 @@ function ResultDetailView({
   plannedRecommendations,
   plannedCourseTerms,
   headingRef,
+  allowTracklessResult,
   onGoToPlan,
 }: {
   result: DiagnosisResult;
@@ -3135,12 +3118,44 @@ function ResultDetailView({
   plannedRecommendations: TrackRecommendation[];
   plannedCourseTerms: Record<string, PlanTerm>;
   headingRef: RefObject<HTMLHeadingElement | null>;
+  allowTracklessResult: boolean;
   onGoToPlan: () => void;
 }) {
   const neededCoursePlans = getTrackNeededCoursePlans(result.trackResults);
   const [activeResultTab, setActiveResultTab] = useState<"summary" | "recommendation" | "modules" | "required">("summary");
 
   if (result.trackResults.length === 0) {
+    if (allowTracklessResult) {
+      return (
+        <div className="view-stack result-view">
+          <SectionHeader
+            eyebrow="진단 결과"
+            title="입력한 과목을 기준으로 결과를 저장했습니다."
+            body="현재 이수 경로는 목표 트랙을 선택하지 않아도 과목 입력 결과를 확인할 수 있습니다. 트랙별 비교가 필요할 때만 학기 계획에서 관심 트랙을 살펴보세요."
+            headingRef={headingRef}
+          />
+          <div className="result-top-grid">
+            <div className="result-top-summary">
+              <div className="result-grid">
+                <ResultMetric label="총 체크 학점" value={`${result.totalCredits}학점`} />
+                <ResultMetric label="필수 이수" value={`${result.requiredCreditsCompleted}/${result.requiredCreditsTotal}학점`} />
+              </div>
+              <EnrollmentPolicyNotice enrollmentType={result.enrollmentType} />
+            </div>
+            <div className="result-action-bar no-print">
+              <div>
+                <strong>결과 리포트 저장</strong>
+                <span>브라우저 인쇄 창에서 PDF 저장 또는 프린터 출력을 선택할 수 있습니다.</span>
+              </div>
+              <button className="print-button" type="button" onClick={printResultReport}>
+                <Printer aria-hidden="true" size={18} />
+                <span>PDF 저장/인쇄</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="view-stack">
         <SectionHeader
@@ -3702,17 +3717,19 @@ function ContactView() {
   );
 }
 
-function DiagnosisPanel({
+export function DiagnosisPanel({
   result,
   selectedTrackNames,
   enrollmentType,
   completedCount,
+  allowResult,
   onShowResult,
 }: {
   result: DiagnosisResult;
   selectedTrackNames: string[];
   enrollmentType: EnrollmentType;
   completedCount: number;
+  allowResult: boolean;
   onShowResult: () => void;
 }) {
   const enrollmentLabel = getEnrollmentLabel(enrollmentType);
@@ -3722,13 +3739,21 @@ function DiagnosisPanel({
       <aside className="diagnosis-panel" aria-label="진단 결과 요약">
         <div className="status-head">
           <span>단국대학교 식품자원경제학과 · {enrollmentLabel}</span>
-          <h2>트랙을 선택하세요</h2>
-          <p>관심 있는 트랙을 하나 이상 선택하면 부족 모듈과 추천 과목이 계산됩니다.</p>
+          <h2>{allowResult ? "입력한 과목을 확인하세요" : "트랙을 선택하세요"}</h2>
+          <p>{allowResult
+            ? "현재 이수 경로는 목표 트랙 없이 과목 입력 결과를 저장할 수 있습니다."
+            : "관심 있는 트랙을 하나 이상 선택하면 부족 모듈과 추천 과목이 계산됩니다."}</p>
         </div>
         <div className="empty-state compact">
-          <strong>선택된 트랙 없음</strong>
-          <span>모든 트랙을 해제한 상태입니다.</span>
+          <strong>{completedCount}개 과목 체크됨</strong>
+          <span>{allowResult ? "트랙 선택은 선택 사항입니다." : "선택된 트랙이 없습니다."}</span>
         </div>
+        {allowResult && (
+          <button className="primary-button" type="button" onClick={onShowResult}>
+            <Save aria-hidden="true" size={18} />
+            <span>진단 결과 자세히 보기</span>
+          </button>
+        )}
       </aside>
     );
   }

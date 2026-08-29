@@ -48,4 +48,66 @@ describe("StudyPathSetup", () => {
     expect(markup).toContain("부전공");
     expect(markup).toContain("disabled=\"\"");
   });
+
+  it("requires an explicit target track for track-major", () => {
+    const markup = renderToStaticMarkup(
+      <StudyPathSetup
+        profile={{
+          goal: "check-progress",
+          affiliation: "department-student",
+          studyPath: "track-major",
+          curriculumRuleVersion: "2026-provided-final-plan",
+          ruleApplicability: "reference-only",
+        }}
+        targetTrackId={undefined}
+        onTargetTrackChange={vi.fn()}
+        onChange={vi.fn()}
+        onComplete={vi.fn()}
+      />,
+    );
+
+    expect(markup).toContain("진단할 트랙");
+    expect(markup).toContain("푸드마케팅");
+    expect(markup).toContain("경제학");
+    expect(markup).toContain("disabled=\"\"");
+  });
+
+  it("enables track-major completion after an explicit target is selected", () => {
+    const markup = renderToStaticMarkup(
+      <StudyPathSetup
+        profile={{
+          goal: "check-progress",
+          affiliation: "department-student",
+          studyPath: "track-major",
+          curriculumRuleVersion: "2026-provided-final-plan",
+          ruleApplicability: "reference-only",
+        }}
+        targetTrackId="food-marketing"
+        onTargetTrackChange={vi.fn()}
+        onChange={vi.fn()}
+        onComplete={vi.fn()}
+      />,
+    );
+
+    expect(markup).toContain("푸드마케팅");
+    expect(markup).not.toContain("disabled=\"\"");
+  });
+
+  it("keeps an incompatible affiliation and path pair incomplete", () => {
+    const markup = renderToStaticMarkup(
+      <StudyPathSetup
+        profile={{
+          goal: "check-progress",
+          affiliation: "external-student",
+          studyPath: "advanced-major",
+          curriculumRuleVersion: "2026-provided-final-plan",
+          ruleApplicability: "reference-only",
+        }}
+        onChange={vi.fn()}
+        onComplete={vi.fn()}
+      />,
+    );
+
+    expect(markup).toContain("disabled=\"\"");
+  });
 });
