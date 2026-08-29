@@ -1571,9 +1571,15 @@ git commit -m "feat: restore path diagnosis navigation"
 ### Task 7: Foundation Release Gate And Documentation
 
 **Files:**
+- Modify: `.gitignore`
 - Modify: `README.md`
 - Modify: `CHANGELOG.md`
 - Create: `reports/validation/2026-08-30-track-foundation-validation.md`
+- Create: `docs/assets/2026-08-30-foundation/01-profile-desktop.png`
+- Create: `docs/assets/2026-08-30-foundation/02-courses-desktop.png`
+- Create: `docs/assets/2026-08-30-foundation/03-result-desktop.png`
+- Create: `docs/assets/2026-08-30-foundation/04-profile-mobile.png`
+- Create: `docs/assets/2026-08-30-foundation/05-result-mobile.png`
 
 **Interfaces:**
 - Consumes: all Task 1–6 test and browser evidence
@@ -1616,6 +1622,7 @@ Create the report with:
 - 뒤로가기·앞으로가기·새로고침
 - 키보드 흐름
 - 콘솔 오류·가로 넘침
+- 캡처 파일명·SHA-256·검수 여부
 
 ## 남은 위험
 - 적용 학번과 필수 변형 공식 확인
@@ -1626,7 +1633,17 @@ Create the report with:
 
 Do not write test counts until the commands have actually run.
 
-- [ ] **Step 3: Update collaboration docs**
+- [ ] **Step 3: Preserve accepted browser evidence and ignore future scratch output**
+
+Copy the five accepted files from `output/playwright/foundation-20260830/` to `docs/assets/2026-08-30-foundation/` with the same names. Compare source and destination SHA-256 values and record them in the validation report. Add this exact line to `.gitignore`:
+
+```gitignore
+/output/
+```
+
+Do not delete the source screenshots. Confirm `git status --short` no longer lists `output/` and the five documentation copies are staged later.
+
+- [ ] **Step 4: Update collaboration docs**
 
 README and CHANGELOG must distinguish:
 
@@ -1636,7 +1653,7 @@ README and CHANGELOG must distinguish:
 - features implemented in this foundation
 - features still in the next plans
 
-- [ ] **Step 4: Run documentation and status checks**
+- [ ] **Step 5: Run documentation and status checks**
 
 Run:
 
@@ -1646,15 +1663,15 @@ git status --short
 git diff --stat
 ```
 
-Expected: no unsupported certainty copy; only Task 7 documentation and intentional Task 1–6 files changed.
+Expected: no unsupported certainty copy; Task 7 docs, `.gitignore`, and five documentation screenshots are the only uncommitted files.
 
-- [ ] **Step 5: Commit Task 7**
+- [ ] **Step 6: Commit Task 7**
 
 ```powershell
-git add README.md CHANGELOG.md reports/validation/2026-08-30-track-foundation-validation.md
+git add .gitignore README.md CHANGELOG.md reports/validation/2026-08-30-track-foundation-validation.md docs/assets/2026-08-30-foundation
 git commit -m "docs: record track foundation validation"
 ```
 
-- [ ] **Step 6: Stop before later feature plans**
+- [ ] **Step 7: Stop before later feature plans**
 
 Report the completed foundation, verification results, remaining official-data risks, and exact next plan. Do not start the recommendation, graduation planner, PDF, or image-generation implementation in the same unchecked batch.
