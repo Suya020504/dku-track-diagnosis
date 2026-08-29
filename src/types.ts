@@ -19,6 +19,57 @@ export type PlanningSemester =
 
 export type PlanTerm = "next" | "following" | "later";
 
+export type ServiceGoal =
+  | "learn-track-system"
+  | "find-track"
+  | "check-progress"
+  | "plan-graduation";
+
+export type StudentAffiliation = "department-student" | "external-student";
+
+export type StudyPath =
+  | "advanced-major"
+  | "track-major"
+  | "department-with-other-major"
+  | "double-major"
+  | "minor";
+
+export type RuleApplicability =
+  | "student-confirmed"
+  | "officially-verified"
+  | "reference-only";
+
+export type StudentProfile = {
+  goal: ServiceGoal;
+  affiliation: StudentAffiliation;
+  studyPath: StudyPath;
+  entryYear?: number;
+  curriculumRuleVersion: "2026-provided-final-plan";
+  ruleApplicability: RuleApplicability;
+};
+
+export type CourseSelectionStatus = "completed" | "in-progress" | "planned";
+
+export type CourseSelectionRecord = {
+  courseId: string;
+  status: CourseSelectionStatus;
+  plannedTerm?: PlanTerm;
+};
+
+export type AdditionalMajorCredit = {
+  id: string;
+  label: string;
+  credits: number;
+  status: "student-entered" | "officially-verified";
+  note?: string;
+};
+
+export type RequirementEvidenceStatus =
+  | "official-public"
+  | "provided-final-plan"
+  | "project-derived"
+  | "official-review-required";
+
 export type ModuleId =
   | "A"
   | "B"
