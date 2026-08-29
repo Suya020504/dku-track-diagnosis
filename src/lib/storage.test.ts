@@ -1,6 +1,16 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { STORAGE_KEY } from "../data/curriculumData";
-import { emptyState, loadSavedState, saveState } from "./storage";
+import type { DiagnosisSnapshot } from "../types";
+import {
+  createEmptyAppState,
+  emptyState,
+  loadAppState,
+  loadSavedState,
+  migrateV1State,
+  normalizeSnapshotHistory,
+  saveAppState,
+  saveState,
+} from "./storage";
 
 const values = new Map<string, string>();
 
@@ -13,6 +23,20 @@ Object.defineProperty(globalThis, "localStorage", {
     clear: () => values.clear(),
   },
 });
+
+function makeStorage(initial: Record<string, string>): Storage {
+  const storageValues = new Map(Object.entries(initial));
+  return {
+    getItem: (key) => storageValues.get(key) ?? null,
+    setItem: (key, value) => void storageValues.set(key, value),
+    removeItem: (key) => void storageValues.delete(key),
+    clear: () => storageValues.clear(),
+    key: (index) => [...storageValues.keys()][index] ?? null,
+    get length() {
+      return storageValues.size;
+    },
+  };
+}
 
 describe("diagnosis storage", () => {
   beforeEach(() => values.clear());
@@ -64,5 +88,53 @@ describe("diagnosis storage", () => {
     );
 
     expect(loadSavedState().plannedCourseTerms).toEqual({});
+  });
+
+  it("migrates v1 completed courses and remote planned terms without loss", () => {
+    const migrated = migrateV1State({
+      curriculumYear: 2026,
+      trackIds: ["food-marketing"],
+      completedCourseIds: ["b-2", "f-1"],
+      enrollmentType: "primary",
+      plannedCourseTerms: { "h-1": "next" },
+    });
+
+    expect(migrated.courseSelections).toEqual([
+      { courseId: "b-2", status: "completed" },
+      { courseId: "f-1", status: "completed" },
+      { courseId: "h-1", status: "planned", plannedTerm: "next" },
+    ]);
+    expect(migrated.profile?.affiliation).toBe("department-student");
+    expect(migrated.profile?.ruleApplicability).toBe("reference-only");
+  });
+
+  it("keeps only the newest twelve diagnosis snapshots", () => {
+    const snapshots = Array.from({ length: 13 }, (_, index) => ({
+      id: `snapshot-${index + 1}`,
+    })) as DiagnosisSnapshot[];
+
+    expect(normalizeSnapshotHistory(snapshots)).toHaveLength(12);
+    expect(normalizeSnapshotHistory(snapshots)[0].id).toBe("snapshot-2");
+  });
+
+  it("returns the last valid state when the active payload is corrupt", () => {
+    const validState = createEmptyAppState();
+    const storage = makeStorage({
+      "track-sim:v2": "{broken",
+      "track-sim:v2:last-valid": JSON.stringify(validState),
+    });
+
+    expect(loadAppState(storage)).toEqual(validState);
+  });
+
+  it("returns false when v2 storage throws while saving", () => {
+    const throwingStorage: Storage = {
+      ...makeStorage({}),
+      setItem: () => {
+        throw new Error("quota exceeded");
+      },
+    };
+
+    expect(saveAppState(createEmptyAppState(), throwingStorage)).toBe(false);
   });
 });

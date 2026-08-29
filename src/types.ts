@@ -64,6 +64,33 @@ export type AdditionalMajorCredit = {
   note?: string;
 };
 
+export type DiagnosisSnapshot = {
+  id: string;
+  createdAt: string;
+  ruleVersion: "2026-provided-final-plan";
+  profile: StudentProfile;
+  courseSelections: CourseSelectionRecord[];
+  additionalMajorCredits: AdditionalMajorCredit[];
+  targetTrackId?: TrackId;
+  comparisonTrackIds: TrackId[];
+  result: PathProgressResult;
+};
+
+export type SavedAppStateV2 = {
+  version: 2;
+  profile?: StudentProfile;
+  profileDraft?: Partial<StudentProfile>;
+  courseSelections: CourseSelectionRecord[];
+  additionalMajorCredits: AdditionalMajorCredit[];
+  courseInputReviewedAt?: string;
+  targetTrackId?: TrackId;
+  comparisonTrackIds: TrackId[];
+  interestSurvey?: unknown;
+  currentSemester?: PlanningSemester;
+  targetGraduationSemester?: PlanningSemester;
+  snapshots: DiagnosisSnapshot[];
+};
+
 export type RequirementEvidenceStatus =
   | "official-public"
   | "provided-final-plan"
