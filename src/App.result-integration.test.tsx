@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import App from "./App";
+import { calculateDiagnosis } from "./lib/diagnosis";
 import { STORAGE_KEY_V2 } from "./lib/storage";
 import type { SavedAppStateV2, StudentProfile } from "./types";
 
@@ -108,6 +109,35 @@ describe("path-aware result integration", () => {
     );
 
     expect(markup).toContain("참고 계산상 충족");
+    expect(markup).not.toContain("선택한 트랙 조건을 모두 충족했습니다.");
+  });
+
+  it("keeps a legacy-passed track-major as a reference calculation", () => {
+    const completedCourseIds = [
+      "b-2", "c-1", "c-2", "c-3", "f-1", "f-2", "h-1", "h-2", "i-1", "i-2", "j-1", "j-2", "l-1", "l-2",
+    ];
+    const legacyResult = calculateDiagnosis({
+      trackIds: ["food-marketing"],
+      completedCourseIds,
+      enrollmentType: "primary",
+    });
+    const markup = renderApp(
+      state(trackProfile, {
+        targetTrackId: "food-marketing",
+        courseSelections: completedCourseIds.map((courseId) => ({ courseId, status: "completed" as const })),
+        additionalMajorCredits: [{
+          id: "verified-transfer-credit",
+          label: "공식 인정 전공학점",
+          credits: 21,
+          status: "officially-verified",
+        }],
+      }),
+      "?view=result&step=result",
+    );
+
+    expect(legacyResult.passed).toBe(true);
+    expect(markup).toContain("참고 계산상 충족");
+    expect(markup).not.toContain("현재 입력 기준 충족");
     expect(markup).not.toContain("선택한 트랙 조건을 모두 충족했습니다.");
   });
 
