@@ -3,6 +3,25 @@ import type { Course, CurriculumModule, Track } from "../types";
 export const CURRICULUM_YEAR = 2026 as const;
 export const STORAGE_KEY = "track-sim:v1";
 
+export const OFFICIAL_CURRICULUM_SOURCE = {
+  title: "2026학년도 학사종합안내",
+  organization: "단국대학교",
+  referenceYear: 2026,
+  currentVerifiedAt: "2026-08-30",
+  currentServerModifiedAt: "2026-08-27T11:19:56+09:00",
+  currentPage: 72,
+  stableSnapshotPage: 70,
+  url: "https://www.dankook.ac.kr/documents/d/kor/2026-1-_-260119-pdf?download=true#page=72",
+  fixedSnapshotUrl:
+    "https://lawbk21.dankook.ac.kr/documents/20118/12232463/2026%ED%95%99%EB%85%84%EB%8F%84%201%ED%95%99%EA%B8%B0%20%EC%A2%85%ED%95%A9%EA%B0%95%EC%9D%98%EC%8B%9C%EA%B0%84%ED%91%9C_%EC%97%85%EB%A1%9C%EB%93%9C%EC%9A%A9260119.pdf/0ecd0cf2-f64b-5986-a0c2-d01235678d4b?version=7.0#page=70",
+  confirmedScope: [
+    "2024학년도 개설 모듈형 트랙제",
+    "학과전공 4개와 융합전공 1개",
+    "트랙별 모듈 구성",
+    "15개 모듈의 과목명과 학점",
+  ],
+} as const;
+
 export const modules: CurriculumModule[] = [
   { id: "A", name: "학문기초(교양)", category: "liberal", courseCount: 4 },
   { id: "B", name: "경제학기초", category: "foundation", courseCount: 2 },

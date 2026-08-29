@@ -17,6 +17,21 @@ export type PlanningSemester =
   | "4-1"
   | "4-2";
 
+export type AcademicSemesterNumber = 1 | 2;
+export type AcademicTermId = `${number}-${AcademicSemesterNumber}`;
+
+export type CourseOfferingEvidence =
+  | "historical-2026-snapshot"
+  | "unknown";
+
+export type CourseOfferingRecord = {
+  courseId: string;
+  officialCourseCode: string;
+  observedProgramSemesters: PlanningSemester[];
+  timetableName?: string;
+  evidence: CourseOfferingEvidence;
+};
+
 export type PlanTerm = "next" | "following" | "later";
 
 export type ServiceGoal =
