@@ -1155,6 +1155,32 @@ function completeProfile(profile: StudentProfile) {
 
 const requiresTrack = savedState.profile?.studyPath === "track-major";
 
+const [diagnosisStep, setDiagnosisStep] = useState(() =>
+  resolveDiagnosisStep(window.location.search, savedState),
+);
+const stepHeadingRef = useRef<HTMLHeadingElement>(null);
+
+useEffect(() => {
+  function syncFromLocation() {
+    const next = resolveDiagnosisStep(window.location.search, savedState);
+    if (new URLSearchParams(window.location.search).get("step") !== next) {
+      writeDiagnosisStepToHistory(next, "replace");
+    }
+    setDiagnosisStep(next);
+  }
+  window.addEventListener("popstate", syncFromLocation);
+  return () => window.removeEventListener("popstate", syncFromLocation);
+}, [savedState]);
+
+useEffect(() => {
+  stepHeadingRef.current?.focus();
+}, [diagnosisStep]);
+
+function navigateDiagnosisStep(step: DiagnosisStep) {
+  writeDiagnosisStepToHistory(step, "push");
+  setDiagnosisStep(step);
+}
+
 if (diagnosisStep === "profile" || !savedState.profile) {
   return <StudyPathSetup
     profile={savedState.profile}
@@ -1166,6 +1192,8 @@ if (diagnosisStep === "profile" || !savedState.profile) {
 ```
 
 Use `savedState.profileDraft` as the initial draft when no complete profile exists by extending the component prop to accept `initialDraft`. Require a track only when `requiresTrack` is true. Preserve the current course-search and filter markup after setup completion and show `role="alert"` when `storageError` is true.
+
+Import the Task 6 routing functions. Give every step heading `ref={stepHeadingRef}`, `tabIndex={-1}`, and a visible focus style. When the user confirms direct course input, persist `courseInputReviewedAt: new Date().toISOString()` before navigating to `result`.
 
 Do not redesign the remaining page in this task.
 
@@ -1179,7 +1207,24 @@ Run: `pnpm.cmd run build`
 
 Expected: all PASS.
 
-- [ ] **Step 6: Commit Task 4**
+- [ ] **Step 6: Run browser verification**
+
+Start: `pnpm.cmd run dev`
+
+Verify on desktop `1440×900` and mobile `390×844`:
+
+1. first visit → profile → direct course selection → result
+2. minor reaches course selection without a track
+3. track-major cannot reach result without selecting a track
+4. browser back/forward restores the prior step
+5. refresh preserves the current step and selected courses
+6. no horizontal overflow
+7. keyboard-only profile and course flow completes
+8. console errors and warnings are zero
+
+Capture accepted screenshots under `output/playwright/foundation-20260830/` and inspect each image before reporting.
+
+- [ ] **Step 7: Commit Task 4**
 
 ```powershell
 git add src/features/profile/StudyPathSetup.tsx src/features/profile/StudyPathSetup.test.tsx src/App.tsx src/styles.css
@@ -1390,7 +1435,6 @@ git commit -m "feat: show path-aware progress results"
 **Files:**
 - Create or Modify: `src/lib/viewRouting.ts`
 - Test: `src/lib/viewRouting.test.ts`
-- Modify: `src/App.tsx`
 
 **Interfaces:**
 - Produces: `readViewFromSearch`, `buildViewHref`, `writeViewToHistory`
@@ -1503,37 +1547,7 @@ export function writeDiagnosisStepToHistory(
 }
 ```
 
-Wire the functions in `App.tsx` with this effect and navigation helper:
-
-```tsx
-const [diagnosisStep, setDiagnosisStep] = useState(() =>
-  resolveDiagnosisStep(window.location.search, savedState),
-);
-const stepHeadingRef = useRef<HTMLHeadingElement>(null);
-
-useEffect(() => {
-  function syncFromLocation() {
-    const next = resolveDiagnosisStep(window.location.search, savedState);
-    if (new URLSearchParams(window.location.search).get("step") !== next) {
-      writeDiagnosisStepToHistory(next, "replace");
-    }
-    setDiagnosisStep(next);
-  }
-  window.addEventListener("popstate", syncFromLocation);
-  return () => window.removeEventListener("popstate", syncFromLocation);
-}, [savedState]);
-
-useEffect(() => {
-  stepHeadingRef.current?.focus();
-}, [diagnosisStep]);
-
-function navigateDiagnosisStep(step: DiagnosisStep) {
-  writeDiagnosisStepToHistory(step, "push");
-  setDiagnosisStep(step);
-}
-```
-
-Give every step heading `ref={stepHeadingRef}`, `tabIndex={-1}`, and a visible focus style. When the user confirms direct course input, set `courseInputReviewedAt` to a new ISO timestamp before navigating to `result`.
+Task 4 consumes these pure routing interfaces when `App.tsx` switches to v2 state. Do not modify `App.tsx` in this task.
 
 - [ ] **Step 4: Run routing, full tests, and build**
 
@@ -1545,27 +1559,10 @@ Run: `pnpm.cmd run build`
 
 Expected: all PASS.
 
-- [ ] **Step 5: Run browser verification**
-
-Start: `pnpm.cmd run dev`
-
-Verify on desktop `1440×900` and mobile `390×844`:
-
-1. first visit → profile → direct course selection → result
-2. minor reaches course selection without a track
-3. track-major cannot reach result without selecting a track
-4. browser back/forward restores the prior step
-5. refresh preserves the current step and selected courses
-6. no horizontal overflow
-7. keyboard-only profile and course flow completes
-8. console errors and warnings are zero
-
-Capture accepted screenshots under `output/playwright/foundation-20260830/` and inspect each image before reporting.
-
-- [ ] **Step 6: Commit Task 6**
+- [ ] **Step 5: Commit Task 6**
 
 ```powershell
-git add src/lib/viewRouting.ts src/lib/viewRouting.test.ts src/App.tsx
+git add src/lib/viewRouting.ts src/lib/viewRouting.test.ts
 git commit -m "feat: restore path diagnosis navigation"
 ```
 
