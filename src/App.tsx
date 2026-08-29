@@ -371,15 +371,20 @@ function App() {
     [completedCourseIds, enrollmentType, selectedTrackIds],
   );
   const pathProgress = useMemo(
-    () => savedState.profile
-      ? calculatePathProgress({
-          profile: savedState.profile,
-          courseSelections: savedState.courseSelections,
-          additionalMajorCredits: savedState.additionalMajorCredits,
-          courseInputReviewedAt: savedState.courseInputReviewedAt,
-          targetTrackId: savedState.targetTrackId,
-        })
-      : undefined,
+    () => {
+      const profile = savedState.profile;
+      if (!profile || (profile.studyPath === "track-major" && !savedState.targetTrackId)) {
+        return undefined;
+      }
+
+      return calculatePathProgress({
+        profile,
+        courseSelections: savedState.courseSelections,
+        additionalMajorCredits: savedState.additionalMajorCredits,
+        courseInputReviewedAt: savedState.courseInputReviewedAt,
+        targetTrackId: savedState.targetTrackId,
+      });
+    },
     [savedState],
   );
   const labRecommendations = useMemo(
