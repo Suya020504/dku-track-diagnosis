@@ -7,3 +7,4 @@ tmp
 debug.log
 
 .vercel
+/output/
