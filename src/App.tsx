@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { courses, CURRICULUM_YEAR, modules, tracks } from "./data/curriculumData";
 import { StudyPathSetup } from "./features/profile/StudyPathSetup";
+import { PathProgressSummary } from "./features/results/PathProgressSummary";
 import {
   calculateDiagnosis,
   calculateTrackRecommendations,
@@ -36,6 +37,7 @@ import {
   isRequiredCourseApplicable,
   isModuleInAnyTrack,
 } from "./lib/diagnosis";
+import { calculatePathProgress } from "./lib/progressEngine";
 import { createEmptyAppState, loadAppState, saveAppState } from "./lib/storage";
 import {
   resolveDiagnosisStep,
@@ -50,6 +52,7 @@ import type {
   ModuleProgress,
   PlanTerm,
   PlanningSemester,
+  PathProgressResult,
   SavedAppStateV2,
   StudentProfile,
   Track,
@@ -366,6 +369,18 @@ function App() {
         enrollmentType,
       }),
     [completedCourseIds, enrollmentType, selectedTrackIds],
+  );
+  const pathProgress = useMemo(
+    () => savedState.profile
+      ? calculatePathProgress({
+          profile: savedState.profile,
+          courseSelections: savedState.courseSelections,
+          additionalMajorCredits: savedState.additionalMajorCredits,
+          courseInputReviewedAt: savedState.courseInputReviewedAt,
+          targetTrackId: savedState.targetTrackId,
+        })
+      : undefined,
+    [savedState],
   );
   const labRecommendations = useMemo(
     () =>
@@ -780,15 +795,16 @@ function App() {
           </section>
         )}
 
-        {activeView === "result" && (
+        {activeView === "result" && savedState.profile && pathProgress && (
           <section className="primary-panel full-panel">
             <ResultDetailView
               result={result}
+              profile={savedState.profile}
+              pathProgress={pathProgress}
               recommendations={labRecommendations}
               plannedRecommendations={plannedRecommendations}
               plannedCourseTerms={plannedCourseTerms}
               headingRef={stepHeadingRef}
-              allowTracklessResult={!requiresTrack}
               onGoToPlan={() => setActiveView("experiment")}
             />
           </section>
@@ -3106,88 +3122,56 @@ function EnrollmentPolicyNotice({ enrollmentType }: { enrollmentType: Enrollment
 
 function ResultDetailView({
   result,
+  profile,
+  pathProgress,
   recommendations,
   plannedRecommendations,
   plannedCourseTerms,
   headingRef,
-  allowTracklessResult,
   onGoToPlan,
 }: {
   result: DiagnosisResult;
+  profile: StudentProfile;
+  pathProgress: PathProgressResult;
   recommendations: TrackRecommendation[];
   plannedRecommendations: TrackRecommendation[];
   plannedCourseTerms: Record<string, PlanTerm>;
   headingRef: RefObject<HTMLHeadingElement | null>;
-  allowTracklessResult: boolean;
   onGoToPlan: () => void;
 }) {
   const neededCoursePlans = getTrackNeededCoursePlans(result.trackResults);
+  const hasTrackProgress = pathProgress.trackProgress !== "not-applicable";
   const [activeResultTab, setActiveResultTab] = useState<"summary" | "recommendation" | "modules" | "required">("summary");
-
-  if (result.trackResults.length === 0) {
-    if (allowTracklessResult) {
-      return (
-        <div className="view-stack result-view">
-          <SectionHeader
-            eyebrow="진단 결과"
-            title="입력한 과목을 기준으로 결과를 저장했습니다."
-            body="현재 이수 경로는 목표 트랙을 선택하지 않아도 과목 입력 결과를 확인할 수 있습니다. 트랙별 비교가 필요할 때만 학기 계획에서 관심 트랙을 살펴보세요."
-            headingRef={headingRef}
-          />
-          <div className="result-top-grid">
-            <div className="result-top-summary">
-              <div className="result-grid">
-                <ResultMetric label="총 체크 학점" value={`${result.totalCredits}학점`} />
-                <ResultMetric label="필수 이수" value={`${result.requiredCreditsCompleted}/${result.requiredCreditsTotal}학점`} />
-              </div>
-              <EnrollmentPolicyNotice enrollmentType={result.enrollmentType} />
-            </div>
-            <div className="result-action-bar no-print">
-              <div>
-                <strong>결과 리포트 저장</strong>
-                <span>브라우저 인쇄 창에서 PDF 저장 또는 프린터 출력을 선택할 수 있습니다.</span>
-              </div>
-              <button className="print-button" type="button" onClick={printResultReport}>
-                <Printer aria-hidden="true" size={18} />
-                <span>PDF 저장/인쇄</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-    return (
-      <div className="view-stack">
-        <SectionHeader
-          eyebrow="진단 결과"
-          title="진단할 트랙을 먼저 선택하세요."
-          body="트랙을 모두 해제한 상태입니다. 자가진단 탭에서 관심 있는 트랙을 하나 이상 선택하면 트랙별 부족 모듈과 추천 과목을 확인할 수 있습니다."
-          headingRef={headingRef}
-        />
-        <div className="empty-state">
-          <strong>현재 선택된 트랙 없음</strong>
-          <span>트랙/모듈 탭 또는 자가진단 탭에서 트랙을 다시 선택하세요.</span>
-        </div>
-      </div>
-    );
-  }
+  const visibleResultTab = !hasTrackProgress && (activeResultTab === "summary" || activeResultTab === "modules")
+    ? "recommendation"
+    : activeResultTab;
+  const statusTitle = {
+    "current-input-satisfied": "현재 입력 기준 충족",
+    "reference-calculation-satisfied": "참고 계산상 충족",
+    incomplete: "보완할 조건이 있어요",
+    "official-review-required": "공식 확인 필요",
+  }[pathProgress.status];
 
   return (
     <div className="view-stack result-view">
       <SectionHeader
         eyebrow="진단 결과"
-        title={result.passed ? "선택한 트랙 조건을 모두 충족했습니다." : "선택한 트랙 중 보완해야 할 조건이 있습니다."}
-        body="복수 트랙을 선택한 경우 어느 트랙이 충족됐고 어느 트랙이 부족한지 먼저 구분해서 보여줍니다."
+        title={statusTitle}
+        body={hasTrackProgress
+          ? "선택한 이수 경로의 학점과 트랙 모듈 진행도를 함께 확인하세요."
+          : "선택한 이수 경로의 학점과 필수과목 진행도를 확인하세요."}
         headingRef={headingRef}
       />
       <div className="result-top-grid">
         <div className="result-top-summary">
-          <div className="result-grid">
-            <ResultMetric label="전체 진행률" value={`${result.completionRate}%`} />
-            <ResultMetric label="남은 과목" value={formatNeededCourseRange(neededCoursePlans)} />
-            <ResultMetric label="트랙 인정 학점" value={`${result.trackCredits}학점`} />
-            <ResultMetric label="필수 과목" value={`${result.requiredCreditsCompleted}/${result.requiredCreditsTotal}학점`} />
-          </div>
+          {hasTrackProgress && (
+            <div className="result-grid">
+              <ResultMetric label="전체 진행률" value={`${result.completionRate}%`} />
+              <ResultMetric label="남은 과목" value={formatNeededCourseRange(neededCoursePlans)} />
+              <ResultMetric label="트랙 인정 학점" value={`${result.trackCredits}학점`} />
+              <ResultMetric label="필수 과목" value={`${result.requiredCreditsCompleted}/${result.requiredCreditsTotal}학점`} />
+            </div>
+          )}
           <EnrollmentPolicyNotice enrollmentType={result.enrollmentType} />
         </div>
         <div className="result-action-bar no-print">
@@ -3201,46 +3185,51 @@ function ResultDetailView({
           </button>
         </div>
       </div>
+      <PathProgressSummary profile={profile} result={pathProgress} />
       <div className="result-detail-tabs" role="tablist" aria-label="진단 결과 상세 보기">
+        {hasTrackProgress && (
+          <button
+            className={visibleResultTab === "summary" ? "active" : ""}
+            id="result-tab-summary"
+            role="tab"
+            aria-controls="result-panel-summary"
+            aria-selected={visibleResultTab === "summary"}
+            type="button"
+            onClick={() => setActiveResultTab("summary")}
+          >
+            한눈에 보기
+          </button>
+        )}
         <button
-          className={activeResultTab === "summary" ? "active" : ""}
-          id="result-tab-summary"
-          role="tab"
-          aria-controls="result-panel-summary"
-          aria-selected={activeResultTab === "summary"}
-          type="button"
-          onClick={() => setActiveResultTab("summary")}
-        >
-          한눈에 보기
-        </button>
-        <button
-          className={activeResultTab === "recommendation" ? "active" : ""}
+          className={visibleResultTab === "recommendation" ? "active" : ""}
           id="result-tab-recommendation"
           role="tab"
           aria-controls="result-panel-recommendation"
-          aria-selected={activeResultTab === "recommendation"}
+          aria-selected={visibleResultTab === "recommendation"}
           type="button"
           onClick={() => setActiveResultTab("recommendation")}
         >
           맞춤 트랙 추천
         </button>
+        {hasTrackProgress && (
+          <button
+            className={visibleResultTab === "modules" ? "active" : ""}
+            id="result-tab-modules"
+            role="tab"
+            aria-controls="result-panel-modules"
+            aria-selected={visibleResultTab === "modules"}
+            type="button"
+            onClick={() => setActiveResultTab("modules")}
+          >
+            부족 모듈
+          </button>
+        )}
         <button
-          className={activeResultTab === "modules" ? "active" : ""}
-          id="result-tab-modules"
-          role="tab"
-          aria-controls="result-panel-modules"
-          aria-selected={activeResultTab === "modules"}
-          type="button"
-          onClick={() => setActiveResultTab("modules")}
-        >
-          부족 모듈
-        </button>
-        <button
-          className={activeResultTab === "required" ? "active" : ""}
+          className={visibleResultTab === "required" ? "active" : ""}
           id="result-tab-required"
           role="tab"
           aria-controls="result-panel-required"
-          aria-selected={activeResultTab === "required"}
+          aria-selected={visibleResultTab === "required"}
           type="button"
           onClick={() => setActiveResultTab("required")}
         >
@@ -3248,10 +3237,12 @@ function ResultDetailView({
         </button>
       </div>
       <div className="result-detail-panel">
-        <div className="result-tab-panel" id="result-panel-summary" role="tabpanel" aria-labelledby="result-tab-summary" hidden={activeResultTab !== "summary"}>
-          <TrackNeededCourseSummary plans={neededCoursePlans} />
-        </div>
-        <div className="result-tab-panel" id="result-panel-recommendation" role="tabpanel" aria-labelledby="result-tab-recommendation" hidden={activeResultTab !== "recommendation"}>
+        {hasTrackProgress && (
+          <div className="result-tab-panel" id="result-panel-summary" role="tabpanel" aria-labelledby="result-tab-summary" hidden={visibleResultTab !== "summary"}>
+            <TrackNeededCourseSummary plans={neededCoursePlans} />
+          </div>
+        )}
+        <div className="result-tab-panel" id="result-panel-recommendation" role="tabpanel" aria-labelledby="result-tab-recommendation" hidden={visibleResultTab !== "recommendation"}>
           <PersonalizedTrackRecommendation
             recommendations={recommendations}
             plannedRecommendations={plannedRecommendations}
@@ -3259,10 +3250,12 @@ function ResultDetailView({
             onGoToPlan={onGoToPlan}
           />
         </div>
-        <div className="result-tab-panel" id="result-panel-modules" role="tabpanel" aria-labelledby="result-tab-modules" hidden={activeResultTab !== "modules"}>
-          <ModuleProgressBoard trackResults={result.trackResults} />
-        </div>
-        <div className="result-tab-panel" id="result-panel-required" role="tabpanel" aria-labelledby="result-tab-required" hidden={activeResultTab !== "required"}>
+        {hasTrackProgress && (
+          <div className="result-tab-panel" id="result-panel-modules" role="tabpanel" aria-labelledby="result-tab-modules" hidden={visibleResultTab !== "modules"}>
+            <ModuleProgressBoard trackResults={result.trackResults} />
+          </div>
+        )}
+        <div className="result-tab-panel" id="result-panel-required" role="tabpanel" aria-labelledby="result-tab-required" hidden={visibleResultTab !== "required"}>
           <div className="result-support-grid">
             {result.excludedRequiredCourses.length > 0 && (
               <CourseSummaryList
