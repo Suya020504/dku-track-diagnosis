@@ -7,6 +7,7 @@ import {
   EnrollmentProfileSummary,
   completeProfileTransition,
   reviewCourseInputTransition,
+  saveCompletedCoursesManually,
 } from "./App";
 import type { SavedAppStateV2, StudentProfile } from "./types";
 
@@ -101,5 +102,28 @@ describe("profile integration transitions", () => {
     expect(markup).toContain("이수 경로 변경");
     expect(markup).not.toContain("type=\"radio\"");
     expect(markup).not.toContain("심화전공");
+  });
+
+  it("reports a throwing localStorage save as failed without a success time", () => {
+    const throwingStorage: Storage = {
+      get length() {
+        return 0;
+      },
+      clear: () => undefined,
+      getItem: () => null,
+      key: () => null,
+      removeItem: () => undefined,
+      setItem: () => {
+        throw new Error("quota exceeded");
+      },
+    };
+
+    const feedback = saveCompletedCoursesManually(
+      state(minorProfile),
+      new Date(2026, 7, 30, 14, 5),
+      throwingStorage,
+    );
+
+    expect(feedback).toEqual({ storageError: true, lastManualSaveAt: "" });
   });
 });

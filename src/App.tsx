@@ -323,6 +323,18 @@ export function reviewCourseInputTransition(
   return { ...current, courseInputReviewedAt };
 }
 
+export function saveCompletedCoursesManually(
+  current: SavedAppStateV2,
+  savedAt: Date,
+  storage?: Storage,
+): { storageError: boolean; lastManualSaveAt: string } {
+  const saved = saveAppState(current, storage);
+  return {
+    storageError: !saved,
+    lastManualSaveAt: saved ? formatSaveTime(savedAt) : "",
+  };
+}
+
 function App() {
   const [savedState, setSavedState] = useState<SavedAppStateV2>(() => loadAppState());
   const [storageError, setStorageError] = useState(false);
@@ -331,8 +343,11 @@ function App() {
   );
   const [activeView, setActiveView] = useState<ViewId>(() => {
     const view = new URLSearchParams(window.location.search).get("view");
-    if (view === "diagnosis") return "diagnosis";
-    if (view === "result") return "result";
+    if (view === "diagnosis" || view === "result") {
+      return resolveDiagnosisStep(window.location.search, savedState) === "result"
+        ? "result"
+        : "diagnosis";
+    }
     return "landing";
   });
   const selectedTrackIds = useMemo(() => getSelectedTrackIds(savedState), [savedState]);
@@ -343,9 +358,10 @@ function App() {
   const [guideOpen, setGuideOpen] = useState(() => !loadGuideDismissed());
   const [guideStepIndex, setGuideStepIndex] = useState(0);
   const stepHeadingRef = useRef<HTMLHeadingElement>(null);
+  const initialLocationSyncedRef = useRef(false);
   const completedCourseIds = useMemo(
     () => savedState.courseSelections
-      .filter((selection) => selection.status === "completed" || selection.status === "in-progress")
+      .filter((selection) => selection.status === "completed")
       .map((selection) => selection.courseId),
     [savedState.courseSelections],
   );
@@ -420,6 +436,10 @@ function App() {
       setActiveView(next === "result" ? "result" : "diagnosis");
     }
 
+    if (!initialLocationSyncedRef.current) {
+      initialLocationSyncedRef.current = true;
+      syncFromLocation();
+    }
     window.addEventListener("popstate", syncFromLocation);
     return () => window.removeEventListener("popstate", syncFromLocation);
   }, [savedState]);
@@ -533,8 +553,9 @@ function App() {
   }
 
   function saveCompletedCoursesNow() {
-    setStorageError(!saveAppState(savedState));
-    setLastManualSaveAt(formatSaveTime(new Date()));
+    const feedback = saveCompletedCoursesManually(savedState, new Date());
+    setStorageError(feedback.storageError);
+    setLastManualSaveAt(feedback.lastManualSaveAt);
   }
 
   function confirmCourseInput() {
@@ -3146,10 +3167,20 @@ function ResultDetailView({
 }) {
   const neededCoursePlans = getTrackNeededCoursePlans(result.trackResults);
   const hasTrackProgress = pathProgress.trackProgress !== "not-applicable";
+  const requiredProgress = pathProgress.requiredProgress === "not-applicable"
+    ? undefined
+    : pathProgress.requiredProgress;
+  const hasRequiredProgress = requiredProgress !== undefined;
+  const missingRequiredCourses = requiredProgress
+    ? requiredProgress.missingCourseIds
+        .map((courseId) => courses.find((course) => course.id === courseId))
+        .filter((course): course is Course => course !== undefined)
+    : [];
   const [activeResultTab, setActiveResultTab] = useState<"summary" | "recommendation" | "modules" | "required">("summary");
-  const visibleResultTab = !hasTrackProgress && (activeResultTab === "summary" || activeResultTab === "modules")
-    ? "recommendation"
-    : activeResultTab;
+  const visibleResultTab = (
+    (!hasTrackProgress && (activeResultTab === "summary" || activeResultTab === "modules")) ||
+    (!hasRequiredProgress && activeResultTab === "required")
+  ) ? "recommendation" : activeResultTab;
   const statusTitle = {
     "current-input-satisfied": "현재 입력 기준 충족",
     "reference-calculation-satisfied": "참고 계산상 충족",
@@ -3164,7 +3195,9 @@ function ResultDetailView({
         title={statusTitle}
         body={hasTrackProgress
           ? "선택한 이수 경로의 학점과 트랙 모듈 진행도를 함께 확인하세요."
-          : "선택한 이수 경로의 학점과 필수과목 진행도를 확인하세요."}
+          : hasRequiredProgress
+            ? "선택한 이수 경로의 학점과 필수과목 진행도를 확인하세요."
+            : "선택한 이수 경로의 전체 전공학점 진행도를 확인하세요."}
         headingRef={headingRef}
       />
       <div className="result-top-grid">
@@ -3174,10 +3207,14 @@ function ResultDetailView({
               <ResultMetric label="전체 진행률" value={`${result.completionRate}%`} />
               <ResultMetric label="남은 과목" value={formatNeededCourseRange(neededCoursePlans)} />
               <ResultMetric label="트랙 인정 학점" value={`${result.trackCredits}학점`} />
-              <ResultMetric label="필수 과목" value={`${result.requiredCreditsCompleted}/${result.requiredCreditsTotal}학점`} />
+              {requiredProgress && (
+                <ResultMetric
+                  label="필수 과목"
+                  value={`${requiredProgress.completedCredits}/${requiredProgress.requiredCredits}학점`}
+                />
+              )}
             </div>
           )}
-          <EnrollmentPolicyNotice enrollmentType={result.enrollmentType} />
         </div>
         <div className="result-action-bar no-print">
           <div>
@@ -3229,17 +3266,19 @@ function ResultDetailView({
             부족 모듈
           </button>
         )}
-        <button
-          className={visibleResultTab === "required" ? "active" : ""}
-          id="result-tab-required"
-          role="tab"
-          aria-controls="result-panel-required"
-          aria-selected={visibleResultTab === "required"}
-          type="button"
-          onClick={() => setActiveResultTab("required")}
-        >
-          필수 과목
-        </button>
+        {hasRequiredProgress && (
+          <button
+            className={visibleResultTab === "required" ? "active" : ""}
+            id="result-tab-required"
+            role="tab"
+            aria-controls="result-panel-required"
+            aria-selected={visibleResultTab === "required"}
+            type="button"
+            onClick={() => setActiveResultTab("required")}
+          >
+            필수 과목
+          </button>
+        )}
       </div>
       <div className="result-detail-panel">
         {hasTrackProgress && (
@@ -3260,25 +3299,19 @@ function ResultDetailView({
             <ModuleProgressBoard trackResults={result.trackResults} />
           </div>
         )}
-        <div className="result-tab-panel" id="result-panel-required" role="tabpanel" aria-labelledby="result-tab-required" hidden={visibleResultTab !== "required"}>
-          <div className="result-support-grid">
-            {result.excludedRequiredCourses.length > 0 && (
+        {hasRequiredProgress && (
+          <div className="result-tab-panel" id="result-panel-required" role="tabpanel" aria-labelledby="result-tab-required" hidden={visibleResultTab !== "required"}>
+            <div className="result-support-grid">
               <CourseSummaryList
-                title="이수유형 기준 필수 제외"
-                courses={result.excludedRequiredCourses}
-                emptyText="이수유형 때문에 제외된 필수 과목 없음"
+                title="필수 과목 누락"
+                courses={missingRequiredCourses}
+                emptyText="필수 과목 누락 없음"
                 compact
+                tone="danger"
               />
-            )}
-            <CourseSummaryList
-              title="필수 과목 누락"
-              courses={result.missingRequiredCourses}
-              emptyText="필수 과목 누락 없음"
-              compact
-              tone="danger"
-            />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
     </div>

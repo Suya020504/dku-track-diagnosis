@@ -26,12 +26,19 @@ const trackProfile: StudentProfile = {
   studyPath: "track-major",
 };
 
+const doubleMajorProfile: StudentProfile = {
+  ...minorProfile,
+  studyPath: "double-major",
+  ruleApplicability: "reference-only",
+};
+
 function state(profile: StudentProfile, overrides: Partial<SavedAppStateV2> = {}): SavedAppStateV2 {
   return {
     version: 2,
     profile,
     courseSelections: [],
     additionalMajorCredits: [],
+    courseInputReviewedAt: "2026-08-30T00:00:00.000Z",
     comparisonTrackIds: [],
     snapshots: [],
     ...overrides,
@@ -78,6 +85,23 @@ function renderApp(savedState: SavedAppStateV2, search: string): string {
 }
 
 describe("path-aware result integration", () => {
+  it("guards a direct result URL until course input has been reviewed", () => {
+    const markup = renderApp(
+      state(minorProfile, { courseInputReviewedAt: undefined }),
+      "?view=result&step=result",
+    );
+
+    expect(markup).toContain("지금까지 이수한 과목을 선택하세요.");
+    expect(markup).not.toContain("부전공 전공학점");
+  });
+
+  it("renders a direct result URL after course input has been reviewed", () => {
+    const markup = renderApp(state(minorProfile), "?view=result&step=result");
+
+    expect(markup).toContain("부전공 전공학점");
+    expect(markup).not.toContain("지금까지 이수한 과목을 선택하세요.");
+  });
+
   it("renders track-major profile editing without a target track", () => {
     const markup = renderApp(state(trackProfile), "?view=diagnosis&step=profile");
 
@@ -90,11 +114,48 @@ describe("path-aware result integration", () => {
 
     expect(markup).toContain("부전공 전공학점");
     expect(markup).not.toContain("트랙 모듈 진행도");
+    expect(markup).not.toContain("<span>전체 진행률</span>");
+    expect(markup).not.toContain("<span>트랙 인정 학점</span>");
     expect(markup).not.toContain('id="result-tab-summary"');
     expect(markup).not.toContain('id="result-tab-modules"');
+    expect(markup).not.toContain('id="result-tab-required"');
+    expect(markup).not.toContain("1학년 필수 제외 적용");
+    expect(markup).not.toContain("필수 과목 누락");
     expect(markup).toContain("맞춤 트랙 추천");
     expect(markup).toContain("추천 과목을 학기 계획에 담기");
     expect(markup).toContain("PDF 저장/인쇄");
+  });
+
+  it("uses the starred-six required list for a double major, including B-2", () => {
+    const markup = renderApp(state(doubleMajorProfile), "?view=result&step=result");
+
+    expect(markup).toContain('id="result-tab-required"');
+    expect(markup).toContain("B-2 통계학기초");
+    expect(markup).not.toContain("1학년 필수 제외 적용");
+    expect(markup).not.toContain("이수유형 기준 필수 제외");
+  });
+
+  it("does not count in-progress track courses in current result metrics", () => {
+    const inProgressCourseIds = [
+      "b-2", "c-1", "c-2", "c-3", "f-1", "f-2", "h-1", "h-2", "i-1", "i-2", "j-1", "j-2", "l-1", "l-2",
+    ];
+    const markup = renderApp(
+      state(trackProfile, {
+        targetTrackId: "food-marketing",
+        courseSelections: inProgressCourseIds.map((courseId) => ({
+          courseId,
+          status: "in-progress" as const,
+        })),
+      }),
+      "?view=result&step=result",
+    );
+
+    expect(markup).toContain("0 / 18학점");
+    expect(markup).toContain("0 / 63학점");
+    expect(markup).toContain("<span>전체 진행률</span><strong>0%</strong>");
+    expect(markup).toContain("<span>트랙 인정 학점</span><strong>0학점</strong>");
+    expect(markup).not.toContain("<span>전체 진행률</span><strong>100%</strong>");
+    expect(markup).not.toContain("<span>트랙 인정 학점</span><strong>30학점</strong>");
   });
 
   it("uses the path-progress reference status instead of legacy aggregate completion", () => {
