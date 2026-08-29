@@ -70,6 +70,23 @@ export type RequirementEvidenceStatus =
   | "project-derived"
   | "official-review-required";
 
+export type ReviewItem = {
+  code: "rule-source" | "unknown-course" | "additional-credit" | "document-conflict";
+  message: string;
+  evidence: RequirementEvidenceStatus;
+};
+
+export type CreditProgress = {
+  completedCredits: number;
+  requiredCredits: number;
+  missingCredits: number;
+};
+
+export type RequirementProgress = CreditProgress & {
+  completedCourseIds: string[];
+  missingCourseIds: string[];
+};
+
 export type ModuleId =
   | "A"
   | "B"
@@ -163,6 +180,18 @@ export type TrackDiagnosisResult = {
   recommendedCourses: Course[];
   remainingCourses: Course[];
   completionRate: number;
+};
+
+export type PathProgressResult = {
+  requiredProgress: RequirementProgress | "not-applicable";
+  trackProgress: TrackDiagnosisResult | "not-applicable";
+  totalMajorProgress: CreditProgress;
+  reviewItems: ReviewItem[];
+  status:
+    | "current-input-satisfied"
+    | "reference-calculation-satisfied"
+    | "incomplete"
+    | "official-review-required";
 };
 
 export type SavedDiagnosisState = {
