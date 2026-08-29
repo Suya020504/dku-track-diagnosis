@@ -368,7 +368,7 @@ A-module credits remain excluded because `uniqueKnownAssumedAndSelectedCredits` 
 
 - [ ] **Step 5: Verify determinism and performance**
 
-Run the focused file twice. Add a test that evaluates all five tracks under an empty input and expects the whole call to finish within 500ms on the test host; record the measured duration but do not make browser timing a completion claim.
+Run the focused file twice. Add a deterministic test that evaluates all five tracks under an empty input and returns identical values on two runs. Record the measured duration in the task report, but do not use a host-dependent millisecond threshold as a pass/fail assertion or a browser performance claim.
 
 Run: `pnpm.cmd vitest run src/lib/courseCombination.test.ts src/lib/progressEngine.test.ts`
 
