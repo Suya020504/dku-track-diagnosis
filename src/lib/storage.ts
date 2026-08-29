@@ -14,6 +14,34 @@ const trackIds = new Set(tracks.map((track) => track.id));
 const courseIds = new Set(courses.map((course) => course.id));
 const enrollmentTypes = new Set<EnrollmentType>(["primary", "double-major", "minor"]);
 const planTerms = new Set<PlanTerm>(["next", "following", "later"]);
+const planningSemesters = new Set(["1-1", "1-2", "2-1", "2-2", "3-1", "3-2", "4-1", "4-2"]);
+const studentAffiliations = new Set(["department-student", "external-student"]);
+const serviceGoals = new Set(["learn-track-system", "find-track", "check-progress", "plan-graduation"]);
+const studyPaths = new Set([
+  "advanced-major",
+  "track-major",
+  "department-with-other-major",
+  "double-major",
+  "minor",
+]);
+const ruleApplicabilities = new Set(["student-confirmed", "officially-verified", "reference-only"]);
+const courseSelectionStatuses = new Set(["completed", "in-progress", "planned"]);
+const additionalCreditStatuses = new Set(["student-entered", "officially-verified"]);
+const pathProgressStatuses = new Set([
+  "current-input-satisfied",
+  "reference-calculation-satisfied",
+  "incomplete",
+  "official-review-required",
+]);
+const reviewCodes = new Set(["rule-source", "unknown-course", "additional-credit", "document-conflict"]);
+const evidenceStatuses = new Set([
+  "official-public",
+  "provided-final-plan",
+  "project-derived",
+  "official-review-required",
+]);
+const trackKinds = new Set(["학과전공", "융합전공"]);
+const moduleIds = new Set(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O"]);
 
 export const STORAGE_KEY_V2 = "track-sim:v2";
 export const STORAGE_LAST_VALID_KEY_V2 = "track-sim:v2:last-valid";
@@ -38,21 +66,28 @@ export function normalizeSnapshotHistory(items: DiagnosisSnapshot[]): DiagnosisS
 
 export function migrateV1State(value: unknown): SavedAppStateV2 {
   const source = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  if (source.curriculumYear !== CURRICULUM_YEAR) return createEmptyAppState();
   const completed = Array.isArray(source.completedCourseIds)
-    ? [...new Set(source.completedCourseIds.filter((item): item is string => typeof item === "string"))]
+    ? [...new Set(source.completedCourseIds.filter((item): item is string => typeof item === "string" && courseIds.has(item)))]
     : [];
-  const legacyTracks = Array.isArray(source.trackIds)
-    ? source.trackIds.filter(
-        (item): item is TrackId => typeof item === "string" && tracks.some((track) => track.id === item),
-      )
-    : [];
+  const sourceTracks = Array.isArray(source.trackIds)
+    ? source.trackIds
+    : typeof source.trackId === "string"
+      ? [source.trackId]
+      : [];
+  const legacyTracks = sourceTracks.filter(
+    (item): item is TrackId => typeof item === "string" && trackIds.has(item as TrackId),
+  );
+  const uniqueTracks = [...new Set(legacyTracks)];
   const planned = source.plannedCourseTerms && typeof source.plannedCourseTerms === "object"
     ? Object.entries(source.plannedCourseTerms as Record<string, unknown>).filter(
         (entry): entry is [string, PlanTerm] =>
-          planTerms.has(String(entry[1]) as PlanTerm) && !completed.includes(entry[0]),
+          courseIds.has(entry[0]) && planTerms.has(String(entry[1]) as PlanTerm) && !completed.includes(entry[0]),
       )
     : [];
-  const profile = profileForEnrollmentType(source.enrollmentType);
+  const profile = profileForEnrollmentType(
+    enrollmentTypes.has(source.enrollmentType as EnrollmentType) ? source.enrollmentType : "primary",
+  );
 
   return {
     version: 2,
@@ -68,8 +103,8 @@ export function migrateV1State(value: unknown): SavedAppStateV2 {
     ],
     additionalMajorCredits: [],
     courseInputReviewedAt: undefined,
-    targetTrackId: legacyTracks[0],
-    comparisonTrackIds: legacyTracks.slice(1),
+    targetTrackId: uniqueTracks[0],
+    comparisonTrackIds: uniqueTracks.slice(1),
     snapshots: [],
   };
 }
@@ -92,50 +127,194 @@ function profileForEnrollmentType(value: unknown): StudentProfile | undefined {
   return undefined;
 }
 
-function isSavedAppStateV2(value: unknown): value is SavedAppStateV2 {
-  if (!value || typeof value !== "object") return false;
-  const state = value as Partial<SavedAppStateV2>;
-  if (state.version !== 2) return false;
-  if (!Array.isArray(state.courseSelections) || !Array.isArray(state.additionalMajorCredits)) {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isTrackId(value: unknown): value is TrackId {
+  return typeof value === "string" && trackIds.has(value as TrackId);
+}
+
+function isPlanningSemester(value: unknown): boolean {
+  return typeof value === "string" && planningSemesters.has(value);
+}
+
+function isStudentProfile(value: unknown): value is StudentProfile {
+  if (!isRecord(value)) return false;
+  if (
+    !serviceGoals.has(value.goal as string) ||
+    !studentAffiliations.has(value.affiliation as string) ||
+    !getAllowedStudyPaths(value.affiliation as StudentProfile["affiliation"]).includes(
+      value.studyPath as StudentProfile["studyPath"],
+    ) ||
+    value.curriculumRuleVersion !== "2026-provided-final-plan" ||
+    !ruleApplicabilities.has(value.ruleApplicability as string)
+  ) {
     return false;
   }
-  if (!Array.isArray(state.comparisonTrackIds) || !Array.isArray(state.snapshots)) return false;
-  const validStatuses = new Set(["completed", "in-progress", "planned"]);
-  const courseSelectionsValid = state.courseSelections.every(
-    (item) =>
-      item &&
-      typeof item.courseId === "string" &&
-      validStatuses.has(item.status) &&
-      (item.plannedTerm === undefined || planTerms.has(item.plannedTerm)),
-  );
-  const additionalCreditsValid = state.additionalMajorCredits.every(
-    (item) =>
-      item &&
-      typeof item.id === "string" &&
-      typeof item.label === "string" &&
-      Number.isFinite(item.credits) &&
-      item.credits >= 0 &&
-      ["student-entered", "officially-verified"].includes(item.status),
-  );
-  const tracksValid =
-    (state.targetTrackId === undefined || trackIds.has(state.targetTrackId)) &&
-    state.comparisonTrackIds.every((id) => trackIds.has(id));
-  const profileValid = state.profile === undefined || (
-    ["department-student", "external-student"].includes(state.profile.affiliation) &&
-    getAllowedStudyPaths(state.profile.affiliation).includes(state.profile.studyPath) &&
-    ["learn-track-system", "find-track", "check-progress", "plan-graduation"].includes(
-      state.profile.goal,
-    ) &&
-    ["student-confirmed", "officially-verified", "reference-only"].includes(
-      state.profile.ruleApplicability,
+  return value.entryYear === undefined ||
+    (isFiniteNumber(value.entryYear) && Number.isSafeInteger(value.entryYear) && value.entryYear >= 0);
+}
+
+function isProfileDraft(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  const allowedKeys = new Set([
+    "goal",
+    "affiliation",
+    "studyPath",
+    "entryYear",
+    "curriculumRuleVersion",
+    "ruleApplicability",
+  ]);
+  if (Object.keys(value).some((key) => !allowedKeys.has(key))) return false;
+  if (value.goal !== undefined && !serviceGoals.has(value.goal as string)) return false;
+  if (value.affiliation !== undefined && !studentAffiliations.has(value.affiliation as string)) return false;
+  if (value.studyPath !== undefined && !studyPaths.has(value.studyPath as string)) return false;
+  if (
+    value.affiliation !== undefined &&
+    value.studyPath !== undefined &&
+    !getAllowedStudyPaths(value.affiliation as StudentProfile["affiliation"]).includes(
+      value.studyPath as StudentProfile["studyPath"],
     )
+  ) {
+    return false;
+  }
+  if (
+    value.entryYear !== undefined &&
+    (!isFiniteNumber(value.entryYear) || !Number.isSafeInteger(value.entryYear) || value.entryYear < 0)
+  ) {
+    return false;
+  }
+  if (value.curriculumRuleVersion !== undefined && value.curriculumRuleVersion !== "2026-provided-final-plan") {
+    return false;
+  }
+  return value.ruleApplicability === undefined || ruleApplicabilities.has(value.ruleApplicability as string);
+}
+
+function isCourseSelections(value: unknown): boolean {
+  return Array.isArray(value) && value.every((item) =>
+    isRecord(item) &&
+    typeof item.courseId === "string" &&
+    courseSelectionStatuses.has(item.status as string) &&
+    (item.plannedTerm === undefined || planTerms.has(item.plannedTerm as PlanTerm)),
   );
-  const reviewDateValid =
-    state.courseInputReviewedAt === undefined || typeof state.courseInputReviewedAt === "string";
-  const profileDraftValid =
-    state.profileDraft === undefined ||
-    (state.profileDraft !== null && typeof state.profileDraft === "object");
-  return courseSelectionsValid && additionalCreditsValid && tracksValid && profileValid && profileDraftValid && reviewDateValid;
+}
+
+function isAdditionalMajorCredits(value: unknown): boolean {
+  return Array.isArray(value) && value.every((item) =>
+    isRecord(item) &&
+    typeof item.id === "string" &&
+    typeof item.label === "string" &&
+    isFiniteNumber(item.credits) &&
+    item.credits >= 0 &&
+    additionalCreditStatuses.has(item.status as string) &&
+    (item.note === undefined || typeof item.note === "string"),
+  );
+}
+
+function isCreditProgress(value: unknown): boolean {
+  return isRecord(value) &&
+    isFiniteNumber(value.completedCredits) &&
+    isFiniteNumber(value.requiredCredits) &&
+    isFiniteNumber(value.missingCredits);
+}
+
+function isRequirementProgress(value: unknown): boolean {
+  return isCreditProgress(value) &&
+    isRecord(value) &&
+    isStringArray(value.completedCourseIds) &&
+    isStringArray(value.missingCourseIds);
+}
+
+function isCourse(value: unknown): boolean {
+  return isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.code === "string" &&
+    typeof value.name === "string" &&
+    isFiniteNumber(value.credits) &&
+    moduleIds.has(value.moduleId as string) &&
+    (value.recommendedSemester === undefined || typeof value.recommendedSemester === "string") &&
+    (value.required === undefined || typeof value.required === "boolean") &&
+    (value.sourceNote === undefined || typeof value.sourceNote === "string");
+}
+
+function isModuleProgress(value: unknown): boolean {
+  return isRecord(value) &&
+    (moduleIds.has(value.moduleId as string) || value.moduleId === "N+O") &&
+    typeof value.label === "string" &&
+    isFiniteNumber(value.requiredCredits) &&
+    isFiniteNumber(value.completedCredits) &&
+    isFiniteNumber(value.missingCredits) &&
+    isStringArray(value.courseIds);
+}
+
+function isTrackDiagnosisResult(value: unknown): boolean {
+  return isRecord(value) &&
+    isTrackId(value.trackId) &&
+    typeof value.trackName === "string" &&
+    trackKinds.has(value.trackKind as string) &&
+    enrollmentTypes.has(value.enrollmentType as EnrollmentType) &&
+    typeof value.passed === "boolean" &&
+    isFiniteNumber(value.trackCredits) &&
+    isFiniteNumber(value.completionRate) &&
+    Array.isArray(value.missingRequiredCourses) && value.missingRequiredCourses.every(isCourse) &&
+    Array.isArray(value.excludedRequiredCourses) && value.excludedRequiredCourses.every(isCourse) &&
+    Array.isArray(value.moduleProgress) && value.moduleProgress.every(isModuleProgress) &&
+    Array.isArray(value.recommendedCourses) && value.recommendedCourses.every(isCourse) &&
+    Array.isArray(value.remainingCourses) && value.remainingCourses.every(isCourse);
+}
+
+function isReviewItem(value: unknown): boolean {
+  return isRecord(value) &&
+    reviewCodes.has(value.code as string) &&
+    typeof value.message === "string" &&
+    evidenceStatuses.has(value.evidence as string);
+}
+
+function isPathProgressResult(value: unknown): boolean {
+  return isRecord(value) &&
+    (value.requiredProgress === "not-applicable" || isRequirementProgress(value.requiredProgress)) &&
+    (value.trackProgress === "not-applicable" || isTrackDiagnosisResult(value.trackProgress)) &&
+    isCreditProgress(value.totalMajorProgress) &&
+    Array.isArray(value.reviewItems) && value.reviewItems.every(isReviewItem) &&
+    pathProgressStatuses.has(value.status as string);
+}
+
+function isDiagnosisSnapshot(value: unknown): value is DiagnosisSnapshot {
+  return isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.createdAt === "string" &&
+    value.ruleVersion === "2026-provided-final-plan" &&
+    isStudentProfile(value.profile) &&
+    isCourseSelections(value.courseSelections) &&
+    isAdditionalMajorCredits(value.additionalMajorCredits) &&
+    (value.targetTrackId === undefined || isTrackId(value.targetTrackId)) &&
+    Array.isArray(value.comparisonTrackIds) && value.comparisonTrackIds.every(isTrackId) &&
+    isPathProgressResult(value.result);
+}
+
+function isSavedAppStateV2(value: unknown): value is SavedAppStateV2 {
+  if (!isRecord(value)) return false;
+  const state = value as Partial<SavedAppStateV2>;
+  if (state.version !== 2) return false;
+  return isCourseSelections(state.courseSelections) &&
+    isAdditionalMajorCredits(state.additionalMajorCredits) &&
+    (state.targetTrackId === undefined || isTrackId(state.targetTrackId)) &&
+    Array.isArray(state.comparisonTrackIds) && state.comparisonTrackIds.every(isTrackId) &&
+    (state.profile === undefined || isStudentProfile(state.profile)) &&
+    (state.profileDraft === undefined || isProfileDraft(state.profileDraft)) &&
+    (state.courseInputReviewedAt === undefined || typeof state.courseInputReviewedAt === "string") &&
+    (state.currentSemester === undefined || isPlanningSemester(state.currentSemester)) &&
+    (state.targetGraduationSemester === undefined || isPlanningSemester(state.targetGraduationSemester)) &&
+    Array.isArray(state.snapshots) && state.snapshots.every(isDiagnosisSnapshot);
 }
 
 export function loadAppState(storage: Storage = window.localStorage): SavedAppStateV2 {
@@ -162,6 +341,7 @@ export function loadAppState(storage: Storage = window.localStorage): SavedAppSt
 export function saveAppState(state: SavedAppStateV2, storage: Storage = window.localStorage): boolean {
   try {
     const normalized = { ...state, snapshots: normalizeSnapshotHistory(state.snapshots) };
+    if (!isSavedAppStateV2(normalized)) return false;
     const serialized = JSON.stringify(normalized);
     storage.setItem(STORAGE_KEY_V2, serialized);
     storage.setItem(STORAGE_LAST_VALID_KEY_V2, serialized);

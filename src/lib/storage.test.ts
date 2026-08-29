@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { STORAGE_KEY } from "../data/curriculumData";
-import type { DiagnosisSnapshot } from "../types";
+import type { DiagnosisSnapshot, SavedAppStateV2 } from "../types";
 import {
   createEmptyAppState,
   emptyState,
@@ -10,6 +10,8 @@ import {
   normalizeSnapshotHistory,
   saveAppState,
   saveState,
+  STORAGE_KEY_V2,
+  STORAGE_LAST_VALID_KEY_V2,
 } from "./storage";
 
 const values = new Map<string, string>();
@@ -36,6 +38,10 @@ function makeStorage(initial: Record<string, string>): Storage {
       return storageValues.size;
     },
   };
+}
+
+function stateWithTarget(targetTrackId: "food-marketing" | "economics"): SavedAppStateV2 {
+  return { ...createEmptyAppState(), targetTrackId };
 }
 
 describe("diagnosis storage", () => {
@@ -90,13 +96,13 @@ describe("diagnosis storage", () => {
     expect(loadSavedState().plannedCourseTerms).toEqual({});
   });
 
-  it("migrates v1 completed courses and remote planned terms without loss", () => {
+  it("migrates sanitized v1 completed courses and remote planned terms without overlap", () => {
     const migrated = migrateV1State({
       curriculumYear: 2026,
-      trackIds: ["food-marketing"],
-      completedCourseIds: ["b-2", "f-1"],
+      trackIds: ["food-marketing", "unknown-track", "food-marketing"],
+      completedCourseIds: ["b-2", "not-a-course", "f-1", "b-2"],
       enrollmentType: "primary",
-      plannedCourseTerms: { "h-1": "next" },
+      plannedCourseTerms: { "b-2": "following", "h-1": "next", "not-a-course": "later" },
     });
 
     expect(migrated.courseSelections).toEqual([
@@ -106,6 +112,18 @@ describe("diagnosis storage", () => {
     ]);
     expect(migrated.profile?.affiliation).toBe("department-student");
     expect(migrated.profile?.ruleApplicability).toBe("reference-only");
+    expect(migrated.targetTrackId).toBe("food-marketing");
+    expect(migrated.comparisonTrackIds).toEqual([]);
+  });
+
+  it("ignores legacy data from a different curriculum year", () => {
+    expect(migrateV1State({
+      curriculumYear: 2025,
+      trackIds: ["food-marketing"],
+      completedCourseIds: ["f-1"],
+      enrollmentType: "primary",
+      plannedCourseTerms: { "h-1": "next" },
+    })).toEqual(createEmptyAppState());
   });
 
   it("keeps only the newest twelve diagnosis snapshots", () => {
@@ -117,11 +135,101 @@ describe("diagnosis storage", () => {
     expect(normalizeSnapshotHistory(snapshots)[0].id).toBe("snapshot-2");
   });
 
-  it("returns the last valid state when the active payload is corrupt", () => {
-    const validState = createEmptyAppState();
+  it.each([
+    {
+      name: "uses the active v2 state before all fallback sources",
+      active: JSON.stringify(stateWithTarget("food-marketing")),
+      lastValid: JSON.stringify(stateWithTarget("economics")),
+      legacy: JSON.stringify({ ...emptyState(), trackIds: ["economics"] }),
+      expected: stateWithTarget("food-marketing"),
+    },
+    {
+      name: "uses last-valid after malformed active JSON",
+      active: "{broken",
+      lastValid: JSON.stringify(stateWithTarget("economics")),
+      legacy: JSON.stringify({ ...emptyState(), trackIds: ["food-marketing"] }),
+      expected: stateWithTarget("economics"),
+    },
+    {
+      name: "uses last-valid after structurally malformed active JSON",
+      active: JSON.stringify({ ...createEmptyAppState(), snapshots: [{}] }),
+      lastValid: JSON.stringify(stateWithTarget("economics")),
+      legacy: JSON.stringify({ ...emptyState(), trackIds: ["food-marketing"] }),
+      expected: stateWithTarget("economics"),
+    },
+    {
+      name: "migrates sanitized v1 after both v2 copies are malformed",
+      active: JSON.stringify({ version: 2 }),
+      lastValid: JSON.stringify({ version: 2 }),
+      legacy: JSON.stringify({
+        ...emptyState(),
+        trackIds: ["food-marketing"],
+        completedCourseIds: ["f-1", "unknown-course"],
+        plannedCourseTerms: { "f-1": "next", "h-1": "following", "unknown-course": "later" },
+      }),
+      expected: migrateV1State({
+        ...emptyState(),
+        trackIds: ["food-marketing"],
+        completedCourseIds: ["f-1", "unknown-course"],
+        plannedCourseTerms: { "f-1": "next", "h-1": "following", "unknown-course": "later" },
+      }),
+    },
+    {
+      name: "returns empty only after every persisted source is unusable",
+      active: JSON.stringify({ version: 2 }),
+      lastValid: "{broken",
+      legacy: JSON.stringify({ ...emptyState(), curriculumYear: 2025 }),
+      expected: createEmptyAppState(),
+    },
+  ])("$name", ({ active, lastValid, legacy, expected }) => {
     const storage = makeStorage({
-      "track-sim:v2": "{broken",
-      "track-sim:v2:last-valid": JSON.stringify(validState),
+      [STORAGE_KEY_V2]: active,
+      [STORAGE_LAST_VALID_KEY_V2]: lastValid,
+      [STORAGE_KEY]: legacy,
+    });
+
+    expect(loadAppState(storage)).toEqual(expected);
+  });
+
+  it.each([
+    ["snapshot", { ...createEmptyAppState(), snapshots: [{}] }],
+    [
+      "profile curriculum rule version",
+      {
+        ...createEmptyAppState(),
+        profile: {
+          goal: "check-progress",
+          affiliation: "department-student",
+          studyPath: "track-major",
+          curriculumRuleVersion: "wrong-version",
+          ruleApplicability: "reference-only",
+        },
+      },
+    ],
+    [
+      "profile entry year",
+      {
+        ...createEmptyAppState(),
+        profile: {
+          goal: "check-progress",
+          affiliation: "department-student",
+          studyPath: "track-major",
+          entryYear: "2026",
+          curriculumRuleVersion: "2026-provided-final-plan",
+          ruleApplicability: "reference-only",
+        },
+      },
+    ],
+    ["profile draft array", { ...createEmptyAppState(), profileDraft: [] }],
+    ["profile draft field", { ...createEmptyAppState(), profileDraft: { affiliation: "invalid" } }],
+    ["profile draft study path", { ...createEmptyAppState(), profileDraft: { studyPath: "invalid" } }],
+    ["current semester", { ...createEmptyAppState(), currentSemester: "5-1" }],
+    ["target graduation semester", { ...createEmptyAppState(), targetGraduationSemester: "summer" }],
+  ])("falls back after malformed %s", (_, malformedState) => {
+    const validState = stateWithTarget("economics");
+    const storage = makeStorage({
+      [STORAGE_KEY_V2]: JSON.stringify(malformedState),
+      [STORAGE_LAST_VALID_KEY_V2]: JSON.stringify(validState),
     });
 
     expect(loadAppState(storage)).toEqual(validState);
@@ -136,5 +244,48 @@ describe("diagnosis storage", () => {
     };
 
     expect(saveAppState(createEmptyAppState(), throwingStorage)).toBe(false);
+  });
+
+  it("does not replace the last-valid recovery state when the next state is invalid", () => {
+    const recoveryState = stateWithTarget("economics");
+    const storage = makeStorage({
+      [STORAGE_LAST_VALID_KEY_V2]: JSON.stringify(recoveryState),
+    });
+    const invalidState = {
+      ...createEmptyAppState(),
+      currentSemester: "5-1",
+    } as unknown as SavedAppStateV2;
+
+    expect(saveAppState(invalidState, storage)).toBe(false);
+    expect(storage.getItem(STORAGE_LAST_VALID_KEY_V2)).toBe(JSON.stringify(recoveryState));
+    expect(loadAppState(storage)).toEqual(recoveryState);
+  });
+
+  it("keeps the old recovery state when the second v2 write fails", () => {
+    const storedValues = new Map<string, string>([
+      [STORAGE_LAST_VALID_KEY_V2, JSON.stringify(stateWithTarget("economics"))],
+    ]);
+    let writes = 0;
+    const secondWriteFailingStorage: Storage = {
+      getItem: (key) => storedValues.get(key) ?? null,
+      setItem: (key, value) => {
+        writes += 1;
+        if (writes === 2) throw new Error("second write failed");
+        storedValues.set(key, value);
+      },
+      removeItem: (key) => storedValues.delete(key),
+      clear: () => storedValues.clear(),
+      key: (index) => [...storedValues.keys()][index] ?? null,
+      get length() {
+        return storedValues.size;
+      },
+    };
+
+    expect(saveAppState(stateWithTarget("food-marketing"), secondWriteFailingStorage)).toBe(false);
+    expect(secondWriteFailingStorage.getItem(STORAGE_LAST_VALID_KEY_V2)).toBe(
+      JSON.stringify(stateWithTarget("economics")),
+    );
+    secondWriteFailingStorage.setItem(STORAGE_KEY_V2, "{broken");
+    expect(loadAppState(secondWriteFailingStorage)).toEqual(stateWithTarget("economics"));
   });
 });
