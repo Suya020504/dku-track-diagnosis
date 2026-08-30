@@ -4,6 +4,30 @@
 
 ## 2026-08-30
 
+### Validate the planner visual redesign release gate
+
+- 2026-08-31 KST에 캠퍼스 안내책자 × 학업 플래너 시각 체계를 실제 프로덕션 미리보기로 검증했습니다.
+- fresh 관심 설문 10문항 경로, fresh 직접 진단 경로, PDF beta 검수·취소, 결과·독립 추천·학기 계획, 자료 읽기 4개 주소를 완주했습니다.
+- 1440×900, 1024×768, 768×1024, 390×844, 320×800에서 보이는 H1/main 각 1개, 가로 overflow·수평 잘림·44px 미만 조작 요소 0건을 확인했습니다.
+- 키보드 전용 직접 진단, 3px skip-link focus, reduced motion, schedule/checks history 복원, 합성 localStorage 실패 alert, 모바일 하단 내비게이션 비겹침을 확인했습니다.
+- 결과 2쪽과 계획 3쪽을 print media PDF로 저장하고 전 페이지 PNG를 육안 검수했습니다.
+- 합성 비개인 QA 상태의 승인 캡처 15개를 docs/assets/2026-08-30-planner-redesign/에 추가하고 원본과 SHA-256 일치를 확인했습니다.
+
+검증:
+
+- pnpm.cmd test — Vitest 4.1.8, 46개 테스트 파일·544개 테스트 통과
+- pnpm.cmd build — TypeScript noEmit과 Vite 7.3.5 프로덕션 빌드 통과, 1,774개 모듈 변환
+- git diff --check — 공백 오류 0건
+- 로컬 Chromium 151 — 5개 핵심 흐름, 5개 뷰포트, 키보드·히스토리·인쇄·개인정보·이미지 fallback 확인
+
+경계와 남은 리스크:
+
+- 이수 과목 직접 선택은 완전한 기본 경로입니다. PDF beta는 synthetic-course-history.pdf에서 0 matched / 1 unmatched라 release-ready로 판정하지 않았습니다.
+- localStorage에는 앱 상태 키 2개만 남고 PDF 원래 파일명·원문 오탈자·개인 식별 sentinel은 없었습니다. 네트워크는 localhost 정적 GET만 있었고 업로드·POST는 없었습니다.
+- 생성 이미지는 공식 캠퍼스 사진·로고·인장·근거 자료가 아닙니다. 공식 캠퍼스 사진은 재사용 허가 미확인으로 삽입하지 않았습니다.
+- Impeccable detector was run exactly once in Task 11 and failed before JSON because the installed detect-url.mjs was missing. Do not rerun it or alter/install the skill. Preserve this limitation verbatim.
+- 이번 작업은 push, merge, deploy, 외부 제출을 수행하지 않았습니다. 운영 Vercel에 반영됐다고 주장하지 않습니다.
+
 ### Validate independent recommendations and graduation planning
 
 - 관심 적합도, 현재 완료 과목 접근성, 졸업 전 계획 가능성을 하나의 종합 순위로 합치지 않고 독립 축으로 검증했습니다.
