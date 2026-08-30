@@ -3805,14 +3805,6 @@ function EnrollmentPolicyNotice({ enrollmentType }: { enrollmentType: Enrollment
   );
 }
 
-type IncumbentResultTab = "summary" | "recommendation" | "modules" | "required";
-
-function incumbentResultTabForSection(section: ResultSection): IncumbentResultTab {
-  if (section === "current") return "summary";
-  if (section === "next") return "recommendation";
-  return "required";
-}
-
 function ResultDetailView({
   result,
   profile,
@@ -3843,11 +3835,6 @@ function ResultDetailView({
         .map((courseId) => courses.find((course) => course.id === courseId))
         .filter((course): course is Course => course !== undefined)
     : [];
-  const activeResultTab = incumbentResultTabForSection(section);
-  const visibleResultTab: IncumbentResultTab = (
-    (!hasTrackProgress && (activeResultTab === "summary" || activeResultTab === "modules")) ||
-    (!hasRequiredProgress && activeResultTab === "required")
-  ) ? "recommendation" : activeResultTab;
   const statusTitle = {
     "current-input-satisfied": "현재 입력 기준 충족",
     "reference-calculation-satisfied": "참고 계산상 충족",
@@ -3867,109 +3854,80 @@ function ResultDetailView({
             : "선택한 이수 경로의 전체 전공학점 진행도를 확인하세요."}
         headingRef={headingRef}
       />
-      <div className="result-top-grid">
-        <div className="result-top-summary">
-          {hasTrackProgress && (
-            <div className="result-grid">
-              <ResultMetric label="전체 진행률" value={`${result.completionRate}%`} />
-              <ResultMetric label="남은 과목" value={formatNeededCourseRange(neededCoursePlans)} />
-              <ResultMetric label="트랙 인정 학점" value={`${result.trackCredits}학점`} />
-              {requiredProgress && (
-                <ResultMetric
-                  label="필수 과목"
-                  value={`${requiredProgress.completedCredits}/${requiredProgress.requiredCredits}학점`}
-                />
-              )}
-            </div>
-          )}
-        </div>
-        <div className="result-action-bar no-print">
-          <div>
-            <strong>결과 리포트 저장</strong>
-            <span>브라우저 인쇄 창에서 PDF 저장 또는 프린터 출력을 선택할 수 있습니다.</span>
-          </div>
-          <button className="print-button" type="button" onClick={printResultReport}>
-            <Printer aria-hidden="true" size={18} />
-            <span>PDF 저장/인쇄</span>
-          </button>
-        </div>
-      </div>
-      <PathProgressSummary profile={profile} result={pathProgress} />
       <div className="result-detail-tabs" role="tablist" aria-label="진단 결과 상세 보기">
-        {hasTrackProgress && (
+        {([
+          ["current", "현재 현황"],
+          ["next", "다음 할 일"],
+          ["confirm", "확인 사항"],
+        ] as const).map(([id, label]) => (
           <button
-            className={visibleResultTab === "summary" ? "active" : ""}
-            id="result-tab-summary"
+            className={section === id ? "active" : ""}
+            data-result-section={id}
+            id={`result-section-${id}`}
             role="tab"
-            aria-controls="result-panel-summary"
-            aria-selected={visibleResultTab === "summary"}
-            data-result-section="current"
+            aria-controls={`result-panel-${id}`}
+            aria-selected={section === id}
             type="button"
-            onClick={() => onSectionChange("current")}
+            key={id}
+            onClick={() => onSectionChange(id)}
           >
-            한눈에 보기
+            {label}
           </button>
-        )}
-        <button
-          className={visibleResultTab === "recommendation" ? "active" : ""}
-          id="result-tab-recommendation"
-          role="tab"
-          aria-controls="result-panel-recommendation"
-          aria-selected={visibleResultTab === "recommendation"}
-          data-result-section="next"
-          type="button"
-          onClick={() => onSectionChange("next")}
-        >
-          맞춤 트랙 추천
-        </button>
-        {hasTrackProgress && (
-          <button
-            className={visibleResultTab === "modules" ? "active" : ""}
-            id="result-tab-modules"
-            role="tab"
-            aria-controls="result-panel-modules"
-            aria-selected={visibleResultTab === "modules"}
-            data-result-section="next"
-            type="button"
-            onClick={() => onSectionChange("next")}
-          >
-            부족 모듈
-          </button>
-        )}
-        {hasRequiredProgress && (
-          <button
-            className={visibleResultTab === "required" ? "active" : ""}
-            id="result-tab-required"
-            role="tab"
-            aria-controls="result-panel-required"
-            aria-selected={visibleResultTab === "required"}
-            data-result-section="confirm"
-            type="button"
-            onClick={() => onSectionChange("confirm")}
-          >
-            필수 과목
-          </button>
-        )}
+        ))}
       </div>
       <div className="result-detail-panel">
-        {hasTrackProgress && (
-          <div className="result-tab-panel" id="result-panel-summary" role="tabpanel" aria-labelledby="result-tab-summary" hidden={visibleResultTab !== "summary"}>
-            <TrackNeededCourseSummary plans={neededCoursePlans} />
+        <div className="result-tab-panel" data-result-panel="current" id="result-panel-current" role="tabpanel" aria-labelledby="result-section-current" hidden={section !== "current"}>
+          <div className="result-top-grid">
+            <div className="result-top-summary">
+              {hasTrackProgress && (
+                <div className="result-grid">
+                  <ResultMetric label="전체 진행률" value={`${result.completionRate}%`} />
+                  <ResultMetric label="남은 과목" value={formatNeededCourseRange(neededCoursePlans)} />
+                  <ResultMetric label="트랙 인정 학점" value={`${result.trackCredits}학점`} />
+                  {requiredProgress && (
+                    <ResultMetric
+                      label="필수 과목"
+                      value={`${requiredProgress.completedCredits}/${requiredProgress.requiredCredits}학점`}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="result-action-bar no-print">
+              <div>
+                <strong>결과 리포트 저장</strong>
+                <span>브라우저 인쇄 창에서 PDF 저장 또는 프린터 출력을 선택할 수 있습니다.</span>
+              </div>
+              <button className="print-button" type="button" onClick={printResultReport}>
+                <Printer aria-hidden="true" size={18} />
+                <span>PDF 저장/인쇄</span>
+              </button>
+            </div>
           </div>
-        )}
-        <div className="result-tab-panel" id="result-panel-recommendation" role="tabpanel" aria-labelledby="result-tab-recommendation" hidden={visibleResultTab !== "recommendation"}>
+          <PathProgressSummary profile={profile} result={pathProgress} />
+          {hasTrackProgress ? (
+            <TrackNeededCourseSummary plans={neededCoursePlans} />
+          ) : (
+            <p className="empty-text">현재 이수 경로의 전공학점 진행도를 기준으로 확인하세요.</p>
+          )}
+        </div>
+        <div className="result-tab-panel" data-result-panel="next" id="result-panel-next" role="tabpanel" aria-labelledby="result-section-next" hidden={section !== "next"}>
           <IndependentRecommendationPrompt
             onOpenRecommendations={onOpenRecommendations}
             onGoToPlan={onGoToPlan}
           />
-        </div>
-        {hasTrackProgress && (
-          <div className="result-tab-panel" id="result-panel-modules" role="tabpanel" aria-labelledby="result-tab-modules" hidden={visibleResultTab !== "modules"}>
+          {hasTrackProgress ? (
             <ModuleProgressBoard trackResults={result.trackResults} />
+          ) : (
+            <p className="empty-text">선택한 트랙이 없으면 트랙별 부족 모듈은 표시되지 않습니다.</p>
+          )}
+        </div>
+        <div className="result-tab-panel" data-result-panel="confirm" id="result-panel-confirm" role="tabpanel" aria-labelledby="result-section-confirm" hidden={section !== "confirm"}>
+          <div className="result-confirmation-copy">
+            <h3>공식 확인 전 점검</h3>
+            <p>자가진단 결과는 참고용입니다. 실제 인정 여부와 신청 가능 여부는 학과 공식 안내로 확인해 주세요.</p>
           </div>
-        )}
-        {hasRequiredProgress && (
-          <div className="result-tab-panel" id="result-panel-required" role="tabpanel" aria-labelledby="result-tab-required" hidden={visibleResultTab !== "required"}>
+          {hasRequiredProgress ? (
             <div className="result-support-grid">
               <CourseSummaryList
                 title="필수 과목 누락"
@@ -3979,8 +3937,10 @@ function ResultDetailView({
                 tone="danger"
               />
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="empty-text">이 이수 경로에는 별도 필수 과목 확인 항목이 없습니다.</p>
+          )}
+        </div>
       </div>
 
     </div>

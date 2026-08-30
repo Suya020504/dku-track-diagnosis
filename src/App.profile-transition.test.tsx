@@ -177,6 +177,10 @@ describe("profile integration transitions", () => {
     await mountApp();
 
     expect(document.querySelector('[role="tab"][data-profile-stage="path"]')?.getAttribute("aria-selected")).toBe("true");
+    expect(document.querySelector('[data-profile-region="path"]')?.hasAttribute("hidden")).toBe(false);
+    expect(document.querySelector('[data-profile-region="path"]')?.textContent).toContain("소속을 먼저 선택해 주세요");
+    expect(document.querySelector('[data-profile-region="affiliation"]')?.hasAttribute("hidden")).toBe(true);
+    expect(document.querySelector(".study-path-complete")).toBeNull();
 
     await act(async () => {
       (document.querySelector<HTMLButtonElement>('[role="tab"][data-profile-stage="affiliation"]') ??
@@ -186,6 +190,7 @@ describe("profile integration transitions", () => {
 
     await setRouteAndPop("/?view=diagnosis&step=profile&profile=path");
     expect(document.querySelector('[role="tab"][data-profile-stage="path"]')?.getAttribute("aria-selected")).toBe("true");
+    expect(document.querySelector('[data-profile-region="path"]')?.hasAttribute("hidden")).toBe(false);
   });
 
   it("canonicalizes the legacy modules route and lets the resource index change sections", async () => {

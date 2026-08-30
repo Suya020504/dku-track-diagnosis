@@ -144,120 +144,139 @@ export function StudyPathSetup({
           </button>
         </div>
 
-        <fieldset className="study-path-fieldset">
-          <legend>지금 확인하고 싶은 것</legend>
-          <div className="study-path-option-grid goal-options">
-            {(Object.keys(GOAL_LABELS) as ServiceGoal[]).map((goal) => (
-              <label className="study-path-option" key={goal}>
-                <input
-                  type="radio"
-                  name="goal"
-                  checked={draft.goal === goal}
-                  onChange={() => update({ goal })}
-                />
-                <span>{GOAL_LABELS[goal]}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
-        <fieldset className="study-path-fieldset">
-          <legend>학생 소속</legend>
-          <div className="study-path-option-grid">
-            {(Object.keys(AFFILIATION_LABELS) as StudentAffiliation[]).map(
-              (affiliation) => (
-                <label className="study-path-option" key={affiliation}>
-                  <input
-                    type="radio"
-                    name="affiliation"
-                    checked={draft.affiliation === affiliation}
-                    onChange={() => changeAffiliation(affiliation)}
-                  />
-                  <span>{AFFILIATION_LABELS[affiliation]}</span>
-                </label>
-              ),
-            )}
-          </div>
-        </fieldset>
-
-        {draft.affiliation && (
+        <div data-profile-region="affiliation" hidden={profileStage !== "affiliation"}>
           <fieldset className="study-path-fieldset">
-            <legend>이수 경로</legend>
-            <div className="study-path-option-grid path-options">
-              {allowedPaths.map((studyPath) => (
-                <label className="study-path-option" key={studyPath}>
-                  <input
-                    type="radio"
-                    name="studyPath"
-                    checked={draft.studyPath === studyPath}
-                    onChange={() => changeStudyPath(studyPath)}
-                  />
-                  <span>{STUDY_PATH_LABELS[studyPath]}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-        )}
-
-        {draft.studyPath === "track-major" && (
-          <fieldset className="study-path-fieldset">
-            <legend>
-              진단할 트랙
-              {draft.goal === "find-track" && (
-                <small> (설문 전에는 선택하지 않아도 됩니다)</small>
+            <legend>학생 소속</legend>
+            <div className="study-path-option-grid">
+              {(Object.keys(AFFILIATION_LABELS) as StudentAffiliation[]).map(
+                (affiliation) => (
+                  <label className="study-path-option" key={affiliation}>
+                    <input
+                      type="radio"
+                      name="affiliation"
+                      checked={draft.affiliation === affiliation}
+                      onChange={() => changeAffiliation(affiliation)}
+                    />
+                    <span>{AFFILIATION_LABELS[affiliation]}</span>
+                  </label>
+                ),
               )}
-            </legend>
-            <div className="study-path-option-grid track-options">
-              {tracks.map((track) => (
-                <label className="study-path-option" key={track.id}>
-                  <input
-                    type="radio"
-                    name="targetTrackId"
-                    checked={draftTargetTrackId === track.id}
-                    onChange={() => changeTargetTrack(track.id)}
-                  />
-                  <span>
-                    <strong>{track.name}</strong>
-                    <small>{track.kind}</small>
-                  </span>
-                </label>
-              ))}
             </div>
           </fieldset>
-        )}
+          <button
+            className="primary-button"
+            type="button"
+            disabled={!draft.affiliation}
+            onClick={() => onProfileStageChange?.("path")}
+          >
+            이수 경로 선택
+          </button>
+        </div>
 
-        <label className="study-path-entry-year">
-          <span>입학연도 <small>(선택)</small></span>
-          <input
-            type="number"
-            min="2000"
-            max="2026"
-            value={draft.entryYear ?? ""}
-            onChange={(event) =>
-              update({
-                entryYear: event.target.value
-                  ? Number(event.target.value)
-                  : undefined,
-              })
-            }
-          />
-        </label>
+        <div data-profile-region="path" hidden={profileStage !== "path"}>
+          <button className="text-button" type="button" onClick={() => onProfileStageChange?.("affiliation")}>
+            소속 다시 선택
+          </button>
+          {!draft.affiliation ? (
+            <p className="study-path-status" role="status">소속을 먼저 선택해 주세요. 소속을 선택한 뒤 이수 경로를 정할 수 있습니다.</p>
+          ) : (
+            <>
+              <fieldset className="study-path-fieldset">
+                <legend>지금 확인하고 싶은 것</legend>
+                <div className="study-path-option-grid goal-options">
+                  {(Object.keys(GOAL_LABELS) as ServiceGoal[]).map((goal) => (
+                    <label className="study-path-option" key={goal}>
+                      <input
+                        type="radio"
+                        name="goal"
+                        checked={draft.goal === goal}
+                        onChange={() => update({ goal })}
+                      />
+                      <span>{GOAL_LABELS[goal]}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
 
-        <p className="study-path-status" role="status">
-          {draft.affiliation && draft.studyPath
-            ? `${AFFILIATION_LABELS[draft.affiliation]} · ${STUDY_PATH_LABELS[draft.studyPath]} 기준을 사용합니다.`
-            : "학생 소속과 이수 경로를 선택해 주세요."}
-        </p>
-        <button
-          className="primary-button study-path-complete"
-          type="button"
-          disabled={!valid}
-          onClick={complete}
-        >
-          {draft.goal === "find-track" && !draftTargetTrackId
-            ? "관심 설문으로 이동"
-            : "이수 과목 선택으로 이동"}
-        </button>
+              <fieldset className="study-path-fieldset">
+                <legend>이수 경로</legend>
+                <div className="study-path-option-grid path-options">
+                  {allowedPaths.map((studyPath) => (
+                    <label className="study-path-option" key={studyPath}>
+                      <input
+                        type="radio"
+                        name="studyPath"
+                        checked={draft.studyPath === studyPath}
+                        onChange={() => changeStudyPath(studyPath)}
+                      />
+                      <span>{STUDY_PATH_LABELS[studyPath]}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              {draft.studyPath === "track-major" && (
+                <fieldset className="study-path-fieldset">
+                  <legend>
+                    진단할 트랙
+                    {draft.goal === "find-track" && (
+                      <small> (설문 전에는 선택하지 않아도 됩니다)</small>
+                    )}
+                  </legend>
+                  <div className="study-path-option-grid track-options">
+                    {tracks.map((track) => (
+                      <label className="study-path-option" key={track.id}>
+                        <input
+                          type="radio"
+                          name="targetTrackId"
+                          checked={draftTargetTrackId === track.id}
+                          onChange={() => changeTargetTrack(track.id)}
+                        />
+                        <span>
+                          <strong>{track.name}</strong>
+                          <small>{track.kind}</small>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              )}
+
+              <label className="study-path-entry-year">
+                <span>입학연도 <small>(선택)</small></span>
+                <input
+                  type="number"
+                  min="2000"
+                  max="2026"
+                  value={draft.entryYear ?? ""}
+                  onChange={(event) =>
+                    update({
+                      entryYear: event.target.value
+                        ? Number(event.target.value)
+                        : undefined,
+                    })
+                  }
+                />
+              </label>
+
+              <p className="study-path-status" role="status">
+                {draft.studyPath
+                  ? `${AFFILIATION_LABELS[draft.affiliation]} · ${STUDY_PATH_LABELS[draft.studyPath]} 기준을 사용합니다.`
+                  : "이수 경로를 선택해 주세요."}
+              </p>
+              <button
+                className="primary-button study-path-complete"
+                type="button"
+                disabled={!valid}
+                onClick={complete}
+              >
+                {draft.goal === "find-track" && !draftTargetTrackId
+                  ? "관심 설문으로 이동"
+                  : "이수 과목 선택으로 이동"}
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </section>
   );
