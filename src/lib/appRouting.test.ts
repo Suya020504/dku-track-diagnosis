@@ -70,6 +70,24 @@ describe("canonical app route resolution", () => {
     expect(resolveAppRoute("?view=result", reviewedMinorState)).toEqual({ view: "result" });
   });
 
+  it("opens pdf review only for the course step with an in-memory draft", () => {
+    expect(resolveAppRoute(
+      "?view=diagnosis&step=courses&input=pdf-review",
+      minorState,
+      { hasPdfImportDraft: true },
+    )).toEqual({ view: "diagnosis", step: "courses", input: "pdf-review" });
+
+    expect(resolveAppRoute(
+      "?view=diagnosis&step=courses&input=pdf-review",
+      minorState,
+    )).toEqual({ view: "diagnosis", step: "courses" });
+    expect(resolveAppRoute(
+      "?view=diagnosis&step=profile&input=pdf-review",
+      minorState,
+      { hasPdfImportDraft: true },
+    )).toEqual({ view: "diagnosis", step: "profile" });
+  });
+
   it.each([
     ["?view=lab", { view: "recommendation", step: "axes" }],
     ["?view=experiment", { view: "plan", step: "setup" }],
@@ -131,6 +149,50 @@ describe("canonical app route writes", () => {
       "/app?view=experiment&step=schedule&utm_source=share#top",
       { view: "landing" },
     )).toBe("/app?utm_source=share#top");
+  });
+
+  it("writes pdf review only on diagnosis courses and clears stale input elsewhere", () => {
+    expect(buildAppHref(
+      "/app?view=diagnosis&step=courses&utm_source=share#review",
+      { view: "diagnosis", step: "courses", input: "pdf-review" },
+    )).toBe(
+      "/app?view=diagnosis&step=courses&utm_source=share&input=pdf-review#review",
+    );
+
+    expect(buildAppHref(
+      "/app?view=diagnosis&step=courses&input=pdf-review&utm_source=share#review",
+      { view: "overview" },
+    )).toBe("/app?view=overview&utm_source=share#review");
+  });
+
+  it("removes pdf review state from history when navigating away", () => {
+    const pushState = vi.fn();
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: {
+        history: {
+          state: {
+            existing: true,
+            input: "pdf-review",
+            view: "diagnosis",
+            step: "courses",
+          },
+          pushState,
+          replaceState: vi.fn(),
+        },
+        location: {
+          href: "/app?view=diagnosis&step=courses&input=pdf-review&theme=dark",
+        },
+      },
+    });
+
+    writeAppRouteToHistory({ view: "overview" }, "push");
+
+    expect(pushState).toHaveBeenCalledWith(
+      { existing: true, view: "overview" },
+      "",
+      "/app?view=overview&theme=dark",
+    );
   });
 
   it("replaces an alias with its canonical URL on mount", () => {

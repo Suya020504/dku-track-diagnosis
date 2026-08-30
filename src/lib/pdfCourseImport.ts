@@ -11,7 +11,12 @@ import {
   type PdfTextPage,
   type PdfUnmatchedCourse,
 } from "../types";
-import type { PdfRuntime, PdfRuntimeLoadingHandle } from "./pdfJsRuntime";
+import { buildPdfImportCandidates } from "./pdfCourseMatching";
+import {
+  realPdfRuntime,
+  type PdfRuntime,
+  type PdfRuntimeLoadingHandle,
+} from "./pdfJsRuntime";
 
 const PDF_SIGNATURE = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]);
 const SOURCE_ID_PATTERN = /^p[1-9]\d*-c[1-9]\d*$/;
@@ -457,4 +462,16 @@ export async function analyzePdfText(input: {
     globalThis.clearTimeout(timeoutId);
     input.signal.removeEventListener("abort", onAbort);
   }
+}
+
+export function analyzePdfCourseFile(
+  file: File,
+  signal: AbortSignal,
+): Promise<PdfImportDraft> {
+  return analyzePdfText({
+    file,
+    signal,
+    runtime: realPdfRuntime,
+    buildCandidates: buildPdfImportCandidates,
+  });
 }

@@ -8833,6 +8833,338 @@ html {
   .v2-landing *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
+/* PDF course import beta */
+.pdf-import-panel {
+  overflow: hidden;
+  border: 1px solid #cbe9df;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f7fcff 0%, var(--accent-soft) 100%);
+}
+
+.pdf-import-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 48px;
+  padding: 11px 16px;
+  border: 0;
+  background: transparent;
+  color: var(--accent-dark);
+  font-weight: 800;
+  text-align: left;
+}
+
+.pdf-import-toggle::after {
+  color: #5b7180;
+  content: "+";
+  font-size: 20px;
+  line-height: 1;
+}
+
+.pdf-import-toggle[aria-expanded="true"]::after {
+  content: "−";
+}
+
+.pdf-import-content {
+  display: grid;
+  gap: 12px;
+  padding: 0 16px 16px;
+  border-top: 1px solid rgba(8, 122, 91, 0.12);
+}
+
+.pdf-import-summary,
+.pdf-import-privacy {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.pdf-import-privacy {
+  margin-top: 0;
+  color: #36556a;
+}
+
+.pdf-file-picker {
+  display: grid;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.pdf-file-picker input {
+  min-height: 44px;
+  padding: 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.pdf-file-picker input::file-selector-button {
+  min-height: 32px;
+  margin-right: 10px;
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: #dff6ff;
+  color: #205d7c;
+  font-weight: 800;
+}
+
+.pdf-import-progress,
+.pdf-import-failure {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: 11px;
+  background: #e9f8f3;
+  color: #31596a;
+  font-size: 14px;
+}
+
+.pdf-import-progress button,
+.pdf-import-failure button,
+.pdf-unmatched-row button,
+.pdf-review-actions > button {
+  min-height: 44px;
+  padding: 9px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 800;
+}
+
+.pdf-import-failure {
+  display: grid;
+  justify-items: start;
+  border: 1px solid #f1c795;
+  background: var(--warning-soft);
+  color: #74401a;
+}
+
+.pdf-import-failure strong,
+.pdf-import-failure span {
+  display: block;
+}
+
+.pdf-import-recovery-notice {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid #b8dfef;
+  border-radius: 11px;
+  background: #effaff;
+  color: #31596a;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.pdf-review-panel-shell {
+  width: min(960px, 100%);
+  margin: 0 auto;
+}
+
+.pdf-match-review {
+  display: grid;
+  gap: 22px;
+}
+
+.pdf-review-header > span {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.pdf-review-header h1 {
+  margin: 7px 0 8px;
+  color: var(--dku-blue-dark);
+  font-size: clamp(25px, 4vw, 36px);
+  line-height: 1.25;
+}
+
+.pdf-review-header p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.pdf-review-counts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pdf-review-counts span {
+  padding: 12px;
+  border: 1px solid #cfe3ec;
+  border-radius: 10px;
+  background: #f4fbfe;
+  color: #31596a;
+  font-weight: 800;
+  text-align: center;
+}
+
+.pdf-review-save-error,
+.pdf-review-conflicts {
+  margin: 0;
+  padding: 14px;
+  border: 1px solid #efc28c;
+  border-radius: 11px;
+  background: var(--warning-soft);
+  color: #74401a;
+  line-height: 1.6;
+}
+
+.pdf-review-conflicts ul {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pdf-review-conflicts li span,
+.pdf-review-conflicts li small {
+  display: block;
+}
+
+.pdf-review-groups {
+  display: grid;
+  gap: 16px;
+}
+
+.pdf-review-group {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface-muted);
+}
+
+.pdf-review-group h2 {
+  margin: 0 0 2px;
+  color: var(--dku-blue-dark);
+  font-size: 18px;
+}
+
+.pdf-review-group > p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.pdf-review-row,
+.pdf-ambiguous-row,
+.pdf-unmatched-row {
+  min-height: 56px;
+  padding: 12px;
+  border: 1px solid #dce5eb;
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.pdf-review-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.pdf-review-row input,
+.pdf-ambiguous-row input {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+}
+
+.pdf-review-row strong,
+.pdf-review-row small {
+  display: block;
+}
+
+.pdf-review-row small {
+  margin-top: 3px;
+  color: var(--muted);
+}
+
+.pdf-ambiguous-row {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.pdf-ambiguous-row legend {
+  padding: 0 5px;
+  color: #36556a;
+  font-weight: 800;
+}
+
+.pdf-ambiguous-row label {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.pdf-ambiguous-row label:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.pdf-ambiguous-approval {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-weight: 800;
+}
+
+.pdf-unmatched-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  color: #36556a;
+  font-weight: 700;
+}
+
+.pdf-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.pdf-review-actions > .primary-button {
+  border-color: transparent;
+  background: var(--accent);
+  color: #fff;
+}
+
+@media (max-width: 760px) {
+  .pdf-import-progress,
+  .pdf-unmatched-row,
+  .pdf-review-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pdf-review-counts {
+    grid-template-columns: 1fr;
+  }
+
+  .pdf-review-actions > button,
+  .pdf-unmatched-row button,
+  .pdf-import-progress button {
+    width: 100%;
+  }
+}
+
 /* Foundation profile and diagnosis-step integration */
 .profile-step-shell {
   min-height: 100dvh;

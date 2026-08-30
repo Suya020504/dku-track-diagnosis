@@ -3,7 +3,7 @@ import { resolveDiagnosisStep, type DiagnosisStep } from "./viewRouting";
 
 export type AppRoute =
   | { view: "landing" }
-  | { view: "diagnosis"; step: DiagnosisStep }
+  | { view: "diagnosis"; step: DiagnosisStep; input?: "pdf-review" }
   | {
       view: "recommendation";
       step: "survey" | "axes";
@@ -19,13 +19,18 @@ const planSteps = new Set(["setup", "schedule", "checks"] as const);
 export function resolveAppRoute(
   search: string,
   state: SavedAppStateV2,
+  context: { hasPdfImportDraft?: boolean } = {},
 ): AppRoute {
   const params = new URLSearchParams(search);
   const view = params.get("view");
 
   if (view === "diagnosis" || view === "result") {
     const step = resolveDiagnosisStep(search, state);
-    return step === "result" ? { view: "result" } : { view: "diagnosis", step };
+    if (step === "result") return { view: "result" };
+    const input = params.get("input");
+    return step === "courses" && input === "pdf-review" && context.hasPdfImportDraft
+      ? { view: "diagnosis", step, input }
+      : { view: "diagnosis", step };
   }
 
   if (view === "lab") {
@@ -66,6 +71,7 @@ export function resolveAppRoute(
 
 export function buildAppHref(currentHref: string, route: AppRoute): string {
   const url = new URL(currentHref, "https://local.invalid");
+  url.searchParams.delete("input");
 
   if (route.view === "landing") {
     clearRouteParams(url);
@@ -77,6 +83,9 @@ export function buildAppHref(currentHref: string, route: AppRoute): string {
     url.searchParams.set("step", route.step);
     url.searchParams.delete("axis");
     url.searchParams.delete("section");
+    if (route.step === "courses" && route.input === "pdf-review") {
+      url.searchParams.set("input", route.input);
+    }
     return `${url.pathname}${url.search}${url.hash}`;
   }
 
@@ -127,6 +136,7 @@ export function writeAppRouteToHistory(
     step: _step,
     axis: _axis,
     section: _section,
+    input: _input,
     ...unrelatedState
   } = currentState;
   const state = { ...unrelatedState, ...routeHistoryState(route) };
@@ -138,14 +148,18 @@ function clearRouteParams(url: URL): void {
   url.searchParams.delete("step");
   url.searchParams.delete("axis");
   url.searchParams.delete("section");
+  url.searchParams.delete("input");
 }
 
 function routeHistoryState(route: AppRoute): Record<string, string> {
   if (route.view === "diagnosis") {
-    return {
+    const state = {
       view: route.step === "result" ? "result" : "diagnosis",
       step: route.step,
     };
+    return route.step === "courses" && route.input === "pdf-review"
+      ? { ...state, input: route.input }
+      : state;
   }
   if (route.view === "result") return { view: "result", step: "result" };
   if (route.view === "recommendation") {

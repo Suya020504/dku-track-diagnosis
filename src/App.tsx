@@ -33,6 +33,8 @@ import { GraduationPlanSetup } from "./features/planning/GraduationPlanSetup";
 import { InterestSurvey } from "./features/recommendations/InterestSurvey";
 import { TrackRecommendationAxes } from "./features/recommendations/TrackRecommendationAxes";
 import { PathProgressSummary } from "./features/results/PathProgressSummary";
+import { PdfCourseImportPanel } from "./features/courses/PdfCourseImportPanel";
+import { PdfMatchReview } from "./features/courses/PdfMatchReview";
 import {
   calculateDiagnosis,
   getCoursesByModule,
@@ -44,6 +46,7 @@ import {
 import { calculatePathProgress } from "./lib/progressEngine";
 import { buildRecommendationAxes } from "./lib/recommendationEngine";
 import { calculateGraduationPlan } from "./lib/graduationPlanner";
+import { mergeApprovedPdfMatches } from "./lib/pdfCourseMatching";
 import {
   appendDiagnosisSnapshot,
   createEmptyAppState,
@@ -71,6 +74,9 @@ import type {
   PlanTerm,
   PlanningSemester,
   PathProgressResult,
+  PdfImportApproval,
+  PdfImportDraft,
+  PdfMergeConflict,
   RecommendationAxes,
   SavedAppStateV2,
   StudentProfile,
@@ -329,6 +335,13 @@ function viewForRoute(route: AppRoute): ViewId {
   return route.view;
 }
 
+function requestsPdfReview(search: string): boolean {
+  const params = new URLSearchParams(search);
+  return params.get("view") === "diagnosis" &&
+    params.get("step") === "courses" &&
+    params.get("input") === "pdf-review";
+}
+
 function emptyInterestSurveyState(): InterestSurveyState {
   return { answers: {}, currentIndex: 0 };
 }
@@ -570,6 +583,13 @@ export function saveGraduationPlanSnapshotTransition(
 function App() {
   const [savedState, setSavedState] = useState<SavedAppStateV2>(() => loadAppState());
   const [storageError, setStorageError] = useState(false);
+  const [pdfImportDraft, setPdfImportDraft] = useState<PdfImportDraft>();
+  const [pdfImportRecoveryNotice, setPdfImportRecoveryNotice] = useState(
+    () => requestsPdfReview(window.location.search),
+  );
+  const [pdfInputRoute, setPdfInputRoute] = useState<"pdf-review">();
+  const [pdfMergeConflicts, setPdfMergeConflicts] = useState<PdfMergeConflict[]>([]);
+  const [pdfReviewSaveError, setPdfReviewSaveError] = useState(false);
   const [diagnosisStep, setDiagnosisStep] = useState<DiagnosisStep>(() => {
     const route = resolveAppRoute(window.location.search, savedState);
     if (route.view === "diagnosis") return route.step;
@@ -657,7 +677,13 @@ function App() {
   }, [savedState]);
   useEffect(() => {
     function syncFromLocation() {
-      const next = resolveAppRoute(window.location.search, savedState);
+      const requestedPdfReview = requestsPdfReview(window.location.search);
+      const next = resolveAppRoute(window.location.search, savedState, {
+        hasPdfImportDraft: Boolean(pdfImportDraft),
+      });
+      if (requestedPdfReview && !pdfImportDraft) {
+        setPdfImportRecoveryNotice(true);
+      }
       writeAppRouteToHistory(next, "replace");
       applyRoute(next);
     }
@@ -668,11 +694,17 @@ function App() {
     }
     window.addEventListener("popstate", syncFromLocation);
     return () => window.removeEventListener("popstate", syncFromLocation);
-  }, [savedState]);
+  }, [pdfImportDraft, savedState]);
 
   useEffect(() => {
     stepHeadingRef.current?.focus();
   }, [diagnosisStep]);
+
+  useEffect(() => {
+    if (activeView === "diagnosis" && diagnosisStep === "courses" && !pdfInputRoute) {
+      stepHeadingRef.current?.focus();
+    }
+  }, [activeView, diagnosisStep, pdfInputRoute]);
 
   useEffect(() => {
     if (activeView !== "plan") {
@@ -705,6 +737,7 @@ function App() {
 
   function applyRoute(route: AppRoute) {
     setActiveView(viewForRoute(route));
+    setPdfInputRoute(route.view === "diagnosis" ? route.input : undefined);
     if (route.view === "diagnosis") setDiagnosisStep(route.step);
     if (route.view === "result") setDiagnosisStep("result");
     if (route.view === "recommendation") {
@@ -746,6 +779,50 @@ function App() {
     navigateAppRoute(step === "result"
       ? { view: "result" }
       : { view: "diagnosis", step });
+  }
+
+  function openPdfMatchReview(draft: PdfImportDraft) {
+    setPdfImportDraft(draft);
+    setPdfImportRecoveryNotice(false);
+    setPdfMergeConflicts([]);
+    setPdfReviewSaveError(false);
+    navigateAppRoute({ view: "diagnosis", step: "courses", input: "pdf-review" });
+  }
+
+  function returnToDirectCourseInput(mode: "push" | "replace", clearDraft: boolean) {
+    if (clearDraft) setPdfImportDraft(undefined);
+    setPdfMergeConflicts([]);
+    setPdfReviewSaveError(false);
+    const route: AppRoute = { view: "diagnosis", step: "courses" };
+    writeAppRouteToHistory(route, mode);
+    applyRoute(route);
+  }
+
+  function approvePdfMatches(approvals: PdfImportApproval[]) {
+    if (!pdfImportDraft) return;
+    const merged = mergeApprovedPdfMatches(
+      savedState.courseSelections,
+      pdfImportDraft,
+      approvals,
+    );
+    setPdfMergeConflicts(merged.conflicts);
+    setPdfReviewSaveError(false);
+    if (merged.addedCourseIds.length === 0) return;
+
+    const next = applyPlanningSourceChange(savedState, {
+      courseSelections: merged.courseSelections,
+    });
+    if (!saveAppState(next)) {
+      setStorageError(true);
+      setPdfReviewSaveError(true);
+      return;
+    }
+
+    setStorageError(false);
+    setSavedState(next);
+    setPlanSaveStatus("idle");
+    setPdfImportRecoveryNotice(false);
+    returnToDirectCourseInput("replace", true);
   }
 
   function toggleTrack(trackId: TrackId) {
@@ -1208,7 +1285,22 @@ function App() {
           </div>
         )}
 
-        {activeView === "diagnosis" && (
+        {activeView === "diagnosis" && pdfInputRoute === "pdf-review" && pdfImportDraft && (
+          <section className="primary-panel full-panel pdf-review-panel-shell">
+            <PdfMatchReview
+              draft={pdfImportDraft}
+              conflicts={pdfMergeConflicts}
+              saveError={pdfReviewSaveError}
+              headingRef={stepHeadingRef}
+              onApprove={approvePdfMatches}
+              onBack={() => returnToDirectCourseInput("push", false)}
+              onCancel={() => returnToDirectCourseInput("replace", true)}
+              onSearchCourse={() => returnToDirectCourseInput("push", false)}
+            />
+          </section>
+        )}
+
+        {activeView === "diagnosis" && pdfInputRoute !== "pdf-review" && (
           <div className="view-layout">
             {requiresTrack && (trackSetupOpen ? (
               <TrackPicker
@@ -1228,6 +1320,11 @@ function App() {
             ))}
             <div className="content-grid">
               <section className="primary-panel">
+                {pdfImportRecoveryNotice && (
+                  <p className="pdf-import-recovery-notice" role="status">
+                    개인정보 보호를 위해 PDF 검수 내용은 새로고침 후 저장하지 않았어요. 직접 선택은 그대로 유지됩니다.
+                  </p>
+                )}
                 <DiagnosisView
                   completedCourseIds={completedCourseIds}
                   selectedTrackIds={selectedTrackIds}
@@ -1239,6 +1336,7 @@ function App() {
                   onSemesterFilterChange={setSemesterFilter}
                   onToggleCourse={toggleCourse}
                   onSaveCourses={saveCompletedCoursesNow}
+                  onPdfAnalyzed={openPdfMatchReview}
                   lastManualSaveAt={lastManualSaveAt}
                 />
               </section>
@@ -2770,6 +2868,7 @@ function DiagnosisView({
   onSemesterFilterChange,
   onToggleCourse,
   onSaveCourses,
+  onPdfAnalyzed,
   lastManualSaveAt,
 }: {
   completedCourseIds: string[];
@@ -2782,6 +2881,7 @@ function DiagnosisView({
   onSemesterFilterChange: (semester: SemesterFilter) => void;
   onToggleCourse: (courseId: string) => void;
   onSaveCourses: () => void;
+  onPdfAnalyzed: (draft: PdfImportDraft) => void;
   lastManualSaveAt: string;
 }) {
   const completedSet = useMemo(() => new Set(completedCourseIds), [completedCourseIds]);
@@ -2807,6 +2907,7 @@ function DiagnosisView({
           <span>지금 저장</span>
         </button>
       </div>
+      <PdfCourseImportPanel onAnalyzed={onPdfAnalyzed} />
       <EnrollmentPolicyNotice enrollmentType={enrollmentType} />
       <div className="course-view-toolbar">
         <div className="course-view-tabs" role="tablist" aria-label="과목 보기 방식">
