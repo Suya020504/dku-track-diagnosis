@@ -2,6 +2,7 @@ import {
   PDF_IMPORT_LIMITS,
   PdfImportError,
   type PdfAmbiguousCourse,
+  type PdfImportCandidateBuilder,
   type PdfImportCandidates,
   type PdfImportDraft,
   type PdfImportFailureCode,
@@ -327,7 +328,7 @@ export async function analyzePdfText(input: {
   file: File;
   runtime: PdfRuntime;
   signal: AbortSignal;
-  consumePages: (pages: PdfTextPage[]) => PdfImportCandidates;
+  buildCandidates: PdfImportCandidateBuilder;
 }): Promise<PdfImportDraft> {
   const pages: PdfTextPage[] = [];
   let bytes: ArrayBuffer | undefined;
@@ -405,7 +406,7 @@ export async function analyzePdfText(input: {
     }
     if (!hasText) throw safeError("no-text-layer");
 
-    const candidateValue: unknown = input.consumePages(pages);
+    const candidateValue: unknown = input.buildCandidates(pages);
     if (isPromiseLike(candidateValue)) {
       void Promise.resolve(candidateValue).catch(() => undefined);
       throw safeError("parse-failed");

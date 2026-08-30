@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   PDF_IMPORT_LIMITS,
   PdfImportError,
+  type PdfImportCandidateBuilder,
   type PdfImportCandidates,
   type PdfTextPage,
 } from "../types";
@@ -115,20 +116,18 @@ function analyzeWith(input: {
   file?: File;
   runtime: PdfRuntime;
   signal?: AbortSignal;
-  consumePages?: (pages: PdfTextPage[]) => PdfImportCandidates;
+  buildCandidates?: PdfImportCandidateBuilder;
 }) {
   return analyzePdfText({
     file: input.file ?? validPdfFile(),
     runtime: input.runtime,
     signal: input.signal ?? new AbortController().signal,
-    consumePages: input.consumePages ?? emptyCandidates,
+    buildCandidates: input.buildCandidates ?? emptyCandidates,
   });
 }
 
-function unsafeConsumer(
-  value: unknown,
-): (pages: PdfTextPage[]) => PdfImportCandidates {
-  return (() => value) as (pages: PdfTextPage[]) => PdfImportCandidates;
+function unsafeBuilder(value: unknown): PdfImportCandidateBuilder {
+  return (() => value) as PdfImportCandidateBuilder;
 }
 
 async function capturePdfError(
@@ -300,13 +299,13 @@ describe("analyzePdfText limits and output", () => {
 
   it("rejects page 51 before requesting page text", async () => {
     const { destroy, getPageText, runtime } = fakeRuntime({ numPages: 51 });
-    const consumePages = vi.fn(emptyCandidates);
+    const buildCandidates = vi.fn(emptyCandidates);
 
-    await expect(analyzeWith({ runtime, consumePages })).rejects.toMatchObject({
+    await expect(analyzeWith({ runtime, buildCandidates })).rejects.toMatchObject({
       code: "page-limit",
     });
     expect(getPageText).not.toHaveBeenCalled();
-    expect(consumePages).not.toHaveBeenCalled();
+    expect(buildCandidates).not.toHaveBeenCalled();
     expect(destroy).toHaveBeenCalledOnce();
   });
 
@@ -368,12 +367,12 @@ describe("analyzePdfText limits and output", () => {
     const { destroy, open, runtime } = fakeRuntime({
       texts: ["경제원론", "통계"],
     });
-    let retainedPages: PdfTextPage[] | undefined;
+    let retainedPages: readonly PdfTextPage[] | undefined;
 
     const draft = await analyzeWith({
       file,
       runtime,
-      consumePages: (pages) => {
+      buildCandidates: (pages) => {
         retainedPages = pages;
         return validCandidates();
       },
@@ -473,7 +472,7 @@ describe("analyzePdfText strict candidate boundary", () => {
     const error = await capturePdfError(
       analyzeWith({
         runtime,
-        consumePages: unsafeConsumer(value),
+        buildCandidates: unsafeBuilder(value),
       }),
     );
 
@@ -491,7 +490,7 @@ describe("analyzePdfText strict candidate boundary", () => {
     await expect(
       analyzeWith({
         runtime,
-        consumePages: (pages) => {
+        buildCandidates: (pages) => {
           retainedPage = pages[0];
           return pages as unknown as PdfImportCandidates;
         },
@@ -501,24 +500,24 @@ describe("analyzePdfText strict candidate boundary", () => {
     expect(retainedPage).toEqual({ pageNumber: 1, text: "" });
   });
 
-  it("rejects an asynchronous consumer and handles its late raw rejection", async () => {
+  it("rejects an asynchronous builder and handles its late raw rejection", async () => {
     const { runtime } = fakeRuntime({ texts: ["private raw page text"] });
-    const consumerResult = deferred<PdfImportCandidates>();
+    const builderResult = deferred<PdfImportCandidates>();
     const error = await capturePdfError(
       analyzeWith({
         runtime,
-        consumePages: unsafeConsumer(consumerResult.promise),
+        buildCandidates: unsafeBuilder(builderResult.promise),
       }),
     );
 
-    consumerResult.reject(new Error("late consumer raw rejection"));
+    builderResult.reject(new Error("late builder raw rejection"));
     await flushMicrotasks();
 
     expect(error).toMatchObject({ code: "parse-failed" });
-    expect(error.message).not.toContain("late consumer raw rejection");
+    expect(error.message).not.toContain("late builder raw rejection");
   });
 
-  it("blanks retained page objects and preserves safe copy when consumer throws", async () => {
+  it("blanks retained page objects and preserves safe copy when builder throws", async () => {
     const cleanup = deferred<void>();
     const { destroy, runtime } = fakeRuntime({
       texts: ["private raw page text"],
@@ -528,7 +527,7 @@ describe("analyzePdfText strict candidate boundary", () => {
     let settled = false;
     const analysis = analyzeWith({
       runtime,
-      consumePages: (pages) => {
+      buildCandidates: (pages) => {
         retainedPage = pages[0];
         throw new Error("student-secret.pdf sentinel raw stack");
       },
@@ -554,6 +553,54 @@ describe("analyzePdfText strict candidate boundary", () => {
   });
 });
 
+describe("Task2 to Task3 candidate-builder integration contract", () => {
+  it("accepts a candidate-only builder and adds parser-owned draft counts", async () => {
+    const { runtime } = fakeRuntime({ texts: ["경제원론", "통계"] });
+    let retainedPage: PdfTextPage | undefined;
+    const buildPdfImportCandidates: PdfImportCandidateBuilder = (pages) => {
+      retainedPage = pages[0];
+      return validCandidates();
+    };
+
+    const draft = await analyzePdfText({
+      file: validPdfFile(),
+      runtime,
+      signal: new AbortController().signal,
+      buildCandidates: buildPdfImportCandidates,
+    });
+
+    expect(draft).toEqual({
+      pageCount: 2,
+      extractedCharacters: 6,
+      ...validCandidates(),
+    });
+    expect(retainedPage).toEqual({ pageNumber: 1, text: "" });
+  });
+
+  it("rejects a builder-owned full draft and still clears retained pages", async () => {
+    const { runtime } = fakeRuntime({ texts: ["private raw page text"] });
+    let retainedPage: PdfTextPage | undefined;
+    const buildFullDraft = (pages: readonly PdfTextPage[]) => {
+      retainedPage = pages[0];
+      return {
+        pageCount: 999,
+        extractedCharacters: 999,
+        ...validCandidates(),
+      };
+    };
+
+    await expect(
+      analyzePdfText({
+        file: validPdfFile(),
+        runtime,
+        signal: new AbortController().signal,
+        buildCandidates: buildFullDraft as unknown as PdfImportCandidateBuilder,
+      }),
+    ).rejects.toMatchObject({ code: "parse-failed" });
+    expect(retainedPage).toEqual({ pageNumber: 1, text: "" });
+  });
+});
+
 describe("analyzePdfText deferred cancellation races", () => {
   it.each(STOP_MODES)(
     "settles on %s during header read and ignores the late header",
@@ -566,12 +613,12 @@ describe("analyzePdfText deferred cancellation races", () => {
       vi.spyOn(header, "arrayBuffer").mockReturnValue(headerRead.promise);
       vi.spyOn(file, "slice").mockReturnValue(header);
       const { open, runtime } = fakeRuntime();
-      const consumePages = vi.fn(emptyCandidates);
+      const buildCandidates = vi.fn(emptyCandidates);
       const analysis = analyzeWith({
         file,
         runtime,
         signal: controller.signal,
-        consumePages,
+        buildCandidates,
       });
       const stopped = expect(analysis).rejects.toMatchObject({
         code: expectedStopCode(mode),
@@ -589,7 +636,7 @@ describe("analyzePdfText deferred cancellation races", () => {
       await flushMicrotasks();
 
       expect(open).not.toHaveBeenCalled();
-      expect(consumePages).not.toHaveBeenCalled();
+      expect(buildCandidates).not.toHaveBeenCalled();
     },
   );
 
@@ -602,12 +649,12 @@ describe("analyzePdfText deferred cancellation races", () => {
       const file = validPdfFile();
       const read = vi.spyOn(file, "arrayBuffer").mockReturnValue(fullRead.promise);
       const { open, runtime } = fakeRuntime();
-      const consumePages = vi.fn(emptyCandidates);
+      const buildCandidates = vi.fn(emptyCandidates);
       const analysis = analyzeWith({
         file,
         runtime,
         signal: controller.signal,
-        consumePages,
+        buildCandidates,
       });
       await reach(() => expect(read).toHaveBeenCalledOnce());
       const stopped = expect(analysis).rejects.toMatchObject({
@@ -624,7 +671,7 @@ describe("analyzePdfText deferred cancellation races", () => {
       await flushMicrotasks();
 
       expect(open).not.toHaveBeenCalled();
-      expect(consumePages).not.toHaveBeenCalled();
+      expect(buildCandidates).not.toHaveBeenCalled();
     },
   );
 
@@ -637,11 +684,11 @@ describe("analyzePdfText deferred cancellation races", () => {
       const { destroy, document, getPageText, open, runtime } = fakeRuntime({
         openPromise: opened.promise,
       });
-      const consumePages = vi.fn(emptyCandidates);
+      const buildCandidates = vi.fn(emptyCandidates);
       const analysis = analyzeWith({
         runtime,
         signal: controller.signal,
-        consumePages,
+        buildCandidates,
       });
       await reach(() => expect(open).toHaveBeenCalledOnce());
       const stopped = expect(analysis).rejects.toMatchObject({
@@ -659,7 +706,7 @@ describe("analyzePdfText deferred cancellation races", () => {
       await flushMicrotasks();
 
       expect(getPageText).not.toHaveBeenCalled();
-      expect(consumePages).not.toHaveBeenCalled();
+      expect(buildCandidates).not.toHaveBeenCalled();
       expect(destroy).toHaveBeenCalledOnce();
     },
   );
@@ -675,11 +722,11 @@ describe("analyzePdfText deferred cancellation races", () => {
         pageText: (pageNumber) =>
           pageNumber === 1 ? Promise.resolve("first") : latePage.promise,
       });
-      const consumePages = vi.fn(emptyCandidates);
+      const buildCandidates = vi.fn(emptyCandidates);
       const analysis = analyzeWith({
         runtime,
         signal: controller.signal,
-        consumePages,
+        buildCandidates,
       });
       await reach(() => expect(getPageText).toHaveBeenCalledTimes(2));
       const stopped = expect(analysis).rejects.toMatchObject({
@@ -695,7 +742,7 @@ describe("analyzePdfText deferred cancellation races", () => {
       }
       await flushMicrotasks();
 
-      expect(consumePages).not.toHaveBeenCalled();
+      expect(buildCandidates).not.toHaveBeenCalled();
       expect(destroy).toHaveBeenCalledOnce();
     },
   );
@@ -709,12 +756,12 @@ describe("analyzePdfText deferred cancellation races", () => {
       const { destroy, runtime } = fakeRuntime({
         destroyPromise: cleanup.promise,
       });
-      const consumePages = vi.fn(validCandidates);
+      const buildCandidates = vi.fn(validCandidates);
       let settled = false;
       const analysis = analyzeWith({
         runtime,
         signal: controller.signal,
-        consumePages,
+        buildCandidates,
       });
       const caught = analysis.catch((error: unknown) => {
         settled = true;
@@ -733,7 +780,7 @@ describe("analyzePdfText deferred cancellation races", () => {
 
       expect(settledBeforeCleanup).toBe(true);
       expect(error).toMatchObject({ code: expectedStopCode(mode) });
-      expect(consumePages).toHaveBeenCalledOnce();
+      expect(buildCandidates).toHaveBeenCalledOnce();
       expect(destroy).toHaveBeenCalledOnce();
     },
   );

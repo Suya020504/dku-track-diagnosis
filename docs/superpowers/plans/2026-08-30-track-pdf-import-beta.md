@@ -281,23 +281,23 @@ Cover:
 6. abort during a page → destroy once;
 7. 15-second fake-timer timeout → `timeout` and destroy once;
 8. runtime open/page failure → classified safe code, raw error text not returned;
-9. success returns only page count, extracted character count, and a callback-produced draft; it does not expose ArrayBuffer or page strings.
+9. a Task 3-style candidate-only builder yields a parser-owned `PdfImportDraft`; returning a full draft or extra count keys is rejected and no ArrayBuffer or page strings are exposed.
 
 - [ ] **Step 4: Implement controlled analysis**
 
 Public orchestration:
 
 ```ts
-export async function analyzePdfText<T>(input: {
+export type PdfImportCandidateBuilder = (
+  pages: readonly PdfTextPage[],
+) => PdfImportCandidates;
+
+export async function analyzePdfText(input: {
   file: File;
   runtime: PdfRuntime;
   signal: AbortSignal;
-  consumePages: (pages: PdfTextPage[]) => T;
-}): Promise<{
-  pageCount: number;
-  extractedCharacters: number;
-  result: T;
-}>;
+  buildCandidates: PdfImportCandidateBuilder;
+}): Promise<PdfImportDraft>;
 ```
 
 Implementation order:
@@ -305,7 +305,8 @@ Implementation order:
 ```text
 validate file → read fresh ArrayBuffer → open runtime → check numPages →
 sequential page text → enforce character total → require some text →
-consume pages synchronously → clear page strings/ArrayBuffer references → destroy in finally
+build and validate exact candidate arrays synchronously → add parser-owned counts →
+clear page strings/ArrayBuffer references → destroy in finally
 ```
 
 Race the whole operation against one 15,000ms timer and signal. `destroy()` must be idempotent. Do not retry password-protected documents.
@@ -337,48 +338,15 @@ git commit -m "feat: enforce private pdf import limits"
 - Create: `src/lib/pdfCourseMatching.test.ts`
 
 **Interfaces:**
-- Consumes: `courses`, `courseOfferings2026`, extracted `PdfTextPage[]`
-- Produces: `buildPdfImportDraft(pages): PdfImportDraft`
+- Consumes: `courses`, `courseOfferings2026`, extracted `readonly PdfTextPage[]`, and the review types introduced by Task 2
+- Produces: `buildPdfImportCandidates(pages): PdfImportCandidates`
 - Produces: `mergeApprovedPdfMatches(current, approvals): PdfMergeResult`
 
-- [ ] **Step 1: Add exact review types**
+- [ ] **Step 1: Reuse Task 2 review types and add merge types**
+
+Task 2 already owns `PdfMatchKind`, `PdfMatchedCourse`, `PdfAmbiguousCourse`, `PdfUnmatchedCourse`, `PdfImportCandidates`, `PdfImportCandidateBuilder`, and parser-owned `PdfImportDraft`. Task 3 verifies and uses those types; it does not redefine the draft root or its parser-owned count fields.
 
 ```ts
-export type PdfMatchKind =
-  | "internal-code"
-  | "official-code"
-  | "exact-name"
-  | "verified-alias";
-
-export type PdfMatchedCourse = {
-  sourceId: string;
-  courseId: string;
-  matchKind: PdfMatchKind;
-  pageNumbers: number[];
-  displayLabel: string;
-};
-
-export type PdfAmbiguousCourse = {
-  sourceId: string;
-  displayLabel: string;
-  candidateCourseIds: string[];
-  pageNumbers: number[];
-};
-
-export type PdfUnmatchedCourse = {
-  sourceId: string;
-  displayLabel: string;
-  pageNumbers: number[];
-};
-
-export type PdfImportDraft = {
-  pageCount: number;
-  extractedCharacters: number;
-  matched: PdfMatchedCourse[];
-  ambiguous: PdfAmbiguousCourse[];
-  unmatched: PdfUnmatchedCourse[];
-};
-
 export type PdfImportApproval = {
   sourceId: string;
   courseId: string;
@@ -422,7 +390,7 @@ Cover:
 - a fuzzy/typo course-like line never becomes matched; it becomes ambiguous candidates or unmatched;
 - unrelated headers, dates, names, credit numbers, and short tokens are discarded rather than surfaced;
 - deterministic order is page, display label, course code;
-- resulting draft contains no full source line beyond a 60-character sanitized course-like label.
+- resulting candidates contain no full source line beyond a 60-character sanitized course-like label.
 
 - [ ] **Step 4: Implement conservative matching**
 
@@ -483,7 +451,7 @@ git commit -m "feat: match pdf courses for student review"
 - Modify: `src/styles.css`
 
 **Interfaces:**
-- Consumes: real `analyzePdfText`, `buildPdfImportDraft`, `mergeApprovedPdfMatches`
+- Consumes: real `analyzePdfText`, `buildPdfImportCandidates`, `mergeApprovedPdfMatches`
 - Produces: direct-selection-first panel and memory-only review route
 - Invalidates: reviewed course timestamp and graduation plan only after a successful approved merge
 
@@ -546,7 +514,7 @@ const { analyzePdfCourseFile } = await import("../../lib/pdfCourseImport");
 
 Do not statically import `pdfjs-dist`, `pdfJsRuntime`, or the real analyzer from `App.tsx`.
 
-In this task, add `analyzePdfCourseFile(file, signal)` to `pdfCourseImport.ts` by composing the real runtime, `analyzePdfText`, and `buildPdfImportDraft`; it returns only `PdfImportDraft`.
+In this task, add `analyzePdfCourseFile(file, signal)` to `pdfCourseImport.ts` by passing `buildPdfImportCandidates` as the `buildCandidates` callback to real-runtime `analyzePdfText`; Task 2 validates the candidate-only result, adds `pageCount` and `extractedCharacters`, and returns `PdfImportDraft`.
 
 Keep only `PdfImportDraft` in React memory. Do not store `File`, ArrayBuffer, pages, password, or filename after analysis resolves.
 

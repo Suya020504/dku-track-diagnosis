@@ -69,6 +69,10 @@ export type PdfImportCandidates = {
   unmatched: PdfUnmatchedCourse[];
 };
 
+export type PdfImportCandidateBuilder = (
+  pages: readonly PdfTextPage[],
+) => PdfImportCandidates;
+
 export type PdfImportDraft = PdfImportCandidates & {
   pageCount: number;
   extractedCharacters: number;
