@@ -8,6 +8,7 @@ import "./styles/planner-shell.css";
 import "./styles/planner-journey.css";
 import "./styles/planner-landing.css";
 import "./styles/planner-entry.css";
+import "./styles/planner-courses.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

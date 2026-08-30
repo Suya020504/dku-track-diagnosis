@@ -242,6 +242,9 @@ describe("App PDF import integration", () => {
     await mountApp(vi.fn().mockResolvedValue(importedDraft));
 
     expect(document.body.textContent).toContain("지금까지 이수한 과목을 선택하세요");
+    expect(document.body.textContent).toContain("직접 선택만으로 진단을 완료할 수 있어요");
+    expect(document.body.textContent).toContain("수강 중");
+    expect(document.body.textContent).toContain("수강 계획 · 다음 학기");
     expect(labeledCheckbox("통계학기초").checked).toBe(true);
     const file = await openAndAnalyze();
 
@@ -310,6 +313,29 @@ describe("App PDF import integration", () => {
     expect(document.body.textContent).not.toContain("raw parser detail");
     expect(labeledCheckbox("통계학기초").checked).toBe(true);
     expect(location.search).not.toContain("input=");
+  });
+
+  it("returns unmatched review items to the direct search and moves keyboard focus there", async () => {
+    saveState(readyState());
+    const unmatchedDraft: PdfImportDraft = {
+      pageCount: 1,
+      extractedCharacters: 12,
+      matched: [],
+      ambiguous: [],
+      unmatched: [{
+        sourceId: "p1-c1",
+        pageNumbers: [1],
+        displayLabel: "민감한 원문 표기",
+      }],
+    };
+    await mountApp(vi.fn().mockResolvedValue(unmatchedDraft));
+    await openAndAnalyze();
+
+    await click("직접 검색하기");
+
+    expect(location.search).not.toContain("input=");
+    expect(document.activeElement).toBe(document.querySelector('input[type="search"]'));
+    expect(document.body.textContent).not.toContain("민감한 원문 표기");
   });
 
   it("aborts an in-flight parser without changing direct selections or the route", async () => {

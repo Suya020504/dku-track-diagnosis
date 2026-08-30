@@ -77,6 +77,8 @@ describe("PdfCourseImportPanel", () => {
     await renderPanel(vi.fn());
 
     expect(document.body.textContent).toContain("PDF로 선택값 채우기 beta");
+    expect(document.body.textContent).toContain("선택 사항");
+    expect(document.body.textContent).toContain("직접 선택만으로 진단을 완료할 수 있어요");
     expect(document.body.textContent).not.toContain("브라우저 안에서만 분석");
 
     await act(async () => button("PDF로 선택값 채우기 beta").click());

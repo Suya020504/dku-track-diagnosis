@@ -21,7 +21,6 @@ import {
   Printer,
   RotateCcw,
   Save,
-  Search,
   Scale,
   ShieldCheck,
   X,
@@ -33,8 +32,11 @@ import { GraduationPlanSetup } from "./features/planning/GraduationPlanSetup";
 import { InterestSurvey } from "./features/recommendations/InterestSurvey";
 import { TrackRecommendationAxes } from "./features/recommendations/TrackRecommendationAxes";
 import { PathProgressSummary } from "./features/results/PathProgressSummary";
-import { PdfCourseImportPanel } from "./features/courses/PdfCourseImportPanel";
 import { PdfMatchReview } from "./features/courses/PdfMatchReview";
+import {
+  CourseSelectionView,
+  type CourseGroupMode,
+} from "./features/courses/CourseSelectionView";
 import { GuidebookShell } from "./features/shell/GuidebookShell";
 import { PlannerLanding } from "./features/landing/PlannerLanding";
 import type { LandingPlannerStatus } from "./features/landing/PlannerLanding";
@@ -255,6 +257,8 @@ const curriculumSlots = [
   { key: "4-1", label: "4학년 1학기" },
   { key: "4-2", label: "4학년 2학기" },
 ] as const;
+
+const directSelectionCourses = courses.filter((course) => course.moduleId !== "A");
 
 const enrollmentOptions: Array<{
   id: EnrollmentType;
@@ -644,12 +648,17 @@ function App({ storage }: { storage?: Storage } = {}) {
   const [trackSetupOpen, setTrackSetupOpen] = useState(() => selectedTrackIds.length === 0);
   const [gradeFilter, setGradeFilter] = useState<GradeFilter>("all");
   const [semesterFilter, setSemesterFilter] = useState<SemesterFilter>("all");
+  const [courseGroupMode, setCourseGroupMode] = useState<CourseGroupMode>("semester");
+  const [courseQuery, setCourseQuery] = useState("");
+  const [focusCourseSearchOnReturn, setFocusCourseSearchOnReturn] = useState(false);
   const [lastManualSaveAt, setLastManualSaveAt] = useState("");
   const [guideOpen, setGuideOpen] = useState(
     () => activeView !== "landing" && !loadGuideDismissed(),
   );
   const [guideStepIndex, setGuideStepIndex] = useState(0);
   const stepHeadingRef = useRef<HTMLHeadingElement>(null);
+  const diagnosisResultActionRef = useRef<HTMLButtonElement>(null);
+  const courseSearchInputRef = useRef<HTMLInputElement>(null);
   const planHeadingRef = useRef<HTMLHeadingElement>(null);
   const initialLocationSyncedRef = useRef(false);
   const savingPlanGeneratedAtRef = useRef<string | undefined>(undefined);
@@ -746,6 +755,13 @@ function App({ storage }: { storage?: Storage } = {}) {
       stepHeadingRef.current?.focus();
     }
   }, [activeView, diagnosisStep, pdfInputRoute]);
+
+  useEffect(() => {
+    if (!focusCourseSearchOnReturn || activeView !== "diagnosis" || pdfInputRoute) return;
+    courseSearchInputRef.current?.focus();
+    courseSearchInputRef.current?.scrollIntoView?.({ behavior: "auto", block: "center" });
+    setFocusCourseSearchOnReturn(false);
+  }, [activeView, focusCourseSearchOnReturn, pdfInputRoute]);
 
   useEffect(() => {
     if (activeView !== "plan") {
@@ -858,6 +874,11 @@ function App({ storage }: { storage?: Storage } = {}) {
     applyRoute(route);
   }
 
+  function returnToDirectCourseSearch() {
+    setFocusCourseSearchOnReturn(true);
+    returnToDirectCourseInput("push", false);
+  }
+
   function approvePdfMatches(approvals: PdfImportApproval[]) {
     if (!pdfImportDraft) return;
     const merged = mergeApprovedPdfMatches(
@@ -923,6 +944,9 @@ function App({ storage }: { storage?: Storage } = {}) {
     setSavedState(next);
     setGradeFilter("all");
     setSemesterFilter("all");
+    setCourseGroupMode("semester");
+    setCourseQuery("");
+    setFocusCourseSearchOnReturn(false);
     setLastManualSaveAt("");
     setActiveView(nextView);
     navigateDiagnosisStep("profile");
@@ -1600,7 +1624,7 @@ function App({ storage }: { storage?: Storage } = {}) {
               onApprove={approvePdfMatches}
               onBack={() => returnToDirectCourseInput("push", false)}
               onCancel={() => returnToDirectCourseInput("replace", true)}
-              onSearchCourse={() => returnToDirectCourseInput("push", false)}
+              onSearchCourse={returnToDirectCourseSearch}
             />
           </section>
         )}
@@ -1630,15 +1654,22 @@ function App({ storage }: { storage?: Storage } = {}) {
                     개인정보 보호를 위해 PDF 검수 내용은 새로고침 후 저장하지 않았어요. 직접 선택은 그대로 유지됩니다.
                   </p>
                 )}
-                <DiagnosisView
-                  completedCourseIds={completedCourseIds}
+                <CourseSelectionView
+                  courses={directSelectionCourses}
+                  courseSelections={savedState.courseSelections}
                   selectedTrackIds={selectedTrackIds}
                   enrollmentType={enrollmentType}
                   headingRef={stepHeadingRef}
+                  resultActionRef={diagnosisResultActionRef}
+                  searchInputRef={courseSearchInputRef}
+                  mode={courseGroupMode}
                   gradeFilter={gradeFilter}
                   semesterFilter={semesterFilter}
+                  query={courseQuery}
+                  onModeChange={setCourseGroupMode}
                   onGradeFilterChange={setGradeFilter}
                   onSemesterFilterChange={setSemesterFilter}
+                  onQueryChange={setCourseQuery}
                   onToggleCourse={toggleCourse}
                   onSaveCourses={saveCompletedCoursesNow}
                   onPdfAnalyzed={openPdfMatchReview}
@@ -1652,6 +1683,7 @@ function App({ storage }: { storage?: Storage } = {}) {
                 enrollmentType={enrollmentType}
                 completedCount={completedCourseIds.length}
                 allowResult={!requiresTrack || Boolean(savedState.targetTrackId)}
+                actionRef={diagnosisResultActionRef}
                 onShowResult={confirmCourseInput}
               />
             </div>
@@ -3177,188 +3209,6 @@ function ModuleComparison({ selectedTracks }: { selectedTracks: Track[] }) {
   );
 }
 
-function DiagnosisView({
-  completedCourseIds,
-  selectedTrackIds,
-  enrollmentType,
-  headingRef,
-  gradeFilter,
-  semesterFilter,
-  onGradeFilterChange,
-  onSemesterFilterChange,
-  onToggleCourse,
-  onSaveCourses,
-  onPdfAnalyzed,
-  lastManualSaveAt,
-}: {
-  completedCourseIds: string[];
-  selectedTrackIds: TrackId[];
-  enrollmentType: EnrollmentType;
-  headingRef: RefObject<HTMLHeadingElement | null>;
-  gradeFilter: GradeFilter;
-  semesterFilter: SemesterFilter;
-  onGradeFilterChange: (grade: GradeFilter) => void;
-  onSemesterFilterChange: (semester: SemesterFilter) => void;
-  onToggleCourse: (courseId: string) => void;
-  onSaveCourses: () => void;
-  onPdfAnalyzed: (draft: PdfImportDraft) => void;
-  lastManualSaveAt: string;
-}) {
-  const completedSet = useMemo(() => new Set(completedCourseIds), [completedCourseIds]);
-  const [selectionMode, setSelectionMode] = useState<"semester" | "module">("semester");
-  const [courseQuery, setCourseQuery] = useState("");
-
-  return (
-    <div className="view-stack diagnosis-v2">
-      <SectionHeader
-        eyebrow="2. 수강 과목 체크"
-        title="지금까지 이수한 과목을 선택하세요."
-        body="과목을 찾기 편한 방식으로 전환할 수 있습니다. 체크한 과목만 실제 이수 내역으로 계산하고, 앞으로 들을 과목은 학기 계획에서 따로 관리합니다."
-        headingRef={headingRef}
-      />
-      <div className="course-save-panel diagnosis-save-bar">
-        <div>
-          <strong>{completedCourseIds.length}개 과목 선택됨</strong>
-          <span>자동 저장되어 같은 브라우저에서 이어서 볼 수 있어요.</span>
-          <small>{lastManualSaveAt ? `직접 저장: ${lastManualSaveAt}` : "입력 즉시 자동 저장 중"}</small>
-        </div>
-        <button className="primary-button save-course-button" type="button" onClick={onSaveCourses}>
-          <Save aria-hidden="true" size={18} />
-          <span>지금 저장</span>
-        </button>
-      </div>
-      <PdfCourseImportPanel onAnalyzed={onPdfAnalyzed} />
-      <EnrollmentPolicyNotice enrollmentType={enrollmentType} />
-      <div className="course-view-toolbar">
-        <div className="course-view-tabs" role="tablist" aria-label="과목 보기 방식">
-          <button className={selectionMode === "semester" ? "active" : ""} type="button" role="tab" aria-selected={selectionMode === "semester"} onClick={() => setSelectionMode("semester")}>학년·학기별</button>
-          <button className={selectionMode === "module" ? "active" : ""} type="button" role="tab" aria-selected={selectionMode === "module"} onClick={() => setSelectionMode("module")}>모듈별</button>
-        </div>
-        <label className="course-search-field">
-          <Search aria-hidden="true" size={18} />
-          <span className="sr-only">과목 검색</span>
-          <input value={courseQuery} onChange={(event) => setCourseQuery(event.target.value)} placeholder="과목명 또는 과목코드 검색" />
-        </label>
-      </div>
-      <CourseSelectionList
-        mode={selectionMode}
-        query={courseQuery}
-        completedSet={completedSet}
-        selectedTrackIds={selectedTrackIds}
-        enrollmentType={enrollmentType}
-        gradeFilter={gradeFilter}
-        semesterFilter={semesterFilter}
-        onGradeFilterChange={onGradeFilterChange}
-        onSemesterFilterChange={onSemesterFilterChange}
-        onToggleCourse={onToggleCourse}
-      />
-    </div>
-  );
-}
-
-function CourseSelectionList({
-  mode,
-  query,
-  completedSet,
-  selectedTrackIds,
-  enrollmentType,
-  gradeFilter,
-  semesterFilter,
-  onGradeFilterChange,
-  onSemesterFilterChange,
-  onToggleCourse,
-}: {
-  mode: "semester" | "module";
-  query: string;
-  completedSet: Set<string>;
-  selectedTrackIds: TrackId[];
-  enrollmentType: EnrollmentType;
-  gradeFilter: GradeFilter;
-  semesterFilter: SemesterFilter;
-  onGradeFilterChange: (grade: GradeFilter) => void;
-  onSemesterFilterChange: (semester: SemesterFilter) => void;
-  onToggleCourse: (courseId: string) => void;
-}) {
-  const normalizedQuery = query.trim().toLocaleLowerCase("ko");
-  const visibleCourses = useMemo(
-    () =>
-      courses
-        .filter((course) => course.moduleId !== "A")
-        .filter((course) => matchesSemesterFilter(course, gradeFilter, semesterFilter))
-        .filter((course) => !normalizedQuery || `${course.code} ${course.name} ${getModuleLabel(course.moduleId)}`.toLocaleLowerCase("ko").includes(normalizedQuery))
-        .sort((a, b) => semesterRankForView(a.recommendedSemester) - semesterRankForView(b.recommendedSemester) || a.code.localeCompare(b.code)),
-    [gradeFilter, normalizedQuery, semesterFilter],
-  );
-  const semesterGroups = curriculumSlots
-    .map((slot) => ({ ...slot, courses: visibleCourses.filter((course) => course.recommendedSemester === slot.key) }))
-    .filter((group) => group.courses.length > 0);
-  const unknownCourses = visibleCourses.filter((course) => !course.recommendedSemester);
-  const moduleIds = [...new Set(visibleCourses.map((course) => course.moduleId))];
-  const orderedModuleIds = moduleIds.sort((a, b) => a.localeCompare(b));
-  const relatedCount = visibleCourses.filter((course) => isModuleInAnyTrack(selectedTrackIds, course.moduleId)).length;
-
-  return (
-    <section className="course-selection-list" aria-label="이수 과목 선택">
-      {mode === "semester" && (
-        <SemesterCourseQuickFilters
-          gradeFilter={gradeFilter}
-          semesterFilter={semesterFilter}
-          onGradeFilterChange={onGradeFilterChange}
-          onSemesterFilterChange={onSemesterFilterChange}
-        />
-      )}
-      <div className="course-selection-summary">
-        <span><strong>{visibleCourses.length}</strong>개 과목</span>
-        <span><strong>{visibleCourses.filter((course) => completedSet.has(course.id)).length}</strong>개 체크</span>
-        <span><strong>{relatedCount}</strong>개 선택 트랙 관련</span>
-      </div>
-      {visibleCourses.length === 0 ? (
-        <div className="empty-state"><strong>찾는 과목이 없습니다.</strong><span>검색어나 학년·학기 필터를 바꿔보세요.</span></div>
-      ) : (
-        <div className="course-group-scroll">
-          {mode === "semester" && semesterGroups.map((group) => (
-            <CourseRowGroup title={group.label} subtitle={`${group.courses.filter((course) => completedSet.has(course.id)).length}/${group.courses.length}개 이수`} key={group.key}>
-              {group.courses.map((course) => <CourseCheckRow course={course} completed={completedSet.has(course.id)} trackModule={isModuleInAnyTrack(selectedTrackIds, course.moduleId)} enrollmentType={enrollmentType} onToggleCourse={onToggleCourse} key={course.id} />)}
-            </CourseRowGroup>
-          ))}
-          {mode === "semester" && unknownCourses.length > 0 && (
-            <CourseRowGroup title="학기 미정" subtitle={`${unknownCourses.length}개 과목`}>
-              {unknownCourses.map((course) => <CourseCheckRow course={course} completed={completedSet.has(course.id)} trackModule={isModuleInAnyTrack(selectedTrackIds, course.moduleId)} enrollmentType={enrollmentType} onToggleCourse={onToggleCourse} key={course.id} />)}
-            </CourseRowGroup>
-          )}
-          {mode === "module" && orderedModuleIds.map((moduleId) => {
-            const moduleCourses = visibleCourses.filter((course) => course.moduleId === moduleId);
-            const related = isModuleInAnyTrack(selectedTrackIds, moduleId);
-            return (
-              <CourseRowGroup title={getModuleLabel(moduleId)} subtitle={related ? "선택 트랙 관련 모듈" : `${moduleCourses.length}개 과목`} highlight={related} key={moduleId}>
-                {moduleCourses.map((course) => <CourseCheckRow course={course} completed={completedSet.has(course.id)} trackModule={related} enrollmentType={enrollmentType} onToggleCourse={onToggleCourse} key={course.id} />)}
-              </CourseRowGroup>
-            );
-          })}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function CourseRowGroup({ title, subtitle, highlight = false, children }: { title: string; subtitle: string; highlight?: boolean; children: ReactNode }) {
-  return <section className={highlight ? "course-row-group highlight" : "course-row-group"}><header><h3>{title}</h3><span>{subtitle}</span></header><div>{children}</div></section>;
-}
-
-function CourseCheckRow({ course, completed, trackModule, enrollmentType, onToggleCourse }: { course: Course; completed: boolean; trackModule: boolean; enrollmentType: EnrollmentType; onToggleCourse: (courseId: string) => void }) {
-  const required = isRequiredCourseApplicable(course, enrollmentType);
-  return (
-    <label className={["course-check-row", completed ? "checked" : "", trackModule ? "related" : ""].filter(Boolean).join(" ")}>
-      <input type="checkbox" checked={completed} onChange={() => onToggleCourse(course.id)} />
-      <span className="course-row-check" aria-hidden="true">{completed && <CheckCircle2 size={17} />}</span>
-      <span className="course-row-main"><strong>{course.name}</strong><small>{course.code} · {getModuleLabel(course.moduleId)}</small></span>
-      <span className="course-row-term">{formatSemester(course.recommendedSemester)}</span>
-      <span className="course-row-credit">{course.credits}학점</span>
-      <span className="course-row-badges">{required && <em>필수</em>}{trackModule && <em className="related">트랙 관련</em>}</span>
-    </label>
-  );
-}
-
 function LabView({
   recommendations,
   completedCourseIds,
@@ -4665,6 +4515,7 @@ export function DiagnosisPanel({
   enrollmentType,
   completedCount,
   allowResult,
+  actionRef,
   onShowResult,
 }: {
   result: DiagnosisResult;
@@ -4672,6 +4523,7 @@ export function DiagnosisPanel({
   enrollmentType: EnrollmentType;
   completedCount: number;
   allowResult: boolean;
+  actionRef?: RefObject<HTMLButtonElement | null>;
   onShowResult: () => void;
 }) {
   const enrollmentLabel = getEnrollmentLabel(enrollmentType);
@@ -4691,7 +4543,13 @@ export function DiagnosisPanel({
           <span>{allowResult ? "트랙 선택은 선택 사항입니다." : "선택된 트랙이 없습니다."}</span>
         </div>
         {allowResult && (
-          <button className="primary-button" type="button" onClick={onShowResult}>
+          <button
+            id="diagnosis-result-action"
+            ref={actionRef}
+            className="primary-button"
+            type="button"
+            onClick={onShowResult}
+          >
             <Save aria-hidden="true" size={18} />
             <span>진단 결과 자세히 보기</span>
           </button>
@@ -4755,7 +4613,13 @@ export function DiagnosisPanel({
           ))}
         </div>
       )}
-      <button className="primary-button" type="button" onClick={onShowResult}>
+      <button
+        id="diagnosis-result-action"
+        ref={actionRef}
+        className="primary-button"
+        type="button"
+        onClick={onShowResult}
+      >
         <Save aria-hidden="true" size={18} />
         <span>진단 결과 자세히 보기</span>
       </button>

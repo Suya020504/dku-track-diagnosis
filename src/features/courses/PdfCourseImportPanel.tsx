@@ -1,3 +1,4 @@
+import { ChevronDown, FileUp, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import type { PdfImportDraft } from "../../types";
 
@@ -87,7 +88,12 @@ export function PdfCourseImportPanel({
         aria-controls="pdf-import-content"
         onClick={() => setExpanded((current) => !current)}
       >
-        <span id="pdf-import-title">PDF로 선택값 채우기 beta</span>
+        <span className="pdf-import-toggle-copy">
+          <small>선택 사항</small>
+          <strong id="pdf-import-title">PDF로 선택값 채우기 beta</strong>
+          <span>직접 선택만으로 진단을 완료할 수 있어요.</span>
+        </span>
+        <ChevronDown className="pdf-import-toggle-icon" aria-hidden="true" size={20} />
       </button>
 
       {expanded && (
@@ -96,10 +102,12 @@ export function PdfCourseImportPanel({
             10MB 이하·50쪽 이하의 텍스트가 포함된 PDF만 사용할 수 있어요.
           </p>
           <p className="pdf-import-privacy">
-            PDF는 이 브라우저 안에서만 분석하며, 파일·파일명·읽은 내용을 저장하거나 업로드하지 않습니다.
+            <ShieldCheck aria-hidden="true" size={18} />
+            <span>PDF는 이 브라우저 안에서만 분석하며, 파일·파일명·읽은 내용을 저장하거나 업로드하지 않습니다.</span>
           </p>
 
           <label className="pdf-file-picker">
+            <FileUp aria-hidden="true" size={18} />
             <span>PDF 선택</span>
             <input
               ref={fileInputRef}

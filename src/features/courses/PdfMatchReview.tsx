@@ -70,11 +70,14 @@ export function PdfMatchReview({
   return (
     <section className="pdf-match-review" aria-labelledby="pdf-review-title">
       <header className="pdf-review-header">
-        <span>PDF 과목 검수</span>
+        <span>선택 사항 · PDF 과목 검수 beta</span>
         <h1 id="pdf-review-title" ref={headingRef} tabIndex={-1}>
           추가할 과목을 직접 확인해 주세요
         </h1>
         <p>아직 어떤 과목도 선택되지 않았어요. 정식 교과목명을 확인하고 필요한 항목만 승인해 주세요.</p>
+        <small className="pdf-review-privacy-note">
+          검수 초안은 메모리에만 두며, 원문·파일명은 저장하지 않습니다. 승인 전에는 직접 선택 내역에 합치지 않아요.
+        </small>
       </header>
 
       <div className="pdf-review-counts" aria-label="PDF 분석 결과 요약">
