@@ -12,6 +12,8 @@ export function GuidebookShell({
   guideItems,
   mobilePrimaryItems,
   mobileMoreItems,
+  utilityItems = [],
+  utilityActiveId,
   journeyItems,
   saveState,
   onOpenHelp,
@@ -23,6 +25,8 @@ export function GuidebookShell({
   guideItems: readonly GuideIndexItem[];
   mobilePrimaryItems: readonly MobileJourneyItem[];
   mobileMoreItems: readonly MobileJourneyItem[];
+  utilityItems?: readonly MobileJourneyItem[];
+  utilityActiveId?: string;
   journeyItems: readonly CompassPathItem[];
   saveState: LocalSaveState;
   onOpenHelp: () => void;
@@ -36,6 +40,22 @@ export function GuidebookShell({
           <span>트랙진단 학업 플래너</span>
         </div>
         <span className="planner-shell-current-step">현재 · {currentLabel}</span>
+        {utilityItems.length > 0 ? (
+          <nav className="planner-shell-utility" aria-label="보조 화면">
+            {utilityItems.map((item) => (
+              <button
+                className="planner-focusable"
+                type="button"
+                key={item.id}
+                aria-current={utilityActiveId === item.id ? "page" : undefined}
+                disabled={!item.available}
+                onClick={item.onSelect}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
+        ) : null}
         <div className="planner-shell-actions">
           <button className="planner-shell-help planner-focusable" type="button" onClick={onOpenHelp}>
             <HelpCircle aria-hidden="true" size={17} />

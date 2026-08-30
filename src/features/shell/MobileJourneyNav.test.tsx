@@ -11,6 +11,7 @@ const primaryItems: MobileJourneyItem[] = [
 
 const moreItems: MobileJourneyItem[] = [
   { id: "tracks", label: "트랙", available: true, onSelect: vi.fn() },
+  { id: "overview", label: "트랙제 안내", available: true, onSelect: vi.fn() },
   { id: "resources", label: "자료", available: true, onSelect: vi.fn() },
   { id: "contact", label: "문의", available: true, onSelect: vi.fn() },
 ];
@@ -25,6 +26,7 @@ describe("MobileJourneyNav", () => {
     expect(markup).toContain('aria-current="page"');
     expect(markup).toContain("더보기");
     expect(markup).toContain("트랙");
+    expect(markup).toContain("트랙제 안내");
     expect(markup).toContain("자료");
     expect(markup).toContain("문의");
     expect(markup).toContain("<details");

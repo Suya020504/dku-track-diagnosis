@@ -91,6 +91,40 @@ afterEach(async () => {
 });
 
 describe("App recommendation browser interactions", () => {
+  it.each([
+    ["overview", "트랙제 안내", "트랙제 안내", "contact", "문의사항"],
+    ["contact", "문의사항", "문의", "overview", "트랙제 안내"],
+  ] as const)(
+    "keeps %s reachable and names the actual current utility screen",
+    async (view, currentLabel, mobileLabel, destinationView, destinationLabel) => {
+      saveState(createEmptyAppState());
+      history.replaceState({}, "", `/?view=${view}`);
+      await mountApp();
+
+      expect(document.querySelector(".planner-shell-current-step")?.textContent).toContain(currentLabel);
+      const desktopCurrent = [...document.querySelectorAll<HTMLButtonElement>(".planner-shell-utility button")]
+        .find((candidate) => candidate.textContent?.trim() === currentLabel);
+      expect(desktopCurrent?.getAttribute("aria-current")).toBe("page");
+      const mobileCurrent = [...document.querySelectorAll<HTMLButtonElement>(".planner-mobile-nav__menu button")]
+        .find((candidate) => candidate.textContent?.trim() === mobileLabel);
+      expect(mobileCurrent?.getAttribute("aria-current")).toBe("page");
+
+      const destination = [...document.querySelectorAll<HTMLButtonElement>(".planner-shell-utility button")]
+        .find((candidate) => candidate.textContent?.trim() === destinationLabel);
+      expect(destination).not.toBeUndefined();
+      await act(async () => destination?.click());
+      expect(new URLSearchParams(location.search).get("view")).toBe(destinationView);
+      expect(document.querySelector(".planner-shell-current-step")?.textContent).toContain(destinationLabel);
+      expect(document.querySelectorAll("main")).toHaveLength(1);
+
+      const mobileReturn = [...document.querySelectorAll<HTMLButtonElement>(".planner-mobile-nav__menu button")]
+        .find((candidate) => candidate.textContent?.trim() === mobileLabel);
+      await act(async () => mobileReturn?.click());
+      expect(new URLSearchParams(location.search).get("view")).toBe(view);
+      expect(document.querySelector(".planner-shell-current-step")?.textContent).toContain(currentLabel);
+    },
+  );
+
   it("keeps recommendation content under one guidebook shell and one main landmark", async () => {
     saveState(createEmptyAppState());
     history.replaceState({}, "", "/?view=recommendation&step=survey");

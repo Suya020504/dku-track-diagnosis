@@ -52,6 +52,11 @@
   color: var(--planner-department-green);
 }
 
+.planner-compass-path li[data-state="pending"] button {
+  color: var(--planner-ink-muted);
+  background: color-mix(in srgb, var(--planner-paper) 72%, var(--planner-sky-sheet));
+}
+
 .planner-compass-path li[data-state="current"] button {
   background: var(--planner-department-green);
   color: var(--planner-paper);

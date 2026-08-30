@@ -18,6 +18,11 @@ describe("GuidebookShell", () => {
           { id: "plan", label: "계획", available: false, onSelect: vi.fn() },
         ]}
         mobileMoreItems={[]}
+        utilityItems={[
+          { id: "overview", label: "트랙제 안내", available: true, onSelect: vi.fn() },
+          { id: "contact", label: "문의사항", available: true, onSelect: vi.fn() },
+        ]}
+        utilityActiveId="overview"
         journeyItems={[]}
         saveState="saved"
         onOpenHelp={vi.fn()}
@@ -29,6 +34,9 @@ describe("GuidebookShell", () => {
     expect(markup).toContain('class="planner-app');
     expect(markup).toContain("단국대학교 식품자원경제학과");
     expect(markup).toContain("이 브라우저에 저장됨");
+    expect(markup).toContain("트랙제 안내");
+    expect(markup).toContain("문의사항");
+    expect(markup).toContain('aria-current="page"');
     expect((markup.match(/<main/g) ?? [])).toHaveLength(1);
   });
 
@@ -40,6 +48,7 @@ describe("GuidebookShell", () => {
         guideItems={[]}
         mobilePrimaryItems={[]}
         mobileMoreItems={[]}
+        utilityItems={[]}
         journeyItems={[]}
         saveState="error"
         onOpenHelp={vi.fn()}

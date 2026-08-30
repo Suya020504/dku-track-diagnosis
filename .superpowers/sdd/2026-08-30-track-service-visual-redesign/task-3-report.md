@@ -90,3 +90,79 @@ In-app Browser against `http://127.0.0.1:5173/`:
 - Task 3 intentionally wraps rather than redesigns interior screens. The legacy landing content and internal layouts remain until their dedicated later tasks; superseded legacy headers are hidden under the shared shell but retained in source for staged migration safety.
 - The mobile Ribbon is horizontally scrollable so all five route destinations remain real controls at 390px. Its final density and scrollbar treatment remain a Task 11 responsive-polish concern.
 - Browser smoke did not synthesize a private PDF draft. The fixed-nav safe-area geometry was verified, while the complete PDF matching/approval smoke remains part of the PDF and final release tasks.
+
+## Fix round 1 — utility reachability and fact-backed Ribbon completion
+
+### Findings addressed
+
+1. Restored pointer and keyboard reachability for both legacy utility screens without adding steps to the six-item guidebook hierarchy. Desktop now exposes a compact header utility navigation for `트랙제 안내` and `문의사항`; mobile more now contains `트랙제 안내` as well as the existing `문의`. Both surfaces use the existing controlled route callback and expose `aria-current="page"`. The mobile current-step header names `트랙제 안내` or `문의사항` instead of the parent `기록·근거` group.
+2. Separated route context from saved completion facts in the Compass Path Ribbon. `current` still follows the canonical URL, while `completed` comes only from explicit `SavedAppStateV2` facts: completed/selected interest survey, reviewed course input, applicable target-track selection, and a saved graduation plan. Unfinished milestones before a direct late-stage URL now render `pending` / `대기`, not `complete`.
+
+The two reviewer Minor findings remain deferred to Task 11 as requested.
+
+### RED
+
+```text
+pnpm.cmd vitest run src/features/shell/GuidebookShell.test.tsx src/features/shell/MobileJourneyNav.test.tsx src/features/journey/CompassPathRibbon.test.tsx src/App.recommendation-dom.test.tsx src/App.graduation-plan-integration.test.tsx
+Test Files  4 failed | 1 passed (5)
+Tests  9 failed | 36 passed (45)
+```
+
+The failures reproduced missing desktop utility navigation/current labels, missing mobile overview, missing pending/completed Ribbon metadata, and all five prerequisite-state contradictions.
+
+### GREEN
+
+```text
+pnpm.cmd vitest run src/features/shell/GuidebookShell.test.tsx src/features/shell/MobileJourneyNav.test.tsx src/features/journey/CompassPathRibbon.test.tsx src/App.recommendation-dom.test.tsx src/App.graduation-plan-integration.test.tsx
+Test Files  5 passed (5)
+Tests  45 passed (45)
+```
+
+The App coverage compares empty state, profile only, reviewed courses with a missing track-major target, selected target with incomplete course input, and a saved graduation plan. It also exercises desktop and mobile overview/contact callbacks, actual current labels, `aria-current`, canonical URL writes, and one main landmark.
+
+### Type/build correction
+
+The first build correctly caught a test-only tuple inference issue:
+
+```text
+pnpm.cmd build
+src/App.graduation-plan-integration.test.tsx(397,78): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/App.graduation-plan-integration.test.tsx(398,63): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+```
+
+The expected-stage fixture is now read as a `readonly string[]`. Fresh build output:
+
+```text
+pnpm.cmd build
+tsc --noEmit && vite build
+built successfully
+```
+
+### Full verification
+
+```text
+pnpm.cmd test
+Test Files  38 passed (38)
+Tests  458 passed (458)
+
+git diff --check
+passed
+```
+
+### Browser smoke
+
+In-app Browser/connected Edge against the local app:
+
+- Desktop `1440×900`, overview: URL `?view=overview`, current text `현재 · 트랙제 안내`, utility visible, overview `aria-current=page`, one `main`, zero console warnings/errors.
+- Desktop contact: utility click changed URL to `?view=contact`, current text to `현재 · 문의사항`, contact `aria-current=page`, one `main`.
+- Keyboard: pressing Enter on `트랙제 안내` returned from contact to overview and restored the correct current text.
+- Fresh-origin empty plan `?view=plan&step=setup`: `interest/courses/modules/track` each reported `state=pending`, `completed=false`; `semester` reported `state=current`, `completed=false`; the prerequisite page showed `프로필 입력 필요`; zero console warnings/errors.
+- Mobile `390×844`: overview current text and mobile `aria-current` were correct; utility nav was hidden; fixed mobile nav was visible; `scrollWidth === clientWidth`; bottom reservation remained `86px`. Mobile more → `문의` changed the URL and current text to contact, preserved one `main`, and closed the menu.
+
+### Self-review
+
+- `GuidebookShell` remains a pure controlled component and still renders no `main`.
+- The header utility is secondary navigation, not a seventh guidebook milestone; the committed six-step guide index remains unchanged.
+- Mobile fixed destinations and safe-area rules are unchanged; only the missing overview utility entry was added to more.
+- `data-completed` records persisted completion independently of `data-state`, allowing a completed current stage to remain current without losing its fact state.
+- No route, storage, calculation, PDF, guide, focus, scroll, snapshot, or print handler moved into shell components.

@@ -1083,8 +1083,15 @@ function App({ storage }: { storage?: Storage } = {}) {
           : activeView === "plan"
             ? "plan"
             : "resources";
-  const mobileActiveId = activeView === "contact" ? "contact" : guideActiveId;
-  const currentLabel = guideActiveId === "start"
+  const utilityActiveId = activeView === "overview" || activeView === "contact"
+    ? activeView
+    : undefined;
+  const mobileActiveId = utilityActiveId ?? guideActiveId;
+  const currentLabel = activeView === "overview"
+    ? "트랙제 안내"
+    : activeView === "contact"
+      ? "문의사항"
+      : guideActiveId === "start"
     ? "시작하기"
     : guideActiveId === "tracks"
       ? "트랙 탐색"
@@ -1131,20 +1138,40 @@ function App({ storage }: { storage?: Storage } = {}) {
   ];
   const mobileMoreItems: MobileJourneyItem[] = [
     { id: "tracks", label: "트랙", available: true, onSelect: () => navigateAppRoute({ view: "recommendation", step: "survey" }) },
+    { id: "overview", label: "트랙제 안내", available: true, onSelect: () => navigateAppRoute({ view: "overview" }) },
     { id: "resources", label: "자료", available: true, onSelect: () => navigateAppRoute({ view: "resources", section: "tracks" }) },
     { id: "contact", label: "문의", available: true, onSelect: () => navigateAppRoute({ view: "contact" }) },
   ];
+  const utilityItems: MobileJourneyItem[] = [
+    { id: "overview", label: "트랙제 안내", available: true, onSelect: () => navigateAppRoute({ view: "overview" }) },
+    { id: "contact", label: "문의사항", available: true, onSelect: () => navigateAppRoute({ view: "contact" }) },
+  ];
   const currentJourney = resolveJourneyView(shellRoute);
+  const reviewedCourses = Boolean(savedState.profile && savedState.courseInputReviewedAt);
+  const completedJourneyStages = new Set([
+    ...(savedState.interestSurvey?.completedAt || savedState.interestSurvey?.selectedTrackId
+      ? ["interest"]
+      : []),
+    ...(reviewedCourses ? ["courses", "modules"] : []),
+    ...(savedState.profile?.studyPath === "track-major"
+      ? savedState.targetTrackId ? ["track"] : []
+      : reviewedCourses ? ["track"] : []),
+    ...(savedState.graduationPlan ? ["semester"] : []),
+  ]);
   const journeyItems: CompassPathItem[] = PLANNER_JOURNEY.map((item) => {
     const available = item.stage !== "semester" || planNavAvailable;
+    const completed = completedJourneyStages.has(item.stage);
     return {
       id: item.stage,
       label: item.label,
-      state: item.index < currentJourney.index
-        ? "complete"
-        : item.index === currentJourney.index
-          ? "current"
-          : "next",
+      state: item.index === currentJourney.index
+        ? "current"
+        : completed
+          ? "complete"
+          : item.index > currentJourney.index
+            ? "next"
+            : "pending",
+      completed,
       available,
       unavailableReason: available ? undefined : "결과 확인과 목표 트랙 선택 후 열려요.",
       onSelect: () => {
@@ -1169,6 +1196,8 @@ function App({ storage }: { storage?: Storage } = {}) {
         guideItems={guideItems}
         mobilePrimaryItems={mobilePrimaryItems}
         mobileMoreItems={mobileMoreItems}
+        utilityItems={utilityItems}
+        utilityActiveId={utilityActiveId}
         journeyItems={journeyItems}
         saveState={storageError ? "error" : "saved"}
         onOpenHelp={openGuide}

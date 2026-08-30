@@ -361,6 +361,50 @@ describe("graduation plan pure transitions", () => {
 });
 
 describe("App graduation plan pages", () => {
+  it.each([
+    ["empty", createEmptyAppState(), []],
+    ["profile only", { ...createEmptyAppState(), profile: minorProfile }, []],
+    [
+      "reviewed courses with a missing track-major target",
+      {
+        ...createEmptyAppState(),
+        profile: { ...minorProfile, studyPath: "track-major" as const },
+        courseInputReviewedAt: "2026-08-30T00:00:00.000Z",
+      },
+      ["courses", "modules"],
+    ],
+    [
+      "selected target with incomplete course input",
+      {
+        ...createEmptyAppState(),
+        profile: { ...minorProfile, studyPath: "track-major" as const },
+        targetTrackId: "food-marketing" as const,
+      },
+      ["track"],
+    ],
+    ["saved graduation plan", stateWithPlan(), ["courses", "modules", "track", "semester"]],
+  ] as const)(
+    "derives Ribbon completion from saved milestones for %s",
+    async (_label, state, completedStages) => {
+      saveState(state as SavedAppStateV2);
+      history.replaceState({}, "", "/?view=plan&step=setup");
+      await mountApp();
+
+      const stages = ["interest", "courses", "modules", "track", "semester"];
+      const completed = completedStages as readonly string[];
+      for (const stage of stages) {
+        const item = document.querySelector<HTMLElement>(`[data-journey-stage="${stage}"]`);
+        expect(item, stage).not.toBeNull();
+        expect(item?.dataset.completed, stage).toBe(completed.includes(stage) ? "true" : "false");
+        if (stage !== "semester" && !completed.includes(stage)) {
+          expect(item?.dataset.state, stage).toBe("pending");
+        }
+      }
+      expect(document.querySelector('[data-journey-stage="semester"]')?.getAttribute("data-state")).toBe("current");
+      expect(document.querySelectorAll("main")).toHaveLength(1);
+    },
+  );
+
   it("keeps the plan page under one guidebook shell and one main landmark", async () => {
     saveState(stateWithPlan());
     history.replaceState({}, "", "/?view=plan&step=schedule");

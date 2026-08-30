@@ -54,6 +54,31 @@
   justify-self: end;
 }
 
+.planner-shell-utility {
+  grid-column: 2;
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.planner-shell-utility button {
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--planner-control-radius);
+  background: transparent;
+  color: var(--planner-ink-muted);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.planner-shell-utility button[aria-current="page"] {
+  background: var(--planner-mint-sheet);
+  color: var(--planner-department-green);
+}
+
 .planner-shell-help,
 .planner-local-save {
   display: inline-flex;
@@ -217,7 +242,8 @@
 
   .planner-shell-wordmark span,
   .planner-shell-actions .planner-local-save,
-  .planner-shell-help span {
+  .planner-shell-help span,
+  .planner-shell-utility {
     display: none;
   }
 
