@@ -8887,31 +8887,23 @@ html {
 }
 
 .pdf-file-picker {
-  display: grid;
-  gap: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
   min-height: 44px;
-  color: var(--text);
-  font-weight: 800;
-}
-
-.pdf-file-picker input {
-  min-height: 44px;
-  padding: 7px;
+  padding: 9px 16px;
   border: 1px solid var(--line-strong);
   border-radius: 10px;
   background: var(--surface);
   color: var(--text);
+  font-weight: 800;
+  cursor: pointer;
 }
 
-.pdf-file-picker input::file-selector-button {
-  min-height: 32px;
-  margin-right: 10px;
-  padding: 5px 12px;
-  border: 0;
-  border-radius: 8px;
-  background: #dff6ff;
-  color: #205d7c;
-  font-weight: 800;
+.pdf-file-picker:focus-within {
+  outline: 3px solid rgba(98, 191, 232, 0.45);
+  outline-offset: 2px;
 }
 
 .pdf-import-progress,

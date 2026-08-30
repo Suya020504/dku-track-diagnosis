@@ -4,6 +4,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { calculateGraduationPlan } from "./lib/graduationPlanner";
+import { STORAGE_KEY_V2, STORAGE_LAST_VALID_KEY_V2 } from "./lib/storage";
 import type {
   GraduationPlanPreferences,
   PdfImportDraft,
@@ -11,7 +12,6 @@ import type {
   StudentProfile,
 } from "./types";
 
-const STORAGE_KEY_V2 = "track-sim:v2";
 const profile: StudentProfile = {
   goal: "check-progress",
   affiliation: "external-student",
@@ -99,13 +99,53 @@ function labeledCheckbox(label: string): HTMLInputElement {
 
 async function mountApp(
   analyzePdfCourseFile: (file: File, signal: AbortSignal) => Promise<PdfImportDraft>,
+  storage?: Storage,
 ) {
   vi.doMock("./lib/pdfCourseImport", () => ({ analyzePdfCourseFile }));
   const { default: App } = await import("./App");
   const container = document.querySelector<HTMLDivElement>("#root");
   if (!container) throw new Error("Missing root");
   root = createRoot(container);
-  await act(async () => root?.render(<App />));
+  await act(async () => root?.render(<App storage={storage} />));
+}
+
+function makeSecondWriteFailingStorage(state: SavedAppStateV2) {
+  const serialized = JSON.stringify(state);
+  const values = new Map<string, string>([
+    [STORAGE_KEY_V2, serialized],
+    [STORAGE_LAST_VALID_KEY_V2, serialized],
+  ]);
+  let armed = false;
+  let writes = 0;
+  let failed = false;
+  const storage: Storage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => {
+      values.set(key, value);
+      if (!armed) return;
+      writes += 1;
+      if (writes === 2 && !failed) {
+        failed = true;
+        throw new Error("active commit write failed after persisting");
+      }
+    },
+    removeItem: (key) => void values.delete(key),
+    clear: () => values.clear(),
+    key: (index) => [...values.keys()][index] ?? null,
+    get length() {
+      return values.size;
+    },
+  };
+  return {
+    arm() {
+      armed = true;
+      writes = 0;
+      failed = false;
+    },
+    serialized,
+    storage,
+    values,
+  };
 }
 
 async function click(label: string) {
@@ -353,5 +393,32 @@ describe("App PDF import integration", () => {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY_V2) ?? "null") as SavedAppStateV2;
     expect(stored.courseSelections).toContainEqual({ courseId: "b-1", status: "completed" });
     expect(location.search).not.toContain("input=");
+  });
+
+  it("rolls back a persisted first write when the active commit write throws", async () => {
+    const initial = readyState();
+    saveState(initial);
+    const failing = makeSecondWriteFailingStorage(initial);
+    failing.arm();
+    await mountApp(vi.fn().mockResolvedValue(importedDraft), failing.storage);
+    await openAndAnalyze();
+    await act(async () => labeledCheckbox("경제원론").click());
+
+    await click("승인한 새 과목 1개 적용");
+
+    expect(document.body.textContent).toContain("저장하지 못했습니다");
+    expect(document.body.textContent).toContain("추가할 과목을 직접 확인해 주세요");
+    expect(labeledCheckbox("경제원론").checked).toBe(true);
+    expect(location.search).toContain("input=pdf-review");
+    expect(failing.values.get(STORAGE_KEY_V2)).toBe(failing.serialized);
+    expect(failing.values.get(STORAGE_LAST_VALID_KEY_V2)).toBe(failing.serialized);
+
+    await act(async () => root?.unmount());
+    root = undefined;
+    await mountApp(vi.fn().mockResolvedValue(importedDraft), failing.storage);
+
+    expect(location.search).not.toContain("input=");
+    expect(labeledCheckbox("경제원론").checked).toBe(false);
+    expect(labeledCheckbox("통계학기초").checked).toBe(true);
   });
 });

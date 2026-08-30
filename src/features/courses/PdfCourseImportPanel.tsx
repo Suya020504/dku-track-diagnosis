@@ -65,7 +65,9 @@ export function PdfCourseImportPanel({
   }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.currentTarget.files?.[0];
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = "";
     if (file) void startAnalysis(file);
   }
 
@@ -101,6 +103,7 @@ export function PdfCourseImportPanel({
             <span>PDF 선택</span>
             <input
               ref={fileInputRef}
+              className="sr-only"
               type="file"
               accept="application/pdf,.pdf"
               onChange={handleFileChange}

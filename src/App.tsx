@@ -580,8 +580,9 @@ export function saveGraduationPlanSnapshotTransition(
   });
 }
 
-function App() {
-  const [savedState, setSavedState] = useState<SavedAppStateV2>(() => loadAppState());
+function App({ storage }: { storage?: Storage } = {}) {
+  const appStorage = storage ?? window.localStorage;
+  const [savedState, setSavedState] = useState<SavedAppStateV2>(() => loadAppState(appStorage));
   const [storageError, setStorageError] = useState(false);
   const [pdfImportDraft, setPdfImportDraft] = useState<PdfImportDraft>();
   const [pdfImportRecoveryNotice, setPdfImportRecoveryNotice] = useState(
@@ -730,7 +731,7 @@ function App() {
   function persist(updater: (current: SavedAppStateV2) => SavedAppStateV2) {
     setSavedState((current) => {
       const next = updater(current);
-      setStorageError(!saveAppState(next));
+      setStorageError(!saveAppState(next, appStorage));
       return next;
     });
   }
@@ -758,7 +759,7 @@ function App() {
 
   function completeProfile(profile: StudentProfile) {
     const transition = completeProfileTransition(savedState, profile);
-    setStorageError(!saveAppState(transition.state));
+    setStorageError(!saveAppState(transition.state, appStorage));
     setSavedState(transition.state);
     setPlanSaveStatus("idle");
     setTrackSetupOpen(false);
@@ -812,7 +813,7 @@ function App() {
     const next = applyPlanningSourceChange(savedState, {
       courseSelections: merged.courseSelections,
     });
-    if (!saveAppState(next)) {
+    if (!saveAppState(next, appStorage)) {
       setStorageError(true);
       setPdfReviewSaveError(true);
       return;
@@ -859,7 +860,7 @@ function App() {
 
   function resetState(nextView: ViewId = activeView) {
     const next = createEmptyAppState();
-    setStorageError(!saveAppState(next));
+    setStorageError(!saveAppState(next, appStorage));
     setSavedState(next);
     setGradeFilter("all");
     setSemesterFilter("all");
@@ -869,7 +870,7 @@ function App() {
   }
 
   function saveCompletedCoursesNow() {
-    const feedback = saveCompletedCoursesManually(savedState, new Date());
+    const feedback = saveCompletedCoursesManually(savedState, new Date(), appStorage);
     setStorageError(feedback.storageError);
     setLastManualSaveAt(feedback.lastManualSaveAt);
   }
@@ -880,7 +881,7 @@ function App() {
       return;
     }
     const next = reviewCourseInputTransition(savedState, new Date().toISOString());
-    setStorageError(!saveAppState(next));
+    setStorageError(!saveAppState(next, appStorage));
     setSavedState(next);
     navigateDiagnosisStep(resolveDiagnosisStep("?view=result&step=result", next));
   }
@@ -921,7 +922,7 @@ function App() {
 
   function startEntryFlow(goal: "check-progress" | "find-track") {
     const transition = startEntryFlowTransition(savedState, goal);
-    setStorageError(!saveAppState(transition.state));
+    setStorageError(!saveAppState(transition.state, appStorage));
     setSavedState(transition.state);
     setGuideOpen(false);
     navigateAppRoute(transition.route);
@@ -933,7 +934,7 @@ function App() {
 
   function chooseInterestTrack(trackId: TrackId) {
     const transition = chooseInterestTrackTransition(savedState, trackId);
-    setStorageError(!saveAppState(transition.state));
+    setStorageError(!saveAppState(transition.state, appStorage));
     setSavedState(transition.state);
     navigateAppRoute(transition.route);
   }
@@ -949,7 +950,7 @@ function App() {
       }),
       profileDraft: undefined,
     };
-    setStorageError(!saveAppState(nextState));
+    setStorageError(!saveAppState(nextState, appStorage));
     setSavedState(nextState);
     navigateAppRoute({
       view: "diagnosis",
@@ -963,7 +964,7 @@ function App() {
       preferences,
       new Date().toISOString(),
     );
-    const saved = saveAppState(transition.state);
+    const saved = saveAppState(transition.state, appStorage);
     setStorageError(!saved);
     setSavedState(transition.state);
     setPlanDraft(preferences);
@@ -997,7 +998,7 @@ function App() {
       recommendationAxes,
       plan: savedState.graduationPlan,
     });
-    const saved = saveAppState(next);
+    const saved = saveAppState(next, appStorage);
     setStorageError(!saved);
     if (!saved) {
       savingPlanGeneratedAtRef.current = undefined;

@@ -47,6 +47,41 @@ function makeStorage(initial: Record<string, string>): Storage {
   };
 }
 
+function makeRecordedStorage(
+  initial: Record<string, string>,
+  failure?: { call: number; afterPersist: boolean },
+) {
+  const storageValues = new Map(Object.entries(initial));
+  const writes: string[] = [];
+  const removals: string[] = [];
+  let setCalls = 0;
+  let failureUsed = false;
+  const storage: Storage = {
+    getItem: (key) => storageValues.get(key) ?? null,
+    setItem: (key, value) => {
+      setCalls += 1;
+      writes.push(key);
+      const mustFail = !failureUsed && failure?.call === setCalls;
+      if (mustFail && failure.afterPersist) storageValues.set(key, value);
+      if (mustFail) {
+        failureUsed = true;
+        throw new Error(`write ${setCalls} failed`);
+      }
+      storageValues.set(key, value);
+    },
+    removeItem: (key) => {
+      removals.push(key);
+      storageValues.delete(key);
+    },
+    clear: () => storageValues.clear(),
+    key: (index) => [...storageValues.keys()][index] ?? null,
+    get length() {
+      return storageValues.size;
+    },
+  };
+  return { removals, storage, storageValues, writes };
+}
+
 function stateWithTarget(targetTrackId: "food-marketing" | "economics"): SavedAppStateV2 {
   return { ...createEmptyAppState(), targetTrackId };
 }
@@ -731,6 +766,65 @@ describe("diagnosis storage", () => {
     };
 
     expect(saveAppState(createEmptyAppState(), throwingStorage)).toBe(false);
+  });
+
+  it("writes last-valid first and the active primary key last as the commit marker", () => {
+    const target = stateWithTarget("food-marketing");
+    const recorded = makeRecordedStorage({});
+
+    expect(saveAppState(target, recorded.storage)).toBe(true);
+
+    expect(recorded.writes).toEqual([
+      STORAGE_LAST_VALID_KEY_V2,
+      STORAGE_KEY_V2,
+    ]);
+    expect(recorded.storage.getItem(STORAGE_LAST_VALID_KEY_V2)).toBe(JSON.stringify(target));
+    expect(recorded.storage.getItem(STORAGE_KEY_V2)).toBe(JSON.stringify(target));
+  });
+
+  it("restores both prior values when the first write persists and then throws", () => {
+    const priorPrimary = JSON.stringify(stateWithTarget("economics"));
+    const priorLastValid = JSON.stringify(createEmptyAppState());
+    const recorded = makeRecordedStorage(
+      {
+        [STORAGE_KEY_V2]: priorPrimary,
+        [STORAGE_LAST_VALID_KEY_V2]: priorLastValid,
+      },
+      { call: 1, afterPersist: true },
+    );
+
+    expect(saveAppState(stateWithTarget("food-marketing"), recorded.storage)).toBe(false);
+    expect(recorded.storage.getItem(STORAGE_KEY_V2)).toBe(priorPrimary);
+    expect(recorded.storage.getItem(STORAGE_LAST_VALID_KEY_V2)).toBe(priorLastValid);
+  });
+
+  it("rolls back the first persisted value when the second write throws", () => {
+    const priorPrimary = JSON.stringify(stateWithTarget("economics"));
+    const priorLastValid = JSON.stringify(createEmptyAppState());
+    const recorded = makeRecordedStorage(
+      {
+        [STORAGE_KEY_V2]: priorPrimary,
+        [STORAGE_LAST_VALID_KEY_V2]: priorLastValid,
+      },
+      { call: 2, afterPersist: false },
+    );
+
+    expect(saveAppState(stateWithTarget("food-marketing"), recorded.storage)).toBe(false);
+    expect(recorded.storage.getItem(STORAGE_KEY_V2)).toBe(priorPrimary);
+    expect(recorded.storage.getItem(STORAGE_LAST_VALID_KEY_V2)).toBe(priorLastValid);
+  });
+
+  it("restores previous values with setItem and removes keys that were previously absent", () => {
+    const priorPrimary = JSON.stringify(stateWithTarget("economics"));
+    const recorded = makeRecordedStorage(
+      { [STORAGE_KEY_V2]: priorPrimary },
+      { call: 2, afterPersist: true },
+    );
+
+    expect(saveAppState(stateWithTarget("food-marketing"), recorded.storage)).toBe(false);
+    expect(recorded.storage.getItem(STORAGE_KEY_V2)).toBe(priorPrimary);
+    expect(recorded.storage.getItem(STORAGE_LAST_VALID_KEY_V2)).toBeNull();
+    expect(recorded.removals).toContain(STORAGE_LAST_VALID_KEY_V2);
   });
 
   it("does not replace the last-valid recovery state when the next state is invalid", () => {

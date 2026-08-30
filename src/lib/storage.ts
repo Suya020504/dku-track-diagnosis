@@ -600,15 +600,40 @@ export function loadAppState(storage: Storage = window.localStorage): SavedAppSt
   }
 }
 
+function restoreStorageValue(
+  storage: Storage,
+  key: string,
+  previousValue: string | null,
+): void {
+  try {
+    if (previousValue === null) storage.removeItem(key);
+    else storage.setItem(key, previousValue);
+  } catch {
+    // Best-effort rollback: the caller still reports the save as failed.
+  }
+}
+
 export function saveAppState(state: SavedAppStateV2, storage: Storage = window.localStorage): boolean {
+  let serialized: string;
+  let previousPrimary: string | null;
+  let previousLastValid: string | null;
   try {
     const normalized = { ...state, snapshots: normalizeSnapshotHistory(state.snapshots) };
     if (!isSavedAppStateV2(normalized)) return false;
-    const serialized = JSON.stringify(normalized);
-    storage.setItem(STORAGE_KEY_V2, serialized);
+    serialized = JSON.stringify(normalized);
+    previousPrimary = storage.getItem(STORAGE_KEY_V2);
+    previousLastValid = storage.getItem(STORAGE_LAST_VALID_KEY_V2);
+  } catch {
+    return false;
+  }
+
+  try {
     storage.setItem(STORAGE_LAST_VALID_KEY_V2, serialized);
+    storage.setItem(STORAGE_KEY_V2, serialized);
     return true;
   } catch {
+    restoreStorageValue(storage, STORAGE_KEY_V2, previousPrimary);
+    restoreStorageValue(storage, STORAGE_LAST_VALID_KEY_V2, previousLastValid);
     return false;
   }
 }

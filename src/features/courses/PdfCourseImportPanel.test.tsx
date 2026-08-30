@@ -44,9 +44,16 @@ async function renderPanel(
   return { onAnalyzed };
 }
 
-async function chooseFile(file: File) {
+async function chooseFile(file: File, nativeValue?: string) {
   const input = fileInput();
   Object.defineProperty(input, "files", { configurable: true, value: [file] });
+  if (nativeValue !== undefined) {
+    Object.defineProperty(input, "value", {
+      configurable: true,
+      writable: true,
+      value: nativeValue,
+    });
+  }
   await act(async () => {
     input.dispatchEvent(new Event("change", { bubbles: true }));
   });
@@ -106,6 +113,25 @@ describe("PdfCourseImportPanel", () => {
     expect(document.body.textContent).not.toContain(file.name);
   });
 
+  it("clears the native filename synchronously and exposes only a generic picker label while pending", async () => {
+    const analyzeFile = vi.fn(() => new Promise<PdfImportDraft>(() => undefined));
+    await renderPanel(analyzeFile);
+    await act(async () => button("PDF로 선택값 채우기 beta").click());
+    const file = new File(["private transcript"], "20261234_홍길동_성적표.pdf", {
+      type: "application/pdf",
+    });
+
+    await chooseFile(file, `C:\\fakepath\\${file.name}`);
+
+    expect(fileInput().value).toBe("");
+    expect(fileInput().classList.contains("sr-only")).toBe(true);
+    expect(fileInput().labels?.[0]?.textContent?.trim()).toBe("PDF 선택");
+    expect(document.querySelector('[role="status"]')?.textContent?.trim()).toBe(
+      "PDF를 분석 중이에요. 잠시만 기다려 주세요.분석 취소",
+    );
+    expect(document.body.textContent).not.toContain(file.name);
+  });
+
   it("accepts a completed analysis after the StrictMode effect replay", async () => {
     const onAnalyzed = vi.fn();
     const container = document.querySelector<HTMLDivElement>("#root");
@@ -137,9 +163,10 @@ describe("PdfCourseImportPanel", () => {
     await renderPanel(analyzeFile);
     await act(async () => button("PDF로 선택값 채우기 beta").click());
 
-    await chooseFile(new File(["first"], "first.pdf", { type: "application/pdf" }));
+    const repeatedFile = new File(["same"], "same.pdf", { type: "application/pdf" });
+    await chooseFile(repeatedFile, "C:\\fakepath\\same.pdf");
     expect(fileInput().disabled).toBe(false);
-    await chooseFile(new File(["second"], "second.pdf", { type: "application/pdf" }));
+    await chooseFile(repeatedFile, "C:\\fakepath\\same.pdf");
     expect(signals[0]?.aborted).toBe(true);
     expect(signals[1]?.aborted).toBe(false);
 
