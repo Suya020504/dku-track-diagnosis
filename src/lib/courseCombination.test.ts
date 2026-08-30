@@ -94,6 +94,39 @@ describe("findMinimumCourseCombination", () => {
     });
 
     expect(result.courseIds).toEqual(["d-1"]);
+    expect(result.comparisonKey).toBe("1|3|0|32|D-1");
+  });
+
+  it("prefers the schedulable course before recommended semester and course code", () => {
+    const result = findMinimumCourseCombination({
+      profile: departmentTrackProfile,
+      targetTrackId: "economics",
+      assumedCourseIds: [
+        "b-2", "c-1", "c-2", "c-3", "f-1", "h-1", "d-2", "e-1",
+        "e-2", "g-1", "g-2", "j-1", "j-2", "l-1", "l-2",
+      ],
+      additionalMajorCredits: [],
+      schedulableCourseIds: new Set(["d-3"]),
+    });
+
+    expect(result.courseIds).toEqual(["d-3"]);
+    expect(result.comparisonKey).toBe("1|3|0|32|D-3");
+  });
+
+  it("prefers the earlier recommended semester when schedulability ties", () => {
+    const result = findMinimumCourseCombination({
+      profile: departmentTrackProfile,
+      targetTrackId: "economics",
+      assumedCourseIds: [
+        "b-2", "c-1", "c-2", "c-3", "f-1", "h-1", "d-1", "d-2",
+        "e-1", "g-1", "g-2", "j-1", "j-2", "l-1", "l-2",
+      ],
+      additionalMajorCredits: [],
+      schedulableCourseIds: new Set(courses.map((course) => course.id)),
+    });
+
+    expect(result.courseIds).toEqual(["e-2"]);
+    expect(result.comparisonKey).toBe("1|3|0|22|E-2");
   });
 
   it("does not invent B-1 as part of the starred six required variant", () => {
@@ -133,6 +166,18 @@ describe("findMinimumCourseCombination", () => {
     expect(result.courseIds).toEqual([]);
     expect(result.unallocatedElectiveCredits).toBe(21);
     expect(calculateUnallocatedElectiveCredits(input)).toBe(21);
+  });
+
+  it("counts duplicate non-A credits once and excludes A-module credits", () => {
+    const result = findMinimumCourseCombination({
+      profile: externalMinorProfile,
+      assumedCourseIds: ["a-1", "unknown-course", "b-2", "b-2"],
+      additionalMajorCredits: [],
+      schedulableCourseIds: new Set(),
+    });
+
+    expect(result.courseIds).toEqual([]);
+    expect(result.unallocatedElectiveCredits).toBe(18);
   });
 
   it("adds a course when total track credits reach 30 but one module remains short", () => {
