@@ -4,6 +4,32 @@
 
 ## 2026-08-30
 
+### Resolve the planner final-review findings
+
+- 랜딩의 두 진입 CTA가 저장된 프로필·과목 검토 시각·학기 계획을 지우지 않고 선택한 목표만 `profileDraft`에 보관하도록 수정했습니다.
+- 결과 현재 화면의 다음 CTA를 실제 이동 대상과 맞는 `다음 수강 후보 확인`으로 바꾸고, 결과 주소는 `current → next → confirm` 순서를 유지했습니다.
+- 랜딩 H1의 초기·색인·뒤로가기·새로고침 초점, 안내 모달 제목에서 Shift+Tab 역방향 감금, 저장된 계획 보존을 회귀 테스트로 고정했습니다.
+- Compass Path를 아이콘·상태 텍스트·색을 함께 쓰는 연속 종이 경로로 재구성하고, 모바일에서는 가로 넘침 없는 세로 경로로 전환했습니다.
+- 로컬 설치 후보와 시스템 fallback만 사용하는 display/body 글꼴 토큰을 추가하고, 1440px 랜딩 H1을 66.24px로 조정했습니다. 원격 글꼴 요청·설치·새 의존성은 추가하지 않았습니다.
+- 1440×900 설문에서 `다음` 버튼 하단을 901.09px에서 736.48px로 올려 첫 화면에 완전히 노출했고, 모바일 skip focus와 하단 내비게이션 사이 간격도 다시 확보했습니다.
+- 공통 리본·글꼴 영향을 반영해 합성 비개인 승인 캡처 15개를 모두 재생성하고 원본/추적 복사 SHA-256 일치를 확인했습니다.
+- 최종 런타임 소스는 `4c110a2b93f86baa09fd92368b5458d2d0aa232e`입니다. 이 항목을 포함하는 후속 커밋은 문서만 변경하며 자기 자신의 해시는 문서 안에 기록하지 않습니다.
+
+검증:
+
+- focused regression — 9개 테스트 파일·89개 테스트 통과
+- pnpm.cmd test — Vitest 4.1.8, 47개 테스트 파일·550개 테스트 통과
+- pnpm.cmd build — TypeScript noEmit과 Vite 7.3.5 프로덕션 빌드 통과, 1,774개 모듈 변환
+- git diff --check — 공백 오류 0건
+- Chromium 151 — 저장 계획 CTA 2경로, 랜딩 복귀 초점, 모달 Shift+Tab, 1440/390/320 리본·타이포·설문·overflow·console 확인
+
+경계와 남은 리스크:
+
+- PDF beta는 synthetic-course-history.pdf에서 0 matched / 1 unmatched이며 직접 선택만 완전한 기본 경로입니다.
+- 공식 캠퍼스 사진 재사용 허가는 확인되지 않아 앱에 삽입하지 않았고, 개설 이력 공개 재검증은 blocked-by-public-access입니다.
+- Impeccable detector was run exactly once in Task 11 and failed before JSON because the installed detect-url.mjs was missing. Do not rerun it or alter/install the skill. Preserve this limitation verbatim.
+- push, merge, deploy, 외부 제출은 수행하지 않았습니다.
+
 ### Validate the planner visual redesign release gate
 
 - 2026-08-31 KST에 캠퍼스 안내책자 × 학업 플래너 시각 체계를 실제 프로덕션 미리보기로 검증했습니다.

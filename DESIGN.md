@@ -64,8 +64,10 @@ Full palette. 밝은 자연광 아래에서 노트북으로 보는 학생을 기
 
 ### Typography direction
 
-- Display: 한국어에서 둥근 기하와 넓은 획을 가진 캠퍼스 간행물형 산세리프. `Gmarket Sans` 또는 동등한 로컬 번들 가능 글꼴을 사용하되 배포 전 라이선스를 확인한다.
-- Body/UI: 높은 판독성의 `SUIT Variable` 또는 동등한 로컬 번들 가능 글꼴.
+- Display token `--planner-font-display`: `Gmarket Sans`, `GmarketSans`, `Pretendard Variable`, `Pretendard`, `SUIT Variable`, `SUIT`, `Noto Sans KR`, `Malgun Gothic`, `sans-serif` 순서다.
+- Body/UI token `--planner-font-body`: `Pretendard Variable`, `Pretendard`, `SUIT Variable`, `SUIT`, `Noto Sans KR`, `Apple SD Gothic Neo`, `Malgun Gothic`, `system-ui`, `sans-serif` 순서다.
+- 두 스택은 사용자 기기에 이미 설치된 글꼴 후보와 시스템 fallback만 사용한다. 앱이 글꼴 파일을 번들하거나 원격 요청·설치를 수행한다고 주장하지 않는다.
+- Display stack은 페이지 H1과 랜딩·설문의 주요 간행물형 제목에만 적용하고, 버튼·입력·유틸리티 조작은 Body/UI stack을 유지한다.
 - Data/utility: 본문 글꼴의 tabular numerals와 굵기 차이를 사용한다. 별도 영문 모노 글꼴로 기술 제품처럼 보이게 하지 않는다.
 - 본문은 16–18px, 라인 높이 1.65 전후. 모바일의 핵심 제목은 30–38px, 데스크톱 랜딩 제목은 64–80px 범위에서 내용에 맞춰 조정한다.
 
@@ -144,8 +146,8 @@ Full palette. 밝은 자연광 아래에서 노트북으로 보는 학생을 기
 
 - 구현됨: 공통 GuidebookShell, 랜딩, 관심 설문, 2단계 프로필, 과목 원장, 결과 3페이지, 독립 추천 3축, 학기 플래너, 공식 자료 4페이지, 반응형·인쇄·키보드·주소 복원.
 - 런타임 identity: 공식 logo·seal·학과 마크 이미지는 사용하지 않고 텍스트 워드마크와 Compass 표식만 사용한다. 공개 자산 파일은 삭제하지 않았다.
-- 검증된 경계: 1440×900, 1024×768, 768×1024, 390×844, 320×800에서 가로 넘침·44px 미만 가시 조작·중복 main/H1이 없다.
-- 남은 release gate: PDF beta의 실제 포털 성적표 표본 매칭과 공개 범위 확정, 공식 캠퍼스 사진의 외부 재사용 허락, 번들 한글 글꼴 라이선스 확정.
+- 검증된 경계: 1440×900, 1024×768, 768×1024, 390×844, 320×800에서 가로 넘침·44px 미만 가시 조작·중복 main/H1이 없다. 최종 수정에서는 1440px 랜딩 H1 66.24px, 390/320px 어절 단위 줄바꿈, 세로 Compass Path와 모바일 하단 내비게이션 비겹침을 추가 확인했다.
+- 남은 release gate: PDF beta의 실제 포털 성적표 표본 매칭과 공개 범위 확정, 공식 캠퍼스 사진의 외부 재사용 허락, blocked-by-public-access 상태인 개설 이력의 공식 재확인.
 
 ## Absolute Bans
 

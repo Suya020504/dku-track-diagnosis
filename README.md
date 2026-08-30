@@ -27,7 +27,7 @@
 
 ## 현재 사용자 흐름과 시각 체계
 
-전체 화면은 캠퍼스 안내책자 × 학업 플래너 체계로 구성합니다. 데스크톱은 왼쪽 GUIDE INDEX, 중앙 Compass Path와 학기 열을 사용하고, 모바일은 현재 단계 제목과 시작·진단·결과·계획 하단 내비게이션으로 바뀝니다.
+전체 화면은 캠퍼스 안내책자 × 학업 플래너 체계로 구성합니다. 데스크톱은 왼쪽 GUIDE INDEX, 접힌 종이 면이 한 방향으로 이어지는 Compass Path와 학기 열을 사용하고, 모바일 Compass Path는 가로 스크롤 없는 세로 경로로 바뀝니다. 시작·진단·결과·계획 하단 내비게이션은 별도로 유지됩니다.
 
 주요 흐름은 다음 두 가지입니다.
 
@@ -43,7 +43,7 @@
 | 소속·이수 경로 | ?view=diagnosis&step=profile&profile=affiliation 또는 profile=path |
 | 과목 직접 선택 | ?view=diagnosis&step=courses |
 | PDF 검수 beta | ?view=diagnosis&step=courses&input=pdf-review |
-| 결과 현재·다음·확인 | ?view=result&step=result&section=current, next, checks |
+| 결과 현재·다음·확인 | ?view=result&step=result&section=current, next, confirm |
 | 관심·완료 과목·졸업 계획 독립 비교 | ?view=recommendation&step=axes |
 | 계획 조건·일정·확인 | ?view=plan&step=setup, schedule, checks |
 | 트랙·모듈·교육과정·공식 근거 | ?view=resources&section=tracks, modules, curriculum, official |

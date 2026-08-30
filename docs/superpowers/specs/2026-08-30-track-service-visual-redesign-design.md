@@ -1,12 +1,13 @@
 # 단국대학교 식품자원경제학과 트랙진단 전체 시각 재설계
 
 - 작성일: 2026-08-30
-- 상태: 선택 방향 구현 완료·Task 12 최종 release gate 대기
+- 상태: Task 12 구현·검증 완료 (`DONE_WITH_CONCERNS`)
 - 선택 방향: C `학업 플래너형`
 - 상위 기준: `PRODUCT.md`, `DESIGN.md`
 - 보존 대상: 현재 계산·저장·주소·추천·계획·PDF beta 소스 전체
 - 승인 시안: `design-proposals/visual-redesign-2026-08-30/planner-timeline-north-star.png`
 - 시안 기록: `design-proposals/visual-redesign-2026-08-30/north-star.md`
+- 최종 런타임 소스: `4c110a2b93f86baa09fd92368b5458d2d0aa232e`
 
 ## 1. 재설계 목표
 
@@ -297,5 +298,8 @@ src/
 
 - 완료: 랜딩·설문·프로필·과목 원장·결과·추천·학기 계획·공식 자료와 공통 GuidebookShell.
 - 완료: 5개 지정 뷰포트, 44px 조작, 청록 focus-visible, skip navigation, 잠금 사유, reduced motion, 결과/계획 인쇄, 추천 축과 legacy modules 주소 복원.
+- 완료: 저장 계획을 보존하는 랜딩 draft 진입, 랜딩 H1 복귀 초점, 모달 역방향 focus trap, 연속 종이 경로형 Compass Path, 로컬 fallback 글꼴 스택, 1440×900 설문 첫 화면의 `다음` 완전 노출.
 - 보존: 계산 엔진, localStorage schema, URL contract, PDF 메모리 전용 검수와 직접 선택 기본 경로.
-- 미완료 release gate: 실제 포털 PDF 표본 매칭, 공식 캠퍼스 사진 재사용 허락, 진단 이력 전용 UI, 번들 한글 글꼴 라이선스.
+- 미완료 release gate: 실제 포털 PDF 표본 매칭(현재 합성 fixture 0 matched / 1 unmatched), 공식 캠퍼스 사진 재사용 허락, blocked-by-public-access 상태인 개설 이력의 공식 재확인.
+- 후속 범위: 진단 이력 전용 UI. 현재 snapshot·계획 저장 계약을 바꾸지 않았다.
+- 검증 한계: Impeccable detector는 Task 11에서 설치본 `detect-url.mjs` 누락으로 JSON 생성 전에 실패했으며 재실행·설치·변경하지 않았다.
