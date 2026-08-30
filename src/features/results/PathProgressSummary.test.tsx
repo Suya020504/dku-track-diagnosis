@@ -55,15 +55,31 @@ it("shows minor credit progress without track-module progress", () => {
 
   expect(markup).toContain("부전공 전공학점");
   expect(markup).toContain("15 / 21학점");
-  expect(markup).not.toContain("트랙 모듈 진행도");
+  expect(markup).not.toContain("트랙 모듈 진행");
+  expect(markup).toContain('class="planner-progress-path"');
 });
 
-it("marks reference-only satisfaction as requiring official review", () => {
+it("presents percentages as secondary details and keeps reference satisfaction cautious", () => {
   const markup = renderToStaticMarkup(
     <PathProgressSummary profile={referenceAdvancedMajor} result={referenceSatisfiedResult} />,
   );
 
   expect(markup).toContain("참고 계산상 충족");
-  expect(markup).toContain("공식 확인 필요");
+  expect(markup).toContain("제공 최종안 참고");
+  expect(markup).toContain("100% 진행");
+  expect(markup).toContain("planner-progress-path__percentage");
+  expect(markup).not.toContain("현재 입력 기준 충족");
   expect(markup).not.toContain("이수 확정");
+});
+
+it("uses department-confirmation wording when personal applicability is unresolved", () => {
+  const markup = renderToStaticMarkup(
+    <PathProgressSummary
+      profile={{ ...referenceAdvancedMajor, ruleApplicability: "student-confirmed" }}
+      result={{ ...referenceSatisfiedResult, status: "official-review-required" }}
+    />,
+  );
+
+  expect(markup).toContain("학과 확인 필요");
+  expect(markup).not.toContain("공식 확인 필요");
 });

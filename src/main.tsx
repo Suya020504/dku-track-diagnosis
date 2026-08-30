@@ -9,6 +9,7 @@ import "./styles/planner-journey.css";
 import "./styles/planner-landing.css";
 import "./styles/planner-entry.css";
 import "./styles/planner-courses.css";
+import "./styles/planner-results.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

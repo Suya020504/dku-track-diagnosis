@@ -154,7 +154,7 @@ describe("path-aware result integration", () => {
     const markup = renderApp(state(minorProfile), "?view=result&step=result");
 
     expect(markup).toContain("부전공 전공학점");
-    expect(markup).not.toContain("트랙 모듈 진행도");
+    expect(markup).not.toContain("트랙 모듈 진행");
     expect(markup).not.toContain("<span>전체 진행률</span>");
     expect(markup).not.toContain("<span>트랙 인정 학점</span>");
     expect(markup).not.toContain('id="result-tab-summary"');
@@ -162,9 +162,9 @@ describe("path-aware result integration", () => {
     expect(markup).not.toContain('id="result-tab-required"');
     expect(markup).not.toContain("1학년 필수 제외 적용");
     expect(markup).not.toContain("필수 과목 누락");
-    expect(markup).toContain("다음 할 일");
-    expect(markup).toContain("추천 과목을 학기 계획에 담기");
-    expect(markup).toContain("PDF 저장/인쇄");
+    expect(markup).toContain('id="result-section-next"');
+    expect(markup).not.toContain("추천 과목을 학기 계획에 담기");
+    expect(markup).toContain("결과 저장/인쇄");
   });
 
   it("uses the starred-six required list for a double major, including B-2", () => {
@@ -193,10 +193,10 @@ describe("path-aware result integration", () => {
 
     expect(markup).toContain("0 / 18학점");
     expect(markup).toContain("0 / 63학점");
-    expect(markup).toContain("<span>전체 진행률</span><strong>0%</strong>");
-    expect(markup).toContain("<span>트랙 인정 학점</span><strong>0학점</strong>");
-    expect(markup).not.toContain("<span>전체 진행률</span><strong>100%</strong>");
-    expect(markup).not.toContain("<span>트랙 인정 학점</span><strong>30학점</strong>");
+    expect(markup).toContain("0 / 30학점");
+    expect(markup).toContain("0학점");
+    expect(markup).not.toContain("result-grid");
+    expect(markup).not.toContain("30학점</dd>");
   });
 
   it("uses the path-progress reference status instead of legacy aggregate completion", () => {
@@ -249,11 +249,11 @@ describe("path-aware result integration", () => {
       "?view=result&step=result",
     );
 
-    expect(markup).toContain("트랙 모듈 진행도");
+    expect(markup).toContain("트랙 모듈 진행");
     expect(markup).toContain('id="result-section-current"');
     expect(markup).toContain('id="result-section-next"');
-    expect(markup).toContain("현재 현황");
-    expect(markup).toContain("다음 할 일");
+    expect(markup).toContain("현재 · 계산된 진행 경로");
+    expect(markup).not.toContain('data-result-panel="next"');
   });
 
   it("restores the incumbent result section from deep links and user navigation", async () => {
@@ -266,7 +266,9 @@ describe("path-aware result integration", () => {
 
     expect(document.querySelector('[data-result-section="next"]')?.getAttribute("aria-selected")).toBe("true");
     expect(document.querySelector('[data-result-panel="next"]')?.textContent).toContain("모듈별 충족 현황");
-    expect(document.querySelector('[data-result-panel="current"]')?.hasAttribute("hidden")).toBe(true);
+    expect(document.querySelectorAll("h1")).toHaveLength(1);
+    expect(document.querySelector('[data-result-panel="current"]')).toBeNull();
+    expect(document.activeElement).toBe(document.querySelector("h1"));
     const printButton = document.querySelector<HTMLButtonElement>(".print-button");
     expect(printButton?.closest("[hidden]")).toBeNull();
     await act(async () => printButton?.click());
@@ -277,7 +279,9 @@ describe("path-aware result integration", () => {
         (() => { throw new Error("Missing current result control"); })()).click();
     });
     expect(new URLSearchParams(location.search).get("section")).toBe("current");
-    expect(document.querySelector('[data-result-panel="current"]')?.hasAttribute("hidden")).toBe(false);
+    expect(document.querySelector('[data-result-panel="current"]')).not.toBeNull();
+    expect(document.querySelector('[data-result-panel="next"]')).toBeNull();
+    expect(document.activeElement).toBe(document.querySelector("h1"));
 
     await setRouteAndPop("/?view=result&section=next");
     expect(document.querySelector('[data-result-section="next"]')?.getAttribute("aria-selected")).toBe("true");
@@ -288,8 +292,9 @@ describe("path-aware result integration", () => {
         (() => { throw new Error("Missing confirm result control"); })()).click();
     });
     expect(new URLSearchParams(location.search).get("section")).toBe("confirm");
-    expect(document.querySelector('[data-result-panel="confirm"]')?.hasAttribute("hidden")).toBe(false);
-    expect(document.querySelector('[data-result-panel="confirm"]')?.textContent).toContain("공식 확인 전 점검");
+    expect(document.querySelector('[data-result-panel="confirm"]')).not.toBeNull();
+    expect(document.querySelector('[data-result-panel="confirm"]')?.textContent).toContain("학과에 확인할 질문");
+    expect(document.activeElement).toBe(document.querySelector("h1"));
   });
 
   it("keeps confirm selected and visible when a path has no required-course panel", async () => {

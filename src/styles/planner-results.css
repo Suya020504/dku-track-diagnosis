@@ -1,0 +1,703 @@
+.planner-app .planner-result-view,
+.planner-app .planner-result-section,
+.planner-app .planner-path-progress,
+.planner-app .planner-track-comparison,
+.planner-app .planner-next-course-list,
+.planner-app .planner-module-ledger,
+.planner-app .planner-check-ledger,
+.planner-app .planner-official-questions,
+.planner-app .planner-official-links {
+  display: grid;
+  gap: var(--planner-space-5);
+  min-width: 0;
+}
+
+.planner-app .planner-result-view {
+  width: min(100%, 980px);
+  margin-inline: auto;
+}
+
+.planner-app .planner-result-page-band {
+  border-block: 1px solid #cfdbe5;
+  background: #fff;
+}
+
+.planner-app .planner-result-page-band [role="tablist"] {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.planner-app .planner-result-page-band button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--planner-space-3);
+  align-items: center;
+  min-width: 0;
+  min-height: 56px;
+  padding: 8px 14px;
+  border: 0;
+  border-inline-start: 3px solid transparent;
+  background: #fff;
+  color: var(--planner-ink-muted);
+  text-align: start;
+}
+
+.planner-app .planner-result-page-band button + button {
+  border-inline-start-color: #e2e8ee;
+}
+
+.planner-app .planner-result-page-band button.active {
+  border-inline-start-color: var(--planner-department-green);
+  background: var(--planner-mint-sheet);
+  color: var(--planner-ink);
+}
+
+.planner-app .planner-result-page-band__index {
+  color: var(--planner-department-green);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.planner-app .planner-result-page-band button > span:last-child {
+  display: grid;
+  min-width: 0;
+}
+
+.planner-app .planner-result-page-band strong,
+.planner-app .planner-result-page-band small {
+  overflow-wrap: anywhere;
+}
+
+.planner-app .planner-result-page-band small {
+  margin-top: 2px;
+  color: inherit;
+  font-size: 0.75rem;
+}
+
+.planner-app .planner-result-active-page {
+  min-width: 0;
+}
+
+.planner-app .planner-result-heading {
+  display: grid;
+  gap: var(--planner-space-2);
+  padding-block-end: var(--planner-space-5);
+  border-block-end: 2px solid var(--planner-dankook-blue);
+}
+
+.planner-app .planner-result-heading > span,
+.planner-app :is(
+  .planner-track-comparison,
+  .planner-next-course-list,
+  .planner-module-ledger,
+  .planner-check-ledger,
+  .planner-official-questions,
+  .planner-official-links,
+  .planner-result-next-actions
+) > header > span,
+.planner-app .planner-result-next-actions > span {
+  color: var(--planner-department-green);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.planner-app .planner-result-heading h1 {
+  max-width: 780px;
+  margin: 0;
+  color: var(--planner-ink);
+  font-size: clamp(1.75rem, 4vw, 2.7rem);
+  line-height: 1.22;
+  overflow-wrap: anywhere;
+}
+
+.planner-app .planner-result-heading h1:focus {
+  outline: none;
+}
+
+.planner-app .planner-result-heading h1:focus-visible {
+  box-shadow: -4px 0 0 var(--planner-department-green);
+}
+
+.planner-app .planner-result-heading p,
+.planner-app :is(
+  .planner-track-comparison,
+  .planner-next-course-list,
+  .planner-module-ledger,
+  .planner-result-next-actions
+) > header > p {
+  max-width: 760px;
+  margin: 0;
+  color: var(--planner-ink-muted);
+  line-height: 1.75;
+}
+
+.planner-app .planner-path-progress {
+  padding: clamp(18px, 4vw, 30px);
+  border: 1px solid #cedbe5;
+  border-radius: var(--planner-sheet-radius);
+  background: #fff;
+}
+
+.planner-app .planner-path-progress__header {
+  display: flex;
+  gap: var(--planner-space-3);
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.planner-app .planner-path-progress__header > div {
+  display: grid;
+  gap: var(--planner-space-1);
+}
+
+.planner-app .planner-path-progress__header span {
+  color: var(--planner-ink-muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.planner-app .planner-path-progress__header h2 {
+  margin: 0;
+  color: var(--planner-ink);
+  font-size: 1.45rem;
+}
+
+.planner-app .planner-path-progress__status {
+  padding: 6px 10px;
+  border: 1px solid var(--planner-department-green);
+  border-radius: 999px;
+  color: var(--planner-department-green);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.planner-app .planner-progress-path {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.planner-app .planner-progress-path__step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: var(--planner-space-3);
+  min-width: 0;
+  padding-block-end: 24px;
+}
+
+.planner-app .planner-progress-path__step:not(:last-child)::before {
+  position: absolute;
+  inset-block: 18px -2px;
+  inset-inline-start: 8px;
+  width: 2px;
+  background: #bed3c9;
+  content: "";
+}
+
+.planner-app .planner-progress-path__step:last-child {
+  padding-block-end: 0;
+}
+
+.planner-app .planner-progress-path__marker {
+  position: relative;
+  z-index: 1;
+  width: 18px;
+  height: 18px;
+  margin-block-start: 2px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: var(--planner-department-green);
+  box-shadow: 0 0 0 1px var(--planner-department-green);
+}
+
+.planner-app .planner-progress-path__content,
+.planner-app .planner-progress-path__modules {
+  display: grid;
+  gap: var(--planner-space-2);
+  min-width: 0;
+}
+
+.planner-app .planner-progress-path__heading {
+  display: flex;
+  gap: var(--planner-space-3);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.planner-app .planner-progress-path__heading strong {
+  color: var(--planner-ink);
+}
+
+.planner-app .planner-progress-path__percentage,
+.planner-app .planner-progress-path__credits,
+.planner-app .planner-progress-path__missing,
+.planner-app .planner-progress-path__complete {
+  color: var(--planner-ink-muted);
+  font-size: 0.8rem;
+}
+
+.planner-app .planner-progress-path__missing {
+  color: #a84d37;
+}
+
+.planner-app .planner-progress-path__complete {
+  color: var(--planner-department-green);
+}
+
+.planner-app .planner-progress-path progress {
+  width: 100%;
+  height: 8px;
+  accent-color: var(--planner-department-green);
+}
+
+.planner-app .planner-progress-path__modules {
+  margin: 8px 0 0;
+  padding: 10px 0 0;
+  border-block-start: 1px solid #e1e8ed;
+  list-style: none;
+}
+
+.planner-app .planner-progress-path__modules li {
+  display: flex;
+  gap: var(--planner-space-3);
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.planner-app .planner-progress-path__modules span {
+  color: var(--planner-ink);
+  overflow-wrap: anywhere;
+}
+
+.planner-app .planner-progress-path__modules small {
+  color: var(--planner-ink-muted);
+  text-align: end;
+}
+
+.planner-app .planner-track-comparison > header,
+.planner-app .planner-next-course-list > header,
+.planner-app .planner-module-ledger > header,
+.planner-app .planner-check-ledger > header,
+.planner-app .planner-official-questions > header,
+.planner-app .planner-official-links > header {
+  display: grid;
+  gap: var(--planner-space-1);
+}
+
+.planner-app :is(
+  .planner-track-comparison,
+  .planner-next-course-list,
+  .planner-module-ledger,
+  .planner-check-ledger,
+  .planner-official-questions,
+  .planner-official-links,
+  .planner-result-next-actions
+) h2 {
+  margin: 0;
+  color: var(--planner-ink);
+  font-size: clamp(1.25rem, 3vw, 1.7rem);
+}
+
+.planner-app .planner-track-comparison__list,
+.planner-app .planner-next-course-list__items,
+.planner-app .planner-module-ledger__tracks {
+  display: grid;
+  gap: var(--planner-space-3);
+  min-width: 0;
+}
+
+.planner-app .planner-track-comparison__row {
+  min-width: 0;
+  padding-block: 18px;
+  border-block-start: 1px solid #d8e1e8;
+}
+
+.planner-app .planner-track-comparison__row:last-child {
+  border-block-end: 1px solid #d8e1e8;
+}
+
+.planner-app .planner-track-comparison__row > header {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: var(--planner-space-3);
+  align-items: center;
+}
+
+.planner-app .planner-track-comparison__row h3,
+.planner-app .planner-module-ledger__tracks h3 {
+  margin: 0;
+  color: var(--planner-ink);
+}
+
+.planner-app .planner-track-comparison__row header span,
+.planner-app .planner-track-comparison__row header strong {
+  font-size: 0.82rem;
+}
+
+.planner-app .planner-track-comparison__row header > strong {
+  color: var(--planner-department-green);
+}
+
+.planner-app .planner-track-comparison__row dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  margin: 14px 0;
+}
+
+.planner-app .planner-track-comparison__row dl div {
+  display: flex;
+  gap: 7px;
+  align-items: baseline;
+}
+
+.planner-app .planner-track-comparison__row dt {
+  color: var(--planner-ink-muted);
+  font-size: 0.78rem;
+}
+
+.planner-app .planner-track-comparison__row dd {
+  margin: 0;
+  color: var(--planner-ink);
+  font-weight: 800;
+}
+
+.planner-app .planner-track-comparison__gaps,
+.planner-app .planner-check-ledger ul,
+.planner-app .planner-official-questions ol,
+.planner-app .planner-official-links ul {
+  display: grid;
+  gap: var(--planner-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.planner-app .planner-track-comparison__gaps li,
+.planner-app .planner-check-ledger li,
+.planner-app .planner-official-questions li {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border-inline-start: 3px solid var(--planner-wheat);
+  background: var(--planner-paper);
+}
+
+.planner-app .planner-track-comparison__gaps li > div {
+  display: flex;
+  gap: var(--planner-space-3);
+  justify-content: space-between;
+}
+
+.planner-app .planner-track-comparison__gaps span,
+.planner-app .planner-track-comparison__gaps small,
+.planner-app .planner-check-ledger span,
+.planner-app .planner-official-questions span {
+  color: var(--planner-ink-muted);
+  line-height: 1.6;
+}
+
+.planner-app .planner-directed-empty {
+  margin: 0;
+  padding: 14px;
+  border-inline-start: 3px solid var(--planner-review-coral);
+  background: var(--planner-paper);
+  color: var(--planner-ink-muted);
+  line-height: 1.7;
+}
+
+.planner-app .planner-next-course {
+  display: grid;
+  gap: var(--planner-space-3);
+  padding-block: 14px;
+  border-block-start: 1px solid #d8e1e8;
+}
+
+.planner-app .planner-next-course:last-child {
+  border-block-end: 1px solid #d8e1e8;
+}
+
+.planner-app .planner-next-course dl {
+  display: grid;
+  gap: var(--planner-space-2);
+  margin: 0;
+  padding-inline: 12px;
+}
+
+.planner-app .planner-next-course dl div {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: var(--planner-space-3);
+}
+
+.planner-app .planner-next-course dt {
+  color: var(--planner-department-green);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.planner-app .planner-next-course dd {
+  margin: 0;
+  color: var(--planner-ink-muted);
+  line-height: 1.6;
+}
+
+.planner-app .planner-module-ledger__tracks > section {
+  padding-block: 16px;
+  border-block-start: 1px solid #d8e1e8;
+}
+
+.planner-app .planner-module-ledger__tracks > section > header {
+  display: flex;
+  gap: var(--planner-space-3);
+  align-items: center;
+}
+
+.planner-app .planner-module-ledger__tracks ul {
+  display: grid;
+  gap: 0;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.planner-app .planner-module-ledger__tracks li {
+  display: flex;
+  gap: var(--planner-space-3);
+  align-items: start;
+  justify-content: space-between;
+  padding-block: 10px;
+  border-block-start: 1px solid #e4eaee;
+}
+
+.planner-app .planner-module-ledger__tracks li > div {
+  display: grid;
+  gap: 3px;
+}
+
+.planner-app .planner-module-ledger__tracks li span,
+.planner-app .planner-module-ledger__tracks li small {
+  color: var(--planner-ink-muted);
+  font-size: 0.8rem;
+}
+
+.planner-app .planner-module-ledger__tracks li > small {
+  text-align: end;
+}
+
+.planner-app .planner-result-next-actions,
+.planner-app .planner-result-print,
+.planner-app .planner-result-continue {
+  display: grid;
+  gap: var(--planner-space-3);
+  padding: clamp(18px, 4vw, 28px);
+  border: 1px solid #cddde6;
+  border-radius: var(--planner-sheet-radius);
+  background: var(--planner-sky-sheet);
+}
+
+.planner-app .planner-result-continue {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  width: 100%;
+  min-height: 64px;
+  color: var(--planner-ink);
+  text-align: start;
+}
+
+.planner-app .planner-result-continue > span:first-child {
+  display: grid;
+  gap: var(--planner-space-1);
+}
+
+.planner-app .planner-result-continue small {
+  color: var(--planner-department-green);
+  font-weight: 900;
+}
+
+.planner-app .planner-result-continue > span:last-child {
+  color: var(--planner-dankook-blue);
+  font-weight: 900;
+}
+
+.planner-app .planner-result-next-actions > p,
+.planner-app .planner-result-print span {
+  margin: 0;
+  color: var(--planner-ink-muted);
+  line-height: 1.65;
+}
+
+.planner-app .planner-result-next-actions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--planner-space-2);
+}
+
+.planner-app .planner-result-next-actions button,
+.planner-app .planner-result-print button {
+  min-height: 44px;
+}
+
+.planner-app .planner-check-ledger li {
+  border-inline-start-color: var(--planner-review-coral);
+}
+
+.planner-app .planner-official-questions ol {
+  counter-reset: official-question;
+}
+
+.planner-app .planner-official-questions li {
+  position: relative;
+  grid-template-columns: minmax(0, 160px) minmax(0, 1fr);
+  gap: var(--planner-space-3);
+  border-inline-start-color: var(--planner-dankook-blue);
+  counter-increment: official-question;
+}
+
+.planner-app .planner-official-questions li strong::before {
+  margin-inline-end: 7px;
+  color: var(--planner-dankook-blue);
+  content: counter(official-question, decimal-leading-zero);
+}
+
+.planner-app .planner-official-links a {
+  display: flex;
+  gap: var(--planner-space-3);
+  align-items: center;
+  justify-content: space-between;
+  min-height: 56px;
+  padding: 12px 14px;
+  border: 1px solid #d7e1e8;
+  border-radius: var(--planner-control-radius);
+  background: #fff;
+  color: var(--planner-ink);
+  text-decoration: none;
+}
+
+.planner-app .planner-official-links a > span {
+  display: grid;
+  gap: 3px;
+}
+
+.planner-app .planner-official-links small {
+  color: var(--planner-ink-muted);
+}
+
+.planner-app .planner-result-print {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  background: var(--planner-paper);
+}
+
+.planner-app .planner-result-print > div {
+  display: grid;
+  gap: var(--planner-space-1);
+}
+
+@media (max-width: 560px) {
+  .planner-app .planner-result-page-band button {
+    grid-template-columns: 1fr;
+    gap: 2px;
+    min-height: 60px;
+    padding: 8px;
+    text-align: center;
+  }
+
+  .planner-app .planner-result-page-band button > span:last-child small {
+    display: none;
+  }
+
+  .planner-app .planner-result-heading h1 {
+    font-size: 1.75rem;
+  }
+
+  .planner-app .planner-path-progress__header,
+  .planner-app .planner-progress-path__heading,
+  .planner-app .planner-progress-path__modules li,
+  .planner-app .planner-module-ledger__tracks li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .planner-app .planner-path-progress__status {
+    white-space: normal;
+  }
+
+  .planner-app .planner-progress-path__modules small,
+  .planner-app .planner-module-ledger__tracks li > small {
+    text-align: start;
+  }
+
+  .planner-app .planner-track-comparison__row > header {
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
+
+  .planner-app .planner-track-comparison__row header > strong {
+    grid-column: 2;
+  }
+
+  .planner-app .planner-next-course .planner-course-sticker,
+  .planner-app .planner-next-course dl div,
+  .planner-app .planner-official-questions li,
+  .planner-app .planner-result-print,
+  .planner-app .planner-result-continue {
+    grid-template-columns: 1fr;
+  }
+
+  .planner-app .planner-next-course .planner-course-sticker__meta {
+    white-space: normal;
+  }
+
+  .planner-app .planner-result-next-actions > div,
+  .planner-app .planner-result-next-actions button,
+  .planner-app .planner-result-print button {
+    width: 100%;
+  }
+}
+
+@media print {
+  .planner-result-page-band,
+  .planner-result-print,
+  .planner-result-continue,
+  .planner-result-next-actions {
+    display: none !important;
+  }
+
+  .planner-result-view,
+  .planner-result-active-page,
+  .planner-result-section,
+  .planner-path-progress {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    margin: 0 !important;
+  }
+
+  .planner-result-heading,
+  .planner-evidence-band,
+  .planner-progress-path__step,
+  .planner-track-comparison__row,
+  .planner-next-course,
+  .planner-module-ledger__tracks > section,
+  .planner-check-ledger li,
+  .planner-official-questions li,
+  .planner-official-links li {
+    break-inside: avoid;
+  }
+
+  .planner-track-comparison,
+  .planner-next-course-list,
+  .planner-module-ledger,
+  .planner-check-ledger,
+  .planner-official-questions,
+  .planner-official-links {
+    margin-block-start: 18px;
+  }
+}
