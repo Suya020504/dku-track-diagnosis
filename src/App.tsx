@@ -3875,6 +3875,16 @@ function ResultDetailView({
           </button>
         ))}
       </div>
+      <div className="result-action-bar no-print">
+        <div>
+          <strong>결과 리포트 저장</strong>
+          <span>브라우저 인쇄 창에서 PDF 저장 또는 프린터 출력을 선택할 수 있습니다.</span>
+        </div>
+        <button className="print-button" type="button" onClick={printResultReport}>
+          <Printer aria-hidden="true" size={18} />
+          <span>PDF 저장/인쇄</span>
+        </button>
+      </div>
       <div className="result-detail-panel">
         <div className="result-tab-panel" data-result-panel="current" id="result-panel-current" role="tabpanel" aria-labelledby="result-section-current" hidden={section !== "current"}>
           <div className="result-top-grid">
@@ -3892,16 +3902,6 @@ function ResultDetailView({
                   )}
                 </div>
               )}
-            </div>
-            <div className="result-action-bar no-print">
-              <div>
-                <strong>결과 리포트 저장</strong>
-                <span>브라우저 인쇄 창에서 PDF 저장 또는 프린터 출력을 선택할 수 있습니다.</span>
-              </div>
-              <button className="print-button" type="button" onClick={printResultReport}>
-                <Printer aria-hidden="true" size={18} />
-                <span>PDF 저장/인쇄</span>
-              </button>
             </div>
           </div>
           <PathProgressSummary profile={profile} result={pathProgress} />

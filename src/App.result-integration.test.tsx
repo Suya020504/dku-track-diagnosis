@@ -259,12 +259,18 @@ describe("path-aware result integration", () => {
   it("restores the incumbent result section from deep links and user navigation", async () => {
     saveState(state(trackProfile, { targetTrackId: "food-marketing" }));
     history.replaceState({}, "", "/?view=result&section=next");
+    const print = vi.fn();
+    Object.defineProperty(window, "print", { configurable: true, value: print });
 
     await mountApp();
 
     expect(document.querySelector('[data-result-section="next"]')?.getAttribute("aria-selected")).toBe("true");
     expect(document.querySelector('[data-result-panel="next"]')?.textContent).toContain("모듈별 충족 현황");
     expect(document.querySelector('[data-result-panel="current"]')?.hasAttribute("hidden")).toBe(true);
+    const printButton = document.querySelector<HTMLButtonElement>(".print-button");
+    expect(printButton?.closest("[hidden]")).toBeNull();
+    await act(async () => printButton?.click());
+    expect(print).toHaveBeenCalledTimes(1);
 
     await act(async () => {
       (document.querySelector<HTMLButtonElement>('[data-result-section="current"]') ??
@@ -289,10 +295,16 @@ describe("path-aware result integration", () => {
   it("keeps confirm selected and visible when a path has no required-course panel", async () => {
     saveState(state(minorProfile));
     history.replaceState({}, "", "/?view=result&section=confirm");
+    const print = vi.fn();
+    Object.defineProperty(window, "print", { configurable: true, value: print });
 
     await mountApp();
 
     expect(document.querySelector('[data-result-section="confirm"]')?.getAttribute("aria-selected")).toBe("true");
     expect(document.querySelector('[data-result-panel="confirm"]')?.textContent).toContain("별도 필수 과목 확인 항목이 없습니다");
+    const printButton = document.querySelector<HTMLButtonElement>(".print-button");
+    expect(printButton?.closest("[hidden]")).toBeNull();
+    await act(async () => printButton?.click());
+    expect(print).toHaveBeenCalledTimes(1);
   });
 });
