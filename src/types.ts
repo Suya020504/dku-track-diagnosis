@@ -130,9 +130,75 @@ export type RequirementEvidenceStatus =
   | "official-review-required";
 
 export type ReviewItem = {
-  code: "rule-source" | "unknown-course" | "additional-credit" | "document-conflict";
+  code:
+    | "rule-source"
+    | "unknown-course"
+    | "additional-credit"
+    | "document-conflict"
+    | "future-offering"
+    | "seasonal-term"
+    | "plan-input"
+    | "elective-placeholder";
   message: string;
   evidence: RequirementEvidenceStatus;
+};
+
+export type GraduationPlanStatus =
+  | "currently-satisfied"
+  | "regular-plan-possible"
+  | "load-adjustment-needed"
+  | "extra-term-possible"
+  | "official-review-required";
+
+export type GraduationPlanPreferences = {
+  currentTerm: AcademicTermId;
+  targetGraduationTerm: AcademicTermId;
+  maxMajorCoursesPerTerm: number;
+  considerSeasonalTerm: boolean;
+};
+
+export type PlannedCourseOrigin = "in-progress" | "user-planned" | "generated";
+
+export type PlannedCoursePlacement = {
+  termId: AcademicTermId;
+  courseId: string;
+  origin: PlannedCourseOrigin;
+  offeringEvidence: CourseOfferingEvidence;
+};
+
+export type UnplacedCourseReason =
+  | "offering-unknown"
+  | "user-plan-conflict"
+  | "capacity-before-target"
+  | "after-target";
+
+export type UnplacedCourse = {
+  courseId: string;
+  reason: UnplacedCourseReason;
+  message: string;
+};
+
+export type GraduationPlanResult = {
+  status: GraduationPlanStatus;
+  preferences: GraduationPlanPreferences;
+  placements: PlannedCoursePlacement[];
+  extraTermPlacements: PlannedCoursePlacement[];
+  unplacedCourses: UnplacedCourse[];
+  unallocatedElectiveCredits: number;
+  unallocatedElectiveSlots: number;
+  recommendedMaxMajorCoursesPerTerm?: number;
+  neededExtraTerms: number;
+  reviewItems: ReviewItem[];
+  generatedAt: string;
+};
+
+export type GraduationPlanInput = {
+  profile: StudentProfile;
+  targetTrackId?: TrackId;
+  courseSelections: CourseSelectionRecord[];
+  additionalMajorCredits: AdditionalMajorCredit[];
+  preferences: GraduationPlanPreferences;
+  generatedAt: string;
 };
 
 export type CreditProgress = {
