@@ -114,7 +114,11 @@ describe("canonical app route writes", () => {
     Object.defineProperty(globalThis, "window", {
       configurable: true,
       value: {
-        history: { state: { existing: true }, pushState, replaceState },
+        history: {
+          state: { existing: true, section: "old", view: "lab" },
+          pushState,
+          replaceState,
+        },
         location: { href: "/app?view=lab&utm_source=share" },
       },
     });
@@ -123,7 +127,7 @@ describe("canonical app route writes", () => {
     writeAppRouteToHistory(route, "replace");
 
     expect(replaceState).toHaveBeenCalledWith(
-      expect.objectContaining({ existing: true, view: "recommendation", step: "axes" }),
+      { existing: true, view: "recommendation", step: "axes" },
       "",
       "/app?view=recommendation&utm_source=share&step=axes",
     );
@@ -136,7 +140,11 @@ describe("canonical app route writes", () => {
     Object.defineProperty(globalThis, "window", {
       configurable: true,
       value: {
-        history: { state: { existing: true }, pushState, replaceState },
+        history: {
+          state: { existing: true, section: "old", view: "lab" },
+          pushState,
+          replaceState,
+        },
         location: { href: "/app?view=overview&theme=dark" },
       },
     });
@@ -144,7 +152,7 @@ describe("canonical app route writes", () => {
     writeAppRouteToHistory({ view: "plan", step: "setup" }, "push");
 
     expect(pushState).toHaveBeenCalledWith(
-      expect.objectContaining({ existing: true, view: "plan", step: "setup" }),
+      { existing: true, view: "plan", step: "setup" },
       "",
       "/app?view=plan&theme=dark&step=setup",
     );

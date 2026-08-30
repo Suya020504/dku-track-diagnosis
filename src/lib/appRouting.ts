@@ -122,7 +122,13 @@ export function writeAppRouteToHistory(
   if (typeof window === "undefined") return;
   const href = buildAppHref(window.location.href, route);
   const currentState = window.history.state ?? {};
-  const { view: _view, step: _step, axis: _axis, ...unrelatedState } = currentState;
+  const {
+    view: _view,
+    step: _step,
+    axis: _axis,
+    section: _section,
+    ...unrelatedState
+  } = currentState;
   const state = { ...unrelatedState, ...routeHistoryState(route) };
   window.history[mode === "push" ? "pushState" : "replaceState"](state, "", href);
 }

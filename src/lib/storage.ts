@@ -7,6 +7,7 @@ import type {
   EnrollmentType,
   GraduationPlanPreferences,
   PlanTerm,
+  PlannedCoursePlacement,
   SavedAppStateV2,
   SavedDiagnosisState,
   StudentProfile,
@@ -379,7 +380,7 @@ function isReviewItem(value: unknown): boolean {
     evidenceStatuses.has(value.evidence as string);
 }
 
-function isPlannedCoursePlacement(value: unknown): boolean {
+function isPlannedCoursePlacement(value: unknown): value is PlannedCoursePlacement {
   return isRecord(value) &&
     isAcademicTermId(value.termId) &&
     typeof value.courseId === "string" && courseIds.has(value.courseId) &&
@@ -395,21 +396,40 @@ function isUnplacedCourse(value: unknown): boolean {
 }
 
 function isGraduationPlan(value: unknown): boolean {
-  return isRecord(value) &&
-    graduationPlanStatuses.has(value.status as string) &&
-    isGraduationPlanPreferences(value.preferences) &&
-    Array.isArray(value.placements) && value.placements.every(isPlannedCoursePlacement) &&
-    Array.isArray(value.extraTermPlacements) && value.extraTermPlacements.every(isPlannedCoursePlacement) &&
-    Array.isArray(value.unplacedCourses) && value.unplacedCourses.every(isUnplacedCourse) &&
-    isFiniteNumber(value.unallocatedElectiveCredits) && value.unallocatedElectiveCredits >= 0 &&
-    isNonNegativeInteger(value.unallocatedElectiveSlots) &&
-    (value.recommendedMaxMajorCoursesPerTerm === undefined ||
-      Number.isInteger(value.recommendedMaxMajorCoursesPerTerm) &&
-      Number(value.recommendedMaxMajorCoursesPerTerm) >= 1 &&
-      Number(value.recommendedMaxMajorCoursesPerTerm) <= 6) &&
-    isNonNegativeInteger(value.neededExtraTerms) &&
-    Array.isArray(value.reviewItems) && value.reviewItems.every(isReviewItem) &&
-    typeof value.generatedAt === "string";
+  if (
+    !isRecord(value) ||
+    !graduationPlanStatuses.has(value.status as string) ||
+    !isGraduationPlanPreferences(value.preferences) ||
+    !Array.isArray(value.placements) ||
+    !value.placements.every(isPlannedCoursePlacement) ||
+    !Array.isArray(value.extraTermPlacements) ||
+    !value.extraTermPlacements.every(isPlannedCoursePlacement) ||
+    !Array.isArray(value.unplacedCourses) ||
+    !value.unplacedCourses.every(isUnplacedCourse) ||
+    !isFiniteNumber(value.unallocatedElectiveCredits) || value.unallocatedElectiveCredits < 0 ||
+    !isNonNegativeInteger(value.unallocatedElectiveSlots) ||
+    value.recommendedMaxMajorCoursesPerTerm !== undefined &&
+      (!Number.isInteger(value.recommendedMaxMajorCoursesPerTerm) ||
+        Number(value.recommendedMaxMajorCoursesPerTerm) < 1 ||
+        Number(value.recommendedMaxMajorCoursesPerTerm) > 6) ||
+    !isNonNegativeInteger(value.neededExtraTerms) ||
+    !Array.isArray(value.reviewItems) || !value.reviewItems.every(isReviewItem) ||
+    typeof value.generatedAt !== "string"
+  ) {
+    return false;
+  }
+
+  const currentIndex = academicTermIndex(value.preferences.currentTerm);
+  const targetIndex = academicTermIndex(value.preferences.targetGraduationTerm);
+  const normalPlacementsAreInRange = value.placements.every((placement) => {
+    const placementIndex = academicTermIndex(placement.termId);
+    return placementIndex >= currentIndex && placementIndex <= targetIndex;
+  });
+  const extraPlacementsAreInRange = value.extraTermPlacements.every((placement) => {
+    const placementIndex = academicTermIndex(placement.termId);
+    return placementIndex > targetIndex && placementIndex <= targetIndex + 2;
+  });
+  return normalPlacementsAreInRange && extraPlacementsAreInRange;
 }
 
 function isInterestAxisCandidate(value: unknown): boolean {

@@ -345,6 +345,124 @@ describe("diagnosis storage", () => {
   });
 
   it.each([
+    [
+      "normal placement after target",
+      {
+        placements: [{
+          termId: "2028-1",
+          courseId: "f-1",
+          origin: "generated",
+          offeringEvidence: "historical-2026-snapshot",
+        }],
+      },
+    ],
+    [
+      "normal placement before current",
+      {
+        placements: [{
+          termId: "2025-2",
+          courseId: "f-1",
+          origin: "generated",
+          offeringEvidence: "historical-2026-snapshot",
+        }],
+      },
+    ],
+    [
+      "extra placement at target",
+      {
+        extraTermPlacements: [{
+          termId: "2027-2",
+          courseId: "h-1",
+          origin: "generated",
+          offeringEvidence: "unknown",
+        }],
+      },
+    ],
+    [
+      "extra placement beyond two additional terms",
+      {
+        extraTermPlacements: [{
+          termId: "2029-1",
+          courseId: "h-1",
+          origin: "generated",
+          offeringEvidence: "unknown",
+        }],
+      },
+    ],
+  ])("recovers literal last-valid state after invalid plan term semantics: %s", (_, override) => {
+    const lastValid: SavedAppStateV2 = {
+      version: 2,
+      courseSelections: [],
+      additionalMajorCredits: [],
+      targetTrackId: "economics",
+      comparisonTrackIds: [],
+      snapshots: [],
+    };
+    const storage = makeStorage({
+      [STORAGE_KEY_V2]: JSON.stringify({
+        ...createEmptyAppState(),
+        graduationPlanPreferences: planPreferences,
+        graduationPlan: { ...makeGraduationPlan(), ...override },
+      }),
+      [STORAGE_LAST_VALID_KEY_V2]: JSON.stringify(lastValid),
+    });
+
+    expect(loadAppState(storage)).toEqual(lastValid);
+  });
+
+  it("accepts an in-progress placement in the current term", () => {
+    const plan = {
+      ...makeGraduationPlan(),
+      placements: [{
+        termId: "2026-1",
+        courseId: "f-1",
+        origin: "in-progress",
+        offeringEvidence: "historical-2026-snapshot",
+      }],
+    } satisfies GraduationPlanResult;
+    const state: SavedAppStateV2 = {
+      ...createEmptyAppState(),
+      graduationPlanPreferences: planPreferences,
+      graduationPlan: plan,
+    };
+    const storage = makeStorage({ [STORAGE_KEY_V2]: JSON.stringify(state) });
+
+    expect(loadAppState(storage)).toEqual(state);
+  });
+
+  it("applies plan term boundaries to graduation plans inside snapshots", () => {
+    const lastValid: SavedAppStateV2 = {
+      version: 2,
+      courseSelections: [],
+      additionalMajorCredits: [],
+      targetTrackId: "economics",
+      comparisonTrackIds: [],
+      snapshots: [],
+    };
+    const invalidSnapshot = {
+      ...makeSnapshot("invalid-plan-term"),
+      graduationPlan: {
+        ...makeGraduationPlan(),
+        placements: [{
+          termId: "2028-1",
+          courseId: "f-1",
+          origin: "generated",
+          offeringEvidence: "historical-2026-snapshot",
+        }],
+      },
+    };
+    const storage = makeStorage({
+      [STORAGE_KEY_V2]: JSON.stringify({
+        ...createEmptyAppState(),
+        snapshots: [invalidSnapshot],
+      }),
+      [STORAGE_LAST_VALID_KEY_V2]: JSON.stringify(lastValid),
+    });
+
+    expect(loadAppState(storage)).toEqual(lastValid);
+  });
+
+  it.each([
     ["unknown interest track", { ...recommendationAxes, interest: [{ ...recommendationAxes.interest![0], trackId: "unknown" }] }],
     ["invalid progress assumption", { ...recommendationAxes, progress: [{ ...recommendationAxes.progress[0], assumption: "saved-path" }] }],
     ["invalid plan status", { ...recommendationAxes, plan: [{ ...recommendationAxes.plan![0], status: "ready" }] }],
