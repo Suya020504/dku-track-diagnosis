@@ -440,7 +440,13 @@ describe("App recommendation browser interactions", () => {
       throw new Error("quota exceeded");
     });
 
-    await click("4그렇다");
+    await act(async () => {
+      const answer = document.querySelector<HTMLInputElement>(
+        'input[name="interest-consumer-scale"][value="4"]',
+      );
+      if (!answer) throw new Error("Interest answer radio not found: 4 / 그렇다");
+      answer.click();
+    });
     await click("기준별 비교");
 
     const alert = [...document.querySelectorAll<HTMLElement>('[role="alert"]')]

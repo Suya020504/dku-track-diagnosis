@@ -3,14 +3,15 @@ import { describe, expect, it, vi } from "vitest";
 import { StudyPathSetup } from "./StudyPathSetup";
 
 describe("StudyPathSetup", () => {
-  it("shows student affiliation before allowed study paths", () => {
+  it("keeps the compatibility entry point on the affiliation-only first step", () => {
     const markup = renderToStaticMarkup(
       <StudyPathSetup profile={undefined} onChange={vi.fn()} onComplete={vi.fn()} />,
     );
 
     expect(markup).toContain("식품자원경제학과 입학생");
     expect(markup).toContain("타 학과 학생");
-    expect(markup).not.toContain("부전공 진행도");
+    expect(markup).not.toContain("이수 경로를 선택해 주세요");
+    expect(markup).not.toContain('name="studyPath"');
   });
 
   it("does not show minor to department students", () => {
@@ -24,6 +25,7 @@ describe("StudyPathSetup", () => {
           curriculumRuleVersion: "2026-provided-final-plan",
           ruleApplicability: "reference-only",
         }}
+        profileStage="path"
         onChange={vi.fn()}
         onComplete={vi.fn()}
       />,
@@ -39,6 +41,7 @@ describe("StudyPathSetup", () => {
       <StudyPathSetup
         profile={undefined}
         initialDraft={{ affiliation: "external-student", goal: "find-track" }}
+        profileStage="path"
         onChange={vi.fn()}
         onComplete={vi.fn()}
       />,
@@ -60,6 +63,7 @@ describe("StudyPathSetup", () => {
           ruleApplicability: "reference-only",
         }}
         targetTrackId={undefined}
+        profileStage="path"
         onTargetTrackChange={vi.fn()}
         onChange={vi.fn()}
         onComplete={vi.fn()}
@@ -83,6 +87,7 @@ describe("StudyPathSetup", () => {
           ruleApplicability: "reference-only",
         }}
         targetTrackId="food-marketing"
+        profileStage="path"
         onTargetTrackChange={vi.fn()}
         onChange={vi.fn()}
         onComplete={vi.fn()}
@@ -104,6 +109,7 @@ describe("StudyPathSetup", () => {
           ruleApplicability: "reference-only",
         }}
         targetTrackId={undefined}
+        profileStage="path"
         onTargetTrackChange={vi.fn()}
         onChange={vi.fn()}
         onComplete={vi.fn()}
@@ -125,11 +131,14 @@ describe("StudyPathSetup", () => {
           curriculumRuleVersion: "2026-provided-final-plan",
           ruleApplicability: "reference-only",
         }}
+        profileStage="path"
         onChange={vi.fn()}
         onComplete={vi.fn()}
       />,
     );
 
     expect(markup).toContain("disabled=\"\"");
+    expect(markup).toContain("이수 경로를 선택해 주세요");
+    expect(markup).not.toContain("심화전공 기준을 사용합니다");
   });
 });

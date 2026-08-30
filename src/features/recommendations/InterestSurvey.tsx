@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState, type RefObject } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -15,6 +15,7 @@ import {
   isInterestSurveyComplete,
   scoreInterestSurvey,
 } from "../../lib/interestSurvey";
+import { TrackGlyph } from "../../components/TrackGlyph";
 import type {
   InterestSurveyAnswer,
   InterestSurveyState,
@@ -27,6 +28,7 @@ export type InterestSurveyProps = {
   onChange: (value: InterestSurveyState) => void;
   onChooseTrack: (trackId: TrackId) => void;
   onSkipToDiagnosis: () => void;
+  headingRef?: RefObject<HTMLHeadingElement | null>;
 };
 
 const answerOptions: Array<{ value: InterestSurveyAnswer; label: string }> = [
@@ -43,11 +45,9 @@ export function InterestSurvey({
   onChange,
   onChooseTrack,
   onSkipToDiagnosis,
+  headingRef,
 }: InterestSurveyProps) {
   const [showAllResults, setShowAllResults] = useState(false);
-  const resultHeadingRef = useRef<HTMLHeadingElement>(null);
-  const questionHeadingRef = useRef<HTMLLegendElement>(null);
-  const previousQuestionIndexRef = useRef(value.currentIndex);
   const currentIndex = Math.min(
     Math.max(value.currentIndex, 0),
     interestSurveyQuestions.length - 1,
@@ -59,17 +59,6 @@ export function InterestSurvey({
     () => showResult ? scoreInterestSurvey(value.answers) : [],
     [showResult, value.answers],
   );
-
-  useEffect(() => {
-    if (previousQuestionIndexRef.current !== currentIndex) {
-      questionHeadingRef.current?.focus();
-      previousQuestionIndexRef.current = currentIndex;
-    }
-  }, [currentIndex]);
-
-  useEffect(() => {
-    if (showResult) resultHeadingRef.current?.focus();
-  }, [showResult]);
 
   function updateAnswer(answer: InterestSurveyAnswer) {
     onChange({
@@ -114,7 +103,7 @@ export function InterestSurvey({
             <span>관심 적합도 결과</span>
             {comparison.isCloseMatch ? (
               <>
-                <h1 id="interest-result-title" ref={resultHeadingRef} tabIndex={-1}>
+                <h1 id="interest-result-title" ref={headingRef} tabIndex={-1}>
                   여러 관심 방향이 비슷하게 나타났어요
                 </h1>
                 <p>
@@ -124,7 +113,7 @@ export function InterestSurvey({
               </>
             ) : (
               <>
-                <h1 id="interest-result-title" ref={resultHeadingRef} tabIndex={-1}>
+                <h1 id="interest-result-title" ref={headingRef} tabIndex={-1}>
                   {topResult.trackName} 관심 점수가 높게 나타났어요
                 </h1>
                 <p>과목 이수 여부가 아닌 지금의 관심 방향만 비교한 결과입니다.</p>
@@ -150,12 +139,20 @@ export function InterestSurvey({
             <ol>
               {visibleResults.map((result) => {
                 const selected = result.trackId === value.selectedTrackId;
+                const topTie = result.score === topResult.score && comparison.scoreGap === 0;
+                const closeLeader = topResult.score - result.score <= CLOSE_INTEREST_SCORE_GAP;
                 return (
                   <li className={selected ? "selected" : ""} key={result.trackId}>
                     <article>
                       <div className="interest-result-title-row">
-                        <strong>{result.trackName}</strong>
-                        <span>{result.score}%</span>
+                        <div>
+                          <TrackGlyph trackId={result.trackId} />
+                          <strong>{result.trackName}</strong>
+                        </div>
+                        <span>
+                          {topTie ? <small>공동 상위</small> : closeLeader ? <small>상위권</small> : null}
+                          {result.score}%
+                        </span>
                       </div>
                       <div
                         className="interest-score-bar"
@@ -191,7 +188,10 @@ export function InterestSurvey({
             {selectedResult ? (
               <>
                 <span>내가 고른 방향</span>
-                <h2>{selectedResult.trackName}을 선택했어요</h2>
+                <h2>
+                  <TrackGlyph trackId={selectedResult.trackId} />
+                  {selectedResult.trackName}을 선택했어요
+                </h2>
                 <p>{selectedResult.summary}</p>
                 <ul>
                   {selectedResult.reasons.map((reason) => <li key={reason}>{reason}</li>)}
@@ -237,7 +237,9 @@ export function InterestSurvey({
       <header className="interest-survey-head">
         <div>
           <span>내 관심 트랙 찾기</span>
-          <h1 id="interest-survey-title">내가 중요하게 생각하는 전공 방향을 골라 주세요</h1>
+          <h1 id="interest-survey-title" ref={headingRef} tabIndex={-1}>
+            내가 중요하게 생각하는 전공 방향을 골라 주세요
+          </h1>
           <p>한 화면에 한 문항씩, 지금의 생각과 가장 가까운 답을 선택하면 됩니다.</p>
         </div>
         <div className={storageError ? "interest-save-state error" : "interest-save-state"} role="status">
@@ -266,27 +268,30 @@ export function InterestSurvey({
           max={interestSurveyQuestions.length}
         />
 
-        <fieldset className="interest-question-card">
-          <legend ref={questionHeadingRef} tabIndex={-1}>{currentQuestion.statement}</legend>
-          <div className="interest-answer-grid">
+        <fieldset className="interest-question-card" aria-describedby="interest-scale-hint">
+          <legend>{currentQuestion.statement}</legend>
+          <div className="interest-planner-scale">
             {answerOptions.map((option) => {
               const selected = selectedAnswer === option.value;
               return (
-                <button
+                <label
                   className={selected ? "selected" : ""}
-                  type="button"
-                  aria-pressed={selected}
                   key={option.value}
-                  onClick={() => updateAnswer(option.value)}
                 >
-                  <strong>{option.value}</strong>
-                  <span>{option.label}</span>
-                  {selected && <Check aria-hidden="true" size={18} />}
-                </button>
+                  <input
+                    type="radio"
+                    name="interest-consumer-scale"
+                    value={option.value}
+                    checked={selected}
+                    onChange={() => updateAnswer(option.value)}
+                  />
+                  <span aria-hidden="true">{option.value}</span>
+                  <small>{option.label}</small>
+                </label>
               );
             })}
           </div>
-          <p>정답은 없어요. 지금의 관심과 가장 가까운 답이면 충분합니다.</p>
+          <p id="interest-scale-hint">숫자키 또는 방향키로도 선택할 수 있어요. 정답은 없습니다.</p>
         </fieldset>
 
         <div className="interest-question-actions">

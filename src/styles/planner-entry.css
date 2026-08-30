@@ -1,0 +1,682 @@
+/* Interest and profile entry pages: one screen, one decision, one primary action. */
+.planner-app .recommendation-page-shell,
+.planner-app .profile-step-shell {
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.planner-app .profile-flow,
+.planner-app .interest-survey {
+  width: min(100%, 920px);
+  margin-inline: auto;
+  padding: 0 0 32px;
+  color: var(--planner-ink);
+}
+
+.planner-app .interest-survey-head,
+.planner-app .interest-result-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: start;
+  margin: 0 0 16px;
+  padding: clamp(20px, 4vw, 36px);
+  border: 0;
+  border-inline-start: 6px solid var(--planner-dankook-blue);
+  background: var(--planner-sky-sheet);
+}
+
+.planner-app .interest-survey-head > div:first-child,
+.planner-app .interest-result-hero > div:first-child {
+  max-width: 720px;
+}
+
+.planner-app .interest-survey-head > div:first-child > span,
+.planner-app .interest-result-hero > div:first-child > span,
+.planner-app .interest-result-section-head > span,
+.planner-app .interest-choice-summary > span {
+  color: var(--planner-dankook-blue);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.planner-app .interest-survey h1,
+.planner-app .interest-result h1 {
+  margin: 8px 0 10px;
+  color: var(--planner-ink);
+  font-size: clamp(1.75rem, 4vw, 2.55rem);
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+}
+
+.planner-app .interest-survey-head p,
+.planner-app .interest-result-hero p {
+  margin: 0;
+  color: var(--planner-ink-muted);
+  line-height: 1.65;
+}
+
+.planner-app .interest-save-state {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: var(--planner-row-radius);
+  background: var(--planner-mint-sheet);
+  color: var(--planner-department-green);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.planner-app .interest-save-state.error {
+  background: color-mix(in srgb, var(--planner-review-coral) 18%, var(--planner-paper));
+  color: #983e2d;
+}
+
+.planner-app .recommendation-storage-error,
+.planner-app .storage-error {
+  width: 100%;
+  margin: 0 0 16px;
+  border: 0;
+  border-inline-start: 5px solid var(--planner-review-coral);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--planner-review-coral) 13%, var(--planner-paper));
+  color: #783529;
+}
+
+.planner-app .interest-question-panel {
+  padding: clamp(18px, 4vw, 34px);
+  border: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 22%, transparent);
+  border-radius: 0;
+  background: var(--planner-paper);
+  box-shadow: none;
+}
+
+.planner-app .interest-progress-row {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  color: var(--planner-ink-muted);
+  font-size: 0.84rem;
+}
+
+.planner-app .interest-progress-row strong {
+  color: var(--planner-dankook-blue);
+  font-size: 1rem;
+}
+
+.planner-app .interest-question-panel > progress {
+  width: 100%;
+  height: 7px;
+  margin: 10px 0 28px;
+  accent-color: var(--planner-department-green);
+}
+
+.planner-app .interest-question-card {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.planner-app .interest-question-card legend {
+  max-width: 760px;
+  margin: 0 0 26px;
+  color: var(--planner-ink);
+  font-size: clamp(1.3rem, 3vw, 1.75rem);
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.planner-app .interest-planner-scale {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  isolation: isolate;
+}
+
+.planner-app .interest-planner-scale::before {
+  position: absolute;
+  z-index: -1;
+  inset-block-start: 22px;
+  inset-inline: 10%;
+  height: 3px;
+  background: color-mix(in srgb, var(--planner-dankook-blue) 24%, var(--planner-sky-sheet));
+  content: "";
+}
+
+.planner-app .interest-planner-scale label {
+  display: grid;
+  grid-template-rows: 44px auto;
+  gap: 8px;
+  justify-items: center;
+  min-width: 0;
+  min-height: 92px;
+  padding: 0 4px;
+  color: var(--planner-ink-muted);
+  text-align: center;
+  cursor: pointer;
+}
+
+.planner-app .interest-planner-scale input {
+  grid-column: 1;
+  grid-row: 1;
+  width: 24px;
+  height: 24px;
+  margin: 10px 0 0;
+  accent-color: var(--planner-department-green);
+  cursor: pointer;
+}
+
+.planner-app .interest-planner-scale label > span {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: end;
+  transform: translateY(26px);
+  color: var(--planner-dankook-blue);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.planner-app .interest-planner-scale small {
+  align-self: end;
+  color: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.35;
+  word-break: keep-all;
+}
+
+.planner-app .interest-planner-scale label.selected small {
+  color: var(--planner-department-green);
+  font-weight: 900;
+}
+
+.planner-app .interest-question-card > p {
+  margin: 18px 0 0;
+  color: var(--planner-ink-muted);
+  font-size: 0.78rem;
+}
+
+.planner-app .interest-question-actions,
+.planner-app .interest-result-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-top: 28px;
+}
+
+.planner-app .interest-question-actions button,
+.planner-app .interest-result-actions button,
+.planner-app .interest-skip-button,
+.planner-app .interest-result-list button {
+  min-height: 44px;
+}
+
+.planner-app .interest-question-actions .primary-button,
+.planner-app .interest-result-actions .primary-button,
+.planner-app .profile-entry-actions .primary-button {
+  border: 1px solid var(--planner-department-green);
+  border-radius: var(--planner-control-radius);
+  background: var(--planner-department-green);
+  color: var(--planner-paper);
+  box-shadow: none;
+}
+
+.planner-app .interest-question-actions .icon-button,
+.planner-app .interest-result-actions .icon-button {
+  border-color: color-mix(in srgb, var(--planner-dankook-blue) 24%, transparent);
+  background: var(--planner-paper);
+  color: var(--planner-dankook-blue);
+}
+
+.planner-app .interest-skip-button {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  margin: 12px auto 0;
+  padding-inline: 10px;
+  border: 0;
+  background: transparent;
+  color: var(--planner-ink-muted);
+  font-weight: 700;
+}
+
+.planner-app .interest-result-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(250px, 0.65fr);
+  gap: 16px;
+}
+
+.planner-app .interest-result-list,
+.planner-app .interest-choice-summary {
+  padding: clamp(18px, 3vw, 28px);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.planner-app .interest-result-list {
+  border: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 22%, transparent);
+  background: var(--planner-paper);
+}
+
+.planner-app .interest-choice-summary {
+  border-inline-start: 5px solid var(--planner-department-green);
+  background: var(--planner-mint-sheet);
+}
+
+.planner-app .interest-result-section-head h2,
+.planner-app .interest-choice-summary h2 {
+  margin: 7px 0 0;
+  color: var(--planner-ink);
+}
+
+.planner-app .interest-result-list > ol {
+  display: grid;
+  gap: 0;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.planner-app .interest-result-list > ol > li,
+.planner-app .interest-result-list > ol > li.selected {
+  border: 0;
+  border-block-start: 1px solid var(--planner-sky-sheet);
+  border-radius: 0;
+  background: transparent;
+}
+
+.planner-app .interest-result-list > ol > li.selected {
+  border-inline-start: 4px solid var(--planner-department-green);
+  background: color-mix(in srgb, var(--planner-mint-sheet) 54%, var(--planner-paper));
+}
+
+.planner-app .interest-result-list article {
+  padding: 18px 10px;
+}
+
+.planner-app .interest-result-title-row,
+.planner-app .interest-result-title-row > div,
+.planner-app .interest-choice-summary h2 {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+
+.planner-app .interest-result-title-row {
+  justify-content: space-between;
+}
+
+.planner-app .interest-result-title-row > span {
+  display: grid;
+  justify-items: end;
+  color: var(--planner-department-green);
+  font-weight: 900;
+}
+
+.planner-app .interest-result-title-row > span small {
+  color: var(--planner-dankook-blue);
+  font-size: 0.66rem;
+}
+
+.planner-app .interest-score-bar {
+  height: 6px;
+  margin: 11px 0;
+  overflow: hidden;
+  border-radius: 0;
+  background: var(--planner-sky-sheet);
+}
+
+.planner-app .interest-score-bar > span {
+  background: var(--planner-department-green);
+}
+
+.planner-app .interest-result-list article button {
+  padding-inline: 13px;
+  border: 1px solid color-mix(in srgb, var(--planner-department-green) 40%, transparent);
+  border-radius: var(--planner-row-radius);
+  background: var(--planner-paper);
+  color: var(--planner-department-green);
+  font-weight: 800;
+}
+
+.planner-app .interest-result-note {
+  margin: 16px 0 0;
+  padding: 13px 15px;
+  border-radius: 0;
+  background: var(--planner-sky-sheet);
+  color: var(--planner-dankook-blue);
+}
+
+/* URL-controlled profile entry. */
+.planner-app .profile-flow {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr);
+  border: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 22%, transparent);
+  background: var(--planner-paper);
+}
+
+.planner-app .profile-stage-markers {
+  display: grid;
+  align-content: start;
+  gap: 24px;
+  margin: 0;
+  padding: 34px 16px;
+  border-inline-end: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 20%, transparent);
+  background: var(--planner-sky-sheet);
+  list-style: none;
+}
+
+.planner-app .profile-stage-markers li {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  color: var(--planner-ink-muted);
+  font-size: 0.78rem;
+}
+
+.planner-app .profile-stage-markers li > span {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--planner-dankook-blue);
+  border-radius: 50%;
+  background: var(--planner-paper);
+}
+
+.planner-app .profile-stage-markers li[aria-current="step"] {
+  color: var(--planner-department-green);
+}
+
+.planner-app .profile-stage-markers li[aria-current="step"] > span {
+  border-color: var(--planner-department-green);
+  background: var(--planner-department-green);
+  box-shadow: 0 0 0 4px var(--planner-paper);
+}
+
+.planner-app .profile-entry-step {
+  min-width: 0;
+}
+
+.planner-app .profile-entry-band {
+  padding: clamp(22px, 4vw, 38px);
+  border-inline-start: 6px solid var(--planner-dankook-blue);
+}
+
+.planner-app .profile-entry-band--sky {
+  background: color-mix(in srgb, var(--planner-sky-sheet) 72%, var(--planner-paper));
+}
+
+.planner-app .profile-entry-band--mint {
+  border-inline-start-color: var(--planner-department-green);
+  background: var(--planner-mint-sheet);
+}
+
+.planner-app .profile-entry-band > span {
+  color: var(--planner-dankook-blue);
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.planner-app .profile-entry-band h1 {
+  margin: 8px 0 10px;
+  color: var(--planner-ink);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+}
+
+.planner-app .profile-entry-band p {
+  margin: 0;
+  color: var(--planner-ink-muted);
+  line-height: 1.65;
+}
+
+.planner-app .profile-entry-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 28px clamp(20px, 4vw, 38px) 0;
+  border: 0;
+}
+
+.planner-app .profile-entry-fieldset legend,
+.planner-app .profile-entry-year > span {
+  color: var(--planner-ink);
+  font-weight: 900;
+}
+
+.planner-app .profile-entry-fieldset legend small,
+.planner-app .profile-entry-year small {
+  color: var(--planner-ink-muted);
+  font-weight: 600;
+}
+
+.planner-app .profile-entry-rows,
+.planner-app .profile-track-rows {
+  display: grid;
+  margin-top: 12px;
+  border-block-start: 1px solid var(--planner-sky-sheet);
+}
+
+.planner-app .profile-entry-row,
+.planner-app .profile-track-row {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-height: 64px;
+  padding: 10px 6px;
+  border-block-end: 1px solid var(--planner-sky-sheet);
+  color: var(--planner-ink);
+  cursor: pointer;
+}
+
+.planner-app .profile-track-row {
+  grid-template-columns: 24px 28px minmax(0, 1fr);
+}
+
+.planner-app .profile-entry-row:has(input:checked),
+.planner-app .profile-track-row:has(input:checked) {
+  border-inline-start: 4px solid var(--planner-department-green);
+  padding-inline-start: 12px;
+  background: color-mix(in srgb, var(--planner-mint-sheet) 58%, var(--planner-paper));
+}
+
+.planner-app .profile-entry-row input,
+.planner-app .profile-track-row input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--planner-department-green);
+}
+
+.planner-app .profile-entry-row span,
+.planner-app .profile-track-row span {
+  display: grid;
+  gap: 4px;
+}
+
+.planner-app .profile-entry-row small,
+.planner-app .profile-track-row small {
+  color: var(--planner-ink-muted);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.planner-app .profile-entry-year {
+  display: grid;
+  gap: 8px;
+  width: min(260px, calc(100% - 40px));
+  margin: 28px clamp(20px, 4vw, 38px) 0;
+}
+
+.planner-app .profile-entry-year input {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 34%, transparent);
+  border-radius: var(--planner-row-radius);
+  background: var(--planner-paper);
+  color: var(--planner-ink);
+  font: inherit;
+}
+
+.planner-app .profile-entry-status {
+  margin: 22px clamp(20px, 4vw, 38px) 0;
+  padding: 12px 14px;
+  border-inline-start: 4px solid var(--planner-department-green);
+  background: var(--planner-mint-sheet);
+  color: var(--planner-ink);
+  line-height: 1.55;
+}
+
+.planner-app .profile-entry-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 28px clamp(20px, 4vw, 38px) 36px;
+}
+
+.planner-app .profile-entry-actions--split {
+  justify-content: space-between;
+}
+
+.planner-app .profile-entry-actions button,
+.planner-app .profile-recovery button {
+  min-height: 44px;
+  padding-inline: 16px;
+}
+
+.planner-app .profile-back-action,
+.planner-app .profile-secondary-action {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 28%, transparent);
+  border-radius: var(--planner-control-radius);
+  background: var(--planner-paper);
+  color: var(--planner-dankook-blue);
+  font: inherit;
+  font-weight: 800;
+}
+
+.planner-app .profile-entry-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.planner-app .profile-recovery {
+  margin: 28px clamp(20px, 4vw, 38px) 38px;
+  padding: 20px;
+  border-inline-start: 5px solid var(--planner-review-coral);
+  background: color-mix(in srgb, var(--planner-review-coral) 12%, var(--planner-paper));
+}
+
+.planner-app .profile-recovery p {
+  margin: 8px 0 18px;
+  color: var(--planner-ink-muted);
+  line-height: 1.6;
+}
+
+.planner-app :is(.interest-survey h1, .profile-entry-band h1):focus-visible {
+  border-radius: var(--planner-row-radius);
+  outline: 3px solid var(--planner-department-green);
+  outline-offset: 5px;
+  box-shadow: 0 0 0 2px var(--planner-paper);
+}
+
+@media (max-width: 760px) {
+  .planner-app .interest-survey,
+  .planner-app .profile-flow {
+    width: 100%;
+    padding-block-end: 12px;
+  }
+
+  .planner-app .interest-survey-head,
+  .planner-app .interest-result-hero {
+    grid-template-columns: 1fr;
+    padding: 20px 16px;
+  }
+
+  .planner-app .interest-save-state {
+    justify-self: start;
+  }
+
+  .planner-app .interest-question-panel {
+    padding: 20px 14px;
+  }
+
+  .planner-app .interest-planner-scale label {
+    min-height: 108px;
+    padding-inline: 2px;
+  }
+
+  .planner-app .interest-planner-scale small {
+    font-size: 0.65rem;
+  }
+
+  .planner-app .interest-question-actions,
+  .planner-app .interest-result-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .planner-app .interest-question-actions button,
+  .planner-app .interest-result-actions button {
+    width: 100%;
+  }
+
+  .planner-app .interest-result-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .planner-app .profile-flow {
+    display: block;
+  }
+
+  .planner-app .profile-stage-markers {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px 16px;
+    border-inline-end: 0;
+    border-block-end: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 20%, transparent);
+  }
+
+  .planner-app .profile-stage-markers li {
+    min-height: 32px;
+  }
+
+  .planner-app .profile-entry-band,
+  .planner-app .profile-entry-fieldset {
+    padding-inline: 16px;
+  }
+
+  .planner-app .profile-entry-year {
+    width: calc(100% - 32px);
+    margin-inline: 16px;
+  }
+
+  .planner-app .profile-entry-status,
+  .planner-app .profile-recovery {
+    margin-inline: 16px;
+  }
+
+  .planner-app .profile-entry-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+    padding: 24px 16px 30px;
+  }
+
+  .planner-app .profile-entry-actions button {
+    width: 100%;
+  }
+}

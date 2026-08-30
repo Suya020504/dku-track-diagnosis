@@ -27,7 +27,7 @@ import {
   X,
 } from "lucide-react";
 import { courses, CURRICULUM_YEAR, modules, tracks } from "./data/curriculumData";
-import { StudyPathSetup } from "./features/profile/StudyPathSetup";
+import { ProfileFlow } from "./features/profile/ProfileFlow";
 import { GraduationPlanResult } from "./features/planning/GraduationPlanResult";
 import { GraduationPlanSetup } from "./features/planning/GraduationPlanSetup";
 import { InterestSurvey } from "./features/recommendations/InterestSurvey";
@@ -364,7 +364,7 @@ export function startEntryFlowTransition(
   const state: SavedAppStateV2 = {
     ...applyPlanningSourceChange(current, { profile: nextProfile }),
     profileDraft: {
-      ...current.profileDraft,
+      ...(current.profileDraft ?? current.profile ?? {}),
       goal,
       curriculumRuleVersion: "2026-provided-final-plan",
       ruleApplicability: "reference-only",
@@ -388,7 +388,7 @@ export function chooseInterestTrackTransition(
     state: {
       ...applyPlanningSourceChange(current, { profile: nextProfile, targetTrackId: trackId }),
       profileDraft: {
-        ...current.profileDraft,
+        ...(current.profileDraft ?? current.profile ?? {}),
         goal: "find-track",
         curriculumRuleVersion: "2026-provided-final-plan",
         ruleApplicability: "reference-only",
@@ -702,6 +702,8 @@ function App({ storage }: { storage?: Storage } = {}) {
       generatedAt: savedState.graduationPlan?.generatedAt ?? new Date().toISOString(),
     });
   }, [savedState]);
+  const interestQuestionIndex = savedState.interestSurvey?.currentIndex ?? 0;
+  const interestCompletedAt = savedState.interestSurvey?.completedAt;
   useEffect(() => {
     function syncFromLocation() {
       const requestedPdfReview = requestsPdfReview(window.location.search);
@@ -724,10 +726,20 @@ function App({ storage }: { storage?: Storage } = {}) {
   }, [pdfImportDraft, savedState]);
 
   useEffect(() => {
-    if (activeView === "diagnosis" || activeView === "result") {
-      stepHeadingRef.current?.focus();
-    }
-  }, [activeView, diagnosisStep]);
+    const focusEntryHeading = activeView === "diagnosis"
+      || activeView === "result"
+      || (activeView === "recommendation" && recommendationStep === "survey");
+    if (!focusEntryHeading) return;
+    stepHeadingRef.current?.focus();
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [
+    activeView,
+    diagnosisStep,
+    profileStage,
+    recommendationStep,
+    interestQuestionIndex,
+    interestCompletedAt,
+  ]);
 
   useEffect(() => {
     if (activeView === "diagnosis" && diagnosisStep === "courses" && !pdfInputRoute) {
@@ -1338,6 +1350,7 @@ function App({ storage }: { storage?: Storage } = {}) {
           <InterestSurvey
             value={savedState.interestSurvey ?? emptyInterestSurveyState()}
             storageError={storageError}
+            headingRef={stepHeadingRef}
             onChange={changeInterestSurvey}
             onChooseTrack={chooseInterestTrack}
             onSkipToDiagnosis={() => startEntryFlow("check-progress")}
@@ -1451,7 +1464,7 @@ function App({ storage }: { storage?: Storage } = {}) {
             이 브라우저에 변경 내용을 저장하지 못했습니다. 탭을 닫기 전에 입력 내용을 확인해 주세요.
           </p>
         )}
-        <StudyPathSetup
+        <ProfileFlow
           profile={savedState.profile}
           initialDraft={savedState.profileDraft}
           targetTrackId={savedState.targetTrackId}

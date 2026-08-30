@@ -144,7 +144,7 @@ describe("path-aware result integration", () => {
   });
 
   it("renders track-major profile editing without a target track", () => {
-    const markup = renderApp(state(trackProfile), "?view=diagnosis&step=profile");
+    const markup = renderApp(state(trackProfile), "?view=diagnosis&step=profile&profile=path");
 
     expect(markup).toContain("이수 경로");
     expect(markup).toContain("진단할 트랙");

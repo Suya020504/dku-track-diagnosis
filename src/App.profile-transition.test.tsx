@@ -176,21 +176,20 @@ describe("profile integration transitions", () => {
 
     await mountApp();
 
-    expect(document.querySelector('[role="tab"][data-profile-stage="path"]')?.getAttribute("aria-selected")).toBe("true");
-    expect(document.querySelector('[data-profile-region="path"]')?.hasAttribute("hidden")).toBe(false);
+    expect(document.querySelector('[data-profile-stage-marker="path"]')?.getAttribute("aria-current")).toBe("step");
     expect(document.querySelector('[data-profile-region="path"]')?.textContent).toContain("소속을 먼저 선택해 주세요");
-    expect(document.querySelector('[data-profile-region="affiliation"]')?.hasAttribute("hidden")).toBe(true);
+    expect(document.querySelector('[data-profile-region="affiliation"]')).toBeNull();
     expect(document.querySelector(".study-path-complete")).toBeNull();
 
     await act(async () => {
-      (document.querySelector<HTMLButtonElement>('[role="tab"][data-profile-stage="affiliation"]') ??
-        (() => { throw new Error("Missing affiliation profile control"); })()).click();
+      (document.querySelector<HTMLButtonElement>('[data-profile-recover]') ??
+        (() => { throw new Error("Missing affiliation recovery control"); })()).click();
     });
     expect(new URLSearchParams(location.search).get("profile")).toBe("affiliation");
 
     await setRouteAndPop("/?view=diagnosis&step=profile&profile=path");
-    expect(document.querySelector('[role="tab"][data-profile-stage="path"]')?.getAttribute("aria-selected")).toBe("true");
-    expect(document.querySelector('[data-profile-region="path"]')?.hasAttribute("hidden")).toBe(false);
+    expect(document.querySelector('[data-profile-stage-marker="path"]')?.getAttribute("aria-current")).toBe("step");
+    expect(document.querySelector('[data-profile-region="path"]')).not.toBeNull();
   });
 
   it("canonicalizes the legacy modules route and lets the resource index change sections", async () => {

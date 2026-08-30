@@ -11,7 +11,7 @@ const emptyCallbacks = {
 };
 
 describe("InterestSurvey", () => {
-  it("renders one restored question with the controlled answer and all five labels", () => {
+  it("renders one restored question as one native 1–5 planner scale", () => {
     const value: InterestSurveyState = {
       answers: { [interestSurveyQuestions[2].id]: 4 },
       currentIndex: 2,
@@ -32,7 +32,10 @@ describe("InterestSurvey", () => {
     expect(markup).toContain("보통이다");
     expect(markup).toContain("그렇다");
     expect(markup).toContain("매우 그렇다");
-    expect(markup).toContain('aria-pressed="true"');
+    expect(markup.match(/type="radio"/g)).toHaveLength(5);
+    expect(markup.match(/name="interest-consumer-scale"/g)).toHaveLength(5);
+    expect(markup).toMatch(/<input[^>]*(?:value="4"[^>]*checked|checked[^>]*value="4")/);
+    expect(markup).not.toContain('aria-pressed="true"');
     expect(markup).toContain("이전");
     expect(markup).toContain("다음");
   });
@@ -75,6 +78,8 @@ describe("InterestSurvey", () => {
     expect(markup).toMatch(/<h1[^>]*tabindex="-1"/);
     expect(markup).toContain("경제학을 선택했어요");
     expect(markup).toContain("선택한 트랙으로 자가진단 이어가기");
+    expect(markup).toContain('aria-label="경제학 트랙"');
+    expect(markup).toContain("공동 상위");
     expect(markup).not.toContain("전체 1순위");
   });
 });
