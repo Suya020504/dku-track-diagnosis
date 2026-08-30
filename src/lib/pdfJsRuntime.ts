@@ -56,8 +56,13 @@ export type PdfRuntimeDocument = {
   destroy(): Promise<void>;
 };
 
+export type PdfRuntimeLoadingHandle = {
+  promise: Promise<PdfRuntimeDocument>;
+  destroy(): Promise<void>;
+};
+
 export type PdfRuntime = {
-  open(data: ArrayBuffer): Promise<PdfRuntimeDocument>;
+  open(data: ArrayBuffer): PdfRuntimeLoadingHandle;
 };
 
 const defaultLifecycle: PdfJsRuntimeLifecycle = {
@@ -88,99 +93,127 @@ function joinTextItems(items: PdfTextItem[]): string {
     .join("");
 }
 
-async function destroyFailedOpen(
-  loadingTask: PdfLoadingTaskHandle,
-  worker: PdfWorkerHandle,
-): Promise<void> {
-  try {
-    await loadingTask.destroy();
-  } catch {
-    // Preserve the parsing error while still releasing the owned worker.
-  } finally {
-    worker.destroy();
-  }
+function cancelledError(): PdfImportError {
+  return new PdfImportError("cancelled", "PDF 분석을 취소했어요.");
 }
 
-export async function openPdfDocument(
+export function openPdfDocument(
   data: ArrayBuffer,
   lifecycle: PdfJsRuntimeLifecycle = defaultLifecycle,
-): Promise<PdfRuntimeDocument> {
+): PdfRuntimeLoadingHandle {
   const worker = lifecycle.createWorker();
-
-  try {
-    await worker.promise;
-  } catch (error) {
-    worker.destroy();
-    throw error;
-  }
-
-  if (!lifecycle.isWorkerPort(worker.port)) {
-    worker.destroy();
-    throw new PdfImportError(
-      "worker-unavailable",
-      "PDF 처리용 브라우저 작업자를 사용할 수 없어요.",
-    );
-  }
-
-  let loadingTask: PdfLoadingTaskHandle;
-  try {
-    loadingTask = lifecycle.getDocument({
-      data: new Uint8Array(data),
-      worker,
-      stopAtErrors: true,
-      useWorkerFetch: false,
-      useWasm: false,
-      isEvalSupported: false,
-    });
-  } catch (error) {
-    worker.destroy();
-    throw error;
-  }
-
-  let document: PdfDocumentHandle;
-  try {
-    document = await loadingTask.promise;
-  } catch (error) {
-    await destroyFailedOpen(loadingTask, worker);
-    throw error;
-  }
-
-  let extractionQueue: Promise<void> = Promise.resolve();
+  let sourceData: ArrayBuffer | undefined = data;
+  let loadingTask: PdfLoadingTaskHandle | undefined;
+  let destroyed = false;
+  let workerDestroyed = false;
   let destroyPromise: Promise<void> | undefined;
+  let rejectDestroyed!: (error: PdfImportError) => void;
+  const destroyedSignal = new Promise<never>((_resolve, reject) => {
+    rejectDestroyed = reject;
+  });
 
-  const getPageText = (pageNumber: number): Promise<string> => {
-    const extraction = extractionQueue.then(async () => {
-      const page = await document.getPage(pageNumber);
-      try {
-        const textContent = await page.getTextContent();
-        return joinTextItems(textContent.items);
-      } finally {
-        page.cleanup();
-      }
-    });
-    extractionQueue = extraction.then(
-      () => undefined,
-      () => undefined,
-    );
-    return extraction;
-  };
+  const beginDestroy = (cancelPending: boolean): Promise<void> => {
+    if (destroyPromise) return destroyPromise;
+    destroyed = true;
+    sourceData = undefined;
+    if (cancelPending) rejectDestroyed(cancelledError());
 
-  const destroy = (): Promise<void> => {
-    destroyPromise ??= (async () => {
+    let loadingDestroy: Promise<void>;
+    try {
+      loadingDestroy = loadingTask?.destroy() ?? Promise.resolve();
+    } catch (error) {
+      loadingDestroy = Promise.reject(error);
+    }
+
+    let workerError: unknown;
+    if (!workerDestroyed) {
+      workerDestroyed = true;
       try {
-        await loadingTask.destroy();
-      } finally {
         worker.destroy();
+      } catch (error) {
+        workerError = error;
       }
-    })();
+    }
+
+    destroyPromise = loadingDestroy.then(
+      () => {
+        if (workerError !== undefined) throw workerError;
+      },
+      (error: unknown) => {
+        throw error;
+      },
+    );
+    void destroyPromise.catch(() => undefined);
     return destroyPromise;
   };
 
-  return {
-    numPages: document.numPages,
-    getPageText,
-    destroy,
+  const destroy = (): Promise<void> => beginDestroy(true);
+
+  const initialize = async (): Promise<PdfRuntimeDocument> => {
+    try {
+      await worker.promise;
+      if (destroyed) throw cancelledError();
+
+      if (!lifecycle.isWorkerPort(worker.port)) {
+        throw new PdfImportError(
+          "worker-unavailable",
+          "PDF 처리용 브라우저 작업자를 사용할 수 없어요.",
+        );
+      }
+
+      const ownedData = sourceData;
+      sourceData = undefined;
+      if (!ownedData) throw cancelledError();
+      loadingTask = lifecycle.getDocument({
+        data: new Uint8Array(ownedData),
+        worker,
+        stopAtErrors: true,
+        useWorkerFetch: false,
+        useWasm: false,
+        isEvalSupported: false,
+      });
+      if (destroyed) throw cancelledError();
+
+      const document: PdfDocumentHandle = await loadingTask.promise;
+      if (destroyed) throw cancelledError();
+
+      let extractionQueue: Promise<void> = Promise.resolve();
+
+      const getPageText = (pageNumber: number): Promise<string> => {
+        if (destroyed) return Promise.reject(cancelledError());
+        const extraction = extractionQueue.then(async () => {
+          if (destroyed) throw cancelledError();
+          const page = await document.getPage(pageNumber);
+          try {
+            const textContent = await page.getTextContent();
+            return joinTextItems(textContent.items);
+          } finally {
+            page.cleanup();
+          }
+        });
+        extractionQueue = extraction.then(
+          () => undefined,
+          () => undefined,
+        );
+        return extraction;
+      };
+
+      return {
+        numPages: document.numPages,
+        getPageText,
+        destroy,
+      };
+    } catch (error) {
+      if (!destroyed) void beginDestroy(false);
+      throw error;
+    }
   };
+
+  const initialization = initialize();
+  const promise = Promise.race([initialization, destroyedSignal]);
+  void promise.catch(() => undefined);
+
+  return { promise, destroy };
 }
 
 export const realPdfRuntime: PdfRuntime = {

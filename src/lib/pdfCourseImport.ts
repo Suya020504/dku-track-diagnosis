@@ -1,13 +1,26 @@
 import {
   PDF_IMPORT_LIMITS,
   PdfImportError,
+  type PdfAmbiguousCourse,
+  type PdfImportCandidates,
+  type PdfImportDraft,
   type PdfImportFailureCode,
-  type PdfImportTextSummary,
+  type PdfMatchedCourse,
+  type PdfMatchKind,
   type PdfTextPage,
+  type PdfUnmatchedCourse,
 } from "../types";
-import type { PdfRuntime, PdfRuntimeDocument } from "./pdfJsRuntime";
+import type { PdfRuntime, PdfRuntimeLoadingHandle } from "./pdfJsRuntime";
 
 const PDF_SIGNATURE = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]);
+const SOURCE_ID_PATTERN = /^p[1-9]\d*-c[1-9]\d*$/;
+const COURSE_ID_PATTERN = /^[a-z0-9][a-z0-9._-]{0,63}$/i;
+const MATCH_KINDS = new Set<PdfMatchKind>([
+  "internal-code",
+  "official-code",
+  "exact-name",
+  "verified-alias",
+]);
 
 const SAFE_ERROR_MESSAGES: Record<PdfImportFailureCode, string> = {
   "file-empty": "빈 PDF 파일은 사용할 수 없어요.",
@@ -46,27 +59,6 @@ function containsPdfSignature(bytes: Uint8Array): boolean {
   return false;
 }
 
-export async function validatePdfFile(file: File): Promise<void> {
-  if (file.size === 0) {
-    throw safeError("file-empty");
-  }
-  if (file.size > PDF_IMPORT_LIMITS.maxFileBytes) {
-    throw safeError("file-too-large");
-  }
-
-  const mime = file.type.trim().toLowerCase();
-  if (mime !== "" && mime !== "application/pdf") {
-    throw safeError("mime-mismatch");
-  }
-
-  const header = await file
-    .slice(0, PDF_IMPORT_LIMITS.headerScanBytes)
-    .arrayBuffer();
-  if (!containsPdfSignature(new Uint8Array(header))) {
-    throw safeError("signature-mismatch");
-  }
-}
-
 function errorName(error: unknown): string | undefined {
   if (typeof error !== "object" || error === null || !("name" in error)) {
     return undefined;
@@ -75,7 +67,12 @@ function errorName(error: unknown): string | undefined {
 }
 
 export function classifyPdfError(error: unknown): PdfImportError {
-  if (error instanceof PdfImportError) return safeError(error.code);
+  if (
+    error instanceof PdfImportError &&
+    Object.hasOwn(SAFE_ERROR_MESSAGES, error.code)
+  ) {
+    return safeError(error.code);
+  }
 
   switch (errorName(error)) {
     case "PasswordException":
@@ -88,44 +85,286 @@ export function classifyPdfError(error: unknown): PdfImportError {
   }
 }
 
+type AwaitStep = <T>(promise: Promise<T>) => Promise<T>;
+
+async function validatePdfFileWith(
+  file: File,
+  awaitStep: AwaitStep,
+): Promise<void> {
+  if (file.size === 0) throw safeError("file-empty");
+  if (file.size > PDF_IMPORT_LIMITS.maxFileBytes) {
+    throw safeError("file-too-large");
+  }
+
+  const mime = file.type.trim().toLowerCase();
+  if (mime !== "" && mime !== "application/pdf") {
+    throw safeError("mime-mismatch");
+  }
+
+  let header: ArrayBuffer;
+  try {
+    header = await awaitStep(
+      file.slice(0, PDF_IMPORT_LIMITS.headerScanBytes).arrayBuffer(),
+    );
+  } catch (error) {
+    throw classifyPdfError(error);
+  }
+  if (!containsPdfSignature(new Uint8Array(header))) {
+    throw safeError("signature-mismatch");
+  }
+}
+
+export function validatePdfFile(file: File): Promise<void> {
+  return validatePdfFileWith(file, async <T>(promise: Promise<T>) => promise);
+}
+
 function clearPages(pages: PdfTextPage[]): void {
   for (const page of pages) page.text = "";
   pages.length = 0;
 }
 
-export async function analyzePdfText<T>(input: {
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function hasExactKeys(
+  value: Record<string, unknown>,
+  expectedKeys: readonly string[],
+): boolean {
+  if (Object.getOwnPropertySymbols(value).length > 0) return false;
+  const actualKeys = Object.keys(value).sort();
+  const sortedExpected = [...expectedKeys].sort();
+  return (
+    actualKeys.length === sortedExpected.length &&
+    actualKeys.every((key, index) => key === sortedExpected[index])
+  );
+}
+
+function isSourceId(value: unknown): value is string {
+  return typeof value === "string" && SOURCE_ID_PATTERN.test(value);
+}
+
+function isCourseId(value: unknown): value is string {
+  return typeof value === "string" && COURSE_ID_PATTERN.test(value);
+}
+
+function isDisplayLabel(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    value.length >= 1 &&
+    value.length <= 60 &&
+    value === value.trim() &&
+    !/[\r\n\u2028\u2029\u0000-\u001f\u007f]/.test(value)
+  );
+}
+
+function validatedPageNumbers(
+  value: unknown,
+  pageCount: number,
+): number[] | undefined {
+  if (!Array.isArray(value) || value.length === 0) return undefined;
+  const pageNumbers: number[] = [];
+  let previous = 0;
+  for (const pageNumber of value) {
+    if (
+      !Number.isInteger(pageNumber) ||
+      pageNumber < 1 ||
+      pageNumber > pageCount ||
+      pageNumber <= previous
+    ) {
+      return undefined;
+    }
+    pageNumbers.push(pageNumber);
+    previous = pageNumber;
+  }
+  return pageNumbers;
+}
+
+function cloneMatched(
+  value: unknown,
+  pageCount: number,
+): PdfMatchedCourse | undefined {
+  if (
+    !isPlainRecord(value) ||
+    !hasExactKeys(value, [
+      "sourceId",
+      "courseId",
+      "matchKind",
+      "pageNumbers",
+      "displayLabel",
+    ]) ||
+    !isSourceId(value.sourceId) ||
+    !isCourseId(value.courseId) ||
+    typeof value.matchKind !== "string" ||
+    !MATCH_KINDS.has(value.matchKind as PdfMatchKind) ||
+    !isDisplayLabel(value.displayLabel)
+  ) {
+    return undefined;
+  }
+  const pageNumbers = validatedPageNumbers(value.pageNumbers, pageCount);
+  if (!pageNumbers) return undefined;
+  return {
+    sourceId: value.sourceId,
+    courseId: value.courseId,
+    matchKind: value.matchKind as PdfMatchKind,
+    pageNumbers,
+    displayLabel: value.displayLabel,
+  };
+}
+
+function cloneAmbiguous(
+  value: unknown,
+  pageCount: number,
+): PdfAmbiguousCourse | undefined {
+  if (
+    !isPlainRecord(value) ||
+    !hasExactKeys(value, [
+      "sourceId",
+      "displayLabel",
+      "candidateCourseIds",
+      "pageNumbers",
+    ]) ||
+    !isSourceId(value.sourceId) ||
+    !isDisplayLabel(value.displayLabel) ||
+    !Array.isArray(value.candidateCourseIds) ||
+    value.candidateCourseIds.length < 1 ||
+    value.candidateCourseIds.length > 3 ||
+    !value.candidateCourseIds.every(isCourseId) ||
+    new Set(value.candidateCourseIds).size !== value.candidateCourseIds.length
+  ) {
+    return undefined;
+  }
+  const pageNumbers = validatedPageNumbers(value.pageNumbers, pageCount);
+  if (!pageNumbers) return undefined;
+  return {
+    sourceId: value.sourceId,
+    displayLabel: value.displayLabel,
+    candidateCourseIds: [...value.candidateCourseIds],
+    pageNumbers,
+  };
+}
+
+function cloneUnmatched(
+  value: unknown,
+  pageCount: number,
+): PdfUnmatchedCourse | undefined {
+  if (
+    !isPlainRecord(value) ||
+    !hasExactKeys(value, ["sourceId", "displayLabel", "pageNumbers"]) ||
+    !isSourceId(value.sourceId) ||
+    !isDisplayLabel(value.displayLabel)
+  ) {
+    return undefined;
+  }
+  const pageNumbers = validatedPageNumbers(value.pageNumbers, pageCount);
+  if (!pageNumbers) return undefined;
+  return {
+    sourceId: value.sourceId,
+    displayLabel: value.displayLabel,
+    pageNumbers,
+  };
+}
+
+function validateCandidates(
+  value: unknown,
+  pageCount: number,
+): PdfImportCandidates {
+  if (
+    !isPlainRecord(value) ||
+    !hasExactKeys(value, ["matched", "ambiguous", "unmatched"]) ||
+    !Array.isArray(value.matched) ||
+    !Array.isArray(value.ambiguous) ||
+    !Array.isArray(value.unmatched)
+  ) {
+    throw safeError("parse-failed");
+  }
+
+  const matched = value.matched.map((item) => cloneMatched(item, pageCount));
+  const ambiguous = value.ambiguous.map((item) =>
+    cloneAmbiguous(item, pageCount),
+  );
+  const unmatched = value.unmatched.map((item) =>
+    cloneUnmatched(item, pageCount),
+  );
+  if (
+    matched.some((item) => item === undefined) ||
+    ambiguous.some((item) => item === undefined) ||
+    unmatched.some((item) => item === undefined)
+  ) {
+    throw safeError("parse-failed");
+  }
+
+  const sourceIds = [
+    ...matched.map((item) => item?.sourceId),
+    ...ambiguous.map((item) => item?.sourceId),
+    ...unmatched.map((item) => item?.sourceId),
+  ];
+  if (new Set(sourceIds).size !== sourceIds.length) {
+    throw safeError("parse-failed");
+  }
+
+  return {
+    matched: matched as PdfMatchedCourse[],
+    ambiguous: ambiguous as PdfAmbiguousCourse[],
+    unmatched: unmatched as PdfUnmatchedCourse[],
+  };
+}
+
+function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
+  return (
+    (typeof value === "object" || typeof value === "function") &&
+    value !== null &&
+    "then" in value &&
+    typeof value.then === "function"
+  );
+}
+
+export async function analyzePdfText(input: {
   file: File;
   runtime: PdfRuntime;
   signal: AbortSignal;
-  consumePages: (pages: PdfTextPage[]) => T;
-}): Promise<PdfImportTextSummary<T>> {
+  consumePages: (pages: PdfTextPage[]) => PdfImportCandidates;
+}): Promise<PdfImportDraft> {
   const pages: PdfTextPage[] = [];
-  let data: ArrayBuffer | undefined;
-  let document: PdfRuntimeDocument | undefined;
-  let destroyPromise: Promise<void> | undefined;
+  let bytes: ArrayBuffer | undefined;
+  let loading: PdfRuntimeLoadingHandle | undefined;
+  let cleanupPromise: Promise<void> | undefined;
   let stoppedError: PdfImportError | undefined;
   let rejectStopped!: (error: PdfImportError) => void;
-
   const stopped = new Promise<never>((_resolve, reject) => {
     rejectStopped = reject;
   });
 
-  const destroyDocument = (): Promise<void> => {
-    if (!document) return Promise.resolve();
-    destroyPromise ??= Promise.resolve().then(() => document?.destroy());
-    return destroyPromise;
+  const startCleanup = (): Promise<void> => {
+    if (cleanupPromise) return cleanupPromise;
+    if (!loading) return Promise.resolve();
+    try {
+      cleanupPromise = Promise.resolve(loading.destroy());
+    } catch (error) {
+      cleanupPromise = Promise.reject(error);
+    }
+    void cleanupPromise.catch(() => undefined);
+    return cleanupPromise;
   };
 
   const stop = (code: "cancelled" | "timeout"): void => {
     if (stoppedError) return;
     stoppedError = safeError(code);
+    bytes = undefined;
     rejectStopped(stoppedError);
-    void destroyDocument().catch(() => undefined);
+    void startCleanup();
   };
 
   const throwIfStopped = (): void => {
     if (stoppedError) throw stoppedError;
   };
+
+  const guard: AwaitStep = async <T>(promise: Promise<T>): Promise<T> =>
+    Promise.race([promise, stopped]);
 
   const onAbort = (): void => stop("cancelled");
   const timeoutId = globalThis.setTimeout(
@@ -135,26 +374,19 @@ export async function analyzePdfText<T>(input: {
   input.signal.addEventListener("abort", onAbort, { once: true });
   if (input.signal.aborted) onAbort();
 
-  const operation = async (): Promise<PdfImportTextSummary<T>> => {
+  const runSteps = async (): Promise<PdfImportDraft> => {
     throwIfStopped();
-    await validatePdfFile(input.file);
+    await validatePdfFileWith(input.file, guard);
     throwIfStopped();
 
-    const freshData = await input.file.arrayBuffer();
+    bytes = await guard(input.file.arrayBuffer());
     throwIfStopped();
-    data = freshData;
+    loading = input.runtime.open(bytes);
+    bytes = undefined;
+    throwIfStopped();
 
-    const openedDocument = await input.runtime.open(freshData);
-    document = openedDocument;
-    if (stoppedError) {
-      try {
-        await destroyDocument();
-      } catch {
-        // The cancellation remains the only public failure.
-      }
-      throw stoppedError;
-    }
-
+    const document = await guard(loading.promise);
+    throwIfStopped();
     if (document.numPages > PDF_IMPORT_LIMITS.maxPages) {
       throw safeError("page-limit");
     }
@@ -162,7 +394,7 @@ export async function analyzePdfText<T>(input: {
     let extractedCharacters = 0;
     let hasText = false;
     for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
-      const text = await document.getPageText(pageNumber);
+      const text = await guard(document.getPageText(pageNumber));
       throwIfStopped();
       extractedCharacters += text.length;
       if (extractedCharacters > PDF_IMPORT_LIMITS.maxExtractedCharacters) {
@@ -171,30 +403,57 @@ export async function analyzePdfText<T>(input: {
       if (text.trim().length > 0) hasText = true;
       pages.push({ pageNumber, text });
     }
-
     if (!hasText) throw safeError("no-text-layer");
 
-    const result = input.consumePages(pages);
+    const candidateValue: unknown = input.consumePages(pages);
+    if (isPromiseLike(candidateValue)) {
+      void Promise.resolve(candidateValue).catch(() => undefined);
+      throw safeError("parse-failed");
+    }
     throwIfStopped();
-    return { pageCount: document.numPages, extractedCharacters, result };
+    const candidates = validateCandidates(candidateValue, document.numPages);
+    return {
+      pageCount: document.numPages,
+      extractedCharacters,
+      ...candidates,
+    };
   };
 
-  let publicError: PdfImportError | undefined;
-  try {
-    return await Promise.race([operation(), stopped]);
-  } catch (error) {
-    publicError = classifyPdfError(error);
-    throw publicError;
-  } finally {
-    data = undefined;
-    clearPages(pages);
+  const execute = async (): Promise<PdfImportDraft> => {
+    let draft: PdfImportDraft | undefined;
+    let operationError: PdfImportError | undefined;
     try {
-      await destroyDocument();
+      draft = await runSteps();
     } catch (error) {
-      if (!publicError) throw classifyPdfError(error);
-    } finally {
-      globalThis.clearTimeout(timeoutId);
-      input.signal.removeEventListener("abort", onAbort);
+      operationError = classifyPdfError(error);
     }
+
+    bytes = undefined;
+    clearPages(pages);
+    const cleanup = startCleanup();
+    if (operationError) throw operationError;
+
+    try {
+      await guard(cleanup);
+    } catch (error) {
+      throw classifyPdfError(error);
+    }
+    throwIfStopped();
+    if (!draft) throw safeError("parse-failed");
+    return draft;
+  };
+
+  const execution = execute();
+  void execution.catch(() => undefined);
+  try {
+    return await Promise.race([execution, stopped]);
+  } catch (error) {
+    throw classifyPdfError(error);
+  } finally {
+    bytes = undefined;
+    clearPages(pages);
+    void startCleanup();
+    globalThis.clearTimeout(timeoutId);
+    input.signal.removeEventListener("abort", onAbort);
   }
 }

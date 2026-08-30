@@ -24,6 +24,16 @@ type FixturePage = {
   getTextContent?: () => Promise<{ items: FixtureTextItem[] }>;
 };
 
+function deferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+  return { promise, reject, resolve };
+}
+
 function textItem(str: string, hasEOL: boolean): FixtureTextItem {
   return {
     str,
@@ -39,6 +49,15 @@ function textItem(str: string, hasEOL: boolean): FixtureTextItem {
 function createLifecycle(input?: {
   isRealWorker?: boolean;
   pages?: FixturePage[];
+  workerPromise?: Promise<void>;
+  documentPromise?: Promise<{
+    numPages: number;
+    getPage(pageNumber: number): Promise<{
+      getTextContent(): Promise<{ items: FixtureTextItem[] }>;
+      cleanup(): void;
+    }>;
+  }>;
+  loadingDestroyPromise?: Promise<void>;
 }) {
   const pages: FixturePage[] = input?.pages ?? [
     {
@@ -50,7 +69,7 @@ function createLifecycle(input?: {
     },
   ];
   const worker = {
-    promise: Promise.resolve(),
+    promise: input?.workerPromise ?? Promise.resolve(),
     port: new BrowserWorkerStub(),
     destroy: vi.fn<() => void>(),
   };
@@ -58,9 +77,7 @@ function createLifecycle(input?: {
     numPages: pages.length,
     getPage: vi.fn(async (pageNumber: number) => {
       const page = pages[pageNumber - 1];
-      if (!page) {
-        throw new Error("missing synthetic page");
-      }
+      if (!page) throw new Error("missing synthetic page");
       return {
         getTextContent:
           page.getTextContent ??
@@ -72,8 +89,11 @@ function createLifecycle(input?: {
     }),
   };
   const loadingTask = {
-    promise: Promise.resolve(document),
-    destroy: vi.fn(async (): Promise<void> => undefined),
+    promise: input?.documentPromise ?? Promise.resolve(document),
+    destroy: vi.fn(
+      (): Promise<void> =>
+        input?.loadingDestroyPromise ?? Promise.resolve(undefined),
+    ),
   };
   const lifecycle = {
     createWorker: vi.fn(() => worker),
@@ -90,11 +110,14 @@ describe("pdfJsRuntime", () => {
     expect(GlobalWorkerOptions.workerSrc).not.toMatch(/^https?:\/\//i);
   });
 
-  it("passes the hardened PDF.js options and keeps text as literal text", async () => {
+  it("returns an immediate loading owner and keeps extracted text literal", async () => {
     const { lifecycle, pages, worker } = createLifecycle();
     const bytes = new Uint8Array([37, 80, 68, 70, 45]).buffer;
 
-    const document = await openPdfDocument(bytes, lifecycle);
+    const loading = openPdfDocument(bytes, lifecycle);
+    expect(loading).not.toBeInstanceOf(Promise);
+    expect(loading.destroy).toEqual(expect.any(Function));
+    const document = await loading.promise;
     const text = await document.getPageText(1);
 
     expect(lifecycle.getDocument).toHaveBeenCalledWith({
@@ -129,35 +152,108 @@ describe("pdfJsRuntime", () => {
     const { lifecycle } = createLifecycle({
       pages: [makePage("1페이지"), makePage("2페이지")],
     });
-    const document = await openPdfDocument(new ArrayBuffer(8), lifecycle);
+    const loading = openPdfDocument(new ArrayBuffer(8), lifecycle);
+    const document = await loading.promise;
 
     await Promise.all([document.getPageText(1), document.getPageText(2)]);
 
     expect(maximumActiveExtractions).toBe(1);
   });
 
-  it("destroys the loading task and owned worker only once", async () => {
+  it("shares one destroy owner between the loading handle and document", async () => {
     const { lifecycle, loadingTask, worker } = createLifecycle();
-    const document = await openPdfDocument(new ArrayBuffer(8), lifecycle);
+    const loading = openPdfDocument(new ArrayBuffer(8), lifecycle);
+    const document = await loading.promise;
 
-    await Promise.all([document.destroy(), document.destroy()]);
-    await document.destroy();
+    await Promise.all([
+      loading.destroy(),
+      document.destroy(),
+      document.destroy(),
+    ]);
 
     expect(loadingTask.destroy).toHaveBeenCalledTimes(1);
     expect(worker.destroy).toHaveBeenCalledTimes(1);
   });
 
-  it("rejects a fake worker with the safe worker-unavailable code", async () => {
-    const { lifecycle, worker } = createLifecycle({ isRealWorker: false });
+  it("cancels before worker readiness and never constructs a loading task", async () => {
+    const workerReady = deferred<void>();
+    const { lifecycle, worker } = createLifecycle({
+      workerPromise: workerReady.promise,
+    });
+    const loading = openPdfDocument(new ArrayBuffer(8), lifecycle);
+    const cancelled = expect(loading.promise).rejects.toMatchObject({
+      code: "cancelled",
+    });
 
-    await expect(
-      openPdfDocument(new ArrayBuffer(8), lifecycle),
-    ).rejects.toMatchObject({ code: "worker-unavailable" });
+    await loading.destroy();
+    await cancelled;
+    workerReady.resolve();
+    await Promise.resolve();
+
+    expect(lifecycle.getDocument).not.toHaveBeenCalled();
+    expect(worker.destroy).toHaveBeenCalledTimes(1);
+    await loading.destroy();
+    expect(worker.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  it("destroys a pending loading task and ignores a document that resolves late", async () => {
+    const documentReady = deferred<{
+      numPages: number;
+      getPage(pageNumber: number): Promise<never>;
+    }>();
+    const { lifecycle, loadingTask, worker } = createLifecycle({
+      documentPromise: documentReady.promise,
+    });
+    const loading = openPdfDocument(new ArrayBuffer(8), lifecycle);
+    await vi.waitFor(() => expect(lifecycle.getDocument).toHaveBeenCalledOnce());
+    const cancelled = expect(loading.promise).rejects.toMatchObject({
+      code: "cancelled",
+    });
+
+    await loading.destroy();
+    await cancelled;
+    documentReady.resolve({
+      numPages: 1,
+      getPage: vi.fn(async (): Promise<never> => {
+        throw new Error("late document must stay private");
+      }),
+    });
+    await Promise.resolve();
+
+    expect(loadingTask.destroy).toHaveBeenCalledTimes(1);
+    expect(worker.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  it("starts pending cleanup exactly once and returns the same destroy promise", async () => {
+    const cleanup = deferred<void>();
+    const { lifecycle, loadingTask, worker } = createLifecycle({
+      loadingDestroyPromise: cleanup.promise,
+    });
+    const loading = openPdfDocument(new ArrayBuffer(8), lifecycle);
+    await loading.promise;
+
+    const first = loading.destroy();
+    const second = loading.destroy();
+
+    expect(first).toBe(second);
+    expect(loadingTask.destroy).toHaveBeenCalledTimes(1);
+    expect(worker.destroy).toHaveBeenCalledTimes(1);
+    cleanup.resolve();
+    await first;
+  });
+
+  it("rejects a fake worker with safe copy and destroys its owner once", async () => {
+    const { lifecycle, worker } = createLifecycle({ isRealWorker: false });
+    const loading = openPdfDocument(new ArrayBuffer(8), lifecycle);
+
+    await expect(loading.promise).rejects.toMatchObject({
+      code: "worker-unavailable",
+    });
     expect(lifecycle.getDocument).not.toHaveBeenCalled();
     expect(worker.destroy).toHaveBeenCalledTimes(1);
   });
 
-  it("exports the real runtime through the injectable PdfRuntime boundary", async () => {
+  it("exports the real runtime through the injectable loading boundary", () => {
     expect(realPdfRuntime.open).toBe(openPdfDocument);
   });
 });

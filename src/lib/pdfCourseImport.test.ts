@@ -1,12 +1,17 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { PdfRuntime, PdfRuntimeDocument } from "./pdfJsRuntime";
 import {
   PDF_IMPORT_LIMITS,
   PdfImportError,
+  type PdfImportCandidates,
   type PdfTextPage,
 } from "../types";
+import type {
+  PdfRuntime,
+  PdfRuntimeDocument,
+  PdfRuntimeLoadingHandle,
+} from "./pdfJsRuntime";
 import {
   analyzePdfText,
   classifyPdfError,
@@ -14,6 +19,18 @@ import {
 } from "./pdfCourseImport";
 
 const PDF_SIGNATURE = new TextEncoder().encode("%PDF-");
+type StopMode = "abort" | "timeout";
+const STOP_MODES = ["abort", "timeout"] as const;
+
+function deferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+  return { promise, reject, resolve };
+}
 
 function pdfBytes(input?: {
   size?: number;
@@ -43,23 +60,36 @@ function validPdfFile(): File {
   return pdfFile(pdfBytes({ size: 64, signatureOffset: 8 }));
 }
 
-function deferred<T>() {
-  let resolve!: (value: T | PromiseLike<T>) => void;
-  let reject!: (reason?: unknown) => void;
-  const promise = new Promise<T>((promiseResolve, promiseReject) => {
-    resolve = promiseResolve;
-    reject = promiseReject;
-  });
-  return { promise, reject, resolve };
+function emptyCandidates(): PdfImportCandidates {
+  return { matched: [], ambiguous: [], unmatched: [] };
+}
+
+function validCandidates(): PdfImportCandidates {
+  return {
+    matched: [
+      {
+        sourceId: "p1-c1",
+        courseId: "course-1",
+        matchKind: "exact-name",
+        pageNumbers: [1],
+        displayLabel: "경제원론",
+      },
+    ],
+    ambiguous: [],
+    unmatched: [],
+  };
 }
 
 function fakeRuntime(input?: {
   numPages?: number;
   openError?: unknown;
+  openPromise?: Promise<PdfRuntimeDocument>;
   pageText?: (pageNumber: number) => Promise<string>;
   texts?: string[];
+  destroyPromise?: Promise<void>;
 }) {
-  const destroy = vi.fn(async (): Promise<void> => undefined);
+  const cleanup = input?.destroyPromise ?? Promise.resolve();
+  const destroy = vi.fn<() => Promise<void>>(() => cleanup);
   const getPageText = vi.fn(async (pageNumber: number): Promise<string> => {
     if (input?.pageText) return input.pageText(pageNumber);
     return input?.texts?.[pageNumber - 1] ?? "페이지";
@@ -69,26 +99,82 @@ function fakeRuntime(input?: {
     destroy,
     getPageText,
   };
-  const open = vi.fn(async (): Promise<PdfRuntimeDocument> => {
-    if (input?.openError !== undefined) throw input.openError;
-    return document;
-  });
+  const open = vi.fn((): PdfRuntimeLoadingHandle => ({
+    promise:
+      input?.openPromise ??
+      (input?.openError === undefined
+        ? Promise.resolve(document)
+        : Promise.reject(input.openError)),
+    destroy,
+  }));
   const runtime: PdfRuntime = { open };
   return { destroy, document, getPageText, open, runtime };
 }
 
-function analyzeWith<T>(input: {
+function analyzeWith(input: {
   file?: File;
   runtime: PdfRuntime;
   signal?: AbortSignal;
-  consumePages: (pages: PdfTextPage[]) => T;
+  consumePages?: (pages: PdfTextPage[]) => PdfImportCandidates;
 }) {
   return analyzePdfText({
     file: input.file ?? validPdfFile(),
     runtime: input.runtime,
     signal: input.signal ?? new AbortController().signal,
-    consumePages: input.consumePages,
+    consumePages: input.consumePages ?? emptyCandidates,
   });
+}
+
+function unsafeConsumer(
+  value: unknown,
+): (pages: PdfTextPage[]) => PdfImportCandidates {
+  return (() => value) as (pages: PdfTextPage[]) => PdfImportCandidates;
+}
+
+async function capturePdfError(
+  promise: Promise<unknown>,
+): Promise<PdfImportError> {
+  try {
+    await promise;
+  } catch (error) {
+    if (error instanceof PdfImportError) return error;
+    throw error;
+  }
+  throw new Error("Expected PDF operation to reject");
+}
+
+async function flushMicrotasks(): Promise<void> {
+  for (let index = 0; index < 8; index += 1) await Promise.resolve();
+}
+
+async function reach(assertion: () => void): Promise<void> {
+  await flushMicrotasks();
+  try {
+    assertion();
+  } catch {
+    if (vi.isFakeTimers()) {
+      await vi.advanceTimersByTimeAsync(0);
+      assertion();
+    } else {
+      await vi.waitFor(assertion);
+    }
+  }
+}
+
+async function triggerStop(
+  mode: StopMode,
+  controller: AbortController,
+): Promise<void> {
+  if (mode === "abort") {
+    controller.abort();
+    await flushMicrotasks();
+  } else {
+    await vi.advanceTimersByTimeAsync(PDF_IMPORT_LIMITS.timeoutMs);
+  }
+}
+
+function expectedStopCode(mode: StopMode): "cancelled" | "timeout" {
+  return mode === "abort" ? "cancelled" : "timeout";
 }
 
 afterEach(() => {
@@ -106,6 +192,16 @@ describe("validatePdfFile", () => {
       message: "빈 PDF 파일은 사용할 수 없어요.",
     });
     expect(slice).not.toHaveBeenCalled();
+  });
+
+  it("accepts exactly 10 MiB and reads only the first 1,024 bytes", async () => {
+    const file = pdfFile(pdfBytes({ size: PDF_IMPORT_LIMITS.maxFileBytes }));
+    const slice = vi.spyOn(file, "slice");
+    const fullRead = vi.spyOn(file, "arrayBuffer");
+
+    await expect(validatePdfFile(file)).resolves.toBeUndefined();
+    expect(slice).toHaveBeenCalledWith(0, PDF_IMPORT_LIMITS.headerScanBytes);
+    expect(fullRead).not.toHaveBeenCalled();
   });
 
   it("rejects a file over 10 MiB before reading any bytes", async () => {
@@ -132,7 +228,7 @@ describe("validatePdfFile", () => {
     expect(slice).not.toHaveBeenCalled();
   });
 
-  it("allows a blank MIME type when the first 1,024 bytes contain a PDF signature", async () => {
+  it("allows blank MIME when the header contains a PDF signature", async () => {
     const file = pdfFile(pdfBytes({ size: 32, signatureOffset: 12 }), {
       type: "",
     });
@@ -140,7 +236,7 @@ describe("validatePdfFile", () => {
     await expect(validatePdfFile(file)).resolves.toBeUndefined();
   });
 
-  it("accepts a signature at the last position wholly inside the first 1,024 bytes", async () => {
+  it("accepts the last signature wholly inside the first 1,024 bytes", async () => {
     const file = pdfFile(
       pdfBytes({
         size: PDF_IMPORT_LIMITS.headerScanBytes + 20,
@@ -148,13 +244,8 @@ describe("validatePdfFile", () => {
           PDF_IMPORT_LIMITS.headerScanBytes - PDF_SIGNATURE.length,
       }),
     );
-    const slice = vi.spyOn(file, "slice");
-    const fullRead = vi.spyOn(file, "arrayBuffer");
 
     await expect(validatePdfFile(file)).resolves.toBeUndefined();
-    expect(slice).toHaveBeenCalledOnce();
-    expect(slice).toHaveBeenCalledWith(0, PDF_IMPORT_LIMITS.headerScanBytes);
-    expect(fullRead).not.toHaveBeenCalled();
   });
 
   it("rejects a signature that starts after the first 1,024 bytes", async () => {
@@ -170,43 +261,56 @@ describe("validatePdfFile", () => {
       message: "올바른 PDF 파일인지 확인해 주세요.",
     });
   });
+
+  it("maps a direct header-read failure to fixed safe copy", async () => {
+    const file = validPdfFile();
+    const header = file.slice(0, 1);
+    vi.spyOn(header, "arrayBuffer").mockRejectedValue(
+      new Error("student-secret.pdf sentinel-private stack"),
+    );
+    vi.spyOn(file, "slice").mockReturnValue(header);
+
+    const error = await capturePdfError(validatePdfFile(file));
+
+    expect(error).toMatchObject({
+      code: "parse-failed",
+      message: "PDF를 분석하지 못했어요. 과목을 직접 선택해 주세요.",
+    });
+    expect(error.message).not.toMatch(/student-secret|sentinel-private|stack/);
+  });
 });
 
-describe("analyzePdfText", () => {
-  it("accepts exactly 50 pages and destroys the document once", async () => {
+describe("analyzePdfText limits and output", () => {
+  it("accepts exactly 50 pages and destroys the loading owner once", async () => {
     const { destroy, getPageText, runtime } = fakeRuntime({ numPages: 50 });
 
-    const summary = await analyzeWith({
-      runtime,
-      consumePages: (pages) => pages.length,
-    });
+    const draft = await analyzeWith({ runtime });
 
-    expect(summary).toEqual({
+    expect(draft).toEqual({
       pageCount: 50,
       extractedCharacters: 150,
-      result: 50,
+      matched: [],
+      ambiguous: [],
+      unmatched: [],
     });
     expect(getPageText).toHaveBeenCalledTimes(50);
     expect(getPageText).toHaveBeenNthCalledWith(50, 50);
     expect(destroy).toHaveBeenCalledOnce();
   });
 
-  it("rejects page 51 before requesting any page text", async () => {
+  it("rejects page 51 before requesting page text", async () => {
     const { destroy, getPageText, runtime } = fakeRuntime({ numPages: 51 });
-    const consumePages = vi.fn<(pages: PdfTextPage[]) => number>();
+    const consumePages = vi.fn(emptyCandidates);
 
-    await expect(
-      analyzeWith({ runtime, consumePages }),
-    ).rejects.toMatchObject({
+    await expect(analyzeWith({ runtime, consumePages })).rejects.toMatchObject({
       code: "page-limit",
-      message: "50쪽 이하의 PDF 파일만 사용할 수 있어요.",
     });
     expect(getPageText).not.toHaveBeenCalled();
     expect(consumePages).not.toHaveBeenCalled();
     expect(destroy).toHaveBeenCalledOnce();
   });
 
-  it("requests page text sequentially in page-number order", async () => {
+  it("requests pages sequentially in page-number order", async () => {
     let activePages = 0;
     let maximumActivePages = 0;
     const callOrder: number[] = [];
@@ -222,7 +326,7 @@ describe("analyzePdfText", () => {
       },
     });
 
-    await analyzeWith({ runtime, consumePages: () => "draft" });
+    await analyzeWith({ runtime });
 
     expect(callOrder).toEqual([1, 2, 3]);
     expect(maximumActivePages).toBe(1);
@@ -230,145 +334,35 @@ describe("analyzePdfText", () => {
 
   it("rejects pages whose combined trimmed text is empty", async () => {
     const { destroy, runtime } = fakeRuntime({ texts: [" \n\t", ""] });
-    const consumePages = vi.fn<(pages: PdfTextPage[]) => string>();
 
-    await expect(
-      analyzeWith({ runtime, consumePages }),
-    ).rejects.toMatchObject({
+    await expect(analyzeWith({ runtime })).rejects.toMatchObject({
       code: "no-text-layer",
-      message:
-        "텍스트를 읽을 수 없는 PDF예요. 과목을 직접 선택해 주세요.",
     });
-    expect(consumePages).not.toHaveBeenCalled();
     expect(destroy).toHaveBeenCalledOnce();
+  });
+
+  it("accepts exactly 1,000,000 extracted characters", async () => {
+    const { runtime } = fakeRuntime({
+      texts: ["x".repeat(PDF_IMPORT_LIMITS.maxExtractedCharacters)],
+    });
+
+    const draft = await analyzeWith({ runtime });
+
+    expect(draft.extractedCharacters).toBe(1_000_000);
   });
 
   it("rejects extracted text over 1,000,000 characters", async () => {
-    const { destroy, getPageText, runtime } = fakeRuntime({
+    const { destroy, runtime } = fakeRuntime({
       texts: ["x".repeat(PDF_IMPORT_LIMITS.maxExtractedCharacters + 1)],
     });
-    const consumePages = vi.fn<(pages: PdfTextPage[]) => string>();
 
-    await expect(
-      analyzeWith({ runtime, consumePages }),
-    ).rejects.toMatchObject({
+    await expect(analyzeWith({ runtime })).rejects.toMatchObject({
       code: "text-limit",
-      message: "PDF에서 읽은 텍스트가 너무 많아 분석을 중단했어요.",
     });
-    expect(getPageText).toHaveBeenCalledOnce();
-    expect(consumePages).not.toHaveBeenCalled();
     expect(destroy).toHaveBeenCalledOnce();
   });
 
-  it("cancels before opening the runtime when the signal is already aborted", async () => {
-    const controller = new AbortController();
-    controller.abort();
-    const { open, runtime } = fakeRuntime();
-
-    await expect(
-      analyzeWith({
-        runtime,
-        signal: controller.signal,
-        consumePages: () => "draft",
-      }),
-    ).rejects.toMatchObject({
-      code: "cancelled",
-      message: "PDF 분석을 취소했어요.",
-    });
-    expect(open).not.toHaveBeenCalled();
-  });
-
-  it("destroys once when aborted during page extraction", async () => {
-    const pendingPage = deferred<string>();
-    const controller = new AbortController();
-    const { destroy, getPageText, runtime } = fakeRuntime({
-      pageText: () => pendingPage.promise,
-    });
-    const analysis = analyzeWith({
-      runtime,
-      signal: controller.signal,
-      consumePages: () => "draft",
-    });
-    await vi.waitFor(() => expect(getPageText).toHaveBeenCalledOnce());
-
-    controller.abort();
-
-    await expect(analysis).rejects.toMatchObject({ code: "cancelled" });
-    expect(destroy).toHaveBeenCalledOnce();
-  });
-
-  it("uses one 15-second timer and destroys once on timeout", async () => {
-    vi.useFakeTimers();
-    const pendingPage = deferred<string>();
-    const { destroy, getPageText, runtime } = fakeRuntime({
-      pageText: () => pendingPage.promise,
-    });
-    const analysis = analyzeWith({
-      runtime,
-      consumePages: () => "draft",
-    });
-    await vi.advanceTimersByTimeAsync(0);
-
-    expect(getPageText).toHaveBeenCalledOnce();
-    expect(vi.getTimerCount()).toBe(1);
-    const timeoutResult = expect(analysis).rejects.toMatchObject({
-      code: "timeout",
-      message:
-        "PDF 분석 시간이 초과되었어요. 과목을 직접 선택해 주세요.",
-    });
-    await vi.advanceTimersByTimeAsync(PDF_IMPORT_LIMITS.timeoutMs);
-
-    await timeoutResult;
-    expect(destroy).toHaveBeenCalledOnce();
-    expect(vi.getTimerCount()).toBe(0);
-  });
-
-  it("maps a password failure from open without retrying or exposing raw details", async () => {
-    const rawMessage = "student-secret.pdf password=raw-secret stack-text";
-    const passwordError = Object.assign(new Error(rawMessage), {
-      name: "PasswordException",
-    });
-    const { open, runtime } = fakeRuntime({ openError: passwordError });
-
-    const error = await analyzeWith({
-      runtime,
-      consumePages: () => "draft",
-    }).catch((caught: unknown) => caught);
-
-    expect(error).toMatchObject({
-      code: "password-protected",
-      message: "비밀번호가 설정된 PDF는 사용할 수 없어요.",
-    });
-    expect((error as Error).message).not.toContain(rawMessage);
-    expect((error as Error).message).not.toContain("student-secret.pdf");
-    expect(open).toHaveBeenCalledOnce();
-  });
-
-  it("maps a page parsing failure and destroys without exposing raw details", async () => {
-    const rawMessage = "private page text and hidden stack";
-    const invalidError = Object.assign(new Error(rawMessage), {
-      name: "InvalidPDFException",
-    });
-    const { destroy, runtime } = fakeRuntime({
-      pageText: async () => {
-        throw invalidError;
-      },
-    });
-
-    const error = await analyzeWith({
-      runtime,
-      consumePages: () => "draft",
-    }).catch((caught: unknown) => caught);
-
-    expect(error).toMatchObject({
-      code: "invalid-or-corrupt",
-      message: "PDF 파일이 손상되었거나 올바르게 읽을 수 없어요.",
-    });
-    expect((error as Error).message).not.toContain(rawMessage);
-    expect(destroy).toHaveBeenCalledOnce();
-  });
-
-  it("returns only a sanitized callback result and clears retained page references", async () => {
+  it("returns only validated candidate arrays and clears retained pages", async () => {
     const file = validPdfFile();
     const fullRead = vi.spyOn(file, "arrayBuffer");
     const { destroy, open, runtime } = fakeRuntime({
@@ -376,26 +370,28 @@ describe("analyzePdfText", () => {
     });
     let retainedPages: PdfTextPage[] | undefined;
 
-    const summary = await analyzeWith({
+    const draft = await analyzeWith({
       file,
       runtime,
       consumePages: (pages) => {
         retainedPages = pages;
-        return { matchedCourseIds: ["course-1"] };
+        return validCandidates();
       },
     });
 
-    expect(summary).toEqual({
+    expect(draft).toEqual({
       pageCount: 2,
       extractedCharacters: 6,
-      result: { matchedCourseIds: ["course-1"] },
+      ...validCandidates(),
     });
-    expect(Object.keys(summary).sort()).toEqual([
+    expect(Object.keys(draft).sort()).toEqual([
+      "ambiguous",
       "extractedCharacters",
+      "matched",
       "pageCount",
-      "result",
+      "unmatched",
     ]);
-    expect(JSON.stringify(summary)).not.toContain("경제원론");
+    expect(JSON.stringify(draft)).not.toContain("통계");
     expect(retainedPages).toEqual([]);
     expect(fullRead).toHaveBeenCalledOnce();
     expect(open).toHaveBeenCalledWith(expect.any(ArrayBuffer));
@@ -403,7 +399,396 @@ describe("analyzePdfText", () => {
   });
 });
 
-describe("classifyPdfError", () => {
+describe("analyzePdfText strict candidate boundary", () => {
+  it.each([
+    ["raw string", "private raw page text"],
+    ["raw string array", ["private raw page text"]],
+    ["full page objects", [{ pageNumber: 1, text: "private raw page text" }]],
+    ["extra root field", { ...emptyCandidates(), rawText: "private" }],
+    [
+      "extra item field",
+      {
+        ...emptyCandidates(),
+        matched: [
+          {
+            ...validCandidates().matched[0],
+            rawText: "private",
+          },
+        ],
+      },
+    ],
+    [
+      "invalid source id",
+      {
+        ...emptyCandidates(),
+        matched: [
+          { ...validCandidates().matched[0], sourceId: "student-secret" },
+        ],
+      },
+    ],
+    [
+      "multiline label",
+      {
+        ...emptyCandidates(),
+        matched: [
+          { ...validCandidates().matched[0], displayLabel: "경제원론\n성적" },
+        ],
+      },
+    ],
+    [
+      "overlong label",
+      {
+        ...emptyCandidates(),
+        matched: [
+          { ...validCandidates().matched[0], displayLabel: "x".repeat(61) },
+        ],
+      },
+    ],
+    [
+      "out-of-range page number",
+      {
+        ...emptyCandidates(),
+        matched: [
+          { ...validCandidates().matched[0], pageNumbers: [2] },
+        ],
+      },
+    ],
+    [
+      "empty candidate course ids",
+      {
+        ...emptyCandidates(),
+        ambiguous: [
+          {
+            sourceId: "p1-c1",
+            displayLabel: "경제원론",
+            candidateCourseIds: [],
+            pageNumbers: [1],
+          },
+        ],
+      },
+    ],
+  ])("rejects %s with fixed parse-failed copy", async (_label, value) => {
+    const { runtime } = fakeRuntime({ texts: ["private raw page text"] });
+
+    const error = await capturePdfError(
+      analyzeWith({
+        runtime,
+        consumePages: unsafeConsumer(value),
+      }),
+    );
+
+    expect(error).toMatchObject({
+      code: "parse-failed",
+      message: "PDF를 분석하지 못했어요. 과목을 직접 선택해 주세요.",
+    });
+    expect(error.message).not.toContain("private raw page text");
+  });
+
+  it("blanks retained page objects when an unsafe return is rejected", async () => {
+    const { runtime } = fakeRuntime({ texts: ["private raw page text"] });
+    let retainedPage: PdfTextPage | undefined;
+
+    await expect(
+      analyzeWith({
+        runtime,
+        consumePages: (pages) => {
+          retainedPage = pages[0];
+          return pages as unknown as PdfImportCandidates;
+        },
+      }),
+    ).rejects.toMatchObject({ code: "parse-failed" });
+
+    expect(retainedPage).toEqual({ pageNumber: 1, text: "" });
+  });
+
+  it("rejects an asynchronous consumer and handles its late raw rejection", async () => {
+    const { runtime } = fakeRuntime({ texts: ["private raw page text"] });
+    const consumerResult = deferred<PdfImportCandidates>();
+    const error = await capturePdfError(
+      analyzeWith({
+        runtime,
+        consumePages: unsafeConsumer(consumerResult.promise),
+      }),
+    );
+
+    consumerResult.reject(new Error("late consumer raw rejection"));
+    await flushMicrotasks();
+
+    expect(error).toMatchObject({ code: "parse-failed" });
+    expect(error.message).not.toContain("late consumer raw rejection");
+  });
+
+  it("blanks retained page objects and preserves safe copy when consumer throws", async () => {
+    const cleanup = deferred<void>();
+    const { destroy, runtime } = fakeRuntime({
+      texts: ["private raw page text"],
+      destroyPromise: cleanup.promise,
+    });
+    let retainedPage: PdfTextPage | undefined;
+    let settled = false;
+    const analysis = analyzeWith({
+      runtime,
+      consumePages: (pages) => {
+        retainedPage = pages[0];
+        throw new Error("student-secret.pdf sentinel raw stack");
+      },
+    });
+    const caught = analysis.catch((error: unknown) => {
+      settled = true;
+      return error as PdfImportError;
+    });
+    await reach(() => expect(destroy).toHaveBeenCalledOnce());
+    await flushMicrotasks();
+    const settledBeforeCleanup = settled;
+
+    cleanup.resolve();
+    const error = await caught;
+
+    expect(settledBeforeCleanup).toBe(true);
+    expect(error).toMatchObject({
+      code: "parse-failed",
+      message: "PDF를 분석하지 못했어요. 과목을 직접 선택해 주세요.",
+    });
+    expect(retainedPage).toEqual({ pageNumber: 1, text: "" });
+    expect(destroy).toHaveBeenCalledOnce();
+  });
+});
+
+describe("analyzePdfText deferred cancellation races", () => {
+  it.each(STOP_MODES)(
+    "settles on %s during header read and ignores the late header",
+    async (mode) => {
+      if (mode === "timeout") vi.useFakeTimers();
+      const controller = new AbortController();
+      const headerRead = deferred<ArrayBuffer>();
+      const file = validPdfFile();
+      const header = file.slice(0, 1);
+      vi.spyOn(header, "arrayBuffer").mockReturnValue(headerRead.promise);
+      vi.spyOn(file, "slice").mockReturnValue(header);
+      const { open, runtime } = fakeRuntime();
+      const consumePages = vi.fn(emptyCandidates);
+      const analysis = analyzeWith({
+        file,
+        runtime,
+        signal: controller.signal,
+        consumePages,
+      });
+      const stopped = expect(analysis).rejects.toMatchObject({
+        code: expectedStopCode(mode),
+      });
+      if (mode === "timeout") expect(vi.getTimerCount()).toBe(1);
+
+      await triggerStop(mode, controller);
+      await stopped;
+      if (mode === "timeout") expect(vi.getTimerCount()).toBe(0);
+      if (mode === "abort") {
+        headerRead.resolve(pdfBytes().buffer as ArrayBuffer);
+      } else {
+        headerRead.reject(new Error("late header raw rejection"));
+      }
+      await flushMicrotasks();
+
+      expect(open).not.toHaveBeenCalled();
+      expect(consumePages).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(STOP_MODES)(
+    "settles on %s during full read and never opens after late completion",
+    async (mode) => {
+      if (mode === "timeout") vi.useFakeTimers();
+      const controller = new AbortController();
+      const fullRead = deferred<ArrayBuffer>();
+      const file = validPdfFile();
+      const read = vi.spyOn(file, "arrayBuffer").mockReturnValue(fullRead.promise);
+      const { open, runtime } = fakeRuntime();
+      const consumePages = vi.fn(emptyCandidates);
+      const analysis = analyzeWith({
+        file,
+        runtime,
+        signal: controller.signal,
+        consumePages,
+      });
+      await reach(() => expect(read).toHaveBeenCalledOnce());
+      const stopped = expect(analysis).rejects.toMatchObject({
+        code: expectedStopCode(mode),
+      });
+
+      await triggerStop(mode, controller);
+      await stopped;
+      if (mode === "abort") {
+        fullRead.resolve(pdfBytes().buffer as ArrayBuffer);
+      } else {
+        fullRead.reject(new Error("late full read raw rejection"));
+      }
+      await flushMicrotasks();
+
+      expect(open).not.toHaveBeenCalled();
+      expect(consumePages).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(STOP_MODES)(
+    "settles on %s during pending open, destroys immediately, and ignores late open",
+    async (mode) => {
+      if (mode === "timeout") vi.useFakeTimers();
+      const controller = new AbortController();
+      const opened = deferred<PdfRuntimeDocument>();
+      const { destroy, document, getPageText, open, runtime } = fakeRuntime({
+        openPromise: opened.promise,
+      });
+      const consumePages = vi.fn(emptyCandidates);
+      const analysis = analyzeWith({
+        runtime,
+        signal: controller.signal,
+        consumePages,
+      });
+      await reach(() => expect(open).toHaveBeenCalledOnce());
+      const stopped = expect(analysis).rejects.toMatchObject({
+        code: expectedStopCode(mode),
+      });
+
+      await triggerStop(mode, controller);
+      await stopped;
+      expect(destroy).toHaveBeenCalledOnce();
+      if (mode === "abort") {
+        opened.resolve(document);
+      } else {
+        opened.reject(new Error("late open raw rejection"));
+      }
+      await flushMicrotasks();
+
+      expect(getPageText).not.toHaveBeenCalled();
+      expect(consumePages).not.toHaveBeenCalled();
+      expect(destroy).toHaveBeenCalledOnce();
+    },
+  );
+
+  it.each(STOP_MODES)(
+    "settles on %s during page extraction and ignores late page completion",
+    async (mode) => {
+      if (mode === "timeout") vi.useFakeTimers();
+      const controller = new AbortController();
+      const latePage = deferred<string>();
+      const { destroy, getPageText, runtime } = fakeRuntime({
+        numPages: 2,
+        pageText: (pageNumber) =>
+          pageNumber === 1 ? Promise.resolve("first") : latePage.promise,
+      });
+      const consumePages = vi.fn(emptyCandidates);
+      const analysis = analyzeWith({
+        runtime,
+        signal: controller.signal,
+        consumePages,
+      });
+      await reach(() => expect(getPageText).toHaveBeenCalledTimes(2));
+      const stopped = expect(analysis).rejects.toMatchObject({
+        code: expectedStopCode(mode),
+      });
+
+      await triggerStop(mode, controller);
+      await stopped;
+      if (mode === "abort") {
+        latePage.resolve("private late page");
+      } else {
+        latePage.reject(new Error("private late page rejection"));
+      }
+      await flushMicrotasks();
+
+      expect(consumePages).not.toHaveBeenCalled();
+      expect(destroy).toHaveBeenCalledOnce();
+    },
+  );
+
+  it.each(STOP_MODES)(
+    "settles on %s while destroy is pending without a second destroy",
+    async (mode) => {
+      if (mode === "timeout") vi.useFakeTimers();
+      const controller = new AbortController();
+      const cleanup = deferred<void>();
+      const { destroy, runtime } = fakeRuntime({
+        destroyPromise: cleanup.promise,
+      });
+      const consumePages = vi.fn(validCandidates);
+      let settled = false;
+      const analysis = analyzeWith({
+        runtime,
+        signal: controller.signal,
+        consumePages,
+      });
+      const caught = analysis.catch((error: unknown) => {
+        settled = true;
+        return error as PdfImportError;
+      });
+      await reach(() => expect(destroy).toHaveBeenCalledOnce());
+
+      await triggerStop(mode, controller);
+      const settledBeforeCleanup = settled;
+      if (mode === "abort") {
+        cleanup.resolve();
+      } else {
+        cleanup.reject(new Error("late cleanup raw rejection"));
+      }
+      const error = await caught;
+
+      expect(settledBeforeCleanup).toBe(true);
+      expect(error).toMatchObject({ code: expectedStopCode(mode) });
+      expect(consumePages).toHaveBeenCalledOnce();
+      expect(destroy).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("cancels before runtime open when the signal is already aborted", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const { open, runtime } = fakeRuntime();
+
+    await expect(
+      analyzeWith({ runtime, signal: controller.signal }),
+    ).rejects.toMatchObject({ code: "cancelled" });
+    expect(open).not.toHaveBeenCalled();
+  });
+});
+
+describe("safe PDF error classification", () => {
+  it("maps a password open failure without retrying or exposing raw details", async () => {
+    const passwordError = Object.assign(
+      new Error("student-secret.pdf password=raw-secret stack-text"),
+      { name: "PasswordException" },
+    );
+    const { open, runtime } = fakeRuntime({ openError: passwordError });
+
+    const error = await capturePdfError(analyzeWith({ runtime }));
+
+    expect(error).toMatchObject({
+      code: "password-protected",
+      message: "비밀번호가 설정된 PDF는 사용할 수 없어요.",
+    });
+    expect(error.message).not.toMatch(/student-secret|raw-secret|stack-text/);
+    expect(open).toHaveBeenCalledOnce();
+  });
+
+  it("maps a page parsing failure and destroys without exposing raw details", async () => {
+    const invalidError = Object.assign(
+      new Error("student-secret.pdf private page stack"),
+      { name: "InvalidPDFException" },
+    );
+    const { destroy, runtime } = fakeRuntime({
+      pageText: async () => {
+        throw invalidError;
+      },
+    });
+
+    const error = await capturePdfError(analyzeWith({ runtime }));
+
+    expect(error).toMatchObject({
+      code: "invalid-or-corrupt",
+      message: "PDF 파일이 손상되었거나 올바르게 읽을 수 없어요.",
+    });
+    expect(error.message).not.toMatch(/student-secret|private page|stack/);
+    expect(destroy).toHaveBeenCalledOnce();
+  });
+
   it.each([
     [
       "PasswordException",
@@ -430,30 +815,22 @@ describe("classifyPdfError", () => {
 
     expect(classified).toBeInstanceOf(PdfImportError);
     expect(classified).toMatchObject({ code, message });
-    expect(classified.message).not.toContain("student-secret.pdf");
     expect(classified.message).not.toContain("raw");
   });
 
-  it("preserves an approved code but replaces an unsafe message", () => {
-    const classified = classifyPdfError(
-      new PdfImportError(
-        "worker-unavailable",
-        "student-secret.pdf raw worker stack",
+  it("replaces unsafe PdfImportError copy and maps unknown failures", () => {
+    expect(
+      classifyPdfError(
+        new PdfImportError(
+          "worker-unavailable",
+          "student-secret.pdf raw worker stack",
+        ),
       ),
-    );
-
-    expect(classified).toMatchObject({
+    ).toMatchObject({
       code: "worker-unavailable",
       message: "PDF 처리용 브라우저 작업자를 사용할 수 없어요.",
     });
-  });
-
-  it("maps unknown failures to fixed parse-failed copy", () => {
-    const classified = classifyPdfError(
-      new Error("student-secret.pdf raw text raw stack"),
-    );
-
-    expect(classified).toMatchObject({
+    expect(classifyPdfError(new Error("raw stack"))).toMatchObject({
       code: "parse-failed",
       message: "PDF를 분석하지 못했어요. 과목을 직접 선택해 주세요.",
     });

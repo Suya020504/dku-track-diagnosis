@@ -36,10 +36,42 @@ export type PdfTextPage = {
   text: string;
 };
 
-export type PdfImportTextSummary<T> = {
+export type PdfMatchKind =
+  | "internal-code"
+  | "official-code"
+  | "exact-name"
+  | "verified-alias";
+
+export type PdfMatchedCourse = {
+  sourceId: string;
+  courseId: string;
+  matchKind: PdfMatchKind;
+  pageNumbers: number[];
+  displayLabel: string;
+};
+
+export type PdfAmbiguousCourse = {
+  sourceId: string;
+  displayLabel: string;
+  candidateCourseIds: string[];
+  pageNumbers: number[];
+};
+
+export type PdfUnmatchedCourse = {
+  sourceId: string;
+  displayLabel: string;
+  pageNumbers: number[];
+};
+
+export type PdfImportCandidates = {
+  matched: PdfMatchedCourse[];
+  ambiguous: PdfAmbiguousCourse[];
+  unmatched: PdfUnmatchedCourse[];
+};
+
+export type PdfImportDraft = PdfImportCandidates & {
   pageCount: number;
   extractedCharacters: number;
-  result: T;
 };
 
 export type TrackId =
