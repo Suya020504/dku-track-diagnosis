@@ -390,19 +390,21 @@ Cover:
 - a fuzzy/typo course-like line never becomes matched; it becomes ambiguous candidates or unmatched;
 - unrelated headers, dates, names, credit numbers, and short tokens are discarded rather than surfaced;
 - deterministic order is page, display label, course code;
-- resulting candidates contain no full source line beyond a 60-character sanitized course-like label.
+- serialized candidates contain no PDF source text in ambiguous or name-like unmatched display labels; matched labels are canonical curriculum names and standalone safe unknown codes are uppercase.
 
 - [ ] **Step 4: Implement conservative matching**
 
 Rules:
 
 1. exact known code/name/verified alias only → matched;
-2. multiple exact candidates for one normalized token → ambiguous;
-3. fuzzy similarity may suggest up to three candidates only in ambiguous; never matched;
+2. multiple exact candidates for one normalized token → ambiguous with fixed generic display copy;
+3. fuzzy similarity may suggest up to three candidate IDs only in ambiguous with fixed generic display copy; never matched;
 4. no credible course-like candidate → discard;
-5. credible but unknown 2–60 character label → unmatched;
-6. credible course-like labels must contain either a known code pattern or one of the domain tokens `경제`, `식품`, `유통`, `마케팅`, `정책`, `지역`, `환경`, `영양`, `바이오`, `농업`, `경영`, `통계`; arbitrary names, dates, and grade strings are discarded;
+5. credible but unknown 2–60 character cells → unmatched with fixed generic display copy, except standalone safe letter-hyphen-number codes may display their uppercase code;
+6. credible course-like cells must contain either a known code pattern or one of the domain tokens `경제`, `식품`, `유통`, `마케팅`, `정책`, `지역`, `환경`, `영양`, `바이오`, `농업`, `경영`, `통계`; explicit sensitive context, dates, grades, and unrelated text are discarded, while any residual name-like credible cell can produce only generic unmatched copy and is never echoed;
 7. source IDs are deterministic positional IDs such as `p2-c3` assigned after candidate sorting, not hashes or copies of original text.
+
+Never return PDF source wording through ambiguous or unmatched `displayLabel`. Matched rows use canonical curriculum course names. The review UI resolves ambiguous `candidateCourseIds` to canonical course names itself, while name-like unmatched rows use generic page-based copy such as `인식하지 못한 과목명`. Multiple generic rows remain distinct through positional source IDs and page numbers.
 
 Use a small internal edit-distance function; do not add a fuzzy-search dependency.
 
@@ -496,8 +498,8 @@ Review must render:
 
 - counts for matched, ambiguous, unmatched;
 - matched rows unchecked by default;
-- ambiguous candidate radio choice plus approval checkbox;
-- unmatched as manual-review labels with direct-search action;
+- ambiguous candidate radio choice plus approval checkbox, rendering canonical course names from `candidateCourseIds` rather than PDF-derived display text;
+- unmatched as generic page-based manual-review rows with direct-search action; never render PDF source wording;
 - `승인한 새 과목 N개 적용` primary action;
 - conflicts after merge without changing existing status;
 - cancel and back actions.

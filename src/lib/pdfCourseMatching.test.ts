@@ -154,7 +154,7 @@ describe("buildPdfImportCandidates exact matching", () => {
       ambiguous: [
         {
           sourceId: "p1-c1",
-          displayLabel: "경제공유과목",
+          displayLabel: "유사한 과목 후보",
           candidateCourseIds: ["a-1", "b-1"],
           pageNumbers: [1],
         },
@@ -171,7 +171,7 @@ describe("buildPdfImportCandidates conservative suggestions", () => {
     expect(result.matched).toEqual([]);
     expect(result.ambiguous).toEqual([
       expect.objectContaining({
-        displayLabel: "경제원룬",
+        displayLabel: "유사한 과목 후보",
         candidateCourseIds: ["b-1"],
       }),
     ]);
@@ -187,7 +187,7 @@ describe("buildPdfImportCandidates conservative suggestions", () => {
       unmatched: [
         {
           sourceId: "p1-c1",
-          displayLabel: "지역혁신실습",
+          displayLabel: "인식하지 못한 과목명",
           pageNumbers: [1],
         },
       ],
@@ -218,7 +218,6 @@ describe("buildPdfImportCandidates conservative suggestions", () => {
       "식품자원경제학과 홍길동 32212345",
       "식품자원경제전공 홍길동",
       "소속 식품자원경제전공 홍길동",
-      "식품자원경제 홍길동",
       "식품자원경제학부 홍길동",
       "전공 식품자원경제 홍길동",
       "이메일 hong@example.com 경제정책",
@@ -248,12 +247,70 @@ describe("buildPdfImportCandidates conservative suggestions", () => {
     }
   });
 
-  it("discards every non-exact whitespace cell instead of copying a mixed row", () => {
+  it("returns generic unmatched rows for non-sensitive multiword unknowns", () => {
     const result = buildPdfImportCandidates(
       pages([1, "식품자원경제 홍길동\n경제정책 미확인값"]),
     );
 
-    expect(result).toEqual({ matched: [], ambiguous: [], unmatched: [] });
+    expect(result.unmatched).toEqual([
+      {
+        sourceId: "p1-c1",
+        displayLabel: "인식하지 못한 과목명",
+        pageNumbers: [1],
+      },
+      {
+        sourceId: "p1-c2",
+        displayLabel: "인식하지 못한 과목명",
+        pageNumbers: [1],
+      },
+    ]);
+    expect(JSON.stringify(result)).not.toMatch(/식품자원경제|홍길동|경제정책|미확인값/u);
+  });
+
+  it("never serializes source text in ambiguous or name-like unmatched labels", () => {
+    const sentinels = [
+      "식품자원경제홍길동",
+      "김경제",
+      "경제정책 실습",
+      "경제원룬",
+    ];
+
+    const result = buildPdfImportCandidates(
+      pages(
+        [1, `${sentinels[3]}/${sentinels[0]}/${sentinels[1]}`],
+        [2, sentinels[2]!],
+      ),
+    );
+
+    expect(result.ambiguous).toEqual([
+      {
+        sourceId: "p1-c1",
+        displayLabel: "유사한 과목 후보",
+        candidateCourseIds: ["b-1"],
+        pageNumbers: [1],
+      },
+    ]);
+    expect(result.unmatched).toEqual([
+      {
+        sourceId: "p1-c2",
+        displayLabel: "인식하지 못한 과목명",
+        pageNumbers: [1],
+      },
+      {
+        sourceId: "p1-c3",
+        displayLabel: "인식하지 못한 과목명",
+        pageNumbers: [1],
+      },
+      {
+        sourceId: "p2-c1",
+        displayLabel: "인식하지 못한 과목명",
+        pageNumbers: [2],
+      },
+    ]);
+    const serialized = JSON.stringify(result);
+    for (const sentinel of sentinels) {
+      expect(serialized).not.toContain(sentinel);
+    }
   });
 
   it("never copies digits or control characters into an unmatched label", () => {
@@ -272,7 +329,7 @@ describe("buildPdfImportCandidates conservative suggestions", () => {
     expect(result.unmatched).toEqual([
       {
         sourceId: "p1-c1",
-        displayLabel: "경제정책실습",
+        displayLabel: "인식하지 못한 과목명",
         pageNumbers: [1],
       },
     ]);
@@ -345,11 +402,11 @@ describe("buildPdfImportCandidates conservative suggestions", () => {
         expect.objectContaining({ sourceId: "p1-c1", displayLabel: "경제원론" }),
         expect.objectContaining({
           sourceId: "p1-c2",
-          displayLabel: "지역혁신실습",
+          displayLabel: "인식하지 못한 과목명",
         }),
         expect.objectContaining({
           sourceId: "p2-c1",
-          displayLabel: "환경미래실습",
+          displayLabel: "인식하지 못한 과목명",
         }),
       ]),
     );
@@ -389,7 +446,7 @@ describe("Task 2 strict candidate-validator integration", () => {
     expect(draft.ambiguous).toEqual([
       {
         sourceId: "p1-c1",
-        displayLabel: "경제공유과목",
+        displayLabel: "유사한 과목 후보",
         candidateCourseIds: ["a-1", "b-1", "c-1"],
         pageNumbers: [1],
       },
@@ -431,7 +488,7 @@ describe("mergeApprovedPdfMatches", () => {
     ambiguous: [
       {
         sourceId: "p1-c2",
-        displayLabel: "경제공통과목",
+        displayLabel: "유사한 과목 후보",
         candidateCourseIds: ["a-1", "b-1"],
         pageNumbers: [1],
       },
@@ -439,7 +496,7 @@ describe("mergeApprovedPdfMatches", () => {
     unmatched: [
       {
         sourceId: "p3-c1",
-        displayLabel: "지역혁신실습",
+        displayLabel: "인식하지 못한 과목명",
         pageNumbers: [3],
       },
     ],

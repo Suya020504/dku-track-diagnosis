@@ -55,6 +55,8 @@ const GRADE_PATTERN =
   /(?:^|[\s|,;/])(?:a\+?|b\+?|c\+?|d\+?|f|p|np|수|우|미|양|가)(?=$|[\s|,;/])/iu;
 const SCORE_PATTERN = /[0-9０-９]{1,3}(?:[.][0-9０-９]+)?\s*(?:점|\/\s*100)/u;
 const UNKNOWN_COURSE_CODE_PATTERN = /^[A-Za-z]-\d{1,3}$/;
+const AMBIGUOUS_DISPLAY_LABEL = "유사한 과목 후보";
+const UNMATCHED_DISPLAY_LABEL = "인식하지 못한 과목명";
 const MATCH_KIND_ORDER: Record<PdfMatchKind, number> = {
   "internal-code": 0,
   "official-code": 1,
@@ -419,7 +421,7 @@ export function createPdfCourseCandidateBuilder(
         ambiguousByKey.set(key, {
           type: "ambiguous",
           key,
-          displayLabel: cell.displayLabel,
+          displayLabel: AMBIGUOUS_DISPLAY_LABEL,
           candidateCourseIds,
           pageNumbers: new Set(cell.pageNumbers),
         });
@@ -436,8 +438,6 @@ export function createPdfCourseCandidateBuilder(
         });
         continue;
       }
-
-      if (/\s/u.test(cell.displayLabel)) continue;
 
       if (
         !isCredibleCourseLabel(cell.displayLabel) ||
@@ -461,7 +461,7 @@ export function createPdfCourseCandidateBuilder(
           ambiguousByKey.set(key, {
             type: "ambiguous",
             key,
-            displayLabel: cell.displayLabel,
+            displayLabel: AMBIGUOUS_DISPLAY_LABEL,
             candidateCourseIds,
             pageNumbers: new Set(cell.pageNumbers),
           });
@@ -476,7 +476,7 @@ export function createPdfCourseCandidateBuilder(
           unmatchedByKey.set(cell.normalizedLabel, {
             type: "unmatched",
             key: cell.normalizedLabel,
-            displayLabel: cell.displayLabel,
+            displayLabel: UNMATCHED_DISPLAY_LABEL,
             pageNumbers: new Set(cell.pageNumbers),
           });
         }
