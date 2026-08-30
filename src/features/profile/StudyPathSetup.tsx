@@ -36,8 +36,10 @@ type StudyPathSetupProps = {
   profile?: StudentProfile;
   initialDraft?: Partial<StudentProfile>;
   targetTrackId?: TrackId;
+  profileStage?: "affiliation" | "path";
   headingRef?: RefObject<HTMLHeadingElement | null>;
   onTargetTrackChange?: (trackId: TrackId | undefined) => void;
+  onProfileStageChange?: (stage: "affiliation" | "path") => void;
   onChange: (draft: DraftProfile) => void;
   onComplete: (profile: StudentProfile) => void;
 };
@@ -46,8 +48,10 @@ export function StudyPathSetup({
   profile,
   initialDraft,
   targetTrackId,
+  profileStage = "affiliation",
   headingRef,
   onTargetTrackChange,
+  onProfileStageChange,
   onChange,
   onComplete,
 }: StudyPathSetupProps) {
@@ -101,7 +105,7 @@ export function StudyPathSetup({
   }
 
   return (
-    <section className="study-path-setup" aria-labelledby="study-path-title">
+    <section className="study-path-setup" aria-labelledby="study-path-title" data-profile-stage={profileStage}>
       <div className="study-path-setup-card">
         <header className="study-path-setup-head">
           <span>맞춤 진단 시작</span>
@@ -118,6 +122,27 @@ export function StudyPathSetup({
             가장 가까운 항목을 선택해 주세요.
           </p>
         </header>
+
+        <div className="study-path-stage-index" role="tablist" aria-label="프로필 입력 단계">
+          <button
+            data-profile-stage="affiliation"
+            type="button"
+            role="tab"
+            aria-selected={profileStage === "affiliation"}
+            onClick={() => onProfileStageChange?.("affiliation")}
+          >
+            소속 확인
+          </button>
+          <button
+            data-profile-stage="path"
+            type="button"
+            role="tab"
+            aria-selected={profileStage === "path"}
+            onClick={() => onProfileStageChange?.("path")}
+          >
+            이수 경로
+          </button>
+        </div>
 
         <fieldset className="study-path-fieldset">
           <legend>지금 확인하고 싶은 것</legend>

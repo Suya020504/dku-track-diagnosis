@@ -1,5 +1,9 @@
+// @vitest-environment jsdom
+
+import { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { calculateDiagnosis } from "./lib/diagnosis";
 import { resolveDiagnosisStep } from "./lib/viewRouting";
 import {
@@ -9,6 +13,8 @@ import {
   reviewCourseInputTransition,
   saveCompletedCoursesManually,
 } from "./App";
+import App from "./App";
+import { STORAGE_KEY_V2, createEmptyAppState } from "./lib/storage";
 import type { SavedAppStateV2, StudentProfile } from "./types";
 
 const minorProfile: StudentProfile = {
@@ -27,6 +33,8 @@ const trackProfile: StudentProfile = {
   ruleApplicability: "reference-only",
 };
 
+let root: Root | undefined;
+
 function state(profile: StudentProfile): SavedAppStateV2 {
   return {
     version: 2,
@@ -37,6 +45,41 @@ function state(profile: StudentProfile): SavedAppStateV2 {
     snapshots: [],
   };
 }
+
+function saveState(savedState: SavedAppStateV2) {
+  localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(savedState));
+}
+
+async function mountApp() {
+  const container = document.querySelector<HTMLDivElement>("#root");
+  if (!container) throw new Error("Missing root container");
+  root = createRoot(container);
+  await act(async () => root?.render(<App />));
+}
+
+async function setRouteAndPop(href: string) {
+  history.pushState({}, "", href);
+  await act(async () => {
+    window.dispatchEvent(new PopStateEvent("popstate", { state: history.state }));
+  });
+}
+
+beforeEach(() => {
+  (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+  document.body.innerHTML = '<div id="root"></div>';
+  localStorage.clear();
+  history.replaceState({}, "", "/");
+  Object.defineProperty(window, "scrollTo", { configurable: true, value: vi.fn() });
+});
+
+afterEach(async () => {
+  if (root) {
+    await act(async () => root?.unmount());
+    root = undefined;
+  }
+  vi.restoreAllMocks();
+  localStorage.clear();
+});
 
 describe("profile integration transitions", () => {
   it("lets a minor with no track review direct course input and reach result", () => {
@@ -125,5 +168,42 @@ describe("profile integration transitions", () => {
     );
 
     expect(feedback).toEqual({ storageError: true, lastManualSaveAt: "" });
+  });
+
+  it("restores and updates the profile stage through deep links and popstate", async () => {
+    saveState(createEmptyAppState());
+    history.replaceState({}, "", "/?view=diagnosis&step=profile&profile=path");
+
+    await mountApp();
+
+    expect(document.querySelector('[role="tab"][data-profile-stage="path"]')?.getAttribute("aria-selected")).toBe("true");
+
+    await act(async () => {
+      (document.querySelector<HTMLButtonElement>('[role="tab"][data-profile-stage="affiliation"]') ??
+        (() => { throw new Error("Missing affiliation profile control"); })()).click();
+    });
+    expect(new URLSearchParams(location.search).get("profile")).toBe("affiliation");
+
+    await setRouteAndPop("/?view=diagnosis&step=profile&profile=path");
+    expect(document.querySelector('[role="tab"][data-profile-stage="path"]')?.getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("canonicalizes the legacy modules route and lets the resource index change sections", async () => {
+    saveState(state(minorProfile));
+    history.replaceState({}, "", "/?view=modules");
+
+    await mountApp();
+
+    expect(new URLSearchParams(location.search).get("view")).toBe("resources");
+    expect(document.querySelector('[data-resource-section="modules"]')?.getAttribute("aria-selected")).toBe("true");
+
+    await act(async () => {
+      (document.querySelector<HTMLButtonElement>('[data-resource-section="official"]') ??
+        (() => { throw new Error("Missing official resource control"); })()).click();
+    });
+    expect(new URLSearchParams(location.search).get("section")).toBe("official");
+
+    await setRouteAndPop("/?view=resources&section=curriculum");
+    expect(document.querySelector('[data-resource-section="curriculum"]')?.getAttribute("aria-selected")).toBe("true");
   });
 });

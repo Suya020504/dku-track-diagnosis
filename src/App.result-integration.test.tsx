@@ -1,5 +1,9 @@
+// @vitest-environment jsdom
+
+import { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { calculateDiagnosis } from "./lib/diagnosis";
 import { STORAGE_KEY_V2 } from "./lib/storage";
@@ -31,6 +35,8 @@ const doubleMajorProfile: StudentProfile = {
   studyPath: "double-major",
   ruleApplicability: "reference-only",
 };
+
+let root: Root | undefined;
 
 function state(profile: StudentProfile, overrides: Partial<SavedAppStateV2> = {}): SavedAppStateV2 {
   return {
@@ -83,6 +89,41 @@ function renderApp(savedState: SavedAppStateV2, search: string): string {
     else delete (globalThis as { localStorage?: unknown }).localStorage;
   }
 }
+
+function saveState(savedState: SavedAppStateV2) {
+  localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(savedState));
+}
+
+async function mountApp() {
+  const container = document.querySelector<HTMLDivElement>("#root");
+  if (!container) throw new Error("Missing root container");
+  root = createRoot(container);
+  await act(async () => root?.render(<App />));
+}
+
+async function setRouteAndPop(href: string) {
+  history.pushState({}, "", href);
+  await act(async () => {
+    window.dispatchEvent(new PopStateEvent("popstate", { state: history.state }));
+  });
+}
+
+beforeEach(() => {
+  (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+  document.body.innerHTML = '<div id="root"></div>';
+  localStorage.clear();
+  history.replaceState({}, "", "/");
+  Object.defineProperty(window, "scrollTo", { configurable: true, value: vi.fn() });
+});
+
+afterEach(async () => {
+  if (root) {
+    await act(async () => root?.unmount());
+    root = undefined;
+  }
+  vi.restoreAllMocks();
+  localStorage.clear();
+});
 
 describe("path-aware result integration", () => {
   it("guards a direct result URL until course input has been reviewed", () => {
@@ -213,5 +254,23 @@ describe("path-aware result integration", () => {
     expect(markup).toContain('id="result-tab-modules"');
     expect(markup).toContain("한눈에 보기");
     expect(markup).toContain("부족 모듈");
+  });
+
+  it("restores the incumbent result section from deep links and user navigation", async () => {
+    saveState(state(trackProfile, { targetTrackId: "food-marketing" }));
+    history.replaceState({}, "", "/?view=result&section=next");
+
+    await mountApp();
+
+    expect(document.querySelector('[data-result-section="next"]')?.getAttribute("aria-selected")).toBe("true");
+
+    await act(async () => {
+      (document.querySelector<HTMLButtonElement>('[data-result-section="current"]') ??
+        (() => { throw new Error("Missing current result control"); })()).click();
+    });
+    expect(new URLSearchParams(location.search).get("section")).toBe("current");
+
+    await setRouteAndPop("/?view=result&section=next");
+    expect(document.querySelector('[data-result-section="next"]')?.getAttribute("aria-selected")).toBe("true");
   });
 });

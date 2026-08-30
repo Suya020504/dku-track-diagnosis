@@ -57,6 +57,9 @@ import {
   resolveAppRoute,
   writeAppRouteToHistory,
   type AppRoute,
+  type ProfileStage,
+  type ResourceSection,
+  type ResultSection,
 } from "./lib/appRouting";
 import {
   resolveDiagnosisStep,
@@ -600,15 +603,15 @@ function App({ storage }: { storage?: Storage } = {}) {
   const [activeView, setActiveView] = useState<ViewId>(() =>
     viewForRoute(resolveAppRoute(window.location.search, savedState)),
   );
-  const [, setResultSection] = useState<"current" | "next" | "confirm">(() => {
+  const [resultSection, setResultSection] = useState<ResultSection>(() => {
     const route = resolveAppRoute(window.location.search, savedState);
     return route.view === "result" ? route.section ?? "current" : "current";
   });
-  const [, setResourceSection] = useState<"tracks" | "modules" | "curriculum" | "official">(() => {
+  const [resourceSection, setResourceSection] = useState<ResourceSection>(() => {
     const route = resolveAppRoute(window.location.search, savedState);
     return route.view === "resources" ? route.section ?? "tracks" : "tracks";
   });
-  const [, setProfileStage] = useState<"affiliation" | "path">(() => {
+  const [profileStage, setProfileStage] = useState<ProfileStage>(() => {
     const route = resolveAppRoute(window.location.search, savedState);
     return route.view === "diagnosis" && route.step === "profile"
       ? route.profileStage ?? "affiliation"
@@ -803,6 +806,14 @@ function App({ storage }: { storage?: Storage } = {}) {
       : step === "profile"
         ? { view: "diagnosis", step, profileStage: "affiliation" }
         : { view: "diagnosis", step });
+  }
+
+  function navigateProfileStage(stage: ProfileStage) {
+    navigateAppRoute({ view: "diagnosis", step: "profile", profileStage: stage });
+  }
+
+  function navigateResourceSection(section: ResourceSection) {
+    navigateAppRoute({ view: "resources", section });
   }
 
   function openPdfMatchReview(draft: PdfImportDraft) {
@@ -1181,7 +1192,7 @@ function App({ storage }: { storage?: Storage } = {}) {
     );
   }
 
-  if (diagnosisStep === "profile" || !savedState.profile) {
+  if (activeView === "diagnosis" && (diagnosisStep === "profile" || !savedState.profile)) {
     return (
       <div className="profile-step-shell">
         {storageError && (
@@ -1193,10 +1204,12 @@ function App({ storage }: { storage?: Storage } = {}) {
           profile={savedState.profile}
           initialDraft={savedState.profileDraft}
           targetTrackId={savedState.targetTrackId}
+          profileStage={profileStage}
           headingRef={stepHeadingRef}
           onTargetTrackChange={changeTargetTrack}
           onChange={updateProfileDraft}
           onComplete={completeProfile}
+          onProfileStageChange={navigateProfileStage}
         />
       </div>
     );
@@ -1290,7 +1303,11 @@ function App({ storage }: { storage?: Storage } = {}) {
 
         {activeView === "resources" && (
           <section className="primary-panel full-panel">
-            <ResourcesView />
+            <ResourcesView
+              section={resourceSection}
+              selectedTrackIds={selectedTrackIds}
+              onSectionChange={navigateResourceSection}
+            />
           </section>
         )}
 
@@ -1383,7 +1400,9 @@ function App({ storage }: { storage?: Storage } = {}) {
               result={result}
               profile={savedState.profile}
               pathProgress={pathProgress}
+              section={resultSection}
               headingRef={stepHeadingRef}
+              onSectionChange={(section) => navigateAppRoute({ view: "result", section })}
               onOpenRecommendations={() => navigateAppRoute({ view: "recommendation", step: "axes" })}
               onGoToPlan={() => navigateAppRoute({ view: "plan", step: "setup" })}
             />
@@ -2403,7 +2422,15 @@ function OverviewView() {
   );
 }
 
-function ResourcesView() {
+function ResourcesView({
+  section,
+  selectedTrackIds,
+  onSectionChange,
+}: {
+  section: ResourceSection;
+  selectedTrackIds: TrackId[];
+  onSectionChange: (section: ResourceSection) => void;
+}) {
   return (
     <div className="view-stack">
       <SectionHeader
@@ -2411,22 +2438,35 @@ function ResourcesView() {
         title="트랙 확인 자료와 교육과정표를 한 곳에서 확인하세요."
         body="자가진단 전에 참고할 수 있는 공식 링크, 트랙제 안내 영상, 트랙별 모듈/과목표, 2026 교육과정표를 모았습니다."
       />
-      <DepartmentLinkSection />
-      <ToolsInfoSection />
-      <details className="service-disclosure resource-disclosure">
-        <summary>
-          <span><small>트랙 구성</small><strong>트랙별 모듈·과목표 보기</strong></span>
-          <small>5개 트랙 비교</small>
-        </summary>
-        <TrackModuleReference />
-      </details>
-      <details className="service-disclosure resource-disclosure">
-        <summary>
-          <span><small>2026 교육과정</small><strong>전체 학년·학기 과목표 보기</strong></span>
-          <small>학년별 개설 흐름</small>
-        </summary>
-        <CurriculumBoard />
-      </details>
+      <div className="resource-index" role="tablist" aria-label="자료 분류">
+        {([
+          ["tracks", "트랙 구성"],
+          ["modules", "모듈 보기"],
+          ["curriculum", "교육과정표"],
+          ["official", "공식 자료"],
+        ] as const).map(([id, label]) => (
+          <button
+            className={section === id ? "active" : ""}
+            data-resource-section={id}
+            type="button"
+            role="tab"
+            aria-selected={section === id}
+            key={id}
+            onClick={() => onSectionChange(id)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {section === "tracks" && <TrackModuleReference />}
+      {section === "modules" && <ModulesView selectedTrackIds={selectedTrackIds} />}
+      {section === "curriculum" && <CurriculumBoard />}
+      {section === "official" && (
+        <>
+          <DepartmentLinkSection />
+          <ToolsInfoSection />
+        </>
+      )}
     </div>
   );
 }
@@ -3765,18 +3805,30 @@ function EnrollmentPolicyNotice({ enrollmentType }: { enrollmentType: Enrollment
   );
 }
 
+type IncumbentResultTab = "summary" | "recommendation" | "modules" | "required";
+
+function incumbentResultTabForSection(section: ResultSection): IncumbentResultTab {
+  if (section === "current") return "summary";
+  if (section === "next") return "recommendation";
+  return "required";
+}
+
 function ResultDetailView({
   result,
   profile,
   pathProgress,
+  section,
   headingRef,
+  onSectionChange,
   onOpenRecommendations,
   onGoToPlan,
 }: {
   result: DiagnosisResult;
   profile: StudentProfile;
   pathProgress: PathProgressResult;
+  section: ResultSection;
   headingRef: RefObject<HTMLHeadingElement | null>;
+  onSectionChange: (section: ResultSection) => void;
   onOpenRecommendations: () => void;
   onGoToPlan: () => void;
 }) {
@@ -3791,8 +3843,8 @@ function ResultDetailView({
         .map((courseId) => courses.find((course) => course.id === courseId))
         .filter((course): course is Course => course !== undefined)
     : [];
-  const [activeResultTab, setActiveResultTab] = useState<"summary" | "recommendation" | "modules" | "required">("summary");
-  const visibleResultTab = (
+  const activeResultTab = incumbentResultTabForSection(section);
+  const visibleResultTab: IncumbentResultTab = (
     (!hasTrackProgress && (activeResultTab === "summary" || activeResultTab === "modules")) ||
     (!hasRequiredProgress && activeResultTab === "required")
   ) ? "recommendation" : activeResultTab;
@@ -3851,8 +3903,9 @@ function ResultDetailView({
             role="tab"
             aria-controls="result-panel-summary"
             aria-selected={visibleResultTab === "summary"}
+            data-result-section="current"
             type="button"
-            onClick={() => setActiveResultTab("summary")}
+            onClick={() => onSectionChange("current")}
           >
             한눈에 보기
           </button>
@@ -3863,8 +3916,9 @@ function ResultDetailView({
           role="tab"
           aria-controls="result-panel-recommendation"
           aria-selected={visibleResultTab === "recommendation"}
+          data-result-section="next"
           type="button"
-          onClick={() => setActiveResultTab("recommendation")}
+          onClick={() => onSectionChange("next")}
         >
           맞춤 트랙 추천
         </button>
@@ -3875,8 +3929,9 @@ function ResultDetailView({
             role="tab"
             aria-controls="result-panel-modules"
             aria-selected={visibleResultTab === "modules"}
+            data-result-section="next"
             type="button"
-            onClick={() => setActiveResultTab("modules")}
+            onClick={() => onSectionChange("next")}
           >
             부족 모듈
           </button>
@@ -3888,8 +3943,9 @@ function ResultDetailView({
             role="tab"
             aria-controls="result-panel-required"
             aria-selected={visibleResultTab === "required"}
+            data-result-section="confirm"
             type="button"
-            onClick={() => setActiveResultTab("required")}
+            onClick={() => onSectionChange("confirm")}
           >
             필수 과목
           </button>
