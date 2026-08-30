@@ -23,6 +23,24 @@ async function goTo(search: string) {
   });
 }
 
+async function moveNativeHistory(direction: "back" | "forward") {
+  await act(async () => {
+    await new Promise<void>((resolve, reject) => {
+      const timeoutId = window.setTimeout(() => {
+        window.removeEventListener("popstate", handlePopState);
+        reject(new Error(`Timed out waiting for history.${direction}()`));
+      }, 2_000);
+      function handlePopState() {
+        window.clearTimeout(timeoutId);
+        window.removeEventListener("popstate", handlePopState);
+        resolve();
+      }
+      window.addEventListener("popstate", handlePopState, { once: true });
+      window.history[direction]();
+    });
+  });
+}
+
 function resourceButton(section: string): HTMLButtonElement {
   const control = document.querySelector<HTMLButtonElement>(`[data-resource-section="${section}"]`);
   if (!control) throw new Error(`Missing resource control: ${section}`);
@@ -77,6 +95,31 @@ describe("resource reading routes", () => {
         behavior: "auto",
       });
     }
+  });
+
+  it("restores resource heading focus and scroll through native back and forward history", async () => {
+    await mountAt("?view=resources&section=modules");
+    await act(async () => resourceButton("curriculum").click());
+    expect(location.search).toBe("?view=resources&section=curriculum");
+
+    const scrollTo = vi.mocked(window.scrollTo);
+    scrollTo.mockClear();
+    await moveNativeHistory("back");
+
+    expect(location.search).toBe("?view=resources&section=modules");
+    expect(resourceButton("modules").getAttribute("aria-current")).toBe("page");
+    expect(document.activeElement).toBe(document.querySelector("#resource-page-modules"));
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+    expect(scrollTo).toHaveBeenLastCalledWith({ top: 0, left: 0, behavior: "auto" });
+
+    scrollTo.mockClear();
+    await moveNativeHistory("forward");
+
+    expect(location.search).toBe("?view=resources&section=curriculum");
+    expect(resourceButton("curriculum").getAttribute("aria-current")).toBe("page");
+    expect(document.activeElement).toBe(document.querySelector("#resource-page-curriculum"));
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+    expect(scrollTo).toHaveBeenLastCalledWith({ top: 0, left: 0, behavior: "auto" });
   });
 
   it("uses the current curriculum data and evidence states on track and module pages", async () => {
