@@ -10,6 +10,7 @@ import {
   ExternalLink,
   FileText,
   GraduationCap,
+  Heart,
   HelpCircle,
   Instagram,
   Layers3,
@@ -27,6 +28,8 @@ import {
 } from "lucide-react";
 import { courses, CURRICULUM_YEAR, modules, tracks } from "./data/curriculumData";
 import { StudyPathSetup } from "./features/profile/StudyPathSetup";
+import { InterestSurvey } from "./features/recommendations/InterestSurvey";
+import { TrackRecommendationAxes } from "./features/recommendations/TrackRecommendationAxes";
 import { PathProgressSummary } from "./features/results/PathProgressSummary";
 import {
   calculateDiagnosis,
@@ -38,16 +41,22 @@ import {
   isModuleInAnyTrack,
 } from "./lib/diagnosis";
 import { calculatePathProgress } from "./lib/progressEngine";
+import { buildRecommendationAxes } from "./lib/recommendationEngine";
 import { createEmptyAppState, loadAppState, saveAppState } from "./lib/storage";
 import {
+  resolveAppRoute,
+  writeAppRouteToHistory,
+  type AppRoute,
+} from "./lib/appRouting";
+import {
   resolveDiagnosisStep,
-  writeDiagnosisStepToHistory,
   type DiagnosisStep,
 } from "./lib/viewRouting";
 import type {
   Course,
   DiagnosisResult,
   EnrollmentType,
+  InterestSurveyState,
   ModuleId,
   ModuleProgress,
   PlanTerm,
@@ -62,7 +71,7 @@ import type {
   TrackRecommendationStatus,
 } from "./types";
 
-type ViewId = "landing" | "overview" | "resources" | "modules" | "diagnosis" | "lab" | "experiment" | "result" | "contact";
+type ViewId = "landing" | "overview" | "resources" | "modules" | "diagnosis" | "recommendation" | "experiment" | "result" | "contact";
 type GradeFilter = "all" | "1" | "2" | "3" | "4" | "unknown";
 type SemesterFilter = "all" | "1" | "2" | "unknown";
 type LabPlanningSemester = PlanningSemester | "unselected";
@@ -113,10 +122,15 @@ type GuideStep = {
   viewId: ViewId;
 };
 
-const primaryViewItems: Array<{ id: ViewId; label: string; step: string; icon: typeof FileText }> = [
+const primaryViewItems: Array<{
+  id: "diagnosis" | "result" | "recommendation";
+  label: string;
+  step: string;
+  icon: typeof FileText;
+}> = [
   { id: "diagnosis", label: "자가진단", step: "1", icon: ClipboardCheck },
   { id: "result", label: "결과", step: "2", icon: BookOpenCheck },
-  { id: "lab", label: "학기 계획", step: "3", icon: CalendarDays },
+  { id: "recommendation", label: "추천 비교", step: "3", icon: Compass },
 ];
 
 const secondaryViewItems: Array<{ id: ViewId; label: string; icon: typeof FileText }> = [
@@ -146,11 +160,11 @@ const guideSteps: GuideStep[] = [
     viewId: "result",
   },
   {
-    title: "3. 학기 계획에서 다음 행동을 정합니다",
-    body: "현재 수강 이력과 학년·학기를 바탕으로 가까운 트랙과 다음 수강신청 우선순위를 정리합니다.",
-    items: ["현재 이력 기준 가까운 트랙", "정규학기 안에 가능한지 여부", "여러 트랙에 함께 도움 되는 공통 과목"],
-    action: "학기 계획 보기",
-    viewId: "lab",
+    title: "3. 추천 비교에서 기준을 나눠 봅니다",
+    body: "관심, 현재 이수 과목, 졸업 전 계획을 섞지 않고 각각의 기준으로 트랙을 비교합니다.",
+    items: ["관심 설문 기준", "완료한 이수 과목 기준", "졸업 전 계획 가능성 기준"],
+    action: "추천 기준 비교하기",
+    viewId: "recommendation",
   },
   {
     title: "4. 더보기에서 공식 자료를 확인합니다",
@@ -298,10 +312,66 @@ function getEnrollmentTypeForProfile(profile?: StudentProfile): EnrollmentType {
   return "primary";
 }
 
+function viewForRoute(route: AppRoute): ViewId {
+  if (route.view === "recommendation") return "recommendation";
+  if (route.view === "plan") return "experiment";
+  if (route.view === "diagnosis") return "diagnosis";
+  return route.view;
+}
+
+function emptyInterestSurveyState(): InterestSurveyState {
+  return { answers: {}, currentIndex: 0 };
+}
+
+export function startEntryFlowTransition(
+  current: SavedAppStateV2,
+  goal: "check-progress" | "find-track",
+): { state: SavedAppStateV2; route: AppRoute } {
+  const state: SavedAppStateV2 = {
+    ...current,
+    profile: current.profile ? { ...current.profile, goal } : undefined,
+    profileDraft: {
+      ...current.profileDraft,
+      goal,
+      curriculumRuleVersion: "2026-provided-final-plan",
+      ruleApplicability: "reference-only",
+    },
+  };
+  return {
+    state,
+    route: goal === "find-track"
+      ? { view: "recommendation", step: "survey" }
+      : { view: "diagnosis", step: "profile" },
+  };
+}
+
+export function chooseInterestTrackTransition(
+  current: SavedAppStateV2,
+  trackId: TrackId,
+): { state: SavedAppStateV2; route: AppRoute } {
+  const interestSurvey = current.interestSurvey ?? emptyInterestSurveyState();
+  return {
+    state: {
+      ...current,
+      profile: current.profile ? { ...current.profile, goal: "find-track" } : undefined,
+      profileDraft: {
+        ...current.profileDraft,
+        goal: "find-track",
+        curriculumRuleVersion: "2026-provided-final-plan",
+        ruleApplicability: "reference-only",
+      },
+      targetTrackId: trackId,
+      comparisonTrackIds: current.comparisonTrackIds.filter((id) => id !== trackId),
+      interestSurvey: { ...interestSurvey, selectedTrackId: trackId },
+    },
+    route: { view: "diagnosis", step: "profile" },
+  };
+}
+
 export function completeProfileTransition(
   current: SavedAppStateV2,
   profile: StudentProfile,
-): { state: SavedAppStateV2; step: DiagnosisStep } {
+): { state: SavedAppStateV2; step: DiagnosisStep; route: AppRoute } {
   const trackMajor = profile.studyPath === "track-major";
   const state: SavedAppStateV2 = {
     ...current,
@@ -310,10 +380,14 @@ export function completeProfileTransition(
     targetTrackId: trackMajor ? current.targetTrackId : undefined,
     comparisonTrackIds: trackMajor ? current.comparisonTrackIds : [],
   };
-  return {
-    state,
-    step: resolveDiagnosisStep("?view=diagnosis&step=courses", state),
-  };
+  const step = resolveDiagnosisStep("?view=diagnosis&step=courses", state);
+  const hasChosenDirection = Boolean(
+    state.targetTrackId || state.interestSurvey?.selectedTrackId,
+  );
+  const route: AppRoute = profile.goal === "find-track" && !hasChosenDirection
+    ? { view: "recommendation", step: "survey" }
+    : { view: "diagnosis", step };
+  return { state, step, route };
 }
 
 export function reviewCourseInputTransition(
@@ -338,17 +412,22 @@ export function saveCompletedCoursesManually(
 function App() {
   const [savedState, setSavedState] = useState<SavedAppStateV2>(() => loadAppState());
   const [storageError, setStorageError] = useState(false);
-  const [diagnosisStep, setDiagnosisStep] = useState<DiagnosisStep>(() =>
-    resolveDiagnosisStep(window.location.search, savedState),
+  const [diagnosisStep, setDiagnosisStep] = useState<DiagnosisStep>(() => {
+    const route = resolveAppRoute(window.location.search, savedState);
+    if (route.view === "diagnosis") return route.step;
+    if (route.view === "result") return "result";
+    return resolveDiagnosisStep("?view=diagnosis&step=profile", savedState);
+  });
+  const [activeView, setActiveView] = useState<ViewId>(() =>
+    viewForRoute(resolveAppRoute(window.location.search, savedState)),
   );
-  const [activeView, setActiveView] = useState<ViewId>(() => {
-    const view = new URLSearchParams(window.location.search).get("view");
-    if (view === "diagnosis" || view === "result") {
-      return resolveDiagnosisStep(window.location.search, savedState) === "result"
-        ? "result"
-        : "diagnosis";
-    }
-    return "landing";
+  const [recommendationStep, setRecommendationStep] = useState<"survey" | "axes">(() => {
+    const route = resolveAppRoute(window.location.search, savedState);
+    return route.view === "recommendation" ? route.step : "survey";
+  });
+  const [recommendationAxis, setRecommendationAxis] = useState<"interest" | "progress" | "plan" | undefined>(() => {
+    const route = resolveAppRoute(window.location.search, savedState);
+    return route.view === "recommendation" ? route.axis : undefined;
   });
   const selectedTrackIds = useMemo(() => getSelectedTrackIds(savedState), [savedState]);
   const [trackSetupOpen, setTrackSetupOpen] = useState(() => selectedTrackIds.length === 0);
@@ -403,6 +482,21 @@ function App() {
     },
     [savedState],
   );
+  const recommendationAxes = useMemo(() => {
+    if (!savedState.profile) return undefined;
+    const base = {
+      profile: savedState.profile,
+      courseSelections: savedState.courseSelections,
+      additionalMajorCredits: savedState.additionalMajorCredits,
+      interestSurvey: savedState.interestSurvey,
+    };
+    if (!savedState.graduationPlanPreferences) return buildRecommendationAxes(base);
+    return buildRecommendationAxes({
+      ...base,
+      graduationPlanPreferences: savedState.graduationPlanPreferences,
+      generatedAt: savedState.graduationPlan?.generatedAt ?? new Date().toISOString(),
+    });
+  }, [savedState]);
   const labRecommendations = useMemo(
     () =>
       calculateTrackRecommendations({
@@ -412,28 +506,11 @@ function App() {
       }),
     [completedCourseIds, enrollmentType, labPlanningSemester],
   );
-  const plannedCourseIds = useMemo(
-    () => Object.keys(plannedCourseTerms),
-    [plannedCourseTerms],
-  );
-  const plannedRecommendations = useMemo(
-    () =>
-      calculateTrackRecommendations({
-        completedCourseIds: [...completedCourseIds, ...plannedCourseIds],
-        enrollmentType,
-        currentSemester: labPlanningSemester === "unselected" ? undefined : labPlanningSemester,
-      }),
-    [completedCourseIds, enrollmentType, labPlanningSemester, plannedCourseIds],
-  );
-
   useEffect(() => {
     function syncFromLocation() {
-      const next = resolveDiagnosisStep(window.location.search, savedState);
-      if (new URLSearchParams(window.location.search).get("step") !== next) {
-        writeDiagnosisStepToHistory(next, "replace");
-      }
-      setDiagnosisStep(next);
-      setActiveView(next === "result" ? "result" : "diagnosis");
+      const next = resolveAppRoute(window.location.search, savedState);
+      writeAppRouteToHistory(next, "replace");
+      applyRoute(next);
     }
 
     if (!initialLocationSyncedRef.current) {
@@ -460,6 +537,21 @@ function App() {
     });
   }
 
+  function applyRoute(route: AppRoute) {
+    setActiveView(viewForRoute(route));
+    if (route.view === "diagnosis") setDiagnosisStep(route.step);
+    if (route.view === "result") setDiagnosisStep("result");
+    if (route.view === "recommendation") {
+      setRecommendationStep(route.step);
+      setRecommendationAxis(route.axis);
+    }
+  }
+
+  function navigateAppRoute(route: AppRoute) {
+    writeAppRouteToHistory(route, "push");
+    applyRoute(route);
+  }
+
   function updateProfileDraft(profileDraft: Partial<StudentProfile>) {
     persist((current) => ({ ...current, profileDraft }));
   }
@@ -469,7 +561,7 @@ function App() {
     setStorageError(!saveAppState(transition.state));
     setSavedState(transition.state);
     setTrackSetupOpen(false);
-    navigateDiagnosisStep(transition.step);
+    navigateAppRoute(transition.route);
   }
 
   function changeTargetTrack(targetTrackId: TrackId | undefined) {
@@ -483,9 +575,9 @@ function App() {
   }
 
   function navigateDiagnosisStep(step: DiagnosisStep) {
-    writeDiagnosisStepToHistory(step, "push");
-    setDiagnosisStep(step);
-    setActiveView(step === "result" ? "result" : "diagnosis");
+    navigateAppRoute(step === "result"
+      ? { view: "result" }
+      : { view: "diagnosis", step });
   }
 
   function toggleTrack(trackId: TrackId) {
@@ -596,16 +688,110 @@ function App() {
       navigateDiagnosisStep(resolveDiagnosisStep("?view=result&step=result", savedState));
       return;
     }
-    setActiveView(viewId);
-  }
-
-  function enterApp(viewId: Exclude<ViewId, "landing">) {
-    setGuideOpen(false);
-    if (viewId === "diagnosis") {
-      navigateDiagnosisStep(resolveDiagnosisStep("?view=diagnosis&step=courses", savedState));
+    if (viewId === "recommendation") {
+      navigateAppRoute({ view: "recommendation", step: "axes" });
       return;
     }
-    setActiveView(viewId);
+    navigateAppRoute({ view: viewId as "overview" | "resources" | "modules" | "contact" });
+  }
+
+  function startEntryFlow(goal: "check-progress" | "find-track") {
+    const transition = startEntryFlowTransition(savedState, goal);
+    setStorageError(!saveAppState(transition.state));
+    setSavedState(transition.state);
+    setGuideOpen(false);
+    navigateAppRoute(transition.route);
+  }
+
+  function changeInterestSurvey(value: InterestSurveyState) {
+    persist((current) => ({ ...current, interestSurvey: value }));
+  }
+
+  function chooseInterestTrack(trackId: TrackId) {
+    const transition = chooseInterestTrackTransition(savedState, trackId);
+    setStorageError(!saveAppState(transition.state));
+    setSavedState(transition.state);
+    navigateAppRoute(transition.route);
+  }
+
+  function openCourseInputFromAxes() {
+    if (!savedState.profile) {
+      startEntryFlow("check-progress");
+      return;
+    }
+    const nextState: SavedAppStateV2 = {
+      ...savedState,
+      profile: { ...savedState.profile, goal: "check-progress" },
+      profileDraft: undefined,
+    };
+    setStorageError(!saveAppState(nextState));
+    setSavedState(nextState);
+    navigateAppRoute({
+      view: "diagnosis",
+      step: resolveDiagnosisStep("?view=diagnosis&step=courses", nextState),
+    });
+  }
+
+  if (activeView === "landing") {
+    return (
+      <LandingPage
+        onStartDiagnosis={() => startEntryFlow("check-progress")}
+        onFindTrack={() => startEntryFlow("find-track")}
+      />
+    );
+  }
+
+  if (activeView === "recommendation") {
+    return (
+      <div className="recommendation-page-shell">
+        <header className="recommendation-page-header">
+          <button
+            className="recommendation-brand"
+            type="button"
+            onClick={() => navigateAppRoute({ view: "landing" })}
+          >
+            <img src="/dku-seal.svg" alt="" aria-hidden="true" />
+            <span><strong>식품자원경제학과</strong><small>트랙 추천</small></span>
+          </button>
+          <nav aria-label="트랙 추천 화면">
+            <button
+              className={recommendationStep === "survey" ? "active" : ""}
+              type="button"
+              aria-current={recommendationStep === "survey" ? "page" : undefined}
+              onClick={() => navigateAppRoute({ view: "recommendation", step: "survey" })}
+            >
+              관심 설문
+            </button>
+            <button
+              className={recommendationStep === "axes" ? "active" : ""}
+              type="button"
+              aria-current={recommendationStep === "axes" ? "page" : undefined}
+              onClick={() => navigateAppRoute({ view: "recommendation", step: "axes" })}
+            >
+              기준별 비교
+            </button>
+          </nav>
+        </header>
+        {recommendationStep === "survey" ? (
+          <InterestSurvey
+            value={savedState.interestSurvey ?? emptyInterestSurveyState()}
+            storageError={storageError}
+            onChange={changeInterestSurvey}
+            onChooseTrack={chooseInterestTrack}
+            onSkipToDiagnosis={() => startEntryFlow("check-progress")}
+          />
+        ) : (
+          <TrackRecommendationAxes
+            axes={recommendationAxes}
+            courseInputReady={Boolean(savedState.profile && savedState.courseInputReviewedAt)}
+            activeAxis={recommendationAxis}
+            onOpenInterestSurvey={() => navigateAppRoute({ view: "recommendation", step: "survey" })}
+            onOpenCourseInput={openCourseInputFromAxes}
+            onOpenGraduationPlan={() => navigateAppRoute({ view: "plan", step: "setup" })}
+          />
+        )}
+      </div>
+    );
   }
 
   if (diagnosisStep === "profile" || !savedState.profile) {
@@ -629,16 +815,12 @@ function App() {
     );
   }
 
-  if (activeView === "landing") {
-    return <LandingPage onStart={() => enterApp("diagnosis")} />;
-  }
-
-  const activePrimaryViewId = activeView === "experiment" ? "lab" : activeView;
+  const activePrimaryViewId = activeView;
 
   return (
     <div className="app-shell service-shell">
       <header className="service-header">
-        <button className="brand-mark brand-button service-brand" type="button" onClick={() => setActiveView("landing")}>
+        <button className="brand-mark brand-button service-brand" type="button" onClick={() => navigateAppRoute({ view: "landing" })}>
           <img className="brand-seal" src="/dku-seal.svg" alt="" aria-hidden="true" />
           <div>
             <strong>단국대학교</strong>
@@ -658,11 +840,11 @@ function App() {
                 onClick={() => {
                   if (item.id === "diagnosis") {
                     navigateDiagnosisStep(resolveDiagnosisStep("?view=diagnosis&step=courses", savedState));
-                  } else if (item.id === "result") {
-                    navigateDiagnosisStep(resolveDiagnosisStep("?view=result&step=result", savedState));
-                  } else {
-                    setActiveView(item.id);
-                  }
+                   } else if (item.id === "result") {
+                     navigateDiagnosisStep(resolveDiagnosisStep("?view=result&step=result", savedState));
+                   } else {
+                     navigateAppRoute({ view: "recommendation", step: "axes" });
+                   }
                 }}
               >
                 <small>{item.step}</small>
@@ -692,7 +874,7 @@ function App() {
                     key={item.id}
                     type="button"
                     onClick={(event) => {
-                      setActiveView(item.id);
+                      navigateAppRoute({ view: item.id as "overview" | "resources" | "modules" | "contact" });
                       event.currentTarget.closest("details")?.removeAttribute("open");
                     }}
                   >
@@ -787,26 +969,11 @@ function App() {
           </div>
         )}
 
-        {activeView === "lab" && (
-          <section className="primary-panel full-panel">
-            <PlanningModeTabs activeMode="recommendation" onChange={(mode) => setActiveView(mode === "recommendation" ? "lab" : "experiment")} />
-            <div id="planning-panel-recommendation" role="tabpanel" aria-labelledby="planning-tab-recommendation">
-              <LabView
-                recommendations={labRecommendations}
-                completedCourseIds={completedCourseIds}
-                enrollmentType={enrollmentType}
-                planningSemester={labPlanningSemester}
-                onEditProfile={editProfile}
-                onPlanningSemesterChange={changePlanningSemester}
-                onReset={() => resetState("lab")}
-              />
-            </div>
-          </section>
-        )}
-
         {activeView === "experiment" && (
           <section className="primary-panel full-panel">
-            <PlanningModeTabs activeMode="semester" onChange={(mode) => setActiveView(mode === "recommendation" ? "lab" : "experiment")} />
+            <PlanningModeTabs activeMode="semester" onChange={(mode) => mode === "recommendation"
+              ? navigateAppRoute({ view: "recommendation", step: "axes" })
+              : navigateAppRoute({ view: "plan", step: "setup" })} />
             <div id="planning-panel-semester" role="tabpanel" aria-labelledby="planning-tab-semester">
               <ExperimentView
                 recommendations={labRecommendations}
@@ -827,11 +994,9 @@ function App() {
               result={result}
               profile={savedState.profile}
               pathProgress={pathProgress}
-              recommendations={labRecommendations}
-              plannedRecommendations={plannedRecommendations}
-              plannedCourseTerms={plannedCourseTerms}
               headingRef={stepHeadingRef}
-              onGoToPlan={() => setActiveView("experiment")}
+              onOpenRecommendations={() => navigateAppRoute({ view: "recommendation", step: "axes" })}
+              onGoToPlan={() => navigateAppRoute({ view: "plan", step: "setup" })}
             />
           </section>
         )}
@@ -854,7 +1019,13 @@ function App() {
   );
 }
 
-function LandingPage({ onStart }: { onStart: () => void }) {
+function LandingPage({
+  onStartDiagnosis,
+  onFindTrack,
+}: {
+  onStartDiagnosis: () => void;
+  onFindTrack: () => void;
+}) {
   const questions = [
     { title: "내 과목은 어느 트랙에 가까울까?", value: "푸드마케팅", meta: "현재 예시 60%" },
     { title: "앞으로 무엇을 더 들어야 할까?", value: "4과목", meta: "부족 모듈 2개" },
@@ -890,7 +1061,7 @@ function LandingPage({ onStart }: { onStart: () => void }) {
         <nav aria-label="랜딩페이지 안내">
           <a href="#track-system">트랙제란?</a>
           <a href="#service-flow">이용 방법</a>
-          <button type="button" onClick={onStart}>자가진단 시작</button>
+          <button type="button" onClick={onStartDiagnosis}>자가진단 바로 시작</button>
         </nav>
       </header>
 
@@ -902,8 +1073,8 @@ function LandingPage({ onStart }: { onStart: () => void }) {
               <h1 id="v2-hero-title">이수 과목을 체크하고,<br />남은 전공 방향은<br /><span>한눈에 확인하세요.</span></h1>
               <p>트랙제를 처음 접해도 괜찮아요. 현재 이수 과목부터 입력하면 가까운 트랙과 부족한 모듈, 다음 수강 우선순위를 차례대로 보여드립니다.</p>
               <div className="v2-hero-actions">
-                <button type="button" onClick={onStart}>3분 자가진단 시작하기 <ArrowRight aria-hidden="true" size={19} /></button>
-                <a href="#track-system">트랙제부터 알아보기</a>
+                <button type="button" onClick={onStartDiagnosis}>자가진단 바로 시작 <ArrowRight aria-hidden="true" size={19} /></button>
+                <button className="v2-secondary-action" type="button" onClick={onFindTrack}>내 관심 트랙 찾기 <Heart aria-hidden="true" size={18} /></button>
               </div>
               <p className="v2-privacy"><ShieldCheck aria-hidden="true" size={16} /> 로그인 없이 이용 · 입력은 현재 브라우저에만 저장</p>
             </div>
@@ -997,7 +1168,7 @@ function LandingPage({ onStart }: { onStart: () => void }) {
         <section className="v2-final-cta" aria-labelledby="v2-final-title">
           <div className="v2-container">
             <div><small>학생이 만든 비공식 보조 도구</small><h2 id="v2-final-title">다음 수강신청,<br />내 상태를 알고 시작하세요.</h2></div>
-            <button type="button" onClick={onStart}>자가진단 시작하기 <ArrowRight aria-hidden="true" size={20} /></button>
+            <button type="button" onClick={onStartDiagnosis}>자가진단 바로 시작 <ArrowRight aria-hidden="true" size={20} /></button>
           </div>
         </section>
       </main>
@@ -3150,19 +3321,15 @@ function ResultDetailView({
   result,
   profile,
   pathProgress,
-  recommendations,
-  plannedRecommendations,
-  plannedCourseTerms,
   headingRef,
+  onOpenRecommendations,
   onGoToPlan,
 }: {
   result: DiagnosisResult;
   profile: StudentProfile;
   pathProgress: PathProgressResult;
-  recommendations: TrackRecommendation[];
-  plannedRecommendations: TrackRecommendation[];
-  plannedCourseTerms: Record<string, PlanTerm>;
   headingRef: RefObject<HTMLHeadingElement | null>;
+  onOpenRecommendations: () => void;
   onGoToPlan: () => void;
 }) {
   const neededCoursePlans = getTrackNeededCoursePlans(result.trackResults);
@@ -3287,10 +3454,8 @@ function ResultDetailView({
           </div>
         )}
         <div className="result-tab-panel" id="result-panel-recommendation" role="tabpanel" aria-labelledby="result-tab-recommendation" hidden={visibleResultTab !== "recommendation"}>
-          <PersonalizedTrackRecommendation
-            recommendations={recommendations}
-            plannedRecommendations={plannedRecommendations}
-            plannedCourseCount={Object.keys(plannedCourseTerms).length}
+          <IndependentRecommendationPrompt
+            onOpenRecommendations={onOpenRecommendations}
             onGoToPlan={onGoToPlan}
           />
         </div>
@@ -3315,6 +3480,32 @@ function ResultDetailView({
       </div>
 
     </div>
+  );
+}
+
+function IndependentRecommendationPrompt({
+  onOpenRecommendations,
+  onGoToPlan,
+}: {
+  onOpenRecommendations: () => void;
+  onGoToPlan: () => void;
+}) {
+  return (
+    <section className="independent-recommendation-prompt" aria-labelledby="independent-recommendation-title">
+      <span>기준별 추천으로 변경됐어요</span>
+      <h3 id="independent-recommendation-title">관심·이수 과목·졸업 계획을 따로 비교해요</h3>
+      <p>서로 다른 기준을 한 점수로 합치지 않습니다. 각 기준의 순서와 이유를 확인하고 중요하게 볼 기준을 직접 선택해 주세요.</p>
+      <div>
+        <button className="primary-button" type="button" onClick={onOpenRecommendations}>
+          세 기준별 트랙 비교 보기
+          <ArrowRight aria-hidden="true" size={18} />
+        </button>
+        <button className="icon-button" type="button" onClick={onGoToPlan}>
+          추천 과목을 학기 계획에 담기
+          <ArrowRight aria-hidden="true" size={18} />
+        </button>
+      </div>
+    </section>
   );
 }
 

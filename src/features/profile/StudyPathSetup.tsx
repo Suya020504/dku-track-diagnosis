@@ -67,8 +67,9 @@ export function StudyPathSetup({
       draft.studyPath &&
       allowedPaths.includes(draft.studyPath),
   );
+  const targetTrackRequired = draft.studyPath === "track-major" && draft.goal !== "find-track";
   const valid = pathValid &&
-    (draft.studyPath !== "track-major" || Boolean(draftTargetTrackId));
+    (!targetTrackRequired || Boolean(draftTargetTrackId));
 
   function update(patch: Partial<DraftProfile>) {
     const next = { ...draft, ...patch };
@@ -77,7 +78,6 @@ export function StudyPathSetup({
   }
 
   function changeAffiliation(affiliation: StudentAffiliation) {
-    changeTargetTrack(undefined);
     update({ affiliation, studyPath: undefined });
   }
 
@@ -176,7 +176,12 @@ export function StudyPathSetup({
 
         {draft.studyPath === "track-major" && (
           <fieldset className="study-path-fieldset">
-            <legend>진단할 트랙</legend>
+            <legend>
+              진단할 트랙
+              {draft.goal === "find-track" && (
+                <small> (설문 전에는 선택하지 않아도 됩니다)</small>
+              )}
+            </legend>
             <div className="study-path-option-grid track-options">
               {tracks.map((track) => (
                 <label className="study-path-option" key={track.id}>
@@ -224,7 +229,9 @@ export function StudyPathSetup({
           disabled={!valid}
           onClick={complete}
         >
-          이수 과목 선택으로 이동
+          {draft.goal === "find-track" && !draftTargetTrackId
+            ? "관심 설문으로 이동"
+            : "이수 과목 선택으로 이동"}
         </button>
       </div>
     </section>

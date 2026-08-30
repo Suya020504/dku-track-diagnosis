@@ -93,6 +93,28 @@ describe("StudyPathSetup", () => {
     expect(markup).not.toContain("disabled=\"\"");
   });
 
+  it("lets a find-track profile continue to the interest survey without choosing a target first", () => {
+    const markup = renderToStaticMarkup(
+      <StudyPathSetup
+        profile={{
+          goal: "find-track",
+          affiliation: "department-student",
+          studyPath: "track-major",
+          curriculumRuleVersion: "2026-provided-final-plan",
+          ruleApplicability: "reference-only",
+        }}
+        targetTrackId={undefined}
+        onTargetTrackChange={vi.fn()}
+        onChange={vi.fn()}
+        onComplete={vi.fn()}
+      />,
+    );
+
+    expect(markup).toContain("설문 전에는 선택하지 않아도 됩니다");
+    expect(markup).toContain("관심 설문으로 이동");
+    expect(markup).not.toMatch(/<button[^>]*disabled[^>]*>관심 설문으로 이동<\/button>/);
+  });
+
   it("keeps an incompatible affiliation and path pair incomplete", () => {
     const markup = renderToStaticMarkup(
       <StudyPathSetup
