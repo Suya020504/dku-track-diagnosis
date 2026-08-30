@@ -8,6 +8,26 @@
   --planner-ink-muted: #5c6c7e;
   --planner-wheat: #f2c66d;
   --planner-review-coral: #e67c62;
+  --planner-font-display:
+    "Gmarket Sans",
+    "GmarketSans",
+    "Pretendard Variable",
+    Pretendard,
+    "SUIT Variable",
+    SUIT,
+    "Noto Sans KR",
+    "Malgun Gothic",
+    sans-serif;
+  --planner-font-body:
+    "Pretendard Variable",
+    Pretendard,
+    "SUIT Variable",
+    SUIT,
+    "Noto Sans KR",
+    "Apple SD Gothic Neo",
+    "Malgun Gothic",
+    system-ui,
+    sans-serif;
   --planner-space-1: 4px;
   --planner-space-2: 8px;
   --planner-space-3: 12px;
@@ -15,6 +35,17 @@
   --planner-row-radius: 8px;
   --planner-control-radius: 12px;
   --planner-sheet-radius: 20px;
+  font-family: var(--planner-font-body);
+}
+
+.planner-app :is(
+  h1,
+  .planner-landing__locked-planner h2,
+  .planner-landing__section-copy h2,
+  .planner-course-track-figure h2,
+  .interest-question-card legend
+) {
+  font-family: var(--planner-font-display);
 }
 
 .planner-app .planner-focusable:focus-visible {

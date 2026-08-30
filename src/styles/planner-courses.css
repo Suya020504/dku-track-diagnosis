@@ -943,6 +943,10 @@
     padding-block-end: 16px;
   }
 
+  .course-ledger-skip {
+    scroll-margin-block-end: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+
   .course-ledger-save-band {
     align-items: stretch;
     flex-direction: column;

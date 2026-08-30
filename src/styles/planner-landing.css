@@ -14,7 +14,7 @@
 .planner-landing__hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(420px, 1.1fr);
-  min-height: 390px;
+  min-height: 430px;
   overflow: hidden;
   border-block: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 22%, transparent);
   border-radius: var(--planner-sheet-radius);
@@ -44,11 +44,19 @@
 .planner-landing__copy h1 {
   max-width: none;
   color: var(--planner-dankook-blue);
-  font-size: clamp(2.45rem, 3vw, 2.7rem);
+  font-size: clamp(4rem, 4.6vw, 4.8rem);
   font-weight: 900;
   letter-spacing: -0.055em;
   line-height: 1.08;
   text-wrap: balance;
+  word-break: keep-all;
+}
+
+.planner-landing__copy h1:focus-visible {
+  border-radius: var(--planner-row-radius);
+  outline: 3px solid var(--planner-department-green);
+  outline-offset: 6px;
+  box-shadow: 0 0 0 2px var(--planner-paper);
 }
 
 .planner-landing__copy > p {
@@ -135,51 +143,10 @@
 .planner-landing__journey .planner-compass-path {
   width: 100%;
   margin: 0;
-  padding: 0;
-  overflow: hidden;
-  border-block: 1px solid color-mix(in srgb, var(--planner-department-green) 30%, transparent);
-  border-radius: 0;
-  background: var(--planner-mint-sheet);
-}
-
-.planner-landing__journey .planner-compass-path ol {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0;
-}
-
-.planner-landing__journey .planner-compass-path ol::before {
-  inset-inline: 12%;
-  transform-origin: left center;
-}
-
-.planner-landing__journey .planner-compass-path li + li {
-  border-inline-start: 1px solid color-mix(in srgb, var(--planner-department-green) 20%, transparent);
-}
-
-.planner-landing__journey .planner-compass-path button {
-  min-height: 62px;
-  padding: 8px 12px;
-  border-radius: 0;
-  background: transparent;
-}
-
-.planner-landing__journey .planner-compass-path li[data-state="current"] button {
-  background: var(--planner-department-green);
-  color: var(--planner-paper);
 }
 
 .planner-landing__journey .planner-compass-path button strong {
   font-size: 0.88rem;
-}
-
-.planner-landing__journey .planner-compass-path small {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
 }
 
 .planner-landing__locked-planner {
@@ -568,20 +535,6 @@
   .planner-landing__compass-plane figcaption {
     padding-inline: 12px;
     text-align: start;
-  }
-
-  .planner-landing__journey .planner-compass-path {
-    overflow: visible;
-    padding: 0;
-  }
-
-  .planner-landing__journey .planner-compass-path ol {
-    min-width: 0;
-  }
-
-  .planner-landing__journey .planner-compass-path button {
-    min-height: 60px;
-    padding-inline: 5px;
   }
 
   .planner-landing__journey .planner-compass-path button strong {

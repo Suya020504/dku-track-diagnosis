@@ -19,7 +19,7 @@ describe("CompassPathRibbon", () => {
     expect(markup).toContain("완료");
     expect(markup).toContain("현재");
     expect(markup).toContain("다음");
-    expect(markup).toContain("대기");
+    expect(markup).toContain("잠김");
     expect(markup).toContain('aria-current="step"');
     expect(markup).toContain('data-journey-stage="interest"');
     expect(markup).toContain('data-completed="true"');
@@ -30,5 +30,26 @@ describe("CompassPathRibbon", () => {
     const completed = [...document.querySelectorAll<HTMLElement>('[data-completed="true"]')];
     expect(completed).toHaveLength(2);
     expect(completed.every((item) => item.textContent?.includes("완료"))).toBe(true);
+  });
+
+  it("keeps one continuous paper-route structure with folded joins and a current compass node", () => {
+    const markup = renderToStaticMarkup(<CompassPathRibbon items={items} />);
+    document.body.innerHTML = markup;
+
+    const route = document.querySelector<HTMLElement>('[data-path-layout="continuous-paper-route"]');
+    const segments = [...document.querySelectorAll<HTMLElement>("[data-path-segment]")];
+
+    expect(route).not.toBeNull();
+    expect(route?.querySelector("ol")?.classList.contains("planner-compass-path__route")).toBe(true);
+    expect(segments).toHaveLength(items.length);
+    expect(document.querySelectorAll("[data-path-fold]")).toHaveLength(items.length - 1);
+    expect(document.querySelectorAll("[data-path-state-icon]")).toHaveLength(items.length);
+    expect(document.querySelectorAll('[data-visual-state="complete"]')).toHaveLength(2);
+    expect(document.querySelectorAll('[data-visual-state="current"]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-visual-state="next"]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-visual-state="locked"]')).toHaveLength(1);
+    expect(document.querySelectorAll("[data-current-position]")).toHaveLength(1);
+    expect(document.querySelector('[data-visual-state="locked"]')?.textContent).toContain("잠김");
+    expect(segments.every((segment) => segment.querySelector(":scope > button") !== null)).toBe(true);
   });
 });

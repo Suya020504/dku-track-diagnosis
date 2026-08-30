@@ -88,7 +88,7 @@ function renderedJourneyState(markup: string, stage: "interest" | "track" | "sem
 }
 
 function renderedJourneyAvailable(markup: string, stage: "interest" | "track" | "semester") {
-  const item = markup.match(new RegExp(`<li data-journey-stage="${stage}"[\\s\\S]*?</li>`))?.[0];
+  const item = markup.match(new RegExp(`<li(?=[^>]*data-journey-stage="${stage}")[^>]*>[\\s\\S]*?</li>`))?.[0];
   return item ? !item.includes("disabled") : undefined;
 }
 
@@ -403,7 +403,7 @@ describe("recommendation route integration", () => {
     expect(completed.route).toEqual({ view: "diagnosis", step: "courses" });
   });
 
-  it("replaces the active result aggregate with a link to the independent criteria", () => {
+  it("replaces the active result aggregate with a truthful next-page action", () => {
     const state: SavedAppStateV2 = {
       ...createEmptyAppState(),
       profile: {
@@ -418,8 +418,9 @@ describe("recommendation route integration", () => {
 
     const markup = renderApp("?view=result&step=result", state);
 
-    expect(markup).toContain("관심·이수 과목·졸업 계획을 따로 비교해요");
-    expect(markup).toContain("세 기준별 트랙 비교 보기");
+    expect(markup).toContain("현재 상태에서 이어지는 수강 후보를 살펴봐요");
+    expect(markup).toContain("다음 수강 후보 확인");
+    expect(markup).not.toContain("세 기준별 트랙 비교 보기");
     expect(markup).not.toContain("1순위");
     expect(markup).not.toContain("가장 가까워요");
   });

@@ -1,9 +1,11 @@
+import type { RefObject } from "react";
 import { ArrowRight, CheckCircle2, ClipboardCheck, LockKeyhole } from "lucide-react";
 import { CourseModuleTrackFigure } from "../education/CourseModuleTrackFigure";
 import { CompassPathRibbon, type CompassPathItem } from "../journey/CompassPathRibbon";
 import { TrackPreviewStrip } from "./TrackPreviewStrip";
 
 export type PlannerLandingProps = {
+  headingRef?: RefObject<HTMLHeadingElement | null>;
   onFindTrack: () => void;
   onStartDiagnosis: () => void;
   onPlannerAction?: () => void;
@@ -165,6 +167,7 @@ const plannerStatusDetails: Record<LandingPlannerStatus, PlannerStatusDetail> = 
 };
 
 export function PlannerLanding({
+  headingRef,
   onFindTrack,
   onStartDiagnosis,
   onPlannerAction,
@@ -183,7 +186,7 @@ export function PlannerLanding({
       <section className="planner-landing__first-view">
         <div className="planner-landing__hero">
           <div className="planner-landing__copy">
-            <h1 id="planner-landing-title">
+            <h1 id="planner-landing-title" ref={headingRef} tabIndex={-1}>
               <span data-landing-title-line>내 관심을 따라,</span>{" "}
               <span data-landing-title-line>전공 로드맵을 완성해요</span>
             </h1>

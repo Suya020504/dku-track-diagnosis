@@ -594,6 +594,53 @@
   box-shadow: 0 0 0 2px var(--planner-paper);
 }
 
+@media (min-width: 761px) {
+  .planner-app .interest-survey-head {
+    gap: 16px;
+    margin-block-end: 12px;
+    padding: 20px 24px;
+  }
+
+  .planner-app .interest-survey h1 {
+    margin: 6px 0 8px;
+    font-size: clamp(1.72rem, 3.4vw, 2.25rem);
+  }
+
+  .planner-app .interest-survey-head p {
+    line-height: 1.55;
+  }
+
+  .planner-app .interest-question-panel {
+    padding: 20px 28px 22px;
+  }
+
+  .planner-app .interest-question-panel > progress {
+    margin: 8px 0 16px;
+  }
+
+  .planner-app .interest-question-card legend {
+    margin-block-end: 16px;
+    line-height: 1.35;
+  }
+
+  .planner-app .interest-planner-scale label {
+    gap: 4px;
+    min-height: 78px;
+  }
+
+  .planner-app .interest-question-card > p {
+    margin-block-start: 12px;
+  }
+
+  .planner-app .interest-question-actions {
+    margin-block-start: 16px;
+  }
+
+  .planner-app .interest-skip-button {
+    margin-block-start: 8px;
+  }
+}
+
 @media (max-width: 760px) {
   .planner-app .interest-survey,
   .planner-app .profile-flow {

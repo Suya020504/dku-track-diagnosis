@@ -313,15 +313,29 @@ describe("graduation plan pure transitions", () => {
     expect(transition.state.courseInputReviewedAt).toBeUndefined();
   });
 
-  it("invalidates plan sources when entry and interest transitions change profile or target", () => {
-    const current = stateWithPlan();
+  it.each([
+    ["find-track", { view: "recommendation", step: "survey" }],
+    ["check-progress", { view: "diagnosis", step: "profile" }],
+  ] as const)(
+    "keeps committed profile, course review, and saved plan intact when the landing starts %s",
+    (goal, route) => {
+      const current = stateWithPlan();
 
-    const entry = startEntryFlowTransition(current, "check-progress");
+      const entry = startEntryFlowTransition(current, goal);
+
+      expect(entry.route).toEqual(route);
+      expect(entry.state.profile).toEqual(current.profile);
+      expect(entry.state.profileDraft).toMatchObject({ goal });
+      expect(entry.state.courseInputReviewedAt).toBe(current.courseInputReviewedAt);
+      expect(entry.state.graduationPlanPreferences).toEqual(preferences);
+      expect(entry.state.graduationPlan).toEqual(current.graduationPlan);
+    },
+  );
+
+  it("invalidates plan sources when an interest transition changes the target track", () => {
+    const current = stateWithPlan();
     const interest = chooseInterestTrackTransition(current, "economics");
 
-    expect(entry.state.graduationPlan).toBeUndefined();
-    expect(entry.state.courseInputReviewedAt).toBeUndefined();
-    expect(entry.state.graduationPlanPreferences).toEqual(preferences);
     expect(interest.state.graduationPlan).toBeUndefined();
     expect(interest.state.courseInputReviewedAt).toBeUndefined();
     expect(interest.state.graduationPlanPreferences).toEqual(preferences);

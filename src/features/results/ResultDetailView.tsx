@@ -105,9 +105,9 @@ export function ResultDetailView({
         >
           <span>
             <small>다음 페이지</small>
-            <strong>관심·이수 과목·졸업 계획을 따로 비교해요</strong>
+            <strong>현재 상태에서 이어지는 수강 후보를 살펴봐요</strong>
           </span>
-          <span>세 기준별 트랙 비교 보기</span>
+          <span>다음 수강 후보 확인</span>
         </button>
       ) : null}
 

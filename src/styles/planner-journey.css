@@ -1,113 +1,270 @@
 .planner-compass-path {
   width: min(100%, 1240px);
   margin: 0 auto 24px;
-  padding: 12px 16px;
-  border-radius: var(--planner-control-radius);
-  background: var(--planner-mint-sheet);
+  color: var(--planner-ink);
 }
 
-.planner-compass-path ol {
+.planner-compass-path__route {
+  --planner-path-notch: 18px;
   position: relative;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
+  display: flex;
+  width: 100%;
   margin: 0;
   padding: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 28%, transparent);
+  border-radius: var(--planner-control-radius);
+  background: var(--planner-sky-sheet);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--planner-dankook-blue) 12%, transparent);
   list-style: none;
 }
 
-.planner-compass-path ol::before {
-  position: absolute;
-  z-index: 0;
-  inset-block-start: 21px;
-  inset-inline: 8%;
-  height: 2px;
-  background: color-mix(in srgb, var(--planner-department-green) 30%, var(--planner-paper));
-  content: "";
+.planner-compass-path__route > li {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  background: var(--planner-paper);
+  isolation: isolate;
 }
 
-.planner-compass-path li {
-  position: relative;
-  z-index: 1;
-  min-width: 0;
-  text-align: center;
+.planner-compass-path__route > li:first-child:not(:last-child) {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--planner-path-notch)) 0,
+    100% 50%,
+    calc(100% - var(--planner-path-notch)) 100%,
+    0 100%
+  );
+}
+
+.planner-compass-path__route > li:not(:first-child):not(:last-child) {
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--planner-path-notch)) 0,
+    100% 50%,
+    calc(100% - var(--planner-path-notch)) 100%,
+    0 100%,
+    var(--planner-path-notch) 50%
+  );
+}
+
+.planner-compass-path__route > li:last-child:not(:first-child) {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 100%,
+    0 100%,
+    var(--planner-path-notch) 50%
+  );
+}
+
+.planner-compass-path__route > li + li {
+  margin-inline-start: calc(-1 * var(--planner-path-notch));
+}
+
+.planner-compass-path__route > li[data-visual-state="complete"] {
+  background: color-mix(in srgb, var(--planner-mint-sheet) 70%, var(--planner-paper));
+}
+
+.planner-compass-path__route > li[data-visual-state="current"] {
+  z-index: 2;
+  background: var(--planner-department-green);
+}
+
+.planner-compass-path__route > li[data-visual-state="next"] {
+  background: color-mix(in srgb, var(--planner-sky-sheet) 72%, var(--planner-paper));
+}
+
+.planner-compass-path__route > li[data-visual-state="pending"],
+.planner-compass-path__route > li[data-visual-state="locked"] {
+  background: color-mix(in srgb, var(--planner-paper) 74%, var(--planner-sky-sheet));
 }
 
 .planner-compass-path button {
+  position: relative;
+  z-index: 2;
   display: grid;
-  gap: 2px;
-  justify-items: center;
+  gap: 3px;
+  justify-items: start;
   width: 100%;
-  min-height: 44px;
-  padding: 4px 6px;
+  min-height: 76px;
+  padding: 10px calc(var(--planner-path-notch) + 10px);
   border: 0;
-  border-radius: var(--planner-row-radius);
-  background: var(--planner-paper);
+  border-radius: 0;
+  background: transparent;
   color: var(--planner-ink-muted);
   font: inherit;
+  text-align: start;
   cursor: pointer;
 }
 
-.planner-compass-path li[data-state="complete"] button {
+.planner-compass-path li:first-child button {
+  padding-inline-start: 18px;
+}
+
+.planner-compass-path li:last-child button {
+  padding-inline-end: 18px;
+}
+
+.planner-compass-path li[data-visual-state="locked"] button {
+  padding-block-end: 25px;
+}
+
+.planner-compass-path li[data-visual-state="complete"] button {
   color: var(--planner-department-green);
 }
 
-.planner-compass-path li[data-state="pending"] button {
-  color: var(--planner-ink-muted);
-  background: color-mix(in srgb, var(--planner-paper) 72%, var(--planner-sky-sheet));
-}
-
-.planner-compass-path li[data-state="current"] button {
-  background: var(--planner-department-green);
+.planner-compass-path li[data-visual-state="current"] button {
   color: var(--planner-paper);
 }
 
+.planner-compass-path li[data-visual-state="next"] button {
+  color: var(--planner-dankook-blue);
+}
+
 .planner-compass-path button:disabled {
+  color: var(--planner-ink-muted);
   cursor: not-allowed;
-  opacity: 0.52;
+  opacity: 1;
 }
 
-.planner-compass-path button span {
-  font-size: 0.64rem;
-  font-weight: 800;
+.planner-compass-path button:focus-visible {
+  outline: 3px solid var(--planner-wheat);
+  outline-offset: -5px;
+  box-shadow: none;
 }
 
-.planner-compass-path button strong {
+.planner-compass-path__state {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+  font-size: 0.66rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+}
+
+.planner-compass-path__state-icon {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1px solid currentcolor;
+  border-radius: 50%;
+  background: var(--planner-paper);
+  color: currentcolor;
+}
+
+.planner-compass-path__state-icon[data-current-position] {
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--planner-paper);
+  outline: 2px solid var(--planner-wheat);
+  outline-offset: 2px;
+  background: var(--planner-wheat);
+  color: var(--planner-dankook-blue);
+}
+
+.planner-compass-path button > strong {
   overflow: hidden;
   max-width: 100%;
-  font-size: 0.78rem;
+  font-size: 0.86rem;
+  line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.planner-compass-path__fold {
+  position: absolute;
+  z-index: 3;
+  inset-block: 0;
+  inset-inline-end: var(--planner-path-notch);
+  width: var(--planner-path-notch);
+  background: color-mix(in srgb, var(--planner-dankook-blue) 20%, transparent);
+  clip-path: polygon(0 0, 100% 50%, 0 100%, 4px 50%);
+  pointer-events: none;
+}
+
 .planner-compass-path small {
+  position: absolute;
+  z-index: 4;
+  inset-inline: calc(var(--planner-path-notch) + 10px);
+  inset-block-end: 6px;
   display: block;
-  margin-block-start: 4px;
+  overflow: hidden;
   color: var(--planner-ink-muted);
   font-size: 0.62rem;
-  line-height: 1.35;
+  font-weight: 650;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 760px) {
   .planner-compass-path {
+    margin-block-end: 14px;
+  }
+
+  .planner-compass-path__route {
+    --planner-path-notch: 9px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .planner-compass-path__route > li,
+  .planner-compass-path__route > li:first-child:not(:last-child),
+  .planner-compass-path__route > li:not(:first-child):not(:last-child),
+  .planner-compass-path__route > li:last-child:not(:first-child) {
+    clip-path: none;
+  }
+
+  .planner-compass-path__route > li + li {
+    margin-block-start: -1px;
+    margin-inline-start: 0;
+    border-block-start: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 20%, transparent);
+  }
+
+  .planner-compass-path button,
+  .planner-compass-path li:first-child button,
+  .planner-compass-path li:last-child button {
+    grid-template-columns: minmax(94px, auto) minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    min-height: 50px;
+    padding: 7px 18px;
+  }
+
+  .planner-compass-path li[data-visual-state="locked"] button {
+    padding-block-end: 21px;
+  }
+
+  .planner-compass-path__state-icon[data-current-position] {
+    width: 28px;
+    height: 28px;
+    outline-offset: 1px;
+  }
+
+  .planner-compass-path button > strong {
     overflow: visible;
-    margin-block-end: 12px;
-    padding: 8px;
-  }
-
-  .planner-compass-path ol {
-    grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
-    min-width: 0;
-  }
-
-  .planner-compass-path ol::before {
-    display: none;
-  }
-
-  .planner-compass-path button strong {
-    overflow: visible;
-    line-height: 1.35;
+    font-size: 0.8rem;
     text-overflow: clip;
     white-space: normal;
+  }
+
+  .planner-compass-path__fold {
+    inset-block: auto -1px;
+    inset-inline: 12px;
+    width: auto;
+    height: 7px;
+    background: color-mix(in srgb, var(--planner-dankook-blue) 24%, transparent);
+    clip-path: polygon(0 0, calc(50% - 8px) 0, 50% 100%, calc(50% + 8px) 0, 100% 0, 100% 1px, calc(50% + 9px) 1px, 50% calc(100% - 1px), calc(50% - 9px) 1px, 0 1px);
+  }
+
+  .planner-compass-path small {
+    inset-inline: 122px 18px;
+    inset-block-end: 5px;
+    font-size: 0.58rem;
   }
 }

@@ -1,3 +1,5 @@
+import { ArrowRight, CheckCircle2, Clock3, Compass, LockKeyhole } from "lucide-react";
+
 export type CompassPathState = "complete" | "current" | "next" | "pending";
 
 export type CompassPathItem = {
@@ -21,15 +23,32 @@ export function CompassPathRibbon({ items }: { items: readonly CompassPathItem[]
   if (items.length === 0) return null;
 
   return (
-    <nav className="planner-compass-path" aria-label="학업 여정">
-      <ol>
-        {items.map((item) => {
+    <nav
+      className="planner-compass-path"
+      data-path-layout="continuous-paper-route"
+      aria-label="학업 여정"
+    >
+      <ol className="planner-compass-path__route">
+        {items.map((item, index) => {
           const reasonId = `compass-path-${item.id}-reason`;
+          const visualState = item.available ? item.state : "locked";
+          const stateLabel = item.available ? stateLabels[item.state] : "잠김";
+          const StateIcon = visualState === "complete"
+            ? CheckCircle2
+            : visualState === "current"
+              ? Compass
+              : visualState === "next"
+                ? ArrowRight
+                : visualState === "locked"
+                  ? LockKeyhole
+                  : Clock3;
           return (
             <li
               key={item.id}
+              data-path-segment
               data-journey-stage={item.id}
               data-state={item.state}
+              data-visual-state={visualState}
               data-completed={item.completed}
             >
               <button
@@ -40,9 +59,22 @@ export function CompassPathRibbon({ items }: { items: readonly CompassPathItem[]
                 disabled={!item.available}
                 onClick={item.onSelect}
               >
-                <span>{stateLabels[item.state]}</span>
+                <span className="planner-compass-path__state">
+                  <span
+                    className="planner-compass-path__state-icon"
+                    data-path-state-icon={visualState}
+                    data-current-position={visualState === "current" ? "true" : undefined}
+                    aria-hidden="true"
+                  >
+                    <StateIcon size={17} strokeWidth={2.2} />
+                  </span>
+                  <span>{stateLabel}</span>
+                </span>
                 <strong>{item.label}</strong>
               </button>
+              {index < items.length - 1 ? (
+                <span className="planner-compass-path__fold" data-path-fold aria-hidden="true" />
+              ) : null}
               {!item.available && item.unavailableReason ? (
                 <small id={reasonId}>{item.unavailableReason}</small>
               ) : null}

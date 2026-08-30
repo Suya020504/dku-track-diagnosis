@@ -28,6 +28,13 @@ function button(label: string): HTMLButtonElement {
   return control;
 }
 
+function guideButton(label: string): HTMLButtonElement {
+  const control = [...document.querySelectorAll<HTMLButtonElement>(".planner-guide-index button")]
+    .find((candidate) => candidate.textContent?.includes(label));
+  if (!control) throw new Error(`Missing guide button: ${label}`);
+  return control;
+}
+
 beforeEach(() => {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   document.body.innerHTML = '<div id="root"></div>';
@@ -84,6 +91,13 @@ describe("App help dialog", () => {
     const last = controls.at(-1);
     if (!last) throw new Error("Missing final modal control");
 
+    await act(async () => heading.dispatchEvent(new KeyboardEvent("keydown", {
+      bubbles: true,
+      key: "Tab",
+      shiftKey: true,
+    })));
+    expect(document.activeElement).toBe(last);
+
     last.focus();
     await act(async () => last.dispatchEvent(new KeyboardEvent("keydown", {
       bubbles: true,
@@ -108,6 +122,27 @@ describe("App help dialog", () => {
     expect(background.getAttribute("aria-hidden")).toBeNull();
     expect(document.body.style.overflow).toBe("");
     expect(document.activeElement).toBe(invoker);
+  });
+
+  it("focuses the landing H1 on initial load and after shell or history returns", async () => {
+    await mountAt("/");
+
+    const initialHeading = document.querySelector<HTMLHeadingElement>("#planner-landing-title");
+    expect(initialHeading?.tabIndex).toBe(-1);
+    expect(document.activeElement).toBe(initialHeading);
+
+    await act(async () => guideButton("트랙 탐색").click());
+    expect(new URLSearchParams(location.search).get("view")).toBe("recommendation");
+
+    await act(async () => guideButton("시작하기").click());
+    expect(location.search).toBe("");
+    expect(document.activeElement).toBe(document.querySelector("#planner-landing-title"));
+
+    history.pushState({}, "", "/?view=overview");
+    await act(async () => window.dispatchEvent(new PopStateEvent("popstate")));
+    history.pushState({}, "", "/");
+    await act(async () => window.dispatchEvent(new PopStateEvent("popstate")));
+    expect(document.activeElement).toBe(document.querySelector("#planner-landing-title"));
   });
 
   it("closes the overlay before a help action navigates and focuses the destination", async () => {

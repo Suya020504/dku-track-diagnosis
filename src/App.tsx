@@ -224,9 +224,8 @@ export function startEntryFlowTransition(
   current: SavedAppStateV2,
   goal: "check-progress" | "find-track",
 ): { state: SavedAppStateV2; route: AppRoute } {
-  const nextProfile = current.profile ? { ...current.profile, goal } : undefined;
   const state: SavedAppStateV2 = {
-    ...applyPlanningSourceChange(current, { profile: nextProfile }),
+    ...current,
     profileDraft: {
       ...(current.profileDraft ?? current.profile ?? {}),
       goal,
@@ -595,7 +594,8 @@ function App({ storage }: { storage?: Storage } = {}) {
   }, [pdfImportDraft, savedState]);
 
   useEffect(() => {
-    const focusEntryHeading = activeView === "diagnosis"
+    const focusEntryHeading = activeView === "landing"
+      || activeView === "diagnosis"
       || activeView === "result"
       || activeView === "recommendation"
       || activeView === "overview"
@@ -1217,6 +1217,7 @@ function App({ storage }: { storage?: Storage } = {}) {
   if (activeView === "landing") {
     return renderGuidebook(
       <PlannerLanding
+        headingRef={stepHeadingRef}
         journeyItems={landingJourneyItems}
         plannerStatus={landingPlannerStatus}
         onPlannerAction={landingPlannerAction}
@@ -1561,7 +1562,14 @@ function GuideDialog({
       const last = controls.at(-1);
       if (!first || !last) return;
 
-      if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+      if (
+        event.shiftKey
+        && (
+          document.activeElement === headingRef.current
+          || document.activeElement === first
+          || !dialog.contains(document.activeElement)
+        )
+      ) {
         event.preventDefault();
         last.focus();
       } else if (!event.shiftKey && document.activeElement === last) {

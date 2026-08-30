@@ -203,6 +203,8 @@ describe("result decision pages", () => {
     expect(markup).not.toContain('role="tabpanel"');
     expect(markup).not.toContain("aria-selected=");
     expect(markup).not.toContain("aria-controls=");
+    expect(markup).toContain("다음 수강 후보 확인");
+    expect(markup).not.toContain("세 기준별 트랙 비교 보기");
   });
 
   it("renders only the next page with real course evidence, reasons, module contribution, and next actions", () => {
