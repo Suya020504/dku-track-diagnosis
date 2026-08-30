@@ -83,6 +83,15 @@ function economicsAnswers(): Record<string, InterestSurveyAnswer> {
   return answers;
 }
 
+function closeButNotTiedAnswers(): Record<string, InterestSurveyAnswer> {
+  const answers = Object.fromEntries(
+    interestSurveyQuestions.map((question) => [question.id, 3]),
+  ) as Record<string, InterestSurveyAnswer>;
+  answers["consumer-choice"] = 4;
+  answers["economic-data"] = 4;
+  return answers;
+}
+
 const economicsCompleted = selections([
   "b-2", "c-1", "c-2", "c-3", "f-1", "h-1",
   "d-1", "d-2", "e-1", "e-2", "g-1", "g-2", "j-1", "j-2", "l-1", "l-2",
@@ -176,6 +185,25 @@ describe("independent recommendation axes", () => {
 
     expect(result.progress[0].trackId).toBe("food-marketing");
     expect(result.alignedLeaderTrackIds).toEqual(["economics"]);
+  });
+
+  it("keeps a close second visible without treating it as an interest leader", () => {
+    const result = buildRecommendationAxes({
+      profile: departmentAdvancedProfile,
+      courseSelections: [],
+      additionalMajorCredits: noAdditionalCredits,
+      interestSurvey: { answers: closeButNotTiedAnswers(), currentIndex: 9 },
+    });
+    const foodMarketing = result.interest?.find(
+      (candidate) => candidate.trackId === "food-marketing",
+    );
+    const economics = result.interest?.find(
+      (candidate) => candidate.trackId === "economics",
+    );
+
+    expect(foodMarketing).toMatchObject({ score: 61, closeLeader: true });
+    expect(economics).toMatchObject({ score: 59, closeLeader: true });
+    expect(result.alignedLeaderTrackIds).toEqual(["food-marketing"]);
   });
 
   it("leaves unavailable optional axes undefined", () => {

@@ -216,8 +216,12 @@ function alignedLeaderTrackIds(
   plan: PlanAxisCandidate[] | undefined,
 ): TrackId[] {
   const leaderGroups: TrackId[][] = [];
-  if (interest) {
-    leaderGroups.push(interest.filter((candidate) => candidate.closeLeader).map((candidate) => candidate.trackId));
+  if (interest && interest.length > 0) {
+    leaderGroups.push(
+      interest
+        .filter((candidate) => candidate.score === interest[0].score)
+        .map((candidate) => candidate.trackId),
+    );
   }
   if (progress.length > 0) {
     leaderGroups.push(
