@@ -79,6 +79,23 @@ export type AdditionalMajorCredit = {
   note?: string;
 };
 
+export type MinimumCourseCombination = {
+  courseIds: string[];
+  newCourseCount: number;
+  newCredits: number;
+  unallocatedElectiveCredits: number;
+  hardConditionsSatisfied: boolean;
+  comparisonKey: string;
+};
+
+export type CourseCombinationInput = {
+  profile: StudentProfile;
+  targetTrackId?: TrackId;
+  assumedCourseIds: string[];
+  additionalMajorCredits: AdditionalMajorCredit[];
+  schedulableCourseIds: Set<string>;
+};
+
 export type DiagnosisSnapshot = {
   id: string;
   createdAt: string;
