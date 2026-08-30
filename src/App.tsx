@@ -35,6 +35,11 @@ import { TrackRecommendationAxes } from "./features/recommendations/TrackRecomme
 import { PathProgressSummary } from "./features/results/PathProgressSummary";
 import { PdfCourseImportPanel } from "./features/courses/PdfCourseImportPanel";
 import { PdfMatchReview } from "./features/courses/PdfMatchReview";
+import { GuidebookShell } from "./features/shell/GuidebookShell";
+import type { GuideIndexItem } from "./features/shell/GuideIndex";
+import type { MobileJourneyItem } from "./features/shell/MobileJourneyNav";
+import type { CompassPathItem } from "./features/journey/CompassPathRibbon";
+import { PLANNER_JOURNEY, resolveJourneyView } from "./app/journeyView";
 import {
   calculateDiagnosis,
   getCoursesByModule,
@@ -715,8 +720,10 @@ function App({ storage }: { storage?: Storage } = {}) {
   }, [pdfImportDraft, savedState]);
 
   useEffect(() => {
-    stepHeadingRef.current?.focus();
-  }, [diagnosisStep]);
+    if (activeView === "diagnosis" || activeView === "result") {
+      stepHeadingRef.current?.focus();
+    }
+  }, [activeView, diagnosisStep]);
 
   useEffect(() => {
     if (activeView === "diagnosis" && diagnosisStep === "courses" && !pdfInputRoute) {
@@ -1043,8 +1050,144 @@ function App({ storage }: { storage?: Storage } = {}) {
     setPlanSaveStatus("saved");
   }
 
-  if (activeView === "landing") {
+  const shellRoute: AppRoute = activeView === "landing"
+    ? { view: "landing" }
+    : activeView === "recommendation"
+      ? { view: "recommendation", step: recommendationStep, axis: recommendationAxis }
+      : activeView === "plan"
+        ? { view: "plan", step: planStep }
+        : activeView === "diagnosis"
+          ? {
+              view: "diagnosis",
+              step: diagnosisStep,
+              ...(diagnosisStep === "profile" ? { profileStage } : {}),
+              ...(diagnosisStep === "courses" && pdfInputRoute ? { input: pdfInputRoute } : {}),
+            }
+          : activeView === "result"
+            ? { view: "result", section: resultSection }
+            : activeView === "resources" || activeView === "modules"
+              ? { view: "resources", section: activeView === "modules" ? "modules" : resourceSection }
+              : { view: activeView };
+  const resultReady = Boolean(savedState.profile && savedState.courseInputReviewedAt && pathProgress);
+  const targetTrackReady = savedState.profile?.studyPath !== "track-major" || Boolean(savedState.targetTrackId);
+  const planReady = resultReady && targetTrackReady;
+  const planNavAvailable = planReady || activeView === "plan";
+  const guideActiveId = activeView === "landing"
+    ? "start"
+    : activeView === "recommendation"
+      ? "tracks"
+      : activeView === "diagnosis"
+        ? "diagnosis"
+        : activeView === "result"
+          ? "result"
+          : activeView === "plan"
+            ? "plan"
+            : "resources";
+  const mobileActiveId = activeView === "contact" ? "contact" : guideActiveId;
+  const currentLabel = guideActiveId === "start"
+    ? "시작하기"
+    : guideActiveId === "tracks"
+      ? "트랙 탐색"
+      : guideActiveId === "diagnosis"
+        ? "자가진단"
+        : guideActiveId === "result"
+          ? "결과"
+          : guideActiveId === "plan"
+            ? "학기 플래너"
+            : "기록·근거";
+  const goToDiagnosis = () => navigateDiagnosisStep(
+    resolveDiagnosisStep("?view=diagnosis&step=courses", savedState),
+  );
+  const goToResult = () => navigateDiagnosisStep(
+    resolveDiagnosisStep("?view=result&step=result", savedState),
+  );
+  const guideItems: GuideIndexItem[] = [
+    { id: "start", index: "01", label: "시작하기", available: true, onSelect: () => navigateAppRoute({ view: "landing" }) },
+    { id: "tracks", index: "02", label: "트랙 탐색", available: true, onSelect: () => navigateAppRoute({ view: "recommendation", step: "survey" }) },
+    { id: "diagnosis", index: "03", label: "자가진단", available: true, onSelect: goToDiagnosis },
+    {
+      id: "result",
+      index: "04",
+      label: "결과",
+      available: resultReady,
+      unavailableReason: "프로필과 이수 과목을 먼저 확인해 주세요.",
+      onSelect: goToResult,
+    },
+    {
+      id: "plan",
+      index: "05",
+      label: "학기 플래너",
+      available: planNavAvailable,
+      unavailableReason: "결과 확인과 목표 트랙 선택 후 열려요.",
+      onSelect: () => navigateAppRoute({ view: "plan", step: "setup" }),
+    },
+    { id: "resources", index: "06", label: "기록·근거", available: true, onSelect: () => navigateAppRoute({ view: "resources", section: "official" }) },
+  ];
+  const mobilePrimaryItems: MobileJourneyItem[] = [
+    { id: "start", label: "시작", available: true, onSelect: () => navigateAppRoute({ view: "landing" }) },
+    { id: "diagnosis", label: "진단", available: true, onSelect: goToDiagnosis },
+    { id: "result", label: "결과", available: resultReady, unavailableReason: "진단 후 열려요.", onSelect: goToResult },
+    { id: "plan", label: "계획", available: planNavAvailable, unavailableReason: "결과 확인 후 열려요.", onSelect: () => navigateAppRoute({ view: "plan", step: "setup" }) },
+  ];
+  const mobileMoreItems: MobileJourneyItem[] = [
+    { id: "tracks", label: "트랙", available: true, onSelect: () => navigateAppRoute({ view: "recommendation", step: "survey" }) },
+    { id: "resources", label: "자료", available: true, onSelect: () => navigateAppRoute({ view: "resources", section: "tracks" }) },
+    { id: "contact", label: "문의", available: true, onSelect: () => navigateAppRoute({ view: "contact" }) },
+  ];
+  const currentJourney = resolveJourneyView(shellRoute);
+  const journeyItems: CompassPathItem[] = PLANNER_JOURNEY.map((item) => {
+    const available = item.stage !== "semester" || planNavAvailable;
+    return {
+      id: item.stage,
+      label: item.label,
+      state: item.index < currentJourney.index
+        ? "complete"
+        : item.index === currentJourney.index
+          ? "current"
+          : "next",
+      available,
+      unavailableReason: available ? undefined : "결과 확인과 목표 트랙 선택 후 열려요.",
+      onSelect: () => {
+        if (item.stage === "interest") navigateAppRoute({ view: "recommendation", step: "survey" });
+        if (item.stage === "courses") goToDiagnosis();
+        if (item.stage === "modules") navigateAppRoute({ view: "resources", section: "modules" });
+        if (item.stage === "track") {
+          if (activeView === "result") navigateAppRoute({ view: "result", section: resultSection });
+          else navigateAppRoute({ view: "recommendation", step: "axes" });
+        }
+        if (item.stage === "semester") navigateAppRoute({ view: "plan", step: "setup" });
+      },
+    };
+  });
+
+  function renderGuidebook(content: ReactNode) {
     return (
+      <GuidebookShell
+        activeId={guideActiveId}
+        mobileActiveId={mobileActiveId}
+        currentLabel={currentLabel}
+        guideItems={guideItems}
+        mobilePrimaryItems={mobilePrimaryItems}
+        mobileMoreItems={mobileMoreItems}
+        journeyItems={journeyItems}
+        saveState={storageError ? "error" : "saved"}
+        onOpenHelp={openGuide}
+      >
+        {content}
+        {guideOpen && (
+          <GuideDialog
+            activeStepIndex={guideStepIndex}
+            onClose={closeGuide}
+            onMoveStep={moveGuideStep}
+            onGoToView={goToGuideStepView}
+          />
+        )}
+      </GuidebookShell>
+    );
+  }
+
+  if (activeView === "landing") {
+    return renderGuidebook(
       <LandingPage
         onStartDiagnosis={() => startEntryFlow("check-progress")}
         onFindTrack={() => startEntryFlow("find-track")}
@@ -1053,7 +1196,7 @@ function App({ storage }: { storage?: Storage } = {}) {
   }
 
   if (activeView === "recommendation") {
-    return (
+    return renderGuidebook(
       <div className="recommendation-page-shell">
         <header className="recommendation-page-header">
           <button
@@ -1115,7 +1258,7 @@ function App({ storage }: { storage?: Storage } = {}) {
       && !missingTargetTrack,
     );
     if (!prerequisitesReady) {
-      return (
+      return renderGuidebook(
         <GraduationPlanPrerequisite
           hasProfile={Boolean(savedState.profile)}
           courseInputReady={Boolean(savedState.courseInputReviewedAt)}
@@ -1130,7 +1273,7 @@ function App({ storage }: { storage?: Storage } = {}) {
     const planAlreadySaved = Boolean(savedState.graduationPlan && savedState.snapshots.some(
       (snapshot) => snapshot.graduationPlan?.generatedAt === savedState.graduationPlan?.generatedAt,
     ));
-    return (
+    return renderGuidebook(
       <div className="graduation-plan-shell">
         <div className="graduation-plan-topbar">
           <button
@@ -1193,8 +1336,8 @@ function App({ storage }: { storage?: Storage } = {}) {
   }
 
   if (activeView === "diagnosis" && (diagnosisStep === "profile" || !savedState.profile)) {
-    return (
-      <div className="profile-step-shell">
+    return renderGuidebook(
+      <main className="profile-step-shell">
         {storageError && (
           <p className="storage-error" role="alert">
             이 브라우저에 변경 내용을 저장하지 못했습니다. 탭을 닫기 전에 입력 내용을 확인해 주세요.
@@ -1211,13 +1354,13 @@ function App({ storage }: { storage?: Storage } = {}) {
           onComplete={completeProfile}
           onProfileStageChange={navigateProfileStage}
         />
-      </div>
+      </main>
     );
   }
 
   const activePrimaryViewId = activeView;
 
-  return (
+  return renderGuidebook(
     <div className="app-shell service-shell">
       <header className="service-header">
         <button className="brand-mark brand-button service-brand" type="button" onClick={() => navigateAppRoute({ view: "landing" })}>
@@ -1415,14 +1558,6 @@ function App({ storage }: { storage?: Storage } = {}) {
           </section>
         )}
       </main>
-      {guideOpen && (
-        <GuideDialog
-          activeStepIndex={guideStepIndex}
-          onClose={closeGuide}
-          onMoveStep={moveGuideStep}
-          onGoToView={goToGuideStepView}
-        />
-      )}
     </div>
   );
 }

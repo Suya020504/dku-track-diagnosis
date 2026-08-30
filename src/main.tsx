@@ -4,6 +4,8 @@ import App from "./App";
 import "./styles.css";
 import "./styles/planner-tokens.css";
 import "./styles/planner-components.css";
+import "./styles/planner-shell.css";
+import "./styles/planner-journey.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

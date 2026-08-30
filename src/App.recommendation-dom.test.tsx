@@ -91,6 +91,36 @@ afterEach(async () => {
 });
 
 describe("App recommendation browser interactions", () => {
+  it("keeps recommendation content under one guidebook shell and one main landmark", async () => {
+    saveState(createEmptyAppState());
+    history.replaceState({}, "", "/?view=recommendation&step=survey");
+
+    await mountApp();
+
+    expect(document.querySelector(".planner-guidebook-shell")).not.toBeNull();
+    expect(document.querySelectorAll("main")).toHaveLength(1);
+    const trackIndex = [...document.querySelectorAll<HTMLButtonElement>(".planner-guide-index button")]
+      .find((candidate) => candidate.textContent?.includes("트랙 탐색"));
+    expect(trackIndex?.getAttribute("aria-current")).toBe("page");
+  });
+
+  it("uses the Compass Path Ribbon as real guarded route navigation", async () => {
+    saveState(createEmptyAppState());
+    history.replaceState({}, "", "/?view=recommendation&step=survey");
+    await mountApp();
+
+    const courses = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
+      .find((candidate) => candidate.textContent?.includes("과목"));
+    expect(courses).not.toBeUndefined();
+    await act(async () => courses?.click());
+
+    const params = new URLSearchParams(location.search);
+    expect(params.get("view")).toBe("diagnosis");
+    expect(params.get("step")).toBe("profile");
+    expect(document.querySelectorAll("main")).toHaveLength(1);
+    expect(document.activeElement?.tagName).toBe("H1");
+  });
+
   it("persists the landing diagnosis goal and uses push history for the user action", async () => {
     const replaceState = vi.spyOn(history, "replaceState");
     const pushState = vi.spyOn(history, "pushState");
@@ -178,7 +208,8 @@ describe("App recommendation browser interactions", () => {
     await click("4그렇다");
     await click("기준별 비교");
 
-    const alert = document.querySelector<HTMLElement>('[role="alert"]');
+    const alert = [...document.querySelectorAll<HTMLElement>('[role="alert"]')]
+      .find((candidate) => candidate.textContent?.includes("새로고침하면 답변이 사라질 수 있습니다"));
     expect(alert).not.toBeNull();
     expect(alert?.textContent ?? "").toContain("새로고침하면 답변이 사라질 수 있습니다");
     expect(document.body.textContent).toContain("관심에 가까운 트랙");

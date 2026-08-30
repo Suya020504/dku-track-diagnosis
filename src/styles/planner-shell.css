@@ -1,0 +1,356 @@
+.planner-app {
+  min-height: 100vh;
+  background: var(--planner-paper);
+  color: var(--planner-ink);
+}
+
+.planner-app :is(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--planner-department-green);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 2px var(--planner-paper);
+}
+
+.planner-shell-header {
+  position: relative;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) auto minmax(240px, 1fr);
+  gap: var(--planner-space-5);
+  align-items: center;
+  min-height: 76px;
+  padding: 12px clamp(20px, 4vw, 56px);
+  border-block-end: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 22%, transparent);
+  background: var(--planner-paper);
+}
+
+.planner-shell-wordmark {
+  display: grid;
+  gap: 2px;
+  justify-self: start;
+  letter-spacing: -0.02em;
+}
+
+.planner-shell-wordmark strong {
+  color: var(--planner-dankook-blue);
+  font-size: 0.95rem;
+}
+
+.planner-shell-wordmark span,
+.planner-shell-current-step {
+  color: var(--planner-ink-muted);
+  font-size: 0.78rem;
+}
+
+.planner-shell-current-step {
+  display: none;
+  font-weight: 700;
+}
+
+.planner-shell-actions {
+  grid-column: 3;
+  display: flex;
+  gap: var(--planner-space-3);
+  align-items: center;
+  justify-self: end;
+}
+
+.planner-shell-help,
+.planner-local-save {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: var(--planner-control-radius);
+  background: var(--planner-sky-sheet);
+  color: var(--planner-dankook-blue);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.planner-shell-help {
+  cursor: pointer;
+}
+
+.planner-local-save {
+  background: var(--planner-mint-sheet);
+  color: var(--planner-department-green);
+}
+
+.planner-local-save--error {
+  background: color-mix(in srgb, var(--planner-review-coral) 16%, var(--planner-paper));
+  color: #983e2d;
+}
+
+.planner-shell-layout {
+  display: grid;
+  grid-template-columns: 188px minmax(0, 1fr);
+  width: min(100%, 1440px);
+  margin-inline: auto;
+}
+
+.planner-guide-index {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  min-height: calc(100vh - 76px);
+  padding: 32px 16px 48px 20px;
+  border-inline-end: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 20%, transparent);
+  background: var(--planner-sky-sheet);
+}
+
+.planner-guide-index__title {
+  display: block;
+  margin: 0 8px 18px;
+  color: var(--planner-dankook-blue);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.planner-guide-index ol {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.planner-guide-index li {
+  position: relative;
+}
+
+.planner-guide-index li[data-active="true"]::after {
+  position: absolute;
+  inset-block: 7px;
+  inset-inline-end: -17px;
+  width: 5px;
+  background: var(--planner-department-green);
+  content: "";
+}
+
+.planner-guide-index button {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 8px;
+  border: 0;
+  border-radius: var(--planner-row-radius);
+  background: transparent;
+  color: var(--planner-ink);
+  text-align: start;
+  cursor: pointer;
+}
+
+.planner-guide-index button[aria-current="page"] {
+  background: var(--planner-paper);
+  color: var(--planner-department-green);
+}
+
+.planner-guide-index button:disabled {
+  color: var(--planner-ink-muted);
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.planner-guide-index button span {
+  color: var(--planner-dankook-blue);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+}
+
+.planner-guide-index button strong {
+  font-size: 0.88rem;
+}
+
+.planner-guide-index small {
+  display: block;
+  margin: -3px 8px 8px 36px;
+  color: var(--planner-ink-muted);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.planner-shell-page {
+  min-width: 0;
+  padding: 24px clamp(18px, 3vw, 48px) 72px;
+}
+
+.planner-shell-content {
+  width: min(100%, 1240px);
+  margin-inline: auto;
+}
+
+/* Legacy inner headers are superseded by the one common, text-only shell header. */
+.planner-app .v2-landing-header,
+.planner-app .recommendation-page-header,
+.planner-app .service-header {
+  display: none;
+}
+
+.planner-app .service-storage-error {
+  margin-block-start: 0;
+}
+
+.planner-mobile-nav {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .planner-app {
+    padding-block-end: calc(86px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .planner-shell-header {
+    position: sticky;
+    top: 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 62px;
+    padding: 8px 14px;
+    background: color-mix(in srgb, var(--planner-paper) 96%, transparent);
+  }
+
+  .planner-shell-wordmark span,
+  .planner-shell-actions .planner-local-save,
+  .planner-shell-help span {
+    display: none;
+  }
+
+  .planner-shell-current-step {
+    display: block;
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .planner-shell-actions {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .planner-shell-help {
+    justify-content: center;
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+
+  .planner-shell-layout {
+    display: block;
+  }
+
+  .planner-guide-index {
+    display: none;
+  }
+
+  .planner-shell-page {
+    padding: 12px 12px 24px;
+  }
+
+  .planner-mobile-nav {
+    position: fixed;
+    z-index: 100;
+    inset-inline: 0;
+    inset-block-end: 0;
+    display: block;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+    border-block-start: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 24%, transparent);
+    background: var(--planner-paper);
+  }
+
+  .planner-mobile-nav__primary {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2px;
+    max-width: 520px;
+    margin-inline: auto;
+  }
+
+  .planner-mobile-nav__item button,
+  .planner-mobile-nav__more > summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 48px;
+    padding: 6px 2px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--planner-ink-muted);
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .planner-mobile-nav__item button[aria-current="page"] {
+    background: var(--planner-mint-sheet);
+    color: var(--planner-department-green);
+  }
+
+  .planner-mobile-nav__item button:disabled {
+    cursor: not-allowed;
+    opacity: 0.42;
+  }
+
+  .planner-mobile-nav__more {
+    position: relative;
+  }
+
+  .planner-mobile-nav__more > summary {
+    flex-direction: column;
+    list-style: none;
+  }
+
+  .planner-mobile-nav__more > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .planner-mobile-nav__menu {
+    position: absolute;
+    inset-inline-end: 0;
+    inset-block-end: calc(100% + 10px);
+    display: grid;
+    width: 160px;
+    padding: 8px;
+    border: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 24%, transparent);
+    border-radius: var(--planner-control-radius);
+    background: var(--planner-paper);
+  }
+
+  .planner-mobile-nav__menu .planner-mobile-nav__item button {
+    justify-content: flex-start;
+    padding-inline: 14px;
+    font-size: 0.82rem;
+  }
+}
+
+@media print {
+  .planner-app {
+    min-height: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  .planner-shell-header,
+  .planner-guide-index,
+  .planner-mobile-nav,
+  .planner-compass-path {
+    display: none !important;
+  }
+
+  .planner-shell-layout,
+  .planner-shell-page,
+  .planner-shell-content {
+    display: block;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+}

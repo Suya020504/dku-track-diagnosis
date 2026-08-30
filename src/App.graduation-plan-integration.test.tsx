@@ -361,6 +361,19 @@ describe("graduation plan pure transitions", () => {
 });
 
 describe("App graduation plan pages", () => {
+  it("keeps the plan page under one guidebook shell and one main landmark", async () => {
+    saveState(stateWithPlan());
+    history.replaceState({}, "", "/?view=plan&step=schedule");
+
+    await mountApp();
+
+    expect(document.querySelector(".planner-guidebook-shell")).not.toBeNull();
+    expect(document.querySelectorAll("main")).toHaveLength(1);
+    const planIndex = [...document.querySelectorAll<HTMLButtonElement>(".planner-guide-index button")]
+      .find((candidate) => candidate.textContent?.includes("학기 플래너"));
+    expect(planIndex?.getAttribute("aria-current")).toBe("page");
+  });
+
   it("shows a working prerequisite action instead of calculating with missing inputs", async () => {
     saveState({
       ...createEmptyAppState(),

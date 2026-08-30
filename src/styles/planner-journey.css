@@ -1,0 +1,96 @@
+.planner-compass-path {
+  width: min(100%, 1240px);
+  margin: 0 auto 24px;
+  padding: 12px 16px;
+  border-radius: var(--planner-control-radius);
+  background: var(--planner-mint-sheet);
+}
+
+.planner-compass-path ol {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.planner-compass-path ol::before {
+  position: absolute;
+  z-index: 0;
+  inset-block-start: 21px;
+  inset-inline: 8%;
+  height: 2px;
+  background: color-mix(in srgb, var(--planner-department-green) 30%, var(--planner-paper));
+  content: "";
+}
+
+.planner-compass-path li {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+.planner-compass-path button {
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: var(--planner-row-radius);
+  background: var(--planner-paper);
+  color: var(--planner-ink-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.planner-compass-path li[data-state="complete"] button {
+  color: var(--planner-department-green);
+}
+
+.planner-compass-path li[data-state="current"] button {
+  background: var(--planner-department-green);
+  color: var(--planner-paper);
+}
+
+.planner-compass-path button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.planner-compass-path button span {
+  font-size: 0.64rem;
+  font-weight: 800;
+}
+
+.planner-compass-path button strong {
+  overflow: hidden;
+  max-width: 100%;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.planner-compass-path small {
+  display: block;
+  margin-block-start: 4px;
+  color: var(--planner-ink-muted);
+  font-size: 0.62rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 760px) {
+  .planner-compass-path {
+    overflow-x: auto;
+    margin-block-end: 12px;
+    padding: 8px;
+  }
+
+  .planner-compass-path ol {
+    min-width: 500px;
+  }
+}
