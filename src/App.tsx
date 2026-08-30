@@ -1242,12 +1242,11 @@ function App({ storage }: { storage?: Storage } = {}) {
       label: "트랙 탐색",
       state: landingTrackComplete ? "complete" : hasInterestDirection ? "current" : "next",
       completed: landingTrackComplete,
-      available: true,
-      onSelect: () => navigateAppRoute(
-        hasInterestDirection
-          ? { view: "recommendation", step: "axes", axis: "interest" }
-          : { view: "recommendation", step: "survey" },
-      ),
+      available: hasInterestDirection,
+      unavailableReason: hasInterestDirection
+        ? undefined
+        : "관심 질문을 마치면 트랙 비교가 열려요.",
+      onSelect: () => navigateAppRoute({ view: "recommendation", step: "axes", axis: "interest" }),
     },
     {
       id: "semester",

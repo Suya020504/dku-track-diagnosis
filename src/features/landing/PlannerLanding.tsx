@@ -61,8 +61,8 @@ const plannerStatusDetails: Record<LandingPlannerStatus, PlannerStatusDetail> = 
       {
         title: "현재 단계",
         rows: [
-          ["관심 방향", "입력 내용 저장됨"],
-          ["다음 행동", "학생 유형과 이수 경로 확인"],
+          ["학생 유형", "입력 필요"],
+          ["이수 경로", "입력 필요"],
         ],
       },
       {
@@ -81,10 +81,10 @@ const plannerStatusDetails: Record<LandingPlannerStatus, PlannerStatusDetail> = 
     actionLabel: "이수 과목 확인하기",
     terms: [
       {
-        title: "현재 단계",
+        title: "입력한 상태",
         rows: [
-          ["관심 방향", "입력 내용 저장됨"],
-          ["다음 행동", "완료한 이수 과목 확인"],
+          ["학생 유형", "입력됨"],
+          ["이수 경로", "저장됨"],
         ],
       },
       {
@@ -106,7 +106,7 @@ const plannerStatusDetails: Record<LandingPlannerStatus, PlannerStatusDetail> = 
         title: "확인한 상태",
         rows: [
           ["이수 과목", "검토 완료"],
-          ["다음 행동", "목표 트랙 선택"],
+          ["목표 트랙", "선택 필요"],
         ],
       },
       {

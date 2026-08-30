@@ -119,6 +119,23 @@ afterEach(async () => {
 });
 
 describe("App recommendation browser interactions", () => {
+  it("keeps fresh track exploration locked while interest questions open the survey", async () => {
+    await mountApp();
+
+    const interestJourney = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
+      .find((candidate) => candidate.textContent?.includes("관심 질문"));
+    const trackJourney = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
+      .find((candidate) => candidate.textContent?.includes("트랙 탐색"));
+
+    expect(trackJourney?.disabled).toBe(true);
+    expect(trackJourney?.getAttribute("aria-describedby")).not.toBeNull();
+    await act(async () => interestJourney?.click());
+
+    const params = new URLSearchParams(location.search);
+    expect(params.get("view")).toBe("recommendation");
+    expect(params.get("step")).toBe("survey");
+  });
+
   it("keeps a fresh landing unobstructed and opens or closes help only on request", async () => {
     await mountApp();
 

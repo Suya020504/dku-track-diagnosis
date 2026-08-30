@@ -42,10 +42,11 @@ const completedInterestSurvey: InterestSurveyState = {
 };
 
 function landingState(
-  stage: "empty" | "interest" | "courses" | "saved-plan",
+  stage: "empty" | "profile-only" | "interest" | "courses-no-target" | "courses" | "saved-plan",
 ): SavedAppStateV2 {
   const empty = createEmptyAppState();
   if (stage === "empty") return empty;
+  if (stage === "profile-only") return { ...empty, profile: landingProfile };
 
   const interestState: SavedAppStateV2 = {
     ...empty,
@@ -53,6 +54,13 @@ function landingState(
     targetTrackId: "economics",
   };
   if (stage === "interest") return interestState;
+  if (stage === "courses-no-target") {
+    return {
+      ...empty,
+      profile: landingProfile,
+      courseInputReviewedAt: "2026-08-30T00:30:00.000Z",
+    };
+  }
 
   const courseState: SavedAppStateV2 = {
     ...interestState,
@@ -77,6 +85,11 @@ function landingState(
 
 function renderedJourneyState(markup: string, stage: "interest" | "track" | "semester") {
   return markup.match(new RegExp(`data-journey-stage="${stage}" data-state="([^"]+)"`))?.[1];
+}
+
+function renderedJourneyAvailable(markup: string, stage: "interest" | "track" | "semester") {
+  const item = markup.match(new RegExp(`<li data-journey-stage="${stage}"[\\s\\S]*?</li>`))?.[0];
+  return item ? !item.includes("disabled") : undefined;
 }
 
 function createStorage(state?: SavedAppStateV2): Storage {
@@ -168,6 +181,20 @@ describe("recommendation route integration", () => {
       title: "관심을 찾으면 계획표가 펼쳐져요",
       status: "입력 전 잠김",
       action: undefined,
+      trackAvailable: false,
+      copy: ["전공 과목 후보", "관심 트랙 선택 후 표시"],
+      forbidden: ["학생 유형 입력됨", "이수 과목 검토 완료", "저장한 계획 사용 가능"],
+    },
+    {
+      name: "profile only",
+      state: landingState("profile-only"),
+      journey: ["current", "next", "pending"],
+      title: "다음은 이수 과목을 확인할 차례예요",
+      status: "이수 과목 확인 필요",
+      action: "이수 과목 확인하기",
+      trackAvailable: false,
+      copy: ["학생 유형", "입력됨", "이수 경로", "저장됨"],
+      forbidden: ["관심 방향", "이수 과목 검토 완료", "저장한 계획 사용 가능"],
     },
     {
       name: "completed interest and selected target",
@@ -176,6 +203,20 @@ describe("recommendation route integration", () => {
       title: "다음은 학생 유형을 확인할 차례예요",
       status: "학생 유형 확인 필요",
       action: "진단 정보 이어가기",
+      trackAvailable: true,
+      copy: ["학생 유형", "입력 필요", "이수 경로", "입력 필요"],
+      forbidden: ["학생 유형 입력됨", "이수 과목 검토 완료", "저장한 계획 사용 가능"],
+    },
+    {
+      name: "reviewed courses without target",
+      state: landingState("courses-no-target"),
+      journey: ["current", "next", "pending"],
+      title: "학기 계획 전에 목표 트랙을 골라 주세요",
+      status: "트랙 선택 필요",
+      action: "트랙 비교 보기",
+      trackAvailable: false,
+      copy: ["이수 과목", "검토 완료", "목표 트랙", "선택 필요"],
+      forbidden: ["관심 방향", "저장한 계획 사용 가능"],
     },
     {
       name: "reviewed courses",
@@ -184,6 +225,9 @@ describe("recommendation route integration", () => {
       title: "입력한 상태로 학기 계획을 만들 수 있어요",
       status: "계획 준비 완료",
       action: "학기 계획 열기",
+      trackAvailable: true,
+      copy: ["이수 과목", "검토 완료", "목표 방향", "선택 완료"],
+      forbidden: ["입력 전 잠김", "저장한 계획 사용 가능"],
     },
     {
       name: "saved graduation plan",
@@ -192,8 +236,21 @@ describe("recommendation route integration", () => {
       title: "저장한 학기 계획이 있어요",
       status: "저장한 계획 사용 가능",
       action: "저장한 계획 보기",
+      trackAvailable: true,
+      copy: ["학기 일정", "다시 열어 확인", "저장한 내용 보기"],
+      forbidden: ["입력 전 잠김", "이수 과목 확인 필요"],
     },
-  ])("renders the real landing progress for $name", ({ name, state, journey, title, status, action }) => {
+  ])("renders the real landing progress for $name", ({
+    name,
+    state,
+    journey,
+    title,
+    status,
+    action,
+    trackAvailable,
+    copy,
+    forbidden,
+  }) => {
     const markup = renderApp("", state);
 
     expect([
@@ -203,9 +260,13 @@ describe("recommendation route integration", () => {
     ]).toEqual(journey);
     expect(markup).toContain(title);
     expect(markup).toContain(status);
+    expect(renderedJourneyAvailable(markup, "track")).toBe(trackAvailable);
     if (action) expect(markup).toContain(action);
     else expect(markup).not.toContain("planner-landing__planner-action");
     if (name !== "empty input") expect(markup).not.toContain("입력 전 잠김");
+    copy.forEach((value) => expect(markup).toContain(value));
+    forbidden.forEach((value) => expect(markup).not.toContain(value));
+    if (!trackAvailable) expect(markup).toContain("관심 질문을 마치면 트랙 비교가 열려요.");
   });
 
   it("allows the interest survey route without a profile and restores its current question", () => {
