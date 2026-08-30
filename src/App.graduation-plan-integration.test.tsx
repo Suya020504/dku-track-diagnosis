@@ -131,6 +131,11 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="root"></div>';
   localStorage.clear();
   history.replaceState({}, "", "/");
+  Object.defineProperty(history, "scrollRestoration", {
+    configurable: true,
+    writable: true,
+    value: "auto",
+  });
   Object.defineProperty(window, "scrollTo", { configurable: true, value: vi.fn() });
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
@@ -459,6 +464,7 @@ describe("App graduation plan pages", () => {
     expect(document.body.textContent).toContain("계획 저장");
     expect(document.body.textContent).not.toContain("배치하지 못한 과목");
     expectFocusedPlanHeading("목표 학기 안에 참고 계획을 만들었어요");
+    expect(history.scrollRestoration).toBe("manual");
     vi.mocked(window.scrollTo).mockClear();
 
     await click("확인할 항목 보기");
@@ -466,6 +472,7 @@ describe("App graduation plan pages", () => {
     expect(document.body.textContent).toContain("배치하지 못한 과목");
     expect(document.body.textContent).not.toContain("계획 저장");
     expectFocusedPlanHeading("배치하지 못한 과목");
+    expect(history.scrollRestoration).toBe("manual");
     expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
     vi.mocked(window.scrollTo).mockClear();
 
@@ -479,7 +486,32 @@ describe("App graduation plan pages", () => {
     expect(new URLSearchParams(location.search).get("step")).toBe("schedule");
     expect(document.body.textContent).toContain("계획 저장");
     expectFocusedPlanHeading("목표 학기 안에 참고 계획을 만들었어요");
+    expect(history.scrollRestoration).toBe("manual");
     expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
+  });
+
+  it("restores the previous history scroll policy after leaving plan", async () => {
+    saveState(stateWithPlan());
+    history.replaceState({}, "", "/?view=plan&step=schedule");
+    await mountApp();
+    expect(history.scrollRestoration).toBe("manual");
+
+    await click("추천 비교로 돌아가기");
+
+    expect(new URLSearchParams(location.search).get("view")).toBe("recommendation");
+    expect(history.scrollRestoration).toBe("auto");
+  });
+
+  it("restores the previous history scroll policy when App unmounts from plan", async () => {
+    saveState(stateWithPlan());
+    history.replaceState({}, "", "/?view=plan&step=schedule");
+    await mountApp();
+    expect(history.scrollRestoration).toBe("manual");
+
+    await act(async () => root?.unmount());
+    root = undefined;
+
+    expect(history.scrollRestoration).toBe("auto");
   });
 
   it("saves one snapshot only on the explicit save action", async () => {

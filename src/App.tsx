@@ -682,6 +682,15 @@ function App() {
 
   useEffect(() => {
     if (activeView !== "plan") return;
+    const previousScrollRestoration = window.history.scrollRestoration;
+    window.history.scrollRestoration = "manual";
+    return () => {
+      window.history.scrollRestoration = previousScrollRestoration;
+    };
+  }, [activeView]);
+
+  useEffect(() => {
+    if (activeView !== "plan") return;
     planHeadingRef.current?.focus();
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [activeView, planStep]);
