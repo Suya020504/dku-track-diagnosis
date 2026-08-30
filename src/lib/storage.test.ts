@@ -1,7 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { STORAGE_KEY } from "../data/curriculumData";
-import type { DiagnosisSnapshot, SavedAppStateV2 } from "../types";
+import type {
+  DiagnosisSnapshot,
+  GraduationPlanPreferences,
+  GraduationPlanResult,
+  RecommendationAxes,
+  SavedAppStateV2,
+} from "../types";
 import {
+  appendDiagnosisSnapshot,
   createEmptyAppState,
   emptyState,
   loadAppState,
@@ -42,6 +49,100 @@ function makeStorage(initial: Record<string, string>): Storage {
 
 function stateWithTarget(targetTrackId: "food-marketing" | "economics"): SavedAppStateV2 {
   return { ...createEmptyAppState(), targetTrackId };
+}
+
+const minorProfile = {
+  goal: "check-progress",
+  affiliation: "external-student",
+  studyPath: "minor",
+  entryYear: 2026,
+  curriculumRuleVersion: "2026-provided-final-plan",
+  ruleApplicability: "reference-only",
+} as const;
+
+const planPreferences: GraduationPlanPreferences = {
+  currentTerm: "2026-1",
+  targetGraduationTerm: "2027-2",
+  maxMajorCoursesPerTerm: 3,
+  considerSeasonalTerm: false,
+};
+
+function makeGraduationPlan(
+  preferences: GraduationPlanPreferences = planPreferences,
+): GraduationPlanResult {
+  return {
+    status: "regular-plan-possible",
+    preferences,
+    placements: [{
+      termId: "2026-1",
+      courseId: "f-1",
+      origin: "generated",
+      offeringEvidence: "historical-2026-snapshot",
+    }],
+    extraTermPlacements: [],
+    unplacedCourses: [{
+      courseId: "h-1",
+      reason: "offering-unknown",
+      message: "개설 학기 확인 필요",
+    }],
+    unallocatedElectiveCredits: 0,
+    unallocatedElectiveSlots: 0,
+    recommendedMaxMajorCoursesPerTerm: 4,
+    neededExtraTerms: 0,
+    reviewItems: [{
+      code: "future-offering",
+      message: "향후 개설 여부 확인 필요",
+      evidence: "project-derived",
+    }],
+    generatedAt: "2026-08-30T00:00:00.000Z",
+  };
+}
+
+const recommendationAxes: RecommendationAxes = {
+  interest: [{
+    trackId: "food-marketing",
+    score: 80,
+    closeLeader: false,
+    reasons: ["소비자 분석 선호"],
+  }],
+  progress: [{
+    trackId: "food-marketing",
+    missingCourseCount: 2,
+    missingCredits: 6,
+    missingModuleLabels: ["H. 머천다이징"],
+    assumption: "current-path",
+  }],
+  plan: [{
+    trackId: "food-marketing",
+    status: "regular-plan-possible",
+    unplacedCourseCount: 0,
+    neededExtraTerms: 0,
+    assumption: "track-major-hypothesis",
+  }],
+  alignedLeaderTrackIds: ["food-marketing"],
+};
+
+function makeSnapshot(id: string): DiagnosisSnapshot {
+  return {
+    id,
+    createdAt: "2026-08-30T00:00:00.000Z",
+    ruleVersion: "2026-provided-final-plan",
+    profile: minorProfile,
+    courseSelections: [],
+    additionalMajorCredits: [],
+    comparisonTrackIds: [],
+    result: {
+      requiredProgress: "not-applicable",
+      trackProgress: "not-applicable",
+      totalMajorProgress: {
+        completedCredits: 0,
+        requiredCredits: 0,
+        missingCredits: 0,
+      },
+      reviewItems: [],
+      status: "incomplete",
+    },
+  };
 }
 
 describe("diagnosis storage", () => {
@@ -133,6 +234,170 @@ describe("diagnosis storage", () => {
 
     expect(normalizeSnapshotHistory(snapshots)).toHaveLength(12);
     expect(normalizeSnapshotHistory(snapshots)[0].id).toBe("snapshot-2");
+  });
+
+  it("loads a valid legacy v2 state without recommendation or plan fields", () => {
+    const legacyV2: SavedAppStateV2 = {
+      version: 2,
+      courseSelections: [],
+      additionalMajorCredits: [],
+      comparisonTrackIds: [],
+      snapshots: [],
+    };
+
+    expect(loadAppState(makeStorage({
+      [STORAGE_KEY_V2]: JSON.stringify(legacyV2),
+    }))).toEqual(legacyV2);
+  });
+
+  it("persists valid survey, recommendation, plan, and enriched snapshot data", () => {
+    const graduationPlan = makeGraduationPlan();
+    const snapshot = {
+      ...makeSnapshot("enriched"),
+      recommendationAxes,
+      graduationPlan,
+    };
+    const state: SavedAppStateV2 = {
+      ...createEmptyAppState(),
+      interestSurvey: {
+        answers: { "consumer-choice": 5, "future-food": 1 },
+        currentIndex: 2,
+        completedAt: "2026-08-30T00:00:00.000Z",
+        selectedTrackId: "food-marketing",
+      },
+      graduationPlanPreferences: planPreferences,
+      graduationPlan,
+      snapshots: [snapshot],
+    };
+    const storage = makeStorage({});
+
+    expect(saveAppState(state, storage)).toBe(true);
+    expect(loadAppState(storage)).toEqual(state);
+  });
+
+  it.each([
+    ["answer outside 1-5", { answers: { "consumer-choice": 6 }, currentIndex: 0 }],
+    ["unknown question", { answers: { "made-up-question": 3 }, currentIndex: 0 }],
+    ["non-integer current index", { answers: {}, currentIndex: 0.5 }],
+    ["unknown selected track", { answers: {}, currentIndex: 0, selectedTrackId: "unknown" }],
+  ])("recovers last-valid state after invalid survey %s", (_, interestSurvey) => {
+    const validState = stateWithTarget("economics");
+    const storage = makeStorage({
+      [STORAGE_KEY_V2]: JSON.stringify({ ...createEmptyAppState(), interestSurvey }),
+      [STORAGE_LAST_VALID_KEY_V2]: JSON.stringify(validState),
+    });
+
+    expect(loadAppState(storage)).toEqual(validState);
+  });
+
+  it.each([
+    ["target before current", { ...planPreferences, currentTerm: "2027-1", targetGraduationTerm: "2026-2" }],
+    ["invalid current term", { ...planPreferences, currentTerm: "2026-3" }],
+    ["load below one", { ...planPreferences, maxMajorCoursesPerTerm: 0 }],
+    ["load above six", { ...planPreferences, maxMajorCoursesPerTerm: 7 }],
+    ["fractional load", { ...planPreferences, maxMajorCoursesPerTerm: 2.5 }],
+  ])("recovers last-valid state after invalid plan preferences: %s", (_, graduationPlanPreferences) => {
+    const validState = stateWithTarget("economics");
+    const storage = makeStorage({
+      [STORAGE_KEY_V2]: JSON.stringify({ ...createEmptyAppState(), graduationPlanPreferences }),
+      [STORAGE_LAST_VALID_KEY_V2]: JSON.stringify(validState),
+    });
+
+    expect(loadAppState(storage)).toEqual(validState);
+  });
+
+  it("rejects a stored plan whose preferences differ from the saved preferences", () => {
+    const validState = stateWithTarget("economics");
+    const storage = makeStorage({
+      [STORAGE_KEY_V2]: JSON.stringify({
+        ...createEmptyAppState(),
+        graduationPlanPreferences: planPreferences,
+        graduationPlan: makeGraduationPlan({
+          ...planPreferences,
+          targetGraduationTerm: "2028-1",
+        }),
+      }),
+      [STORAGE_LAST_VALID_KEY_V2]: JSON.stringify(validState),
+    });
+
+    expect(loadAppState(storage)).toEqual(validState);
+  });
+
+  it.each([
+    ["unknown placement course", { placements: [{ termId: "2026-1", courseId: "unknown", origin: "generated", offeringEvidence: "unknown" }] }],
+    ["invalid placement origin", { placements: [{ termId: "2026-1", courseId: "f-1", origin: "manual", offeringEvidence: "unknown" }] }],
+    ["invalid offering evidence", { placements: [{ termId: "2026-1", courseId: "f-1", origin: "generated", offeringEvidence: "guaranteed" }] }],
+    ["invalid unplaced reason", { unplacedCourses: [{ courseId: "h-1", reason: "unknown", message: "검토" }] }],
+    ["invalid plan status", { status: "ready" }],
+  ])("recovers after invalid nested graduation plan data: %s", (_, override) => {
+    const validState = stateWithTarget("economics");
+    const malformedPlan = { ...makeGraduationPlan(), ...override };
+    const storage = makeStorage({
+      [STORAGE_KEY_V2]: JSON.stringify({
+        ...createEmptyAppState(),
+        graduationPlanPreferences: planPreferences,
+        graduationPlan: malformedPlan,
+      }),
+      [STORAGE_LAST_VALID_KEY_V2]: JSON.stringify(validState),
+    });
+
+    expect(loadAppState(storage)).toEqual(validState);
+  });
+
+  it.each([
+    ["unknown interest track", { ...recommendationAxes, interest: [{ ...recommendationAxes.interest![0], trackId: "unknown" }] }],
+    ["invalid progress assumption", { ...recommendationAxes, progress: [{ ...recommendationAxes.progress[0], assumption: "saved-path" }] }],
+    ["invalid plan status", { ...recommendationAxes, plan: [{ ...recommendationAxes.plan![0], status: "ready" }] }],
+    ["unknown aligned leader", { ...recommendationAxes, alignedLeaderTrackIds: ["unknown"] }],
+  ])("recovers after invalid snapshot recommendation axes: %s", (_, invalidAxes) => {
+    const validState = stateWithTarget("economics");
+    const storage = makeStorage({
+      [STORAGE_KEY_V2]: JSON.stringify({
+        ...createEmptyAppState(),
+        snapshots: [{ ...makeSnapshot("invalid"), recommendationAxes: invalidAxes }],
+      }),
+      [STORAGE_LAST_VALID_KEY_V2]: JSON.stringify(validState),
+    });
+
+    expect(loadAppState(storage)).toEqual(validState);
+  });
+
+  it("preserves legacy semester fields and every PlanTerm value", () => {
+    const state: SavedAppStateV2 = {
+      ...createEmptyAppState(),
+      currentSemester: "2-1",
+      targetGraduationSemester: "4-2",
+      courseSelections: [
+        { courseId: "f-1", status: "planned", plannedTerm: "next" },
+        { courseId: "h-1", status: "planned", plannedTerm: "following" },
+        { courseId: "i-1", status: "planned", plannedTerm: "later" },
+      ],
+    };
+    const storage = makeStorage({ [STORAGE_KEY_V2]: JSON.stringify(state) });
+
+    expect(loadAppState(storage)).toEqual(state);
+  });
+
+  it("appends a diagnosis snapshot without overwriting earlier history", () => {
+    const state = { ...createEmptyAppState(), snapshots: [makeSnapshot("first")] };
+
+    const appended = appendDiagnosisSnapshot(state, makeSnapshot("second"));
+
+    expect(appended.snapshots.map((snapshot) => snapshot.id)).toEqual(["first", "second"]);
+    expect(state.snapshots.map((snapshot) => snapshot.id)).toEqual(["first"]);
+  });
+
+  it("keeps only the newest twelve snapshots when appending", () => {
+    const state = {
+      ...createEmptyAppState(),
+      snapshots: Array.from({ length: 12 }, (_, index) => makeSnapshot(`snapshot-${index + 1}`)),
+    };
+
+    const appended = appendDiagnosisSnapshot(state, makeSnapshot("snapshot-13"));
+
+    expect(appended.snapshots).toHaveLength(12);
+    expect(appended.snapshots[0].id).toBe("snapshot-2");
+    expect(appended.snapshots[11].id).toBe("snapshot-13");
   });
 
   it.each([

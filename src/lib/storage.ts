@@ -1,8 +1,11 @@
 import { courses, CURRICULUM_YEAR, STORAGE_KEY, tracks } from "../data/curriculumData";
 import { getAllowedStudyPaths } from "../data/requirementRules2026";
+import { interestSurveyQuestions } from "./interestSurvey";
 import type {
+  AcademicTermId,
   DiagnosisSnapshot,
   EnrollmentType,
+  GraduationPlanPreferences,
   PlanTerm,
   SavedAppStateV2,
   SavedDiagnosisState,
@@ -12,6 +15,7 @@ import type {
 
 const trackIds = new Set(tracks.map((track) => track.id));
 const courseIds = new Set(courses.map((course) => course.id));
+const interestQuestionIds = new Set(interestSurveyQuestions.map((question) => question.id));
 const enrollmentTypes = new Set<EnrollmentType>(["primary", "double-major", "minor"]);
 const planTerms = new Set<PlanTerm>(["next", "following", "later"]);
 const planningSemesters = new Set(["1-1", "1-2", "2-1", "2-2", "3-1", "3-2", "4-1", "4-2"]);
@@ -33,7 +37,16 @@ const pathProgressStatuses = new Set([
   "incomplete",
   "official-review-required",
 ]);
-const reviewCodes = new Set(["rule-source", "unknown-course", "additional-credit", "document-conflict"]);
+const reviewCodes = new Set([
+  "rule-source",
+  "unknown-course",
+  "additional-credit",
+  "document-conflict",
+  "future-offering",
+  "seasonal-term",
+  "plan-input",
+  "elective-placeholder",
+]);
 const evidenceStatuses = new Set([
   "official-public",
   "provided-final-plan",
@@ -42,6 +55,22 @@ const evidenceStatuses = new Set([
 ]);
 const trackKinds = new Set(["학과전공", "융합전공"]);
 const moduleIds = new Set(["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O"]);
+const graduationPlanStatuses = new Set([
+  "currently-satisfied",
+  "regular-plan-possible",
+  "load-adjustment-needed",
+  "extra-term-possible",
+  "official-review-required",
+]);
+const plannedCourseOrigins = new Set(["in-progress", "user-planned", "generated"]);
+const courseOfferingEvidence = new Set(["historical-2026-snapshot", "unknown"]);
+const unplacedCourseReasons = new Set([
+  "offering-unknown",
+  "user-plan-conflict",
+  "capacity-before-target",
+  "after-target",
+]);
+const recommendationAssumptions = new Set(["current-path", "track-major-hypothesis"]);
 
 export const STORAGE_KEY_V2 = "track-sim:v2";
 export const STORAGE_LAST_VALID_KEY_V2 = "track-sim:v2:last-valid";
@@ -62,6 +91,16 @@ export function createEmptyAppState(): SavedAppStateV2 {
 
 export function normalizeSnapshotHistory(items: DiagnosisSnapshot[]): DiagnosisSnapshot[] {
   return items.slice(-12);
+}
+
+export function appendDiagnosisSnapshot(
+  state: SavedAppStateV2,
+  snapshot: DiagnosisSnapshot,
+): SavedAppStateV2 {
+  return {
+    ...state,
+    snapshots: normalizeSnapshotHistory([...state.snapshots, snapshot]),
+  };
 }
 
 export function migrateV1State(value: unknown): SavedAppStateV2 {
@@ -135,6 +174,10 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+function isNonNegativeInteger(value: unknown): value is number {
+  return isFiniteNumber(value) && Number.isInteger(value) && value >= 0;
+}
+
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === "string");
 }
@@ -145,6 +188,63 @@ function isTrackId(value: unknown): value is TrackId {
 
 function isPlanningSemester(value: unknown): boolean {
   return typeof value === "string" && planningSemesters.has(value);
+}
+
+function isAcademicTermId(value: unknown): value is AcademicTermId {
+  return typeof value === "string" && /^\d{4}-(1|2)$/.test(value);
+}
+
+function academicTermIndex(value: AcademicTermId): number {
+  const [year, semester] = value.split("-").map(Number);
+  return year * 2 + semester - 1;
+}
+
+function isInterestSurvey(value: unknown): boolean {
+  if (!isRecord(value) || !isRecord(value.answers)) return false;
+  if (
+    !Number.isInteger(value.currentIndex) ||
+    Number(value.currentIndex) < 0 ||
+    Number(value.currentIndex) > interestSurveyQuestions.length
+  ) {
+    return false;
+  }
+  if (
+    value.completedAt !== undefined && typeof value.completedAt !== "string" ||
+    value.selectedTrackId !== undefined && !isTrackId(value.selectedTrackId)
+  ) {
+    return false;
+  }
+  return Object.entries(value.answers).every(([questionId, answer]) =>
+    interestQuestionIds.has(questionId) &&
+    Number.isInteger(answer) &&
+    Number(answer) >= 1 &&
+    Number(answer) <= 5,
+  );
+}
+
+function isGraduationPlanPreferences(value: unknown): value is GraduationPlanPreferences {
+  if (!isRecord(value)) return false;
+  if (
+    !isAcademicTermId(value.currentTerm) ||
+    !isAcademicTermId(value.targetGraduationTerm) ||
+    !Number.isInteger(value.maxMajorCoursesPerTerm) ||
+    Number(value.maxMajorCoursesPerTerm) < 1 ||
+    Number(value.maxMajorCoursesPerTerm) > 6 ||
+    typeof value.considerSeasonalTerm !== "boolean"
+  ) {
+    return false;
+  }
+  return academicTermIndex(value.targetGraduationTerm) >= academicTermIndex(value.currentTerm);
+}
+
+function hasMatchingPreferences(
+  left: GraduationPlanPreferences,
+  right: GraduationPlanPreferences,
+): boolean {
+  return left.currentTerm === right.currentTerm &&
+    left.targetGraduationTerm === right.targetGraduationTerm &&
+    left.maxMajorCoursesPerTerm === right.maxMajorCoursesPerTerm &&
+    left.considerSeasonalTerm === right.considerSeasonalTerm;
 }
 
 function isStudentProfile(value: unknown): value is StudentProfile {
@@ -279,6 +379,74 @@ function isReviewItem(value: unknown): boolean {
     evidenceStatuses.has(value.evidence as string);
 }
 
+function isPlannedCoursePlacement(value: unknown): boolean {
+  return isRecord(value) &&
+    isAcademicTermId(value.termId) &&
+    typeof value.courseId === "string" && courseIds.has(value.courseId) &&
+    plannedCourseOrigins.has(value.origin as string) &&
+    courseOfferingEvidence.has(value.offeringEvidence as string);
+}
+
+function isUnplacedCourse(value: unknown): boolean {
+  return isRecord(value) &&
+    typeof value.courseId === "string" && courseIds.has(value.courseId) &&
+    unplacedCourseReasons.has(value.reason as string) &&
+    typeof value.message === "string";
+}
+
+function isGraduationPlan(value: unknown): boolean {
+  return isRecord(value) &&
+    graduationPlanStatuses.has(value.status as string) &&
+    isGraduationPlanPreferences(value.preferences) &&
+    Array.isArray(value.placements) && value.placements.every(isPlannedCoursePlacement) &&
+    Array.isArray(value.extraTermPlacements) && value.extraTermPlacements.every(isPlannedCoursePlacement) &&
+    Array.isArray(value.unplacedCourses) && value.unplacedCourses.every(isUnplacedCourse) &&
+    isFiniteNumber(value.unallocatedElectiveCredits) && value.unallocatedElectiveCredits >= 0 &&
+    isNonNegativeInteger(value.unallocatedElectiveSlots) &&
+    (value.recommendedMaxMajorCoursesPerTerm === undefined ||
+      Number.isInteger(value.recommendedMaxMajorCoursesPerTerm) &&
+      Number(value.recommendedMaxMajorCoursesPerTerm) >= 1 &&
+      Number(value.recommendedMaxMajorCoursesPerTerm) <= 6) &&
+    isNonNegativeInteger(value.neededExtraTerms) &&
+    Array.isArray(value.reviewItems) && value.reviewItems.every(isReviewItem) &&
+    typeof value.generatedAt === "string";
+}
+
+function isInterestAxisCandidate(value: unknown): boolean {
+  return isRecord(value) &&
+    isTrackId(value.trackId) &&
+    isFiniteNumber(value.score) &&
+    typeof value.closeLeader === "boolean" &&
+    isStringArray(value.reasons);
+}
+
+function isProgressAxisCandidate(value: unknown): boolean {
+  return isRecord(value) &&
+    isTrackId(value.trackId) &&
+    isNonNegativeInteger(value.missingCourseCount) &&
+    isFiniteNumber(value.missingCredits) && value.missingCredits >= 0 &&
+    isStringArray(value.missingModuleLabels) &&
+    recommendationAssumptions.has(value.assumption as string);
+}
+
+function isPlanAxisCandidate(value: unknown): boolean {
+  return isRecord(value) &&
+    isTrackId(value.trackId) &&
+    graduationPlanStatuses.has(value.status as string) &&
+    isNonNegativeInteger(value.unplacedCourseCount) &&
+    isNonNegativeInteger(value.neededExtraTerms) &&
+    recommendationAssumptions.has(value.assumption as string);
+}
+
+function isRecommendationAxes(value: unknown): boolean {
+  return isRecord(value) &&
+    (value.interest === undefined ||
+      Array.isArray(value.interest) && value.interest.every(isInterestAxisCandidate)) &&
+    Array.isArray(value.progress) && value.progress.every(isProgressAxisCandidate) &&
+    (value.plan === undefined || Array.isArray(value.plan) && value.plan.every(isPlanAxisCandidate)) &&
+    Array.isArray(value.alignedLeaderTrackIds) && value.alignedLeaderTrackIds.every(isTrackId);
+}
+
 function isPathProgressResult(value: unknown): boolean {
   return isRecord(value) &&
     (value.requiredProgress === "not-applicable" || isRequirementProgress(value.requiredProgress)) &&
@@ -298,7 +466,9 @@ function isDiagnosisSnapshot(value: unknown): value is DiagnosisSnapshot {
     isAdditionalMajorCredits(value.additionalMajorCredits) &&
     (value.targetTrackId === undefined || isTrackId(value.targetTrackId)) &&
     Array.isArray(value.comparisonTrackIds) && value.comparisonTrackIds.every(isTrackId) &&
-    isPathProgressResult(value.result);
+    isPathProgressResult(value.result) &&
+    (value.recommendationAxes === undefined || isRecommendationAxes(value.recommendationAxes)) &&
+    (value.graduationPlan === undefined || isGraduationPlan(value.graduationPlan));
 }
 
 function isSavedAppStateV2(value: unknown): value is SavedAppStateV2 {
@@ -314,6 +484,13 @@ function isSavedAppStateV2(value: unknown): value is SavedAppStateV2 {
     (state.courseInputReviewedAt === undefined || typeof state.courseInputReviewedAt === "string") &&
     (state.currentSemester === undefined || isPlanningSemester(state.currentSemester)) &&
     (state.targetGraduationSemester === undefined || isPlanningSemester(state.targetGraduationSemester)) &&
+    (state.interestSurvey === undefined || isInterestSurvey(state.interestSurvey)) &&
+    (state.graduationPlanPreferences === undefined ||
+      isGraduationPlanPreferences(state.graduationPlanPreferences)) &&
+    (state.graduationPlan === undefined ||
+      state.graduationPlanPreferences !== undefined &&
+      isGraduationPlan(state.graduationPlan) &&
+      hasMatchingPreferences(state.graduationPlanPreferences, state.graduationPlan.preferences)) &&
     Array.isArray(state.snapshots) && state.snapshots.every(isDiagnosisSnapshot);
 }
 

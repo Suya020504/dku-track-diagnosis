@@ -115,6 +115,8 @@ export type DiagnosisSnapshot = {
   targetTrackId?: TrackId;
   comparisonTrackIds: TrackId[];
   result: PathProgressResult;
+  recommendationAxes?: RecommendationAxes;
+  graduationPlan?: GraduationPlanResult;
 };
 
 export type SavedAppStateV2 = {
@@ -126,7 +128,9 @@ export type SavedAppStateV2 = {
   courseInputReviewedAt?: string;
   targetTrackId?: TrackId;
   comparisonTrackIds: TrackId[];
-  interestSurvey?: unknown;
+  interestSurvey?: InterestSurveyState;
+  graduationPlanPreferences?: GraduationPlanPreferences;
+  graduationPlan?: GraduationPlanResult;
   currentSemester?: PlanningSemester;
   targetGraduationSemester?: PlanningSemester;
   snapshots: DiagnosisSnapshot[];
