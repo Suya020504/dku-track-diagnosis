@@ -29,6 +29,13 @@ const externalEconomicsProfile: StudentProfile = {
   ruleApplicability: "reference-only",
 };
 
+const departmentTrackProfile: StudentProfile = {
+  ...externalMinorProfile,
+  affiliation: "department-student",
+  studyPath: "track-major",
+  ruleApplicability: "reference-only",
+};
+
 const completed = (courseIds: string[]): CourseSelectionRecord[] =>
   courseIds.map((courseId) => ({ courseId, status: "completed" }));
 
@@ -46,6 +53,31 @@ function minorPlan(
       maxMajorCoursesPerTerm: 2,
       considerSeasonalTerm: false,
       ...overrides,
+    },
+    generatedAt: "2026-08-30T09:00:00.000Z",
+  };
+}
+
+function foodMarketingPlan(
+  courseIds: string[],
+  targetGraduationTerm: GraduationPlanInput["preferences"]["targetGraduationTerm"],
+  maxMajorCoursesPerTerm: number,
+): GraduationPlanInput {
+  return {
+    profile: departmentTrackProfile,
+    targetTrackId: "food-marketing",
+    courseSelections: completed(courseIds),
+    additionalMajorCredits: [{
+      id: "verified-other-major",
+      label: "검증된 교육과정표 밖 전공학점",
+      credits: 21,
+      status: "officially-verified",
+    }],
+    preferences: {
+      currentTerm: "2026-2",
+      targetGraduationTerm,
+      maxMajorCoursesPerTerm,
+      considerSeasonalTerm: false,
     },
     generatedAt: "2026-08-30T09:00:00.000Z",
   };
@@ -151,6 +183,79 @@ describe("calculateGraduationPlan", () => {
       termId: "2026-2",
       origin: "in-progress",
     }));
+    expect(result.placements.filter((item) => item.courseId === "d-2")).toHaveLength(1);
+    expect(result.placements).not.toContainEqual(expect.objectContaining({ courseId: "b-1" }));
+  });
+
+  it("chooses the semester-1 J alternative that fits the regular target horizon", () => {
+    const input = foodMarketingPlan([
+      "b-2", "c-1", "c-2", "c-3", "f-1", "h-1", "f-2", "h-2",
+      "i-1", "i-2", "j-1", "l-1", "l-2",
+    ], "2027-1", 6);
+
+    const first = calculateGraduationPlan(input);
+    const second = calculateGraduationPlan(input);
+
+    expect(second).toEqual(first);
+    expect(first.status).toBe("regular-plan-possible");
+    expect(first.unallocatedElectiveCredits).toBe(0);
+    expect(first.unplacedElectiveCredits).toBe(0);
+    expect(first.placements).toContainEqual(expect.objectContaining({
+      courseId: "j-3",
+      termId: "2027-1",
+      origin: "generated",
+    }));
+    expect(first.placements).not.toContainEqual(expect.objectContaining({ courseId: "j-2" }));
+  });
+
+  it("chooses an equal-size equal-credit combination that distributes capacity across terms", () => {
+    const result = calculateGraduationPlan(foodMarketingPlan([
+      "b-2", "c-1", "c-2", "c-3", "f-1", "h-1",
+      "i-1", "i-2", "j-1", "l-2",
+    ], "2027-2", 2));
+
+    expect(result.status).toBe("regular-plan-possible");
+    expect(result.unallocatedElectiveCredits).toBe(0);
+    expect(result.unplacedCourses).toEqual([]);
+    expect(result.placements.filter((item) => item.origin === "generated")).toEqual([
+      expect.objectContaining({ courseId: "h-3", termId: "2027-1" }),
+      expect.objectContaining({ courseId: "l-1", termId: "2027-1" }),
+      expect.objectContaining({ courseId: "f-3", termId: "2027-2" }),
+      expect.objectContaining({ courseId: "j-2", termId: "2027-2" }),
+    ]);
+    expect(result.placements).not.toContainEqual(expect.objectContaining({ courseId: "f-2" }));
+  });
+
+  it("does not trade minimum new credits for a higher-credit regular-horizon combination", () => {
+    const result = calculateGraduationPlan({
+      profile: departmentTrackProfile,
+      targetTrackId: "food-bio-economy",
+      courseSelections: completed([
+        "b-2", "c-1", "c-2", "c-3", "f-1", "h-1", "i-1", "f-2", "h-2",
+        "m-1", "m-2", "m-3", "m-4",
+      ]),
+      additionalMajorCredits: [{
+        id: "verified-other-major",
+        label: "검증된 교육과정표 밖 전공학점",
+        credits: 21,
+        status: "officially-verified",
+      }],
+      preferences: {
+        currentTerm: "2026-2",
+        targetGraduationTerm: "2027-1",
+        maxMajorCoursesPerTerm: 6,
+        considerSeasonalTerm: false,
+      },
+      generatedAt: "2026-08-30T09:00:00.000Z",
+    });
+    const generatedCourseIds = [...result.placements, ...result.extraTermPlacements]
+      .filter((item) => item.origin === "generated")
+      .map((item) => item.courseId)
+      .sort();
+
+    expect(result.status).toBe("extra-term-possible");
+    expect(result.unallocatedElectiveCredits).toBe(0);
+    expect(generatedCourseIds).toEqual(["n-1", "n-2", "o-1"]);
   });
 
   it("caps current-term in-progress placements and exposes deterministic overflow", () => {
@@ -333,6 +438,9 @@ describe("calculateGraduationPlan", () => {
     ], { maxMajorCoursesPerTerm: 1 }));
 
     expect(result.status).toBe("regular-plan-possible");
+    expect(result.placements.filter((item) => item.courseId === "d-2")).toEqual([
+      expect.objectContaining({ origin: "user-planned" }),
+    ]);
     expect(result.reviewItems).toContainEqual(expect.objectContaining({
       code: "future-offering",
       message: FUTURE_OFFERING_MESSAGE,

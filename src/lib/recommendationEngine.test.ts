@@ -48,9 +48,9 @@ const nextFirstTermPreferences: GraduationPlanPreferences = {
 };
 
 const regionalPlanningWindow: GraduationPlanPreferences = {
-  currentTerm: "2026-1",
-  targetGraduationTerm: "2028-2",
-  maxMajorCoursesPerTerm: 2,
+  currentTerm: "2026-2",
+  targetGraduationTerm: "2027-2",
+  maxMajorCoursesPerTerm: 3,
   considerSeasonalTerm: false,
 };
 
@@ -162,7 +162,7 @@ describe("independent recommendation axes", () => {
       profile: externalMinorProfile,
       courseSelections: [
         ...economicsCompleted,
-        ...selections(["h-2", "i-1", "i-2", "k-1", "k-3"], "planned"),
+        ...selections(["h-3", "i-1", "i-2", "k-1", "k-2", "d-3"], "planned"),
       ],
       additionalMajorCredits: noAdditionalCredits,
       interestSurvey: { answers: foodMarketingAnswers(), currentIndex: 9 },
@@ -174,6 +174,35 @@ describe("independent recommendation axes", () => {
     expect(result.progress[0].trackId).toBe("economics");
     expect(result.plan?.[0].trackId).toBe("regional-development-consulting");
     expect(result.alignedLeaderTrackIds).toEqual([]);
+  });
+
+  it("propagates a horizon-feasible food-marketing alternative into plan-axis ordering", () => {
+    const result = rankTracksByGraduationPlanability({
+      profile: externalMinorProfile,
+      courseSelections: selections([
+        "b-2", "c-1", "c-2", "c-3", "f-1", "h-1", "f-2", "h-2",
+        "i-1", "i-2", "j-1", "l-1", "l-2",
+      ]),
+      additionalMajorCredits: [{
+        id: "verified-other-major",
+        label: "검증된 교육과정표 밖 전공학점",
+        credits: 21,
+        status: "officially-verified",
+      }],
+      preferences: {
+        currentTerm: "2026-2",
+        targetGraduationTerm: "2027-1",
+        maxMajorCoursesPerTerm: 6,
+        considerSeasonalTerm: false,
+      },
+      generatedAt,
+    });
+
+    expect(result[0]).toMatchObject({
+      trackId: "food-marketing",
+      status: "regular-plan-possible",
+      unplacedCourseCount: 0,
+    });
   });
 
   it("includes a track once when it leads at least two available axes", () => {

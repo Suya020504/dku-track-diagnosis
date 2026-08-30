@@ -41,6 +41,12 @@ export function calculateUnallocatedElectiveCredits(
 export function findMinimumCourseCombination(
   input: CourseCombinationInput,
 ): MinimumCourseCombination {
+  return findMinimumCourseCombinations(input)[0];
+}
+
+export function findMinimumCourseCombinations(
+  input: CourseCombinationInput,
+): MinimumCourseCombination[] {
   const rule = getRequirementRule(input.profile, input.targetTrackId);
   const candidates = applicableCandidateIds(input);
   const assumed = new Set(input.assumedCourseIds);
@@ -60,11 +66,11 @@ export function findMinimumCourseCombination(
     });
 
     if (accepted.length > 0) {
-      return accepted.sort(compareCombinations)[0];
+      return accepted.sort(compareCombinations);
     }
   }
 
-  return buildCombination(input, [], false);
+  return [buildCombination(input, [], false)];
 }
 
 function applicableCandidateIds(input: CourseCombinationInput): string[] {

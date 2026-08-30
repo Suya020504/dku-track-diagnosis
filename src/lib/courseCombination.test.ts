@@ -8,6 +8,7 @@ import type {
 import {
   calculateUnallocatedElectiveCredits,
   findMinimumCourseCombination,
+  findMinimumCourseCombinations,
 } from "./courseCombination";
 
 const coursesById = Object.fromEntries(courses.map((course) => [course.id, course]));
@@ -41,6 +42,26 @@ const foodBioInput: CourseCombinationInput = {
 };
 
 describe("findMinimumCourseCombination", () => {
+  it("exposes every hard-condition match from the first minimum-course layer", () => {
+    const results = findMinimumCourseCombinations({
+      profile: departmentTrackProfile,
+      targetTrackId: "food-marketing",
+      assumedCourseIds: [
+        "b-2", "c-1", "c-2", "c-3", "f-1", "h-1", "f-2", "h-2",
+        "i-1", "i-2", "j-1", "l-1", "l-2",
+      ],
+      additionalMajorCredits: [],
+      schedulableCourseIds: new Set(courses.map((course) => course.id)),
+    });
+
+    expect(results.map((result) => result.courseIds)).toEqual([
+      ["j-2"],
+      ["j-3"],
+    ]);
+    expect(results.every((result) => result.newCourseCount === 1)).toBe(true);
+    expect(results.every((result) => result.hardConditionsSatisfied)).toBe(true);
+  });
+
   it("counts a required course that also fills a module only once", () => {
     const result = findMinimumCourseCombination({
       profile: departmentTrackProfile,

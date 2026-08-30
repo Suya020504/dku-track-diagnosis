@@ -10,13 +10,14 @@ import type {
   GraduationPlanInput,
   GraduationPlanResult,
   GraduationPlanStatus,
+  MinimumCourseCombination,
   PlanTerm,
   PlannedCoursePlacement,
   PlannedCourseOrigin,
   ReviewItem,
   UnplacedCourse,
 } from "../types";
-import { findMinimumCourseCombination } from "./courseCombination";
+import { findMinimumCourseCombinations } from "./courseCombination";
 import { calculatePathProgress } from "./progressEngine";
 
 const FUTURE_OFFERING_MESSAGE =
@@ -220,47 +221,23 @@ export function calculateGraduationPlan(input: GraduationPlanInput): GraduationP
   }
 
   const assumedCourseIds = uniqueSelectionIds(input.courseSelections);
-  const combination = findMinimumCourseCombination({
+  const combinations = minimumCreditPlanningCombinations(findMinimumCourseCombinations({
     profile: input.profile,
     targetTrackId: input.targetTrackId,
     assumedCourseIds,
     additionalMajorCredits: input.additionalMajorCredits,
-    schedulableCourseIds: new Set(
-      Object.values(courseOfferings2026)
-        .filter((record) => record.evidence !== "unknown")
-        .map((record) => record.courseId),
-    ),
-  });
-  const candidates: ScheduleCourseCandidate[] = [
-    ...uniquePlannedSelections(input.courseSelections).map((item) => ({
-      courseId: item.courseId,
-      origin: "user-planned" as const,
-      plannedTerm: item.plannedTerm,
-    })),
-    ...combination.courseIds.map((courseId) => ({
-      courseId,
-      origin: "generated" as const,
-    })),
-  ];
-  const schedule = (horizon: AcademicTermId[], maximum: number) => scheduleCoursesWithinLoad({
-    horizon,
-    maxMajorCoursesPerTerm: maximum,
-    candidates,
-    unallocatedElectiveCredits: combination.unallocatedElectiveCredits,
-  });
-  const succeeds = (result: ScheduleCoursesWithinLoadResult) =>
-    combination.hardConditionsSatisfied
-    && result.unplacedCourses.length === 0
-    && result.remainingElectiveSlots === 0;
-
-  let selectedSchedule = schedule(
+    schedulableCourseIds: courseIdsObservedInHorizon(regularHorizon),
+  }));
+  let selectedAttempt = evaluateCombinationScenario(
+    input,
+    combinations,
     regularHorizon,
     input.preferences.maxMajorCoursesPerTerm,
   );
   let selectedStatus: GraduationPlanStatus = "official-review-required";
   let recommendedMaximum: number | undefined;
 
-  if (succeeds(selectedSchedule)) {
+  if (selectedAttempt.successful) {
     selectedStatus = "regular-plan-possible";
   } else {
     for (
@@ -268,9 +245,9 @@ export function calculateGraduationPlan(input: GraduationPlanInput): GraduationP
       maximum <= 6;
       maximum += 1
     ) {
-      const adjusted = schedule(regularHorizon, maximum);
-      if (!succeeds(adjusted)) continue;
-      selectedSchedule = adjusted;
+      const adjusted = evaluateCombinationScenario(input, combinations, regularHorizon, maximum);
+      if (!adjusted.successful) continue;
+      selectedAttempt = adjusted;
       selectedStatus = "load-adjustment-needed";
       recommendedMaximum = maximum;
       break;
@@ -283,13 +260,21 @@ export function calculateGraduationPlan(input: GraduationPlanInput): GraduationP
     termIdFromIndex(termIndex(input.preferences.targetGraduationTerm) + 2),
   ];
   if (selectedStatus === "official-review-required") {
-    const extended = schedule(extendedHorizon, input.preferences.maxMajorCoursesPerTerm);
-    selectedSchedule = extended;
-    if (succeeds(extended)) selectedStatus = "extra-term-possible";
+    selectedAttempt = evaluateCombinationScenario(
+      input,
+      combinations,
+      extendedHorizon,
+      input.preferences.maxMajorCoursesPerTerm,
+    );
+    if (selectedAttempt.successful) selectedStatus = "extra-term-possible";
   }
 
-  selectedSchedule = withAdditionalUnplaced(
-    selectedSchedule,
+  const selected = selectedAttempt.successful ?? selectedAttempt.bestEffort;
+  if (!selected) throw new Error("Course combination search returned no candidates");
+  const combination = selected.combination;
+
+  const selectedSchedule = withAdditionalUnplaced(
+    selected.scheduled,
     inProgressSchedule.unplacedCourses,
   );
   if (inProgressSchedule.unplacedCourses.length > 0) {
@@ -316,6 +301,115 @@ export function calculateGraduationPlan(input: GraduationPlanInput): GraduationP
       : undefined,
     reviewItems,
   });
+}
+
+type ScheduledCombination = {
+  combination: MinimumCourseCombination;
+  scheduled: ScheduleCoursesWithinLoadResult;
+};
+
+type CombinationScenarioResult = {
+  successful?: ScheduledCombination;
+  bestEffort?: ScheduledCombination;
+};
+
+function minimumCreditPlanningCombinations(
+  combinations: MinimumCourseCombination[],
+): MinimumCourseCombination[] {
+  const hardConditionMatches = combinations.filter((item) => item.hardConditionsSatisfied);
+  const candidates = hardConditionMatches.length > 0 ? hardConditionMatches : combinations;
+  const minimumNewCredits = Math.min(...candidates.map((item) => item.newCredits));
+
+  return candidates
+    .filter((item) => item.newCredits === minimumNewCredits)
+    .sort(comparePlanningCombinations);
+}
+
+function comparePlanningCombinations(
+  left: MinimumCourseCombination,
+  right: MinimumCourseCombination,
+): number {
+  return combinationRecommendedRankSum(left) - combinationRecommendedRankSum(right)
+    || combinationCourseCodes(left).localeCompare(combinationCourseCodes(right));
+}
+
+function combinationRecommendedRankSum(combination: MinimumCourseCombination): number {
+  return combination.courseIds.reduce(
+    (sum, courseId) => sum + recommendedSemesterRank(courseId),
+    0,
+  );
+}
+
+function combinationCourseCodes(combination: MinimumCourseCombination): string {
+  return combination.courseIds.map(courseCode).sort().join(",");
+}
+
+function courseIdsObservedInHorizon(horizon: AcademicTermId[]): Set<string> {
+  return new Set(
+    Object.values(courseOfferings2026)
+      .filter((record) => record.evidence !== "unknown")
+      .filter((record) => horizon.some((termId) => isObservedInTerm(record.courseId, termId)))
+      .map((record) => record.courseId),
+  );
+}
+
+function evaluateCombinationScenario(
+  input: GraduationPlanInput,
+  combinations: MinimumCourseCombination[],
+  horizon: AcademicTermId[],
+  maximum: number,
+): CombinationScenarioResult {
+  let bestEffort: ScheduledCombination | undefined;
+  const userPlannedCandidates = uniquePlannedSelections(input.courseSelections).map((item) => ({
+    courseId: item.courseId,
+    origin: "user-planned" as const,
+    plannedTerm: item.plannedTerm,
+  }));
+
+  for (const combination of combinations) {
+    const scheduled = scheduleCoursesWithinLoad({
+      horizon,
+      maxMajorCoursesPerTerm: maximum,
+      candidates: [
+        ...userPlannedCandidates,
+        ...combination.courseIds.map((courseId) => ({
+          courseId,
+          origin: "generated" as const,
+        })),
+      ],
+      unallocatedElectiveCredits: combination.unallocatedElectiveCredits,
+    });
+    const attempt = { combination, scheduled };
+
+    if (combinationScheduleSucceeds(attempt)) {
+      return { successful: attempt, bestEffort: attempt };
+    }
+    if (!bestEffort || compareBestEffortSchedules(attempt, bestEffort) < 0) {
+      bestEffort = attempt;
+    }
+  }
+
+  return { bestEffort };
+}
+
+function combinationScheduleSucceeds(attempt: ScheduledCombination): boolean {
+  return attempt.combination.hardConditionsSatisfied
+    && attempt.scheduled.unplacedCourses.length === 0
+    && attempt.scheduled.remainingElectiveSlots === 0;
+}
+
+function compareBestEffortSchedules(
+  left: ScheduledCombination,
+  right: ScheduledCombination,
+): number {
+  const leftUnresolved = left.scheduled.unplacedCourses.length
+    + left.scheduled.remainingElectiveSlots;
+  const rightUnresolved = right.scheduled.unplacedCourses.length
+    + right.scheduled.remainingElectiveSlots;
+
+  return leftUnresolved - rightUnresolved
+    || left.scheduled.unplacedCourses.length - right.scheduled.unplacedCourses.length
+    || left.scheduled.remainingElectiveCredits - right.scheduled.remainingElectiveCredits;
 }
 
 function scheduleCurrentTermInProgress(input: GraduationPlanInput): {
