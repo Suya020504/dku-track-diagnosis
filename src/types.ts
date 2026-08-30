@@ -36,6 +36,12 @@ export type PdfTextPage = {
   text: string;
 };
 
+export type PdfImportTextSummary<T> = {
+  pageCount: number;
+  extractedCharacters: number;
+  result: T;
+};
+
 export type TrackId =
   | "food-marketing"
   | "regional-development-consulting"
