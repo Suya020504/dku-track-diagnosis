@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Compass } from "lucide-react";
 import type { RefObject } from "react";
 import { TrackGlyph } from "../../components/TrackGlyph";
 import { tracks } from "../../data/curriculumData";
@@ -98,6 +98,10 @@ export function StudyPathStep({
         <p>{AFFILIATION_LABELS[affiliation]}에게 적용되는 선택지만 보여드립니다.</p>
       </header>
 
+      <p className="profile-entry-status profile-entry-status--midyear">
+        {"2·3학년도 현재 이수 과목으로 참고 진단할 수 있습니다. 실제 트랙 신청 가능 시기, 적용 학번과 최종 인정 범위는 학과 확인이 필요합니다."}
+      </p>
+
       <fieldset className="profile-entry-fieldset">
         <legend>지금 확인하고 싶은 것</legend>
         <div className="profile-entry-rows profile-entry-rows--compact">
@@ -139,8 +143,25 @@ export function StudyPathStep({
           <legend>
             진단할 트랙
             {goal === "find-track" ? <small> (설문 전에는 선택하지 않아도 됩니다)</small> : null}
+            {goal === "check-progress" ? <small> (선택 · 목표 없이 5개 트랙 비교 가능)</small> : null}
           </legend>
           <div className="profile-track-rows">
+            {goal === "check-progress" ? (
+              <label className="profile-track-row">
+                <input
+                  type="radio"
+                  name="targetTrackId"
+                  checked={targetTrackId === undefined}
+                  data-target-track-choice="compare-all"
+                  onChange={() => onTargetTrackChange(undefined)}
+                />
+                <Compass aria-hidden="true" size={24} />
+                <span>
+                  <strong>아직 정하지 않았어요 · 5개 트랙 비교</strong>
+                  <small>현재 이수 과목만으로 가까운 트랙을 나란히 봅니다.</small>
+                </span>
+              </label>
+            ) : null}
             {tracks.map((track) => (
               <label className="profile-track-row" key={track.id}>
                 <input

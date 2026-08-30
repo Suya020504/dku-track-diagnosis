@@ -12,6 +12,51 @@
 
 No official-campus photo derivative, university logo/seal asset, or `landing-student.jpg` was copied for this redesign foundation.
 
+## Academic journey campus-map background
+
+- Generation mode: built-in `image_gen` tool (`stylized-concept`) using the provided campus-map mockup as the composition reference and the planner-compass mockup as the material/style reference.
+- Generated source: `C:\Users\HAPPY\.codex\generated_images\019fae1d-952c-7f52-a1b5-66d624e265e7\exec-17400c91-5a60-4e63-b13f-65d84cb2efa6.png`
+- Runtime file: `public/illustrations/academic-journey-campus-map-v1.webp`
+- Runtime conversion: FFmpeg, 1600 × 900 center crop, WebP quality 82.
+- Runtime SHA256: `DE931E600D6FACAEBB57FBF08A78AB258CE22830E37952AB76CF27D4C31627FC`
+- Dimensions and size: `1600 × 900 px`, `85,268 bytes`.
+- Purpose: non-factual folded-paper background for the interactive academic-journey map. All route lines, pins, labels, zoom controls, current location, saved state, and navigation remain semantic HTML/React/SVG.
+- Alt: empty because the image is decorative; the adjacent H1, explanation, route buttons, legend and route list contain the complete meaning.
+- Boundary: this is not a real geographic map, not an official Dankook University campus map, and not evidence of building locations.
+- Inspection: no text, letters, numbers, logo, seal, people, route line, pin, button, data, watermark, or exact-campus claim.
+- Final prompt:
+
+```text
+Use case: stylized-concept
+Asset type: responsive website hero background for an interactive academic journey map
+Primary request: create a text-free conceptual university campus journey map background that can sit behind real HTML controls, path lines, pins, legend, and cards. It represents a student's academic journey, not a real geographic map and not an official campus map.
+Scene/backdrop: a large unfolded paper map with subtle accordion folds and edge shadows, viewed from a gently elevated near-top-down angle. Include faint, generic campus-like academic buildings, library silhouettes, tree-lined paths, a small pond, garden plots, and soft rolling green terrain. Keep the central and lower map areas calm enough for interactive route overlays.
+Style/medium: premium Korean campus guidebook illustration; delicate watercolor wash combined with clean vector-like architectural linework; sophisticated and student-friendly.
+Composition/framing: very wide landscape composition with useful calm zones for a decision sheet, route overlays and a legend panel.
+Color palette: paper white, pale sky blue, mint, restrained deep blue, department green and sparse wheat accents.
+Constraints: no text, Korean, English, letters, numbers, logos, seals, people, route lines, pins, buttons, UI panels, legend, compass, data, percentages, watermark, or exact real-campus geography.
+```
+
+## Flat academic-journey campus map v2
+
+- Status: supersedes the folded v1 background in the running UI; v1 is preserved for provenance and rollback.
+- Generation mode: built-in `image_gen` edit using v1 as the visual reference.
+- Generated source: `C:\Users\HAPPY\.codex\generated_images\019fae1d-952c-7f52-a1b5-66d624e265e7\exec-1500ce16-b6d4-4900-b1ee-88b441498f81.png`
+- Runtime file: `public/illustrations/academic-journey-campus-map-flat-v2.webp`
+- Runtime conversion: FFmpeg, 1600 × 900 center crop, WebP quality 82.
+- Runtime SHA256: `E6259BCCF43745FA67076609DB3C38815AD448FC5D039B5D3C003B038350F164`
+- Dimensions and size: `1600 × 900 px`, `84,098 bytes`.
+- Purpose: quiet, flat 2D guide background for straight HTML/SVG journey routes. The generated background remains decorative and non-geographic.
+- Alt: empty because route meaning is provided by the adjacent heading, real buttons, legend and accessible route list.
+- Inspection: flat rectangular composition, straight zoning and calm center; no folds, warped edges, text, letters, numbers, logo, seal, people, route line, pin, button, watermark or exact-campus claim.
+- Final prompt summary: convert the reference to an orthographic flat 2D campus plan with two tidy horizontal building rows, straight lawns and walkways, a clear central corridor, subtle paper grain, no hills, folds, serpentine roads, UI or text.
+
+### 2026-08-31 local QA captures
+
+- `docs/assets/2026-08-31-campus-map/01-landing-desktop.png` — 1440 × 1100 local Chromium viewport, SHA256 `1F8681233614BD98BD93E13297922CBF109C743AD2A11D04E85F0D9A1EC4AACA`.
+- `docs/assets/2026-08-31-campus-map/02-landing-mobile-map.png` — 390 × 844 local Chromium viewport after one vertical scroll to the map, SHA256 `BE790844F53E868FC88BC71FDF0898D07C966659F82E67F4C97C018C7DBF6748`.
+- Both captures use a fresh, synthetic, non-personal browser state. They validate visual layout only and do not prove official curriculum recognition or deployment.
+
 ## Course → module → track concept illustration
 
 - Generation mode: built-in `image_gen` tool (`stylized-concept`); no CLI/API fallback and no external key.

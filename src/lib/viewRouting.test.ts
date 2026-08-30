@@ -30,6 +30,10 @@ const trackMajorWithoutTrackState: SavedAppStateV2 = {
     ruleApplicability: "reference-only",
   },
 };
+const reviewedTrackMajorWithoutTrackState: SavedAppStateV2 = {
+  ...trackMajorWithoutTrackState,
+  courseInputReviewedAt: "2026-08-30T00:00:00.000Z",
+};
 const reviewedMinorState = { ...minorV2State, courseInputReviewedAt: "2026-08-30T00:00:00.000Z" };
 
 it("keeps the profile step when no valid profile is saved", () => {
@@ -40,8 +44,9 @@ it("allows a minor to reach courses without a track", () => {
   expect(resolveDiagnosisStep("?view=diagnosis&step=courses", minorV2State)).toBe("courses");
 });
 
-it("redirects a track-major without a selected track before results", () => {
-  expect(resolveDiagnosisStep("?view=result", trackMajorWithoutTrackState)).toBe("profile");
+it("allows a track-major without a selected target to enter courses and finish course review", () => {
+  expect(resolveDiagnosisStep("?view=diagnosis&step=courses", trackMajorWithoutTrackState)).toBe("courses");
+  expect(resolveDiagnosisStep("?view=result", reviewedTrackMajorWithoutTrackState)).toBe("result");
 });
 
 it("keeps results behind reviewed course input", () => {

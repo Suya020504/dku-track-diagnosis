@@ -46,6 +46,20 @@ const differingAxes: RecommendationAxes = {
       missingModuleLabels: ["유통무역", "농업경제"],
       assumption: "track-major-hypothesis",
     },
+    {
+      trackId: "regional-development-consulting",
+      missingCourseCount: 6,
+      missingCredits: 18,
+      missingModuleLabels: ["지역개발"],
+      assumption: "track-major-hypothesis",
+    },
+    {
+      trackId: "food-bio-economy",
+      missingCourseCount: 7,
+      missingCredits: 21,
+      missingModuleLabels: ["푸드바이오"],
+      assumption: "track-major-hypothesis",
+    },
   ],
   plan: [
     {
@@ -120,6 +134,17 @@ describe("TrackRecommendationAxes", () => {
     expect(markup).not.toContain("전체 1순위");
     expect(markup).not.toContain("종합 순위");
     expect(markup).not.toContain("91%");
+  });
+
+  it("shows all five candidates on the current-progress comparison page", () => {
+    const markup = renderAxes("progress");
+
+    expect(markup).toContain("푸드마케팅");
+    expect(markup).toContain("경제학");
+    expect(markup).toContain("농식품유통");
+    expect(markup).toContain("지역개발 및 컨설팅");
+    expect(markup).toContain("푸드바이오경제");
+    expect(markup).toContain("함께 비교할 네 후보");
   });
 
   it("keeps the plan hypothesis in a wheat evidence band on the plan axis", () => {

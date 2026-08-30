@@ -163,10 +163,9 @@ describe("App recommendation browser interactions", () => {
   it("keeps fresh track exploration locked while interest questions open the survey", async () => {
     await mountApp();
 
-    const trackJourney = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
-      .find((candidate) => candidate.textContent?.includes("트랙 탐색"));
+    const trackJourney = document.querySelector<HTMLButtonElement>('[data-map-stop="tracks"]');
 
-    expect(trackJourney?.disabled).toBe(true);
+    expect(trackJourney?.getAttribute("aria-disabled")).toBe("true");
     const reasonId = trackJourney?.getAttribute("aria-describedby");
     expect(reasonId).not.toBeNull();
     expect(reasonId ? document.getElementById(reasonId)?.textContent : undefined)
@@ -185,18 +184,17 @@ describe("App recommendation browser interactions", () => {
     expect(saved.profileDraft?.goal).toBe("find-track");
   });
 
-  it("keeps profile-only track exploration locked and follows the guarded diagnosis route", async () => {
+  it("keeps profile-only track exploration locked while allowing direct course diagnosis", async () => {
     saveState(profileOnlyLandingState());
     await mountApp();
 
-    const trackJourney = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
-      .find((candidate) => candidate.textContent?.includes("트랙 탐색"));
+    const trackJourney = document.querySelector<HTMLButtonElement>('[data-map-stop="tracks"]');
     const initialHref = window.location.href;
 
-    expect(document.body.textContent).toContain("학생 유형");
-    expect(document.body.textContent).toContain("이수 경로");
+    expect(document.body.textContent).toContain("과목 확인 필요");
+    expect(document.body.textContent).toContain("학기 플래너를 만들지 않아도 현재 진행도");
     expect(document.body.textContent).not.toContain("관심 방향");
-    expect(trackJourney?.disabled).toBe(true);
+    expect(trackJourney?.getAttribute("aria-disabled")).toBe("true");
     expect(trackJourney?.getAttribute("aria-describedby")).not.toBeNull();
     await act(async () => trackJourney?.click());
     expect(window.location.href).toBe(initialHref);
@@ -204,8 +202,9 @@ describe("App recommendation browser interactions", () => {
     await click("이수 과목 확인하기");
     const params = new URLSearchParams(location.search);
     expect(params.get("view")).toBe("diagnosis");
-    expect(params.get("step")).toBe("profile");
-    expect(params.get("profile")).toBe("affiliation");
+    expect(params.get("step")).toBe("courses");
+    expect(params.get("profile")).toBeNull();
+    expect(document.body.textContent).toContain("지금까지 이수한 과목을 선택하세요.");
   });
 
   it("keeps a fresh landing unobstructed and opens or closes help only on request", async () => {
@@ -235,9 +234,8 @@ describe("App recommendation browser interactions", () => {
     saveState(interestTargetLandingState());
     await mountApp();
 
-    const trackJourney = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
-      .find((candidate) => candidate.textContent?.includes("트랙 탐색"));
-    expect(trackJourney?.disabled).toBe(false);
+    const trackJourney = document.querySelector<HTMLButtonElement>('[data-map-stop="tracks"]');
+    expect(trackJourney?.getAttribute("aria-disabled")).toBeNull();
     expect(trackJourney?.getAttribute("aria-describedby")).toBeNull();
     await act(async () => trackJourney?.click());
 
@@ -247,34 +245,38 @@ describe("App recommendation browser interactions", () => {
     expect(params.get("axis")).toBe("interest");
   });
 
-  it("keeps targetless reviewed-course track step locked while its comparison action opens axes", async () => {
+  it("keeps targetless track exploration locked, opens progress results, and recovers planner setup through target choice", async () => {
     saveState(reviewedCoursesWithoutTargetState());
     await mountApp();
 
-    const trackJourney = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
-      .find((candidate) => candidate.textContent?.includes("트랙 탐색"));
+    const trackJourney = document.querySelector<HTMLButtonElement>('[data-map-stop="tracks"]');
     const initialHref = window.location.href;
     const plannerPreview = document.querySelector('[data-planner-status="needs-track"]');
-    const previewRows = [...(plannerPreview?.querySelectorAll<HTMLDivElement>("dl > div") ?? [])];
-    const reviewedCoursesRow = previewRows.find(
-      (row) => row.querySelector("dt")?.textContent === "이수 과목",
-    );
-    const targetTrackRow = previewRows.find(
-      (row) => row.querySelector("dt")?.textContent === "목표 트랙",
-    );
 
-    expect(reviewedCoursesRow?.querySelector("dd")?.textContent).toBe("검토 완료");
-    expect(targetTrackRow?.querySelector("dd")?.textContent).toBe("선택 필요");
-    expect(trackJourney?.disabled).toBe(true);
+    expect(plannerPreview?.textContent).toContain("목표가 없어도 5개 트랙 자가진단");
+    expect(plannerPreview?.textContent).toContain("목표 트랙 선택 필요");
+    expect(trackJourney?.getAttribute("aria-disabled")).toBe("true");
     expect(trackJourney?.getAttribute("aria-describedby")).not.toBeNull();
+    const nextCourse = document.querySelector<HTMLButtonElement>('[data-map-stop="next"]');
+    expect(nextCourse?.getAttribute("aria-disabled")).toBe("true");
+    expect(nextCourse?.getAttribute("aria-describedby")).not.toBeNull();
+    expect(document.body.textContent).toContain("목표 트랙을 선택하면 다음 과목 추천이 열려요.");
     await act(async () => trackJourney?.click());
     expect(window.location.href).toBe(initialHref);
 
-    await click("트랙 비교 보기");
+    await act(async () => document.querySelector<HTMLButtonElement>('[data-map-stop="current"]')?.click());
     const params = new URLSearchParams(location.search);
     expect(params.get("view")).toBe("recommendation");
     expect(params.get("step")).toBe("axes");
-    expect(params.get("axis")).toBe("interest");
+    expect(params.get("axis")).toBe("progress");
+
+    history.replaceState({}, "", "/");
+    await act(async () => window.dispatchEvent(new PopStateEvent("popstate")));
+    await click("목표 트랙 선택하기");
+    const plannerParams = new URLSearchParams(location.search);
+    expect(plannerParams.get("view")).toBe("diagnosis");
+    expect(plannerParams.get("step")).toBe("profile");
+    expect(plannerParams.get("profile")).toBe("path");
   });
 
   it("opens an existing saved plan from the landing preview", async () => {
@@ -292,9 +294,8 @@ describe("App recommendation browser interactions", () => {
     saveState(savedLandingPlanState());
     await mountApp();
 
-    const semesterJourney = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
-      .find((candidate) => candidate.textContent?.includes("학기 계획"));
-    expect(semesterJourney?.disabled).toBe(false);
+    const semesterJourney = document.querySelector<HTMLButtonElement>('[data-map-stop="plan"]');
+    expect(semesterJourney?.getAttribute("aria-disabled")).toBeNull();
     await act(async () => semesterJourney?.click());
 
     const params = new URLSearchParams(location.search);
@@ -443,6 +444,11 @@ describe("App recommendation browser interactions", () => {
     expect(new URLSearchParams(location.search).get("view")).toBe("diagnosis");
     expect(new URLSearchParams(location.search).get("step")).toBe("profile");
     expect(pushState).toHaveBeenCalledTimes(1);
+
+    await moveNativeHistory("back");
+    expect(location.search).toBe("");
+    expect(document.querySelector('[data-map-stop-wrap="diagnosis"]')?.getAttribute("data-state")).toBe("current");
+    expect(document.querySelector('[data-map-stop-wrap="interest"]')?.getAttribute("data-state")).toBe("next");
   });
 
   it("canonicalizes the legacy experiment alias with replace and renders the non-aggregate plan entry", async () => {

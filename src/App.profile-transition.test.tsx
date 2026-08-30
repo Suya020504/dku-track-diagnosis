@@ -108,18 +108,39 @@ describe("profile integration transitions", () => {
     expect(reviewed.courseInputReviewedAt).toBe("2026-08-30T12:00:00.000Z");
   });
 
-  it("keeps track-major on profile until a target track is explicit", () => {
+  it("lets a progress-checking track-major continue to courses without an explicit target", () => {
     const withoutTarget = completeProfileTransition(state(trackProfile), trackProfile);
     const withTarget = completeProfileTransition(
       { ...state(trackProfile), targetTrackId: "food-marketing" },
       trackProfile,
     );
 
-    expect(withoutTarget.step).toBe("profile");
+    expect(withoutTarget.step).toBe("courses");
     expect(resolveDiagnosisStep("?view=diagnosis&step=courses", withoutTarget.state)).toBe(withoutTarget.step);
     expect(withTarget.step).toBe("courses");
     expect(resolveDiagnosisStep("?view=diagnosis&step=courses", withTarget.state)).toBe(withTarget.step);
     expect(withTarget.state.targetTrackId).toBe("food-marketing");
+  });
+
+  it("restores a targetless track-major directly into course input instead of a blocking picker", async () => {
+    saveState(state(trackProfile));
+    history.replaceState({}, "", "/?view=diagnosis&step=courses");
+
+    await mountApp();
+
+    expect(document.body.textContent).toContain("지금까지 이수한 과목을 선택하세요.");
+    expect(document.body.textContent).toContain("선택한 트랙 없음");
+    expect(document.body.textContent).toContain("5개 트랙 비교");
+    const resultAction = document.querySelector<HTMLButtonElement>("#diagnosis-result-action");
+    expect(resultAction).not.toBeNull();
+
+    await act(async () => resultAction?.click());
+
+    const reviewed = JSON.parse(localStorage.getItem(STORAGE_KEY_V2) ?? "null") as SavedAppStateV2;
+    expect(reviewed.courseInputReviewedAt).toBeTruthy();
+    expect(new URLSearchParams(location.search).get("view")).toBe("recommendation");
+    expect(new URLSearchParams(location.search).get("axis")).toBe("progress");
+    expect(document.querySelector('[data-recommendation-panel="progress"]')).not.toBeNull();
   });
 
   it("clears target and comparison tracks when track-major changes to minor", () => {

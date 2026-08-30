@@ -32,7 +32,7 @@ const resourcePages = [
     index: "04",
     label: "공식 근거",
     title: "원문과 확인 경로를 마지막에 점검하세요",
-    body: "학교 공개 자료, 시간표 검색, 학과 홈페이지와 재사용하지 않은 캠퍼스 사진 출처를 구분합니다.",
+    body: "학교 공개 자료, 시간표 검색, 학과 홈페이지와 YouTube 채널을 구분합니다.",
   },
 ] as const satisfies ReadonlyArray<{
   id: ResourceSection;

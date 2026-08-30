@@ -49,7 +49,7 @@ export function ProfileFlow({
   const pathValid = Boolean(
     draft.affiliation && draft.studyPath && allowedPaths.includes(draft.studyPath),
   );
-  const targetTrackRequired = draft.studyPath === "track-major" && draft.goal !== "find-track";
+  const targetTrackRequired = draft.studyPath === "track-major" && draft.goal === "plan-graduation";
   const entryYearValid = draft.entryYear === undefined || (
     Number.isInteger(draft.entryYear)
     && draft.entryYear >= 2000

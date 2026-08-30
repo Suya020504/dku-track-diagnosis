@@ -168,15 +168,28 @@ describe("resource reading routes", () => {
       .toContain("이미지 없이도 아래 교육과정표에서");
   });
 
-  it("labels safe external links and never embeds the official campus photograph", async () => {
+  it("keeps exact department website and YouTube links available on the official resources page", async () => {
     await mountAt("?view=resources&section=official");
 
-    expect(document.body.textContent).toContain("천안캠퍼스 항공사진(2022)");
-    expect(document.body.textContent).toContain("정보기획팀");
-    expect(document.body.textContent).toContain("2023-04-05");
-    expect(document.body.textContent).toContain("외부 재사용 허가가 확인되기 전까지 앱 안에 사진을 재현하지 않습니다");
+    const officialPage = document.querySelector('[data-resource-page="official"]');
+    const departmentHome = officialPage?.querySelector<HTMLAnchorElement>(
+      'a[href="https://cms.dankook.ac.kr/web/ere"]',
+    );
+    const departmentYouTube = officialPage?.querySelector<HTMLAnchorElement>(
+      'a[href="https://www.youtube.com/@FoodandResourcesEconomics_dku/videos"]',
+    );
+
+    expect(departmentHome?.textContent).toContain("학과 홈페이지");
+    expect(departmentYouTube?.textContent).toContain("학과 YouTube 채널");
+    for (const link of [departmentHome, departmentYouTube]) {
+      expect(link?.target).toBe("_blank");
+      expect(link?.rel.split(" ")).toEqual(expect.arrayContaining(["noopener", "noreferrer"]));
+      expect(link?.textContent).toContain("외부 링크");
+    }
+
+    expect(document.querySelector("[data-official-campus-source]")).toBeNull();
+    expect(document.body.textContent).not.toContain("외부 재사용 허가가 확인되기 전까지 앱 안에 사진을 재현하지 않습니다");
     expect(document.body.textContent).toContain("학생이 만든 학업 계획 보조 도구");
-    expect(document.querySelector('[data-official-campus-source] img')).toBeNull();
 
     const disclaimer = document.querySelector(".planner-resource-disclaimer")?.textContent ?? "";
     expect(disclaimer).toContain("생성한 개념 설명 이미지에는 학교 로고·인장을 사용하지 않았고 공식 학교 이미지가 아닙니다");

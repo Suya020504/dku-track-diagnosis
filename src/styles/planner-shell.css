@@ -49,9 +49,43 @@
 .planner-shell-actions {
   grid-column: 3;
   display: flex;
+  flex-wrap: wrap;
   gap: var(--planner-space-3);
   align-items: center;
   justify-self: end;
+  justify-content: flex-end;
+}
+
+.planner-shell-external-links {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  padding-inline-end: var(--planner-space-2);
+  border-inline-end: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 18%, transparent);
+}
+
+.planner-shell-external-links a {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: var(--planner-control-radius);
+  color: var(--planner-ink-muted);
+  font-size: 0.76rem;
+  font-weight: 750;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.planner-shell-external-links a:hover {
+  background: var(--planner-sky-sheet);
+  color: var(--planner-dankook-blue);
+}
+
+.planner-shell-external-links svg {
+  flex: 0 0 auto;
 }
 
 .planner-shell-utility {
@@ -114,6 +148,69 @@
   grid-template-columns: 188px minmax(0, 1fr);
   width: min(100%, 1440px);
   margin-inline: auto;
+}
+
+.planner-shell-layout.is-immersive {
+  grid-template-columns: minmax(0, 1fr);
+  width: min(100%, 1600px);
+}
+
+.planner-shell-layout.is-immersive .planner-shell-page {
+  min-width: 0;
+}
+
+.planner-shell-map-nav {
+  grid-column: 2;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  .planner-shell-header:has(.planner-shell-map-nav) {
+    grid-template-columns: minmax(220px, 1fr) minmax(260px, auto);
+  }
+
+  .planner-shell-header:has(.planner-shell-map-nav) .planner-shell-actions {
+    grid-column: 2;
+  }
+
+  .planner-shell-map-nav {
+    order: 4;
+    grid-column: 1 / -1;
+    width: 100%;
+    overflow-x: auto;
+    justify-content: flex-start;
+    scrollbar-width: thin;
+  }
+}
+
+.planner-shell-map-nav button {
+  position: relative;
+  min-height: 44px;
+  padding: 0 11px;
+  border: 0;
+  background: transparent;
+  color: var(--planner-ink-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
+.planner-shell-map-nav button[aria-current="page"] {
+  color: var(--planner-department-green);
+}
+
+.planner-shell-map-nav button[aria-current="page"]::after {
+  position: absolute;
+  inset-inline: 10px;
+  inset-block-end: 3px;
+  height: 2px;
+  background: var(--planner-department-green);
+  content: "";
 }
 
 .planner-guide-index {
@@ -236,7 +333,12 @@
   .planner-shell-wordmark span,
   .planner-shell-actions .planner-local-save,
   .planner-shell-help span,
+  .planner-shell-external-links,
   .planner-shell-utility {
+    display: none;
+  }
+
+  .planner-shell-map-nav {
     display: none;
   }
 
@@ -346,6 +448,18 @@
     justify-content: flex-start;
     padding-inline: 14px;
     font-size: 0.82rem;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 900px) {
+  .planner-shell-actions {
+    width: min(52vw, 450px);
+    gap: 4px;
+  }
+
+  .planner-shell-external-links a {
+    padding-inline: 8px;
+    font-size: 0.72rem;
   }
 }
 

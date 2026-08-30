@@ -3,6 +3,78 @@ import { describe, expect, it, vi } from "vitest";
 import { GuidebookShell } from "./GuidebookShell";
 
 describe("GuidebookShell", () => {
+  it("uses top journey navigation and omits the side index in immersive map mode", () => {
+    const markup = renderToStaticMarkup(
+      <GuidebookShell
+        activeId="start"
+        currentLabel="지도 안내"
+        guideItems={[
+          { id: "start", index: "01", label: "지도 안내", available: true, onSelect: vi.fn() },
+          { id: "diagnosis", index: "02", label: "나의 진단", available: true, onSelect: vi.fn() },
+        ]}
+        mobilePrimaryItems={[]}
+        mobileMoreItems={[]}
+        externalLinks={[]}
+        journeyItems={[]}
+        saveState="saved"
+        onOpenHelp={vi.fn()}
+        immersive
+      >
+        <main><h1>지도 안내</h1></main>
+      </GuidebookShell>,
+    );
+
+    expect(markup).toContain('class="planner-shell-map-nav"');
+    expect(markup).toContain('class="planner-shell-layout is-immersive"');
+    expect(markup).not.toContain('class="planner-guide-index"');
+    expect(markup).toContain('aria-current="page"');
+  });
+
+  it("renders safe department website and YouTube anchors separately from internal utility navigation", () => {
+    const markup = renderToStaticMarkup(
+      <GuidebookShell
+        activeId="start"
+        currentLabel="시작하기"
+        guideItems={[]}
+        mobilePrimaryItems={[]}
+        mobileMoreItems={[]}
+        externalLinks={[
+          {
+            id: "department-home",
+            label: "학과 홈페이지",
+            href: "https://cms.dankook.ac.kr/web/ere",
+          },
+          {
+            id: "department-youtube",
+            label: "학과 YouTube",
+            href: "https://www.youtube.com/@FoodandResourcesEconomics_dku/videos",
+          },
+        ]}
+        utilityItems={[
+          { id: "overview", label: "트랙제 안내", available: true, onSelect: vi.fn() },
+        ]}
+        journeyItems={[]}
+        saveState="saved"
+        onOpenHelp={vi.fn()}
+      >
+        <main />
+      </GuidebookShell>,
+    );
+
+    expect(markup).toContain('class="planner-shell-external-links"');
+    expect(markup).toContain('aria-label="학과 공식 링크"');
+    expect(markup).toContain('href="https://cms.dankook.ac.kr/web/ere"');
+    expect(markup).toContain('href="https://www.youtube.com/@FoodandResourcesEconomics_dku/videos"');
+    expect(markup.match(/target="_blank"/g)).toHaveLength(2);
+    expect(markup.match(/rel="noopener noreferrer"/g)).toHaveLength(2);
+
+    const externalNav = markup.match(/<nav class="planner-shell-external-links"[\s\S]*?<\/nav>/)?.[0] ?? "";
+    expect(externalNav).toContain("학과 홈페이지");
+    expect(externalNav).toContain("학과 YouTube");
+    expect(externalNav).toContain('aria-hidden="true"');
+    expect(externalNav).not.toContain("aria-current");
+  });
+
   it("adds the planner shell and local-save status without owning a second main landmark", () => {
     const markup = renderToStaticMarkup(
       <GuidebookShell

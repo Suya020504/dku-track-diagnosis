@@ -160,4 +160,49 @@ describe("ProfileFlow", () => {
     expect(complete.disabled).toBe(true);
     expect(year.getAttribute("aria-invalid")).toBe("true");
   });
+
+  it("lets a progress-checking track-major continue without choosing a target and clear an old target", async () => {
+    const onComplete = vi.fn();
+    const onTargetTrackChange = vi.fn();
+    await mountProfileFlow({
+      profileStage: "path",
+      initialDraft: {
+        affiliation: "department-student",
+        studyPath: "track-major",
+        goal: "check-progress",
+      },
+      targetTrackId: "food-marketing",
+      onComplete,
+      onTargetTrackChange,
+    });
+
+    expect(document.body.textContent).toContain(
+      "2·3학년도 현재 이수 과목으로 참고 진단할 수 있습니다. 실제 트랙 신청 가능 시기, 적용 학번과 최종 인정 범위는 학과 확인이 필요합니다.",
+    );
+    expect(document.body.textContent).toContain("아직 정하지 않았어요 · 5개 트랙 비교");
+
+    await act(async () => click('[data-target-track-choice="compare-all"]'));
+    expect(onTargetTrackChange).toHaveBeenLastCalledWith(undefined);
+    expect(document.querySelector<HTMLButtonElement>(".study-path-complete")?.disabled).toBe(false);
+
+    await act(async () => click(".study-path-complete"));
+    expect(onComplete).toHaveBeenCalledWith(expect.objectContaining({
+      goal: "check-progress",
+      studyPath: "track-major",
+    }));
+  });
+
+  it("requires a target only when the student chooses graduation planning", async () => {
+    await mountProfileFlow({
+      profileStage: "path",
+      initialDraft: {
+        affiliation: "department-student",
+        studyPath: "track-major",
+        goal: "plan-graduation",
+      },
+    });
+
+    expect(document.body.textContent).not.toContain("아직 정하지 않았어요 · 5개 트랙 비교");
+    expect(document.querySelector<HTMLButtonElement>(".study-path-complete")?.disabled).toBe(true);
+  });
 });

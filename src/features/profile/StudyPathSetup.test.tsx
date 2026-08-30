@@ -52,7 +52,7 @@ describe("StudyPathSetup", () => {
     expect(markup).toContain("disabled=\"\"");
   });
 
-  it("requires an explicit target track for track-major", () => {
+  it("keeps the target optional for a progress-checking track-major", () => {
     const markup = renderToStaticMarkup(
       <StudyPathSetup
         profile={{
@@ -73,7 +73,8 @@ describe("StudyPathSetup", () => {
     expect(markup).toContain("진단할 트랙");
     expect(markup).toContain("푸드마케팅");
     expect(markup).toContain("경제학");
-    expect(markup).toContain("disabled=\"\"");
+    expect(markup).toContain("아직 정하지 않았어요 · 5개 트랙 비교");
+    expect(markup).not.toContain("disabled=\"\"");
   });
 
   it("enables track-major completion after an explicit target is selected", () => {

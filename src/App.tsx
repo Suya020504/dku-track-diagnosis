@@ -25,8 +25,9 @@ import {
   type CourseGroupMode,
 } from "./features/courses/CourseSelectionView";
 import { GuidebookShell } from "./features/shell/GuidebookShell";
-import { PlannerLanding } from "./features/landing/PlannerLanding";
 import type { LandingPlannerStatus } from "./features/landing/PlannerLanding";
+import { CampusMapLanding } from "./features/map/CampusMapLanding";
+import type { CampusJourneyStop, CampusJourneyStopId } from "./features/map/CampusJourneyMap";
 import { ResourceIndexView } from "./features/resources/ResourceIndexView";
 import type { GuideIndexItem } from "./features/shell/GuideIndex";
 import type { MobileJourneyItem } from "./features/shell/MobileJourneyNav";
@@ -89,16 +90,16 @@ type GuideStep = {
 
 const guideSteps: GuideStep[] = [
   {
-    title: "1. 자가진단에서 내 이수 정보를 입력합니다",
-    body: "이수유형과 관심 트랙을 고른 뒤, 이미 수강했거나 이수 예정인 과목을 체크합니다.",
-    items: ["주전공·복수전공·부전공 선택", "관심 트랙 복수 선택", "학년·학기별 전공 이수 표에서 과목 체크"],
+    title: "1. 자가진단에서 학생 유형과 이수 과목을 확인합니다",
+    body: "소속과 이수 경로를 정한 뒤 완료·수강 중·계획 과목을 구분합니다. 목표 트랙이 아직 없어도 5개 트랙을 비교할 수 있습니다.",
+    items: ["소속과 이수 경로 선택", "목표 트랙은 선택 사항", "현재 진단에는 완료 과목만 반영"],
     action: "자가진단 열기",
     viewId: "diagnosis",
   },
   {
     title: "2. 결과에서 지금 상태를 확인합니다",
-    body: "선택한 트랙별 진행률과 남은 과목, 부족 모듈, 필수 누락을 필요한 순서대로 확인합니다.",
-    items: ["전체 진행률과 남은 과목 수", "트랙별 충족·부족 상태", "어느 모듈에서 몇 과목이 더 필요한지 확인"],
+    body: "목표가 없으면 5개 트랙의 현재 접근성을 비교하고, 목표를 정했다면 해당 트랙의 남은 과목과 부족 모듈을 확인합니다.",
+    items: ["목표 없는 5개 트랙 비교", "선택한 트랙의 충족·부족 상태", "어느 모듈에서 몇 과목이 더 필요한지 확인"],
     action: "결과 보기",
     viewId: "result",
   },
@@ -209,6 +210,29 @@ function viewForRoute(route: AppRoute): ViewId {
   return route.view;
 }
 
+export function resolveExperienceRoute(
+  search: string,
+  state: SavedAppStateV2,
+  context: { hasPdfImportDraft?: boolean } = {},
+): AppRoute {
+  const route = resolveAppRoute(search, state, context);
+  if (
+    route.view === "result"
+    && state.profile?.studyPath === "track-major"
+    && !state.targetTrackId
+    && state.courseInputReviewedAt
+  ) {
+    return { view: "recommendation", step: "axes", axis: "progress" };
+  }
+  return route;
+}
+
+export function routeAfterCourseReview(state: SavedAppStateV2): AppRoute {
+  return state.profile?.studyPath === "track-major" && !state.targetTrackId
+    ? { view: "recommendation", step: "axes", axis: "progress" }
+    : { view: "result", section: "current" };
+}
+
 function requestsPdfReview(search: string): boolean {
   const params = new URLSearchParams(search);
   return params.get("view") === "diagnosis" &&
@@ -282,6 +306,12 @@ function stablePlanningValue(value: unknown): string {
   );
 }
 
+function stableProfileSource(profile: StudentProfile | undefined): string {
+  if (!profile) return "undefined";
+  const { goal: _goal, ...source } = profile;
+  return stablePlanningValue(source);
+}
+
 function reviewedCourseKey(state: SavedAppStateV2): string {
   return JSON.stringify(
     state.courseSelections
@@ -297,7 +327,7 @@ export function applyPlanningSourceChange(
 ): SavedAppStateV2 {
   const next: SavedAppStateV2 = { ...current, ...patch };
   const profileChanged = hasPatchField(patch, "profile") &&
-    stablePlanningValue(current.profile) !== stablePlanningValue(patch.profile);
+    stableProfileSource(current.profile) !== stableProfileSource(patch.profile);
   const targetChanged = hasPatchField(patch, "targetTrackId") &&
     current.targetTrackId !== patch.targetTrackId;
   const coursesChanged = hasPatchField(patch, "courseSelections") &&
@@ -306,7 +336,7 @@ export function applyPlanningSourceChange(
     stablePlanningValue(current.additionalMajorCredits) !== stablePlanningValue(patch.additionalMajorCredits);
   const reviewedCoursesChanged = coursesChanged && reviewedCourseKey(current) !== reviewedCourseKey(next);
   const planSourceChanged = profileChanged || targetChanged || coursesChanged || creditsChanged;
-  const reviewedSourceChanged = profileChanged || targetChanged || reviewedCoursesChanged || creditsChanged;
+  const reviewedSourceChanged = profileChanged || reviewedCoursesChanged || creditsChanged;
 
   return {
     ...next,
@@ -355,6 +385,10 @@ export function completeProfileTransition(
     : Boolean(state.interestSurvey?.selectedTrackId);
   const route: AppRoute = profile.goal === "find-track" && !hasChosenDirection
     ? { view: "recommendation", step: "survey" }
+    : profile.goal === "plan-graduation"
+      && Boolean(state.courseInputReviewedAt)
+      && (!trackMajor || Boolean(state.targetTrackId))
+      ? { view: "plan", step: "setup" }
     : { view: "diagnosis", step };
   return { state, step, route };
 }
@@ -465,38 +499,38 @@ function App({ storage }: { storage?: Storage } = {}) {
   const [pdfMergeConflicts, setPdfMergeConflicts] = useState<PdfMergeConflict[]>([]);
   const [pdfReviewSaveError, setPdfReviewSaveError] = useState(false);
   const [diagnosisStep, setDiagnosisStep] = useState<DiagnosisStep>(() => {
-    const route = resolveAppRoute(window.location.search, savedState);
+    const route = resolveExperienceRoute(window.location.search, savedState);
     if (route.view === "diagnosis") return route.step;
     if (route.view === "result") return "result";
     return resolveDiagnosisStep("?view=diagnosis&step=profile", savedState);
   });
   const [activeView, setActiveView] = useState<ViewId>(() =>
-    viewForRoute(resolveAppRoute(window.location.search, savedState)),
+    viewForRoute(resolveExperienceRoute(window.location.search, savedState)),
   );
   const [resultSection, setResultSection] = useState<ResultSection>(() => {
-    const route = resolveAppRoute(window.location.search, savedState);
+    const route = resolveExperienceRoute(window.location.search, savedState);
     return route.view === "result" ? route.section ?? "current" : "current";
   });
   const [resourceSection, setResourceSection] = useState<ResourceSection>(() => {
-    const route = resolveAppRoute(window.location.search, savedState);
+    const route = resolveExperienceRoute(window.location.search, savedState);
     return route.view === "resources" ? route.section ?? "tracks" : "tracks";
   });
   const [profileStage, setProfileStage] = useState<ProfileStage>(() => {
-    const route = resolveAppRoute(window.location.search, savedState);
+    const route = resolveExperienceRoute(window.location.search, savedState);
     return route.view === "diagnosis" && route.step === "profile"
       ? route.profileStage ?? "affiliation"
       : "affiliation";
   });
   const [recommendationStep, setRecommendationStep] = useState<"survey" | "axes">(() => {
-    const route = resolveAppRoute(window.location.search, savedState);
+    const route = resolveExperienceRoute(window.location.search, savedState);
     return route.view === "recommendation" ? route.step : "survey";
   });
   const [recommendationAxis, setRecommendationAxis] = useState<"interest" | "progress" | "plan" | undefined>(() => {
-    const route = resolveAppRoute(window.location.search, savedState);
+    const route = resolveExperienceRoute(window.location.search, savedState);
     return route.view === "recommendation" ? route.axis : undefined;
   });
   const [planStep, setPlanStep] = useState<"setup" | "schedule" | "checks">(() => {
-    const route = resolveAppRoute(window.location.search, savedState);
+    const route = resolveExperienceRoute(window.location.search, savedState);
     return route.view === "plan" ? route.step : "setup";
   });
   const [planDraft, setPlanDraft] = useState<Partial<GraduationPlanPreferences>>(
@@ -504,7 +538,7 @@ function App({ storage }: { storage?: Storage } = {}) {
   );
   const [planSaveStatus, setPlanSaveStatus] = useState<"idle" | "saved" | "error">("idle");
   const selectedTrackIds = useMemo(() => getSelectedTrackIds(savedState), [savedState]);
-  const [trackSetupOpen, setTrackSetupOpen] = useState(() => selectedTrackIds.length === 0);
+  const [trackSetupOpen, setTrackSetupOpen] = useState(false);
   const [gradeFilter, setGradeFilter] = useState<GradeFilter>("all");
   const [semesterFilter, setSemesterFilter] = useState<SemesterFilter>("all");
   const [courseGroupMode, setCourseGroupMode] = useState<CourseGroupMode>("semester");
@@ -575,7 +609,7 @@ function App({ storage }: { storage?: Storage } = {}) {
   useEffect(() => {
     function syncFromLocation() {
       const requestedPdfReview = requestsPdfReview(window.location.search);
-      const next = resolveAppRoute(window.location.search, savedState, {
+      const next = resolveExperienceRoute(window.location.search, savedState, {
         hasPdfImportDraft: Boolean(pdfImportDraft),
       });
       if (requestedPdfReview && !pdfImportDraft) {
@@ -840,14 +874,10 @@ function App({ storage }: { storage?: Storage } = {}) {
   }
 
   function confirmCourseInput() {
-    if (requiresTrack && !savedState.targetTrackId) {
-      navigateDiagnosisStep("profile");
-      return;
-    }
     const next = reviewCourseInputTransition(savedState, new Date().toISOString());
     setStorageError(!saveAppState(next, appStorage));
     setSavedState(next);
-    navigateDiagnosisStep(resolveDiagnosisStep("?view=result&step=result", next));
+    navigateAppRoute(routeAfterCourseReview(next));
   }
 
   function editProfile() {
@@ -881,7 +911,11 @@ function App({ storage }: { storage?: Storage } = {}) {
       return;
     }
     if (viewId === "result") {
-      navigateDiagnosisStep(resolveDiagnosisStep("?view=result&step=result", savedState));
+      if (savedState.profile && savedState.courseInputReviewedAt) {
+        navigateAppRoute(routeAfterCourseReview(savedState));
+      } else {
+        navigateDiagnosisStep(resolveDiagnosisStep("?view=result&step=result", savedState));
+      }
       return;
     }
     if (viewId === "recommendation") {
@@ -927,6 +961,19 @@ function App({ storage }: { storage?: Storage } = {}) {
       view: "diagnosis",
       step: resolveDiagnosisStep("?view=diagnosis&step=courses", nextState),
     });
+  }
+
+  function openPlanningTargetSelection() {
+    const profileDraft: Partial<StudentProfile> = {
+      ...(savedState.profile ?? savedState.profileDraft ?? {}),
+      goal: "plan-graduation",
+      curriculumRuleVersion: "2026-provided-final-plan",
+      ruleApplicability: savedState.profile?.ruleApplicability ?? "reference-only",
+    };
+    const nextState = { ...savedState, profileDraft };
+    setStorageError(!saveAppState(nextState, appStorage));
+    setSavedState(nextState);
+    navigateAppRoute({ view: "diagnosis", step: "profile", profileStage: "path" });
   }
 
   function submitGraduationPlan(preferences: GraduationPlanPreferences) {
@@ -998,14 +1045,21 @@ function App({ storage }: { storage?: Storage } = {}) {
             : activeView === "resources"
               ? { view: "resources", section: resourceSection }
               : { view: activeView };
-  const resultReady = Boolean(savedState.profile && savedState.courseInputReviewedAt && pathProgress);
+  const courseResultReady = Boolean(savedState.profile && savedState.courseInputReviewedAt);
+  const exactPathReady = Boolean(courseResultReady && pathProgress);
   const targetTrackReady = savedState.profile?.studyPath !== "track-major" || Boolean(savedState.targetTrackId);
-  const planReady = resultReady && targetTrackReady;
-  const planNavAvailable = planReady || activeView === "plan";
+  const planReady = exactPathReady && targetTrackReady;
+  const planNavAvailable = courseResultReady || activeView === "plan";
+  const comparisonResultActive = activeView === "recommendation"
+    && recommendationStep === "axes"
+    && recommendationAxis === "progress"
+    && courseResultReady
+    && savedState.profile?.studyPath === "track-major"
+    && !savedState.targetTrackId;
   const guideActiveId = activeView === "landing"
     ? "start"
     : activeView === "recommendation"
-      ? "tracks"
+      ? comparisonResultActive ? "result" : "tracks"
       : activeView === "diagnosis"
         ? "diagnosis"
         : activeView === "result"
@@ -1022,7 +1076,7 @@ function App({ storage }: { storage?: Storage } = {}) {
     : activeView === "contact"
       ? "문의사항"
       : guideActiveId === "start"
-    ? "시작하기"
+    ? "지도 안내"
     : guideActiveId === "tracks"
       ? "트랙 탐색"
       : guideActiveId === "diagnosis"
@@ -1030,40 +1084,42 @@ function App({ storage }: { storage?: Storage } = {}) {
         : guideActiveId === "result"
           ? "결과"
           : guideActiveId === "plan"
-            ? "학기 플래너"
-            : "기록·근거";
+            ? "학기 플래너 · 선택"
+            : "도구 & 정보";
   const goToDiagnosis = () => navigateDiagnosisStep(
     resolveDiagnosisStep("?view=diagnosis&step=courses", savedState),
   );
-  const goToResult = () => navigateDiagnosisStep(
-    resolveDiagnosisStep("?view=result&step=result", savedState),
+  const goToResult = () => navigateAppRoute(
+    courseResultReady
+      ? routeAfterCourseReview(savedState)
+      : { view: "diagnosis", step: resolveDiagnosisStep("?view=result&step=result", savedState) },
   );
   const guideItems: GuideIndexItem[] = [
-    { id: "start", index: "01", label: "시작하기", available: true, onSelect: () => navigateAppRoute({ view: "landing" }) },
+    { id: "start", index: "01", label: "지도 안내", available: true, onSelect: () => navigateAppRoute({ view: "landing" }) },
     { id: "tracks", index: "02", label: "트랙 탐색", available: true, onSelect: () => navigateAppRoute({ view: "recommendation", step: "survey" }) },
-    { id: "diagnosis", index: "03", label: "자가진단", available: true, onSelect: goToDiagnosis },
+    { id: "diagnosis", index: "03", label: "나의 진단", available: true, onSelect: goToDiagnosis },
     {
       id: "result",
       index: "04",
-      label: "결과",
-      available: resultReady,
+      label: "진단 결과",
+      available: courseResultReady,
       unavailableReason: "프로필과 이수 과목을 먼저 확인해 주세요.",
       onSelect: goToResult,
     },
     {
       id: "plan",
       index: "05",
-      label: "학기 플래너",
+      label: "학기 플래너 · 선택",
       available: planNavAvailable,
       unavailableReason: "결과 확인과 목표 트랙 선택 후 열려요.",
       onSelect: () => navigateAppRoute({ view: "plan", step: "setup" }),
     },
-    { id: "resources", index: "06", label: "기록·근거", available: true, onSelect: () => navigateAppRoute({ view: "resources", section: "official" }) },
+    { id: "resources", index: "06", label: "도구 & 정보", available: true, onSelect: () => navigateAppRoute({ view: "resources", section: "official" }) },
   ];
   const mobilePrimaryItems: MobileJourneyItem[] = [
     { id: "start", label: "시작", available: true, onSelect: () => navigateAppRoute({ view: "landing" }) },
     { id: "diagnosis", label: "진단", available: true, onSelect: goToDiagnosis },
-    { id: "result", label: "결과", available: resultReady, unavailableReason: "진단 후 열려요.", onSelect: goToResult },
+    { id: "result", label: "결과", available: courseResultReady, unavailableReason: "진단 후 열려요.", onSelect: goToResult },
     { id: "plan", label: "계획", available: planNavAvailable, unavailableReason: "결과 확인 후 열려요.", onSelect: () => navigateAppRoute({ view: "plan", step: "setup" }) },
   ];
   const mobileMoreItems: MobileJourneyItem[] = [
@@ -1118,13 +1174,11 @@ function App({ storage }: { storage?: Storage } = {}) {
   });
 
   const hasSavedPlan = Boolean(savedState.graduationPlan);
-  const hasInterestDirection = Boolean(
+  const interestCompleted = Boolean(
     savedState.interestSurvey?.completedAt
-    || savedState.interestSurvey?.selectedTrackId
-    || savedState.targetTrackId
-    || planReady
-    || hasSavedPlan,
+    || savedState.interestSurvey?.selectedTrackId,
   );
+  const trackExplorationAvailable = interestCompleted || Boolean(savedState.targetTrackId);
   const hasStartedLanding = Boolean(
     savedState.profile
     || savedState.profileDraft?.goal
@@ -1132,7 +1186,6 @@ function App({ storage }: { storage?: Storage } = {}) {
     || savedState.targetTrackId
     || savedState.courseInputReviewedAt,
   );
-  const landingTrackComplete = planReady || hasSavedPlan;
   const landingPlannerStatus: LandingPlannerStatus = hasSavedPlan
     ? "saved-plan"
     : planReady
@@ -1147,37 +1200,79 @@ function App({ storage }: { storage?: Storage } = {}) {
     : landingPlannerStatus === "ready"
       ? () => navigateAppRoute({ view: "plan", step: "setup" })
       : landingPlannerStatus === "needs-track"
-        ? () => navigateAppRoute({ view: "recommendation", step: "axes", axis: "interest" })
+        ? openPlanningTargetSelection
         : landingPlannerStatus === "needs-profile" || landingPlannerStatus === "needs-courses"
           ? goToDiagnosis
           : undefined;
-  const landingJourneyItems: CompassPathItem[] = [
+  const hasDiagnosisDraft = savedState.profileDraft?.goal === "check-progress"
+    || savedState.profileDraft?.goal === "plan-graduation";
+  const landingCurrentStop: CampusJourneyStopId = hasSavedPlan
+    ? "plan"
+    : courseResultReady
+      ? "current"
+      : savedState.profile
+        ? "diagnosis"
+        : hasDiagnosisDraft
+          ? "diagnosis"
+          : interestCompleted
+            ? "tracks"
+            : "interest";
+  const mapStopState = (
+    id: CampusJourneyStopId,
+    complete: boolean,
+    fallback: CampusJourneyStop["state"],
+  ): CampusJourneyStop["state"] => id === landingCurrentStop ? "current" : complete ? "complete" : fallback;
+  const landingMapStops: CampusJourneyStop[] = [
     {
       id: "interest",
-      label: "관심 질문",
-      state: hasInterestDirection ? "complete" : "current",
-      completed: hasInterestDirection,
+      state: mapStopState("interest", interestCompleted, "next"),
       available: true,
-      onSelect: () => navigateAppRoute({ view: "recommendation", step: "survey" }),
+      onSelect: () => startEntryFlow("find-track"),
     },
     {
-      id: "track",
-      label: "트랙 탐색",
-      state: landingTrackComplete ? "complete" : hasInterestDirection ? "current" : "next",
-      completed: landingTrackComplete,
-      available: hasInterestDirection,
-      unavailableReason: hasInterestDirection
-        ? undefined
-        : "관심 질문을 마치면 트랙 비교가 열려요.",
+      id: "tracks",
+      state: mapStopState("tracks", Boolean(savedState.targetTrackId), trackExplorationAvailable ? "next" : "locked"),
+      available: trackExplorationAvailable,
+      unavailableReason: "관심 질문을 마치면 트랙 비교가 열려요.",
       onSelect: () => navigateAppRoute({ view: "recommendation", step: "axes", axis: "interest" }),
     },
     {
-      id: "semester",
-      label: "학기 계획",
-      state: hasSavedPlan ? "complete" : landingTrackComplete ? "current" : "pending",
-      completed: hasSavedPlan,
-      available: planReady || hasSavedPlan,
-      unavailableReason: "관심 트랙과 이수 과목을 먼저 확인해 주세요.",
+      id: "diagnosis",
+      state: mapStopState("diagnosis", courseResultReady, savedState.profile ? "current" : "next"),
+      available: true,
+      onSelect: () => startEntryFlow("check-progress"),
+    },
+    {
+      id: "current",
+      state: mapStopState("current", courseResultReady, courseResultReady ? "next" : "locked"),
+      available: courseResultReady,
+      unavailableReason: "학생 유형과 이수 과목을 확인하면 현재 위치가 열려요.",
+      onSelect: goToResult,
+    },
+    {
+      id: "gaps",
+      state: courseResultReady ? "next" : "locked",
+      available: courseResultReady,
+      unavailableReason: "자가진단을 마치면 부족 영역을 확인할 수 있어요.",
+      onSelect: () => navigateAppRoute(
+        exactPathReady
+          ? { view: "result", section: "current" }
+          : { view: "recommendation", step: "axes", axis: "progress" },
+      ),
+    },
+    {
+      id: "next",
+      state: exactPathReady ? "next" : "locked",
+      available: exactPathReady,
+      unavailableReason: courseResultReady
+        ? "목표 트랙을 선택하면 다음 과목 추천이 열려요."
+        : "자가진단을 마치면 다음 과목을 확인할 수 있어요.",
+      onSelect: () => navigateAppRoute({ view: "result", section: "next" }),
+    },
+    {
+      id: "plan",
+      state: mapStopState("plan", false, hasSavedPlan ? "complete" : "optional"),
+      available: true,
       onSelect: () => navigateAppRoute({ view: "plan", step: hasSavedPlan ? "schedule" : "setup" }),
     },
   ];
@@ -1185,6 +1280,7 @@ function App({ storage }: { storage?: Storage } = {}) {
   function renderGuidebook(
     content: ReactNode,
     renderedJourneyItems: readonly CompassPathItem[] = journeyItems,
+    immersive = false,
   ) {
     return (
       <GuidebookShell
@@ -1197,6 +1293,7 @@ function App({ storage }: { storage?: Storage } = {}) {
         utilityItems={utilityItems}
         utilityActiveId={utilityActiveId}
         journeyItems={renderedJourneyItems}
+        immersive={immersive}
         saveState={storageError ? "error" : "saved"}
         onOpenHelp={openGuide}
         modalOpen={guideOpen}
@@ -1216,15 +1313,15 @@ function App({ storage }: { storage?: Storage } = {}) {
 
   if (activeView === "landing") {
     return renderGuidebook(
-      <PlannerLanding
+      <CampusMapLanding
         headingRef={stepHeadingRef}
-        journeyItems={landingJourneyItems}
+        mapStops={landingMapStops}
         plannerStatus={landingPlannerStatus}
         onPlannerAction={landingPlannerAction}
-        onStartDiagnosis={() => startEntryFlow("check-progress")}
-        onFindTrack={() => startEntryFlow("find-track")}
+        onOpenTrackGuide={() => navigateAppRoute({ view: "resources", section: "tracks" })}
       />,
       [],
+      true,
     );
   }
 
@@ -1299,7 +1396,7 @@ function App({ storage }: { storage?: Storage } = {}) {
           readiness={prerequisiteReadiness}
           headingRef={planHeadingRef}
           onRecover={prerequisiteReadiness.target === "pending" && courseInputReady
-            ? () => navigateAppRoute({ view: "recommendation", step: "axes", axis: "plan" })
+            ? openPlanningTargetSelection
             : openCourseInputFromAxes}
         />
       );
@@ -1487,7 +1584,7 @@ function App({ storage }: { storage?: Storage } = {}) {
                 selectedTrackNames={selectedTracks.map((track) => track.name)}
                 enrollmentType={enrollmentType}
                 completedCount={completedCourseIds.length}
-                allowResult={!requiresTrack || Boolean(savedState.targetTrackId)}
+                allowResult
                 actionRef={diagnosisResultActionRef}
                 onShowResult={confirmCourseInput}
               />
@@ -1876,10 +1973,10 @@ function TrackPicker({
         <button
           className="primary-button track-picker-continue"
           type="button"
-          disabled={selectedTrackIds.length === 0}
           onClick={onContinue}
         >
-          과목 선택으로 이동 <ArrowRight aria-hidden="true" size={17} />
+          {selectedTrackIds.length > 0 ? "선택한 트랙으로 과목 보기" : "트랙 없이 5개 비교"}
+          <ArrowRight aria-hidden="true" size={17} />
         </button>
       )}
     </section>
@@ -1899,8 +1996,12 @@ function TrackSetupSummary({
     <section className="track-setup-summary" aria-label="선택한 이수 유형과 트랙">
       <div>
         <span>1단계 입력 완료</span>
-        <strong>{getEnrollmentLabel(enrollmentType)} · {selectedTrackNames.length}개 트랙</strong>
-        <p>{selectedTrackNames.join(" · ") || "선택한 트랙 없음"}</p>
+        <strong>
+          {getEnrollmentLabel(enrollmentType)} · {selectedTrackNames.length > 0
+            ? `${selectedTrackNames.length}개 트랙`
+            : "5개 트랙 비교 모드"}
+        </strong>
+        <p>{selectedTrackNames.join(" · ") || "선택한 트랙 없음 · 현재 이수 과목으로 비교"}</p>
       </div>
       <button className="icon-button" type="button" onClick={onEdit}>선택 수정</button>
     </section>

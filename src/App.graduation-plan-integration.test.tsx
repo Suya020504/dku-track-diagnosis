@@ -258,7 +258,7 @@ describe("graduation plan pure transitions", () => {
     [
       "target track",
       { targetTrackId: "food-marketing" as const },
-      true,
+      false,
     ],
     [
       "profile",
@@ -313,6 +313,33 @@ describe("graduation plan pure transitions", () => {
     expect(transition.state.courseInputReviewedAt).toBeUndefined();
   });
 
+  it("keeps both reviewed courses and the generated plan when only the profile goal changes", () => {
+    const current = stateWithPlan();
+
+    const next = applyPlanningSourceChange(current, {
+      profile: { ...minorProfile, goal: "check-progress" },
+    });
+
+    expect(next.courseInputReviewedAt).toBe(current.courseInputReviewedAt);
+    expect(next.graduationPlan).toEqual(current.graduationPlan);
+    expect(next.graduationPlanPreferences).toEqual(current.graduationPlanPreferences);
+  });
+
+  it("returns a reviewed track-major directly to planner setup after a planning target is selected", () => {
+    const current = readyState({
+      profile: { ...minorProfile, studyPath: "track-major", goal: "check-progress" },
+      targetTrackId: "food-marketing",
+    });
+
+    const transition = completeProfileTransition(current, {
+      ...current.profile!,
+      goal: "plan-graduation",
+    });
+
+    expect(transition.state.courseInputReviewedAt).toBe(current.courseInputReviewedAt);
+    expect(transition.route).toEqual({ view: "plan", step: "setup" });
+  });
+
   it.each([
     ["find-track", { view: "recommendation", step: "survey" }],
     ["check-progress", { view: "diagnosis", step: "profile" }],
@@ -332,12 +359,12 @@ describe("graduation plan pure transitions", () => {
     },
   );
 
-  it("invalidates plan sources when an interest transition changes the target track", () => {
+  it("invalidates only the plan when an interest transition changes the target track", () => {
     const current = stateWithPlan();
     const interest = chooseInterestTrackTransition(current, "economics");
 
     expect(interest.state.graduationPlan).toBeUndefined();
-    expect(interest.state.courseInputReviewedAt).toBeUndefined();
+    expect(interest.state.courseInputReviewedAt).toBe(current.courseInputReviewedAt);
     expect(interest.state.graduationPlanPreferences).toEqual(preferences);
   });
 
@@ -509,10 +536,15 @@ describe("App graduation plan pages", () => {
     expectFocusedPlanHeading("학기별 참고 계획의 범위를 정해 주세요");
   });
 
-  it("does not choose a target track when the missing-target recovery opens comparison", async () => {
+  it("opens direct target selection when the planner is missing a target", async () => {
     saveState({
       ...createEmptyAppState(),
-      profile: { ...minorProfile, studyPath: "track-major" },
+      profile: { ...minorProfile, affiliation: "department-student", studyPath: "track-major" },
+      profileDraft: {
+        goal: "find-track",
+        affiliation: "external-student",
+        studyPath: "minor",
+      },
       courseInputReviewedAt: "2026-08-30T00:00:00.000Z",
     });
     history.replaceState({}, "", "/?view=plan&step=schedule");
@@ -522,7 +554,12 @@ describe("App graduation plan pages", () => {
 
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_V2) ?? "null") as SavedAppStateV2;
     expect(saved.targetTrackId).toBeUndefined();
-    expect(new URLSearchParams(location.search).get("view")).toBe("recommendation");
+    expect(saved.profileDraft?.goal).toBe("plan-graduation");
+    expect(saved.profileDraft?.affiliation).toBe("department-student");
+    expect(saved.profileDraft?.studyPath).toBe("track-major");
+    expect(new URLSearchParams(location.search).get("view")).toBe("diagnosis");
+    expect(new URLSearchParams(location.search).get("profile")).toBe("path");
+    expect(document.body.textContent).toContain("확인할 이수 경로를 정해 주세요");
   });
 
   it.each([

@@ -1,10 +1,10 @@
-import { CalendarDays, ExternalLink, FileCheck2, Landmark, School } from "lucide-react";
+import { CalendarDays, ExternalLink, FileCheck2, School, Youtube } from "lucide-react";
 import { EvidenceBand } from "../../components/EvidenceBand";
 import { COURSE_OFFERING_SNAPSHOT_META } from "../../data/courseOfferings2026";
 import { OFFICIAL_CURRICULUM_SOURCE } from "../../data/curriculumData";
 
 const DEPARTMENT_URL = "https://cms.dankook.ac.kr/web/ere";
-const CAMPUS_GALLERY_URL = "https://www.dankook.ac.kr/ko/-565";
+const DEPARTMENT_YOUTUBE_URL = "https://www.youtube.com/@FoodandResourcesEconomics_dku/videos";
 
 const officialLinks = [
   {
@@ -27,6 +27,13 @@ const officialLinks = [
     href: DEPARTMENT_URL,
     label: "학과 홈페이지 확인",
     Icon: School,
+  },
+  {
+    title: "식품자원경제학과 YouTube",
+    body: "학과 소개와 트랙제 관련 안내 영상은 학과 공식 채널에서 확인합니다.",
+    href: DEPARTMENT_YOUTUBE_URL,
+    label: "학과 YouTube 채널",
+    Icon: Youtube,
   },
 ] as const;
 
@@ -59,19 +66,6 @@ export function OfficialResourcesView() {
             </li>
           ))}
         </ul>
-      </section>
-
-      <section className="planner-campus-source" data-official-campus-source aria-labelledby="campus-source-title">
-        <Landmark aria-hidden="true" />
-        <div>
-          <span>공식 캠퍼스 갤러리 출처 카드</span>
-          <h2 id="campus-source-title">천안캠퍼스 항공사진(2022)</h2>
-          <p>정보기획팀 · 2023-04-05</p>
-          <p>외부 재사용 허가가 확인되기 전까지 앱 안에 사진을 재현하지 않습니다.</p>
-        </div>
-        <a href={CAMPUS_GALLERY_URL} target="_blank" rel="noopener noreferrer">
-          공식 캠퍼스 갤러리에서 보기 · 외부 링크 <ExternalLink aria-hidden="true" />
-        </a>
       </section>
 
       <EvidenceBand state="historical-2026-snapshot">

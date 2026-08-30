@@ -17,7 +17,6 @@ export function resolveDiagnosisStep(
   state: SavedAppStateV2,
 ): DiagnosisStep {
   if (!hasValidProfile(state)) return "profile";
-  if (state.profile!.studyPath === "track-major" && !state.targetTrackId) return "profile";
 
   const params = new URLSearchParams(search);
   const rawStep = params.get("step");

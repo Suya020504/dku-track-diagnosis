@@ -68,14 +68,18 @@ function CandidateCollection<T extends { trackId: TrackId }>({
   relationLabel,
   renderEvidence,
   leaderTieTrackIds,
+  secondaryLimit = 2,
+  secondaryTitle = "함께 비교할 두 후보",
 }: {
   candidates: T[];
   relationLabel: (candidate: T, index: number) => string;
   renderEvidence: (candidate: T) => ReactNode;
   leaderTieTrackIds: TrackId[];
+  secondaryLimit?: number;
+  secondaryTitle?: string;
 }) {
   const lead = candidates[0];
-  const secondary = candidates.slice(1, 3);
+  const secondary = candidates.slice(1, secondaryLimit + 1);
   if (!lead) return null;
 
   return (
@@ -95,7 +99,7 @@ function CandidateCollection<T extends { trackId: TrackId }>({
         <section className="axis-secondary-candidates" aria-labelledby="axis-secondary-candidates-title">
           <header>
             <span>다른 방향도 확인</span>
-            <h3 id="axis-secondary-candidates-title">함께 비교할 두 후보</h3>
+            <h3 id="axis-secondary-candidates-title">{secondaryTitle}</h3>
           </header>
           <ol>
             {secondary.map((candidate, index) => (
@@ -162,6 +166,8 @@ function ProgressCandidates({ candidates }: { candidates: ProgressAxisCandidate[
     <CandidateCollection
       candidates={candidates}
       leaderTieTrackIds={leaderTieTrackIds}
+      secondaryLimit={4}
+      secondaryTitle="함께 비교할 네 후보"
       relationLabel={(candidate, index) => {
         if (sameProgressLeader(candidate, top) && hasLeaderTie) return "공동 선두 후보";
         return index === 0 ? "기준 안의 선두 후보" : "비교 후보";
