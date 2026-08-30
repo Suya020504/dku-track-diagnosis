@@ -415,6 +415,323 @@
   color: var(--planner-department-green);
 }
 
+.planner-app .planner-overview {
+  display: grid;
+  gap: 40px;
+  color: var(--planner-ink);
+}
+
+.planner-app .planner-overview__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 32px;
+  align-items: end;
+  padding: clamp(24px, 4vw, 44px);
+  border-block: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 24%, transparent);
+  background: var(--planner-sky-sheet);
+  background-image: none;
+}
+
+.planner-app .planner-overview__header > div {
+  max-width: 760px;
+}
+
+.planner-app .planner-overview__header p,
+.planner-app .planner-overview__header h1 {
+  margin: 0;
+}
+
+.planner-app .planner-overview__header > div > p:first-child,
+.planner-app .planner-overview__section > header > span {
+  color: var(--planner-department-green);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.planner-app .planner-overview__header h1 {
+  max-width: 720px;
+  margin-top: var(--planner-space-2);
+  font-size: clamp(2rem, 4.8vw, 3.6rem);
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.planner-app .planner-overview__header > div > p:last-child {
+  max-width: 680px;
+  margin-top: var(--planner-space-3);
+  color: var(--planner-ink-muted);
+  line-height: 1.75;
+}
+
+.planner-app .planner-overview__identity {
+  display: flex;
+  gap: var(--planner-space-3);
+  align-items: center;
+  min-width: 230px;
+  padding: var(--planner-space-3);
+  border: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 24%, transparent);
+  background: var(--planner-paper);
+  color: var(--planner-dankook-blue);
+}
+
+.planner-app .planner-overview__identity > span,
+.planner-app .planner-overview__identity strong,
+.planner-app .planner-overview__identity small {
+  display: block;
+}
+
+.planner-app .planner-overview__identity small {
+  margin-top: var(--planner-space-1);
+  color: var(--planner-ink-muted);
+}
+
+.planner-app .planner-overview__fact-ledger {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  border-block: 1px solid var(--planner-sky-sheet);
+}
+
+.planner-app .planner-overview__fact-ledger > div {
+  display: grid;
+  gap: var(--planner-space-1);
+  padding: var(--planner-space-3) var(--planner-space-5);
+  border-inline-end: 1px solid var(--planner-sky-sheet);
+}
+
+.planner-app .planner-overview__fact-ledger > div:last-child {
+  border-inline-end: 0;
+}
+
+.planner-app .planner-overview__fact-ledger dt {
+  color: var(--planner-ink-muted);
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+
+.planner-app .planner-overview__fact-ledger dd {
+  margin: 0;
+  color: var(--planner-dankook-blue);
+  font-weight: 800;
+}
+
+.planner-app .planner-overview__fact-ledger dd strong {
+  font-size: 1.35rem;
+}
+
+.planner-app .planner-overview__section {
+  display: grid;
+  gap: var(--planner-space-5);
+}
+
+.planner-app .planner-overview__section > header {
+  max-width: 780px;
+}
+
+.planner-app .planner-overview__section > header > h2,
+.planner-app .planner-overview__section > header > p {
+  margin: 0;
+}
+
+.planner-app .planner-overview__section > header > h2 {
+  margin-top: var(--planner-space-2);
+  font-size: clamp(1.5rem, 3.2vw, 2.3rem);
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.planner-app .planner-overview__section > header > p {
+  margin-top: var(--planner-space-3);
+  color: var(--planner-ink-muted);
+  line-height: 1.75;
+}
+
+.planner-app :is(
+  .planner-overview__question-steps,
+  .planner-overview__outcome-list,
+  .planner-overview__track-list
+) {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-block-start: 1px solid var(--planner-sky-sheet);
+}
+
+.planner-app .planner-overview__question-steps > li {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  gap: var(--planner-space-5);
+  padding: var(--planner-space-5) 0;
+  border-block-end: 1px solid var(--planner-sky-sheet);
+}
+
+.planner-app .planner-overview__question-steps > li > span,
+.planner-app .planner-overview__reading-ledger dt {
+  color: var(--planner-dankook-blue);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.planner-app .planner-overview__question-steps h3,
+.planner-app .planner-overview__question-steps p {
+  margin: 0;
+}
+
+.planner-app .planner-overview__question-steps p {
+  margin-top: var(--planner-space-2);
+  color: var(--planner-ink-muted);
+  line-height: 1.7;
+}
+
+.planner-app .planner-overview__reading-ledger {
+  margin: 0;
+  border-block-start: 1px solid var(--planner-sky-sheet);
+}
+
+.planner-app .planner-overview__reading-ledger > div {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr);
+  gap: var(--planner-space-5);
+  padding: var(--planner-space-5) 0;
+  border-block-end: 1px solid var(--planner-sky-sheet);
+}
+
+.planner-app .planner-overview__reading-ledger dd {
+  margin: 0;
+}
+
+.planner-app .planner-overview__reading-ledger ul {
+  display: grid;
+  gap: var(--planner-space-2);
+  margin: 0;
+  padding-inline-start: var(--planner-space-5);
+  color: var(--planner-ink-muted);
+  line-height: 1.65;
+}
+
+.planner-app .planner-overview__path-bands {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-block: 1px solid var(--planner-sky-sheet);
+}
+
+.planner-app .planner-overview__path-bands article {
+  padding: var(--planner-space-5);
+  border-inline-end: 1px solid var(--planner-sky-sheet);
+  background: var(--planner-paper);
+}
+
+.planner-app .planner-overview__path-bands article:last-child {
+  border-inline-end: 0;
+  background: var(--planner-mint-sheet);
+}
+
+.planner-app .planner-overview__path-bands span {
+  color: var(--planner-department-green);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.planner-app .planner-overview__path-bands h3,
+.planner-app .planner-overview__path-bands p {
+  margin: 0;
+}
+
+.planner-app .planner-overview__path-bands h3 {
+  margin-top: var(--planner-space-1);
+}
+
+.planner-app .planner-overview__path-bands p {
+  margin-top: var(--planner-space-2);
+  color: var(--planner-ink-muted);
+  line-height: 1.65;
+}
+
+.planner-app .planner-overview__outcome-list > li {
+  display: grid;
+  grid-template-columns: minmax(11rem, 0.45fr) minmax(0, 1fr);
+  gap: var(--planner-space-5);
+  padding: var(--planner-space-3) 0;
+  border-block-end: 1px solid var(--planner-sky-sheet);
+}
+
+.planner-app .planner-overview__outcome-list p {
+  margin: 0;
+  color: var(--planner-ink-muted);
+  line-height: 1.65;
+}
+
+.planner-app .planner-overview__track-list > li {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: var(--planner-space-3);
+  padding: var(--planner-space-5) 0;
+  border-block-end: 1px solid var(--planner-sky-sheet);
+}
+
+.planner-app .planner-overview__track-list > li > span {
+  color: var(--planner-dankook-blue);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.planner-app .planner-overview__track-list h3,
+.planner-app .planner-overview__track-list p {
+  margin: 0;
+}
+
+.planner-app .planner-overview__track-list small {
+  color: var(--planner-department-green);
+  font-weight: 750;
+}
+
+.planner-app .planner-overview__track-list h3 {
+  margin-top: var(--planner-space-1);
+}
+
+.planner-app .planner-overview__track-list p {
+  margin-top: var(--planner-space-2);
+  color: var(--planner-ink-muted);
+  line-height: 1.65;
+}
+
+.planner-app .planner-overview__track-list p:last-child {
+  color: var(--planner-dankook-blue);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.planner-app .planner-contact-heading h1 {
+  margin: var(--planner-space-2) 0 var(--planner-space-3);
+  color: var(--planner-ink);
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+}
+
+.planner-app .planner-contact-heading p {
+  color: var(--planner-ink-muted);
+}
+
+.planner-app .contact-details a {
+  display: inline-flex;
+  gap: var(--planner-space-2);
+  align-items: center;
+  min-height: 44px;
+}
+
+.planner-app :is(
+  .planner-overview__header h1,
+  .planner-resource-page__header h1,
+  .planner-contact-heading h1
+):focus-visible {
+  outline: 2px solid var(--planner-department-green);
+  outline-offset: 5px;
+  box-shadow: 0 0 0 2px var(--planner-paper);
+}
+
 @media (max-width: 720px) {
   .planner-app .planner-resources,
   .planner-app .planner-resource-page,
@@ -463,6 +780,43 @@
   .planner-app .planner-campus-source a {
     grid-column: 2;
     overflow-wrap: anywhere;
+  }
+
+  .planner-app .planner-overview {
+    gap: 28px;
+  }
+
+  .planner-app .planner-overview__header {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--planner-space-5);
+    padding: var(--planner-space-5);
+  }
+
+  .planner-app .planner-overview__identity {
+    min-width: 0;
+  }
+
+  .planner-app .planner-overview__fact-ledger,
+  .planner-app .planner-overview__path-bands {
+    grid-template-columns: 1fr;
+  }
+
+  .planner-app .planner-overview__fact-ledger > div,
+  .planner-app .planner-overview__path-bands article {
+    border-inline-end: 0;
+    border-block-end: 1px solid var(--planner-sky-sheet);
+  }
+
+  .planner-app .planner-overview__fact-ledger > div:last-child,
+  .planner-app .planner-overview__path-bands article:last-child {
+    border-block-end: 0;
+  }
+
+  .planner-app .planner-overview__question-steps > li,
+  .planner-app .planner-overview__reading-ledger > div,
+  .planner-app .planner-overview__outcome-list > li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--planner-space-2);
   }
 }
 

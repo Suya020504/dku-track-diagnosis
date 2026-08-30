@@ -23,6 +23,12 @@ async function goTo(search: string) {
   });
 }
 
+function resourceButton(section: string): HTMLButtonElement {
+  const control = document.querySelector<HTMLButtonElement>(`[data-resource-section="${section}"]`);
+  if (!control) throw new Error(`Missing resource control: ${section}`);
+  return control;
+}
+
 beforeEach(() => {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   document.body.innerHTML = '<div id="root"></div>';
@@ -53,6 +59,23 @@ describe("resource reading routes", () => {
       expect(document.querySelector(`[data-resource-section="${section}"]`)?.getAttribute("aria-selected"))
         .toBeNull();
       expect(document.querySelectorAll("[data-resource-page]")).toHaveLength(1);
+      expect(document.activeElement).toBe(document.querySelector(`#resource-page-${section}`));
+    }
+  });
+
+  it("focuses each clicked resource page heading while updating the URL", async () => {
+    await mountAt("?view=resources&section=tracks");
+
+    for (const section of ["modules", "curriculum", "official"] as const) {
+      await act(async () => resourceButton(section).click());
+
+      expect(new URLSearchParams(location.search).get("section")).toBe(section);
+      expect(document.activeElement).toBe(document.querySelector(`#resource-page-${section}`));
+      expect(window.scrollTo).toHaveBeenLastCalledWith({
+        top: 0,
+        left: 0,
+        behavior: "auto",
+      });
     }
   });
 

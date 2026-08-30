@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import type { ResourceSection } from "../../lib/appRouting";
 import { CurriculumReferenceView } from "./CurriculumReferenceView";
 import { ModuleReferenceView } from "./ModuleReferenceView";
@@ -48,6 +49,12 @@ export type ResourceIndexViewProps = {
 
 export function ResourceIndexView({ section, onSectionChange }: ResourceIndexViewProps) {
   const currentPage = resourcePages.find((page) => page.id === section) ?? resourcePages[0];
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    headingRef.current?.focus();
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [section]);
 
   return (
     <div className="planner-resources">
@@ -70,7 +77,7 @@ export function ResourceIndexView({ section, onSectionChange }: ResourceIndexVie
       <article className="planner-resource-page" data-resource-page={section} aria-labelledby={`resource-page-${section}`}>
         <header className="planner-resource-page__header">
           <p>자료 {currentPage.index} · {currentPage.label}</p>
-          <h1 id={`resource-page-${section}`}>{currentPage.title}</h1>
+          <h1 id={`resource-page-${section}`} ref={headingRef} tabIndex={-1}>{currentPage.title}</h1>
           <p>{currentPage.body}</p>
         </header>
 

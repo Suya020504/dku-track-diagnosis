@@ -87,7 +87,6 @@ type GuideStep = {
   viewId: ViewId;
 };
 
-const GUIDE_STORAGE_KEY = "track-sim:guide:v1";
 const guideSteps: GuideStep[] = [
   {
     title: "1. 자가진단에서 내 이수 정보를 입력합니다",
@@ -513,10 +512,10 @@ function App({ storage }: { storage?: Storage } = {}) {
   const [courseQuery, setCourseQuery] = useState("");
   const [focusCourseSearchOnReturn, setFocusCourseSearchOnReturn] = useState(false);
   const [lastManualSaveAt, setLastManualSaveAt] = useState("");
-  const [guideOpen, setGuideOpen] = useState(
-    () => activeView !== "landing" && !loadGuideDismissed(),
-  );
+  const [guideOpen, setGuideOpen] = useState(false);
   const [guideStepIndex, setGuideStepIndex] = useState(0);
+  const guideInvokerRef = useRef<HTMLButtonElement | null>(null);
+  const restoreGuideFocusRef = useRef(false);
   const stepHeadingRef = useRef<HTMLHeadingElement>(null);
   const diagnosisResultActionRef = useRef<HTMLButtonElement>(null);
   const courseSearchInputRef = useRef<HTMLInputElement>(null);
@@ -598,7 +597,9 @@ function App({ storage }: { storage?: Storage } = {}) {
   useEffect(() => {
     const focusEntryHeading = activeView === "diagnosis"
       || activeView === "result"
-      || activeView === "recommendation";
+      || activeView === "recommendation"
+      || activeView === "overview"
+      || activeView === "contact";
     if (!focusEntryHeading) return;
     stepHeadingRef.current?.focus();
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -612,6 +613,12 @@ function App({ storage }: { storage?: Storage } = {}) {
     interestCompletedAt,
     resultSection,
   ]);
+
+  useEffect(() => {
+    if (guideOpen || !restoreGuideFocusRef.current) return;
+    restoreGuideFocusRef.current = false;
+    guideInvokerRef.current?.focus();
+  }, [guideOpen]);
 
   useEffect(() => {
     if (activeView === "diagnosis" && diagnosisStep === "courses" && !pdfInputRoute) {
@@ -847,14 +854,20 @@ function App({ storage }: { storage?: Storage } = {}) {
     navigateDiagnosisStep("profile");
   }
 
-  function openGuide() {
+  function openGuide(invoker: HTMLButtonElement) {
+    guideInvokerRef.current = invoker;
+    restoreGuideFocusRef.current = false;
     setGuideStepIndex(0);
     setGuideOpen(true);
   }
 
-  function closeGuide() {
-    saveGuideDismissed();
+  function dismissGuide(restoreFocus: boolean) {
+    restoreGuideFocusRef.current = restoreFocus;
     setGuideOpen(false);
+  }
+
+  function closeGuide() {
+    dismissGuide(true);
   }
 
   function moveGuideStep(nextIndex: number) {
@@ -862,7 +875,7 @@ function App({ storage }: { storage?: Storage } = {}) {
   }
 
   function goToGuideStepView(viewId: ViewId) {
-    closeGuide();
+    dismissGuide(false);
     if (viewId === "diagnosis") {
       navigateDiagnosisStep(resolveDiagnosisStep("?view=diagnosis&step=courses", savedState));
       return;
@@ -1186,16 +1199,17 @@ function App({ storage }: { storage?: Storage } = {}) {
         journeyItems={renderedJourneyItems}
         saveState={storageError ? "error" : "saved"}
         onOpenHelp={openGuide}
-      >
-        {content}
-        {guideOpen && (
+        modalOpen={guideOpen}
+        modal={guideOpen ? (
           <GuideDialog
             activeStepIndex={guideStepIndex}
             onClose={closeGuide}
             onMoveStep={moveGuideStep}
             onGoToView={goToGuideStepView}
           />
-        )}
+        ) : undefined}
+      >
+        {content}
       </GuidebookShell>
     );
   }
@@ -1390,7 +1404,7 @@ function App({ storage }: { storage?: Storage } = {}) {
       <main className="workspace service-workspace">
         {activeView === "overview" && (
           <section className="primary-panel full-panel">
-            <OverviewView />
+            <OverviewView headingRef={stepHeadingRef} />
           </section>
         )}
 
@@ -1498,7 +1512,7 @@ function App({ storage }: { storage?: Storage } = {}) {
 
         {activeView === "contact" && (
           <section className="primary-panel full-panel compact-panel">
-            <ContactView />
+            <ContactView headingRef={stepHeadingRef} />
           </section>
         )}
       </main>
@@ -1520,21 +1534,69 @@ function GuideDialog({
   const activeStep = guideSteps[activeStepIndex];
   const isFirst = activeStepIndex === 0;
   const isLast = activeStepIndex === guideSteps.length - 1;
+  const dialogRef = useRef<HTMLElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    headingRef.current?.focus();
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const controls = [...dialog.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+      )];
+      const first = controls[0];
+      const last = controls.at(-1);
+      if (!first || !last) return;
+
+      if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
 
   return (
     <div className="guide-dialog-backdrop" role="presentation">
-      <section className="guide-dialog" role="dialog" aria-modal="true" aria-labelledby="guide-dialog-title">
+      <section
+        ref={dialogRef}
+        className="guide-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="guide-dialog-title"
+      >
         <div className="guide-dialog-top">
           <div>
             <span>처음 사용하는 학생을 위한 안내</span>
-            <h2 id="guide-dialog-title">사이트 사용방법</h2>
+            <h2 id="guide-dialog-title" ref={headingRef} tabIndex={-1}>사이트 사용방법</h2>
           </div>
           <button className="guide-close-button" type="button" aria-label="사용법 닫기" onClick={onClose}>
             <X aria-hidden="true" size={18} />
           </button>
         </div>
 
-        <div className="guide-stepper" aria-label="사용 단계">
+        <nav className="guide-stepper" aria-label="사용 단계">
           {guideSteps.map((step, index) => (
             <button
               className={index === activeStepIndex ? "guide-step active" : "guide-step"}
@@ -1546,7 +1608,7 @@ function GuideDialog({
               <strong>{step.title.replace(`${index + 1}. `, "")}</strong>
             </button>
           ))}
-        </div>
+        </nav>
 
         <article className="guide-step-card">
           <small>{activeStepIndex + 1} / {guideSteps.length}</small>
@@ -1583,177 +1645,144 @@ function GuideDialog({
   );
 }
 
-function OverviewView() {
+function OverviewView({ headingRef }: { headingRef?: RefObject<HTMLHeadingElement | null> }) {
   return (
-    <div className="view-stack">
-      <header className="topbar dku-hero">
-        <div className="hero-text">
-          <p className="source-line">DANKOOK UNIVERSITY · FOOD & RESOURCE ECONOMICS</p>
-          <h1>
-            <span>단국대학교 식품자원경제학과</span>
-            <span>트랙제 자가진단</span>
+    <article className="planner-overview" aria-labelledby="overview-page-title">
+      <header className="planner-overview__header">
+        <div>
+          <p>트랙제 안내 · 2026학년도 모듈형 교육과정</p>
+          <h1 id="overview-page-title" ref={headingRef} tabIndex={-1}>
+            단국대학교 식품자원경제학과 트랙제 자가진단
           </h1>
-          <p className="hero-copy">
-            <span>2026학년도 모듈형 교육과정 기준으로,</span>
-            <span>내가 선택한 트랙에서 남은 과목과 부족 학점을 바로 확인합니다.</span>
+          <p>
+            2026학년도 모듈형 교육과정 기준으로, 내가 선택한 트랙에서 남은 과목과 부족 학점을 바로 확인합니다.
           </p>
-          <div className="hero-feature-strip" aria-label="서비스 핵심 정보">
-            <span>
-              <strong>5</strong>
-              트랙
-            </span>
-            <span>
-              <strong>15</strong>
-              모듈
-            </span>
-            <span>
-              <strong>2026</strong>
-              교육과정 기준
-            </span>
-          </div>
         </div>
-        <div className="hero-side">
-          <div className="department-mark-card">
-            <span className="department-mark-symbol" aria-hidden="true">
-              <Compass size={36} />
-            </span>
-            <div>
-              <strong>식품자원경제학과</strong>
-              <span>Food & Resource Economics</span>
-            </div>
-          </div>
-        </div>
+        <aside className="planner-overview__identity" aria-label="학과 안내">
+          <Compass aria-hidden="true" size={34} />
+          <span><strong>식품자원경제학과</strong><small>Food &amp; Resource Economics</small></span>
+        </aside>
       </header>
 
-      <SectionHeader
-        eyebrow="트랙제 설명"
-        title="트랙제는 진로 방향에 맞춰 전공 과목을 모듈 단위로 설계하는 제도입니다."
-        body="식품자원경제학과의 2026 개편 교육과정은 전공 과목을 환경경영, 지역개발, 유통무역, 농업경제, 머천다이징, 농식품정책, 프라이싱, 농식품산업및경영, 경제성평가와 융합 모듈로 나누고, 학생이 선택한 트랙에 맞춰 필요한 모듈 학점을 채우는 방식으로 운영됩니다."
-      />
+      <dl className="planner-overview__fact-ledger" aria-label="서비스 핵심 정보">
+        <div><dt>학습 방향</dt><dd><strong>5</strong>개 트랙</dd></div>
+        <div><dt>과목 묶음</dt><dd><strong>15</strong>개 모듈</dd></div>
+        <div><dt>적용 자료</dt><dd><strong>2026</strong> 교육과정 기준</dd></div>
+      </dl>
 
-      <div className="info-grid">
-        <article className="info-card">
-          <h3>트랙제가 무엇인가요?</h3>
+      <section className="planner-overview__section" aria-labelledby="overview-definition-title">
+        <header>
+          <span>트랙제 설명</span>
+          <h2 id="overview-definition-title">트랙제는 진로 방향에 맞춰 전공 과목을 모듈 단위로 설계하는 제도입니다.</h2>
           <p>
-            전공 과목을 진로별 묶음으로 듣는 학습 경로입니다.
-            내 관심 트랙과 부족 모듈을 확인합니다.
+            식품자원경제학과의 2026 개편 교육과정은 전공 과목을 환경경영, 지역개발, 유통무역,
+            농업경제, 머천다이징, 농식품정책, 프라이싱, 농식품산업및경영, 경제성평가와 융합 모듈로 나누고,
+            학생이 선택한 트랙에 맞춰 필요한 모듈 학점을 채우는 방식으로 운영됩니다.
           </p>
-        </article>
-        <article className="info-card">
-          <h3>어떤 혜택이 있나요?</h3>
-          <p>
-            다음 학기에 들을 과목을 고르기 쉽고,
-            내 이수 이력을 진로와 연결해 설명할 수 있습니다.
-          </p>
-        </article>
-        <article className="info-card">
-          <h3>어떻게 구성되어 있나요?</h3>
-          <p>
-            학과전공은 5개 모듈별 6학점,
-            푸드바이오경제는 학과·융합 모듈을 함께 봅니다.
-          </p>
-        </article>
-      </div>
+        </header>
+        <ol className="planner-overview__question-steps">
+          <li>
+            <span>무엇</span>
+            <div><h3>트랙제가 무엇인가요?</h3><p>전공 과목을 진로별 묶음으로 듣는 학습 경로입니다. 내 관심 트랙과 부족 모듈을 확인합니다.</p></div>
+          </li>
+          <li>
+            <span>혜택</span>
+            <div><h3>어떤 혜택이 있나요?</h3><p>다음 학기에 들을 과목을 고르기 쉽고, 내 이수 이력을 진로와 연결해 설명할 수 있습니다.</p></div>
+          </li>
+          <li>
+            <span>구성</span>
+            <div><h3>어떻게 구성되어 있나요?</h3><p>학과전공은 5개 모듈별 6학점, 푸드바이오경제는 학과·융합 모듈을 함께 봅니다.</p></div>
+          </li>
+        </ol>
+      </section>
 
-      <div className="guide-panel">
-        <div className="guide-panel-head">
+      <section className="planner-overview__section" aria-labelledby="overview-guide-title">
+        <header>
           <span>학생용 가이드</span>
-          <h3>트랙제를 왜 활용해야 할까요?</h3>
+          <h2 id="overview-guide-title">트랙제를 왜 활용해야 할까요?</h2>
           <p>
             트랙제는 단순히 신청서를 제출하기 위한 제도가 아니라, 내 전공 선택을 진로 언어로 정리하고
             다음 학기 수강신청 우선순위를 세우는 기준이 됩니다.
           </p>
-        </div>
-        <div className="guide-grid">
-          <article className="guide-card">
-            <h4>장점</h4>
-            <ul>
+        </header>
+        <dl className="planner-overview__reading-ledger">
+          <div>
+            <dt>장점</dt>
+            <dd><ul>
               <li>수강한 과목이 어떤 트랙에 도움이 되는지 바로 확인할 수 있습니다.</li>
               <li>다음 학기에 먼저 채워야 할 모듈과 부족 학점을 정리할 수 있습니다.</li>
               <li>복수 트랙을 비교하면서 겹치는 과목을 효율적으로 선택할 수 있습니다.</li>
-            </ul>
-          </article>
-          <article className="guide-card">
-            <h4>의의</h4>
-            <ul>
+            </ul></dd>
+          </div>
+          <div>
+            <dt>의의</dt>
+            <dd><ul>
               <li>전공 과목을 단순 목록이 아니라 진로별 학습 로드맵으로 보게 해줍니다.</li>
               <li>학과 상담 전 내 현재 상태를 스스로 점검할 수 있는 기준이 됩니다.</li>
               <li>졸업 전 누락 과목을 줄이고, 전공 선택의 이유를 더 명확하게 설명할 수 있습니다.</li>
-            </ul>
-          </article>
-          <article className="guide-card">
-            <h4>이런 학생에게 추천</h4>
-            <ul>
+            </ul></dd>
+          </div>
+          <div>
+            <dt>이런 학생에게 추천</dt>
+            <dd><ul>
               <li>어떤 전공 방향이 나에게 맞는지 아직 고민 중인 학생</li>
               <li>푸드마케팅, 유통, 경제학 등 여러 분야를 함께 비교하고 싶은 학생</li>
               <li>복학, 편입, 교환학생 이후 이수 계획을 다시 정리해야 하는 학생</li>
-            </ul>
-          </article>
+            </ul></dd>
+          </div>
+        </dl>
+      </section>
+
+      <section className="planner-overview__section" aria-labelledby="overview-paths-title">
+        <header>
+          <span>구성 방식</span>
+          <h2 id="overview-paths-title">학과전공과 융합전공의 차이를 먼저 읽어보세요</h2>
+        </header>
+        <div className="planner-overview__path-bands">
+          {trackKindGuides.map((guide) => (
+            <article data-track-kind={guide.kind} key={guide.kind}>
+              <span>{guide.kind}</span>
+              <h3>{guide.title}</h3>
+              <p>{guide.description}</p>
+            </article>
+          ))}
         </div>
-      </div>
+      </section>
 
-      <div className="track-kind-guide">
-        {trackKindGuides.map((guide) => (
-          <article className={guide.kind === "융합전공" ? "kind-guide-card convergence" : "kind-guide-card"} key={guide.kind}>
-            <span className={guide.kind === "융합전공" ? "kind-badge kind-convergence" : "kind-badge kind-major"}>
-              {guide.kind}
-            </span>
-            <h3>{guide.title}</h3>
-            <p>{guide.description}</p>
-          </article>
-        ))}
-      </div>
-
-      <div className="policy-panel">
-        <div>
+      <section className="planner-overview__section" aria-labelledby="overview-outcomes-title">
+        <header>
           <span>핵심 요약</span>
-          <h3>트랙제 이수로 얻는 것</h3>
-        </div>
-        <div className="policy-grid">
-          <article>
-            <strong>진로 중심 전공 설계</strong>
-            <p>
-              관심 진로에 맞는 과목 묶음으로
-              전공 학습 방향을 정리합니다.
-            </p>
-          </article>
-          <article>
-            <strong>이수 이력 표시</strong>
-            <p>
-              트랙 이수 사실이 증명서에 표시되는 방향으로 안내됩니다.
-              내 전공 방향을 설명할 때 도움이 됩니다.
-            </p>
-          </article>
-          <article>
-            <strong>복수전공·부전공 지원</strong>
-            <p>
-              복수전공·부전공은 1학년 필수 과목을
-              필수 누락에서 제외할 수 있습니다.
-            </p>
-          </article>
-        </div>
-      </div>
+          <h2 id="overview-outcomes-title">트랙제 이수로 얻는 것</h2>
+        </header>
+        <ul className="planner-overview__outcome-list">
+          <li><strong>진로 중심 전공 설계</strong><p>관심 진로에 맞는 과목 묶음으로 전공 학습 방향을 정리합니다.</p></li>
+          <li><strong>이수 이력 표시</strong><p>트랙 이수 사실이 증명서에 표시되는 방향으로 안내됩니다. 내 전공 방향을 설명할 때 도움이 됩니다.</p></li>
+          <li><strong>복수전공·부전공 지원</strong><p>복수전공·부전공은 1학년 필수 과목을 필수 누락에서 제외할 수 있습니다.</p></li>
+        </ul>
+      </section>
 
-      <div className="explain-grid">
-        {tracks.map((track) => (
-          <article className="track-card" key={track.id}>
-            <span className={track.kind === "융합전공" ? "kind-badge kind-convergence" : "kind-badge kind-major"}>
-              {track.kind}
-            </span>
-            <h3>{track.name}</h3>
-            <p>{track.description}</p>
-            <div className="keyword-list">
-              {track.careerKeywords.map((keyword) => (
-                <small key={keyword}>{keyword}</small>
-              ))}
-            </div>
-          </article>
-        ))}
-      </div>
-    </div>
+      <section className="planner-overview__section" aria-labelledby="overview-tracks-title">
+        <header>
+          <span>다섯 트랙</span>
+          <h2 id="overview-tracks-title">현재 교육과정의 학습 방향</h2>
+        </header>
+        <ol className="planner-overview__track-list">
+          {tracks.map((track, index) => (
+            <li key={track.id}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <div>
+                <small>{track.kind}</small>
+                <h3>{track.name}</h3>
+                <p>{track.description}</p>
+                <p>{track.careerKeywords.join(" · ")}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+    </article>
   );
 }
-
 
 export function EnrollmentProfileSummary({
   enrollmentType,
@@ -1871,14 +1900,14 @@ function TrackSetupSummary({
 }
 
 
-function ContactView() {
+function ContactView({ headingRef }: { headingRef?: RefObject<HTMLHeadingElement | null> }) {
   return (
     <div className="view-stack">
-      <SectionHeader
-        eyebrow="문의사항"
-        title="개인 프로젝트 운영자에게 문의하기"
-        body="오류 제보, 데이터 검수 의견, 기능 제안은 아래 연락처로 보내주세요. 학과 공식 행정 문의는 반드시 학과 사무실 또는 공식 안내를 이용해야 합니다."
-      />
+      <header className="section-header planner-contact-heading">
+        <span>문의사항</span>
+        <h1 id="contact-page-title" ref={headingRef} tabIndex={-1}>개인 프로젝트 운영자에게 문의하기</h1>
+        <p>오류 제보, 데이터 검수 의견, 기능 제안은 아래 연락처로 보내주세요. 학과 공식 행정 문의는 반드시 학과 사무실 또는 공식 안내를 이용해야 합니다.</p>
+      </header>
       <div className="contact-card">
         <div className="contact-avatar logo-avatar">
           <Compass aria-hidden="true" size={36} />
@@ -2044,32 +2073,6 @@ export function DiagnosisPanel({
   );
 }
 
-function SectionHeader({
-  eyebrow,
-  title,
-  body,
-  headingRef,
-}: {
-  eyebrow: string;
-  title: string;
-  body: string;
-  headingRef?: RefObject<HTMLHeadingElement | null>;
-}) {
-  return (
-    <div className="section-header">
-      <span>{eyebrow}</span>
-      <h2
-        className={headingRef ? "step-focus-heading" : undefined}
-        ref={headingRef}
-        tabIndex={headingRef ? -1 : undefined}
-      >
-        {title}
-      </h2>
-      <p>{body}</p>
-    </div>
-  );
-}
-
 function ResultMetric({ label, value, compact = false }: { label: string; value: string; compact?: boolean }) {
   return (
     <div className={compact ? "metric compact" : "metric"}>
@@ -2107,16 +2110,6 @@ function printResultReport() {
 
 function getEnrollmentLabel(enrollmentType: EnrollmentType): string {
   return enrollmentOptions.find((option) => option.id === enrollmentType)?.label ?? "주전공";
-}
-
-function loadGuideDismissed(): boolean {
-  if (typeof localStorage === "undefined") return false;
-  return localStorage.getItem(GUIDE_STORAGE_KEY) === "dismissed";
-}
-
-function saveGuideDismissed(): void {
-  if (typeof localStorage === "undefined") return;
-  localStorage.setItem(GUIDE_STORAGE_KEY, "dismissed");
 }
 
 export default App;

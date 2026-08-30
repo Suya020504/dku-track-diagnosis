@@ -24,10 +24,6 @@
   transform: translateY(0);
 }
 
-.planner-app .guide-dialog-backdrop {
-  z-index: 160;
-}
-
 .planner-app :is(
   .planner-shell-content,
   .planner-shell-page,
@@ -184,6 +180,36 @@
   .planner-app .pdf-import-cancelled {
     align-items: stretch;
     flex-direction: column;
+  }
+}
+
+@media (max-width: 560px) {
+  .planner-app .guide-dialog-backdrop {
+    padding: var(--planner-space-2);
+  }
+
+  .planner-app .guide-dialog {
+    gap: var(--planner-space-3);
+    max-height: calc(100dvh - 16px);
+    padding: var(--planner-space-3);
+  }
+
+  .planner-app .guide-stepper {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .planner-app .guide-step {
+    grid-template-columns: 24px minmax(0, 1fr);
+    padding: var(--planner-space-2);
+  }
+
+  .planner-app .guide-step span {
+    width: 24px;
+    height: 24px;
+  }
+
+  .planner-app .guide-step-card {
+    padding: var(--planner-space-3);
   }
 }
 

@@ -336,6 +336,34 @@ describe("App recommendation browser interactions", () => {
     },
   );
 
+  it("renders contact as one focused H1 page on a direct URL", async () => {
+    history.replaceState({}, "", "/?view=contact");
+    await mountApp();
+
+    const heading = document.querySelector<HTMLHeadingElement>("#contact-page-title");
+    expect(document.querySelectorAll("main")).toHaveLength(1);
+    expect(document.querySelectorAll("h1")).toHaveLength(1);
+    expect(heading?.textContent).toBe("개인 프로젝트 운영자에게 문의하기");
+    expect(heading?.tabIndex).toBe(-1);
+    expect(document.activeElement).toBe(heading);
+    expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
+  });
+
+  it("uses the guidebook read presentation for overview without equal-card dashboard grids", async () => {
+    history.replaceState({}, "", "/?view=overview");
+    await mountApp();
+
+    expect(document.querySelector(".planner-overview")).not.toBeNull();
+    expect(document.querySelector(".planner-overview__fact-ledger")).not.toBeNull();
+    expect(document.querySelector(".planner-overview__reading-ledger")).not.toBeNull();
+    expect(document.querySelector(".dku-hero")).toBeNull();
+    expect(document.querySelector(".info-grid")).toBeNull();
+    expect(document.querySelector(".guide-grid")).toBeNull();
+    expect(document.querySelector(".policy-grid")).toBeNull();
+    expect(document.querySelectorAll("main")).toHaveLength(1);
+    expect(document.querySelectorAll("h1")).toHaveLength(1);
+  });
+
   it("keeps recommendation content under one guidebook shell and one main landmark", async () => {
     saveState(createEmptyAppState());
     history.replaceState({}, "", "/?view=recommendation&step=survey");
