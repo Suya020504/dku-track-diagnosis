@@ -50,8 +50,8 @@ describe("canonical app route resolution", () => {
   it.each([
     ["", { view: "landing" }],
     ["?view=overview", { view: "overview" }],
-    ["?view=resources", { view: "resources" }],
-    ["?view=modules", { view: "modules" }],
+    ["?view=resources", { view: "resources", section: "tracks" }],
+    ["?view=modules", { view: "resources", section: "modules" }],
     ["?view=contact", { view: "contact" }],
     ["?view=unknown", { view: "landing" }],
   ])("resolves %s to a safe top-level route", (search, expected) => {
@@ -62,12 +62,62 @@ describe("canonical app route resolution", () => {
     expect(resolveAppRoute("?view=diagnosis&step=courses", createEmptyAppState())).toEqual({
       view: "diagnosis",
       step: "profile",
+      profileStage: "affiliation",
     });
     expect(resolveAppRoute("?view=result", minorState)).toEqual({
       view: "diagnosis",
       step: "courses",
     });
-    expect(resolveAppRoute("?view=result", reviewedMinorState)).toEqual({ view: "result" });
+    expect(resolveAppRoute("?view=result", reviewedMinorState)).toEqual({
+      view: "result",
+      section: "current",
+    });
+  });
+
+  it("preserves the requested result section after the result prerequisite is ready", () => {
+    expect(resolveAppRoute("?view=result&section=next", reviewedMinorState)).toEqual({
+      view: "result",
+      section: "next",
+    });
+  });
+
+  it("defaults and validates result sections without bypassing prerequisites", () => {
+    expect(resolveAppRoute("?view=result&section=unknown", reviewedMinorState)).toEqual({
+      view: "result",
+      section: "current",
+    });
+    expect(resolveAppRoute("?view=result&section=next", minorState)).toEqual({
+      view: "diagnosis",
+      step: "courses",
+    });
+  });
+
+  it("resolves resource sections and canonicalizes the legacy modules alias", () => {
+    expect(resolveAppRoute("?view=resources&section=official", reviewedMinorState)).toEqual({
+      view: "resources",
+      section: "official",
+    });
+    expect(resolveAppRoute("?view=modules", reviewedMinorState)).toEqual({
+      view: "resources",
+      section: "modules",
+    });
+    expect(resolveAppRoute("?view=resources&section=unknown", reviewedMinorState)).toEqual({
+      view: "resources",
+      section: "tracks",
+    });
+  });
+
+  it("resolves profile stages only on the profile step", () => {
+    expect(resolveAppRoute("?view=diagnosis&step=profile&profile=path", createEmptyAppState())).toEqual({
+      view: "diagnosis",
+      step: "profile",
+      profileStage: "path",
+    });
+    expect(resolveAppRoute("?view=diagnosis&step=profile&profile=unknown", createEmptyAppState())).toEqual({
+      view: "diagnosis",
+      step: "profile",
+      profileStage: "affiliation",
+    });
   });
 
   it("opens pdf review only for the course step with an in-memory draft", () => {
@@ -85,7 +135,7 @@ describe("canonical app route resolution", () => {
       "?view=diagnosis&step=profile&input=pdf-review",
       minorState,
       { hasPdfImportDraft: true },
-    )).toEqual({ view: "diagnosis", step: "profile" });
+    )).toEqual({ view: "diagnosis", step: "profile", profileStage: "affiliation" });
   });
 
   it.each([
@@ -135,6 +185,18 @@ describe("canonical app route resolution", () => {
 });
 
 describe("canonical app route writes", () => {
+  it("writes canonical section and profile-stage fields", () => {
+    expect(buildAppHref(
+      "/app?view=modules&utm_source=share#top",
+      { view: "resources", section: "official" },
+    )).toBe("/app?view=resources&utm_source=share&section=official#top");
+
+    expect(buildAppHref(
+      "/app?view=diagnosis&step=profile&utm_source=share#top",
+      { view: "diagnosis", step: "profile", profileStage: "path" },
+    )).toBe("/app?view=diagnosis&step=profile&utm_source=share&profile=path#top");
+  });
+
   it("preserves unrelated query parameters and the hash while replacing route fields", () => {
     expect(buildAppHref(
       "/app?view=lab&step=old&axis=plan&utm_source=share&theme=dark#summary",

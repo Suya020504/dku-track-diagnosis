@@ -1,20 +1,34 @@
 import type { SavedAppStateV2 } from "../types";
 import { resolveDiagnosisStep, type DiagnosisStep } from "./viewRouting";
 
+export type ResultSection = "current" | "next" | "confirm";
+export type ResourceSection = "tracks" | "modules" | "curriculum" | "official";
+export type ProfileStage = "affiliation" | "path";
+
 export type AppRoute =
   | { view: "landing" }
-  | { view: "diagnosis"; step: DiagnosisStep; input?: "pdf-review" }
+  | {
+      view: "diagnosis";
+      step: DiagnosisStep;
+      input?: "pdf-review";
+      profileStage?: ProfileStage;
+    }
   | {
       view: "recommendation";
       step: "survey" | "axes";
       axis?: "interest" | "progress" | "plan";
     }
   | { view: "plan"; step: "setup" | "schedule" | "checks" }
-  | { view: "overview" | "resources" | "modules" | "result" | "contact" };
+  | { view: "result"; section?: ResultSection }
+  | { view: "resources"; section?: ResourceSection }
+  | { view: "overview" | "contact" };
 
-const simpleViews = new Set(["overview", "resources", "modules", "contact"] as const);
+const simpleViews = new Set(["overview", "contact"] as const);
 const recommendationAxes = new Set(["interest", "progress", "plan"] as const);
 const planSteps = new Set(["setup", "schedule", "checks"] as const);
+const resultSections = new Set<ResultSection>(["current", "next", "confirm"]);
+const resourceSections = new Set<ResourceSection>(["tracks", "modules", "curriculum", "official"]);
+const profileStages = new Set<ProfileStage>(["affiliation", "path"]);
 
 export function resolveAppRoute(
   search: string,
@@ -26,11 +40,15 @@ export function resolveAppRoute(
 
   if (view === "diagnosis" || view === "result") {
     const step = resolveDiagnosisStep(search, state);
-    if (step === "result") return { view: "result" };
+    if (step === "result") return { view: "result", section: resolveResultSection(params) };
     const input = params.get("input");
+    const profileStage = step === "profile" ? resolveProfileStage(params) : undefined;
+    const baseRoute = profileStage
+      ? { view: "diagnosis" as const, step, profileStage }
+      : { view: "diagnosis" as const, step };
     return step === "courses" && input === "pdf-review" && context.hasPdfImportDraft
-      ? { view: "diagnosis", step, input }
-      : { view: "diagnosis", step };
+      ? { ...baseRoute, input }
+      : baseRoute;
   }
 
   if (view === "lab") {
@@ -62,8 +80,16 @@ export function resolveAppRoute(
     return { view: "plan", step };
   }
 
-  if (simpleViews.has(view as "overview" | "resources" | "modules" | "contact")) {
-    return { view: view as "overview" | "resources" | "modules" | "contact" };
+  if (view === "resources") {
+    return { view: "resources", section: resolveResourceSection(params) };
+  }
+
+  if (view === "modules") {
+    return { view: "resources", section: "modules" };
+  }
+
+  if (simpleViews.has(view as "overview" | "contact")) {
+    return { view: view as "overview" | "contact" };
   }
 
   return { view: "landing" };
@@ -83,6 +109,11 @@ export function buildAppHref(currentHref: string, route: AppRoute): string {
     url.searchParams.set("step", route.step);
     url.searchParams.delete("axis");
     url.searchParams.delete("section");
+    if (route.step === "profile") {
+      url.searchParams.set("profile", route.profileStage ?? "affiliation");
+    } else {
+      url.searchParams.delete("profile");
+    }
     if (route.step === "courses" && route.input === "pdf-review") {
       url.searchParams.set("input", route.input);
     }
@@ -93,7 +124,8 @@ export function buildAppHref(currentHref: string, route: AppRoute): string {
     url.searchParams.set("view", "result");
     url.searchParams.set("step", "result");
     url.searchParams.delete("axis");
-    url.searchParams.delete("section");
+    url.searchParams.set("section", route.section ?? "current");
+    url.searchParams.delete("profile");
     return `${url.pathname}${url.search}${url.hash}`;
   }
 
@@ -106,6 +138,7 @@ export function buildAppHref(currentHref: string, route: AppRoute): string {
       url.searchParams.delete("axis");
     }
     url.searchParams.delete("section");
+    url.searchParams.delete("profile");
     return `${url.pathname}${url.search}${url.hash}`;
   }
 
@@ -114,6 +147,16 @@ export function buildAppHref(currentHref: string, route: AppRoute): string {
     url.searchParams.set("step", route.step);
     url.searchParams.delete("axis");
     url.searchParams.delete("section");
+    url.searchParams.delete("profile");
+    return `${url.pathname}${url.search}${url.hash}`;
+  }
+
+  if (route.view === "resources") {
+    url.searchParams.set("view", "resources");
+    url.searchParams.delete("step");
+    url.searchParams.delete("axis");
+    url.searchParams.set("section", route.section ?? "tracks");
+    url.searchParams.delete("profile");
     return `${url.pathname}${url.search}${url.hash}`;
   }
 
@@ -121,6 +164,7 @@ export function buildAppHref(currentHref: string, route: AppRoute): string {
   url.searchParams.delete("step");
   url.searchParams.delete("axis");
   url.searchParams.delete("section");
+  url.searchParams.delete("profile");
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
@@ -136,6 +180,7 @@ export function writeAppRouteToHistory(
     step: _step,
     axis: _axis,
     section: _section,
+    profile: _profile,
     input: _input,
     ...unrelatedState
   } = currentState;
@@ -148,6 +193,7 @@ function clearRouteParams(url: URL): void {
   url.searchParams.delete("step");
   url.searchParams.delete("axis");
   url.searchParams.delete("section");
+  url.searchParams.delete("profile");
   url.searchParams.delete("input");
 }
 
@@ -157,16 +203,43 @@ function routeHistoryState(route: AppRoute): Record<string, string> {
       view: route.step === "result" ? "result" : "diagnosis",
       step: route.step,
     };
-    return route.step === "courses" && route.input === "pdf-review"
-      ? { ...state, input: route.input }
+    const routeState = route.step === "profile"
+      ? { ...state, profile: route.profileStage ?? "affiliation" }
       : state;
+    return route.step === "courses" && route.input === "pdf-review"
+      ? { ...routeState, input: route.input }
+      : routeState;
   }
-  if (route.view === "result") return { view: "result", step: "result" };
+  if (route.view === "result") {
+    return { view: "result", step: "result", section: route.section ?? "current" };
+  }
   if (route.view === "recommendation") {
     return route.step === "axes" && route.axis
       ? { view: route.view, step: route.step, axis: route.axis }
       : { view: route.view, step: route.step };
   }
   if (route.view === "plan") return { view: route.view, step: route.step };
+  if (route.view === "resources") return { view: route.view, section: route.section ?? "tracks" };
   return { view: route.view };
+}
+
+function resolveResultSection(params: URLSearchParams): ResultSection {
+  const section = params.get("section");
+  return section && resultSections.has(section as ResultSection)
+    ? section as ResultSection
+    : "current";
+}
+
+function resolveResourceSection(params: URLSearchParams): ResourceSection {
+  const section = params.get("section");
+  return section && resourceSections.has(section as ResourceSection)
+    ? section as ResourceSection
+    : "tracks";
+}
+
+function resolveProfileStage(params: URLSearchParams): ProfileStage {
+  const profile = params.get("profile");
+  return profile && profileStages.has(profile as ProfileStage)
+    ? profile as ProfileStage
+    : "affiliation";
 }

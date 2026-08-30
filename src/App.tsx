@@ -600,6 +600,20 @@ function App({ storage }: { storage?: Storage } = {}) {
   const [activeView, setActiveView] = useState<ViewId>(() =>
     viewForRoute(resolveAppRoute(window.location.search, savedState)),
   );
+  const [, setResultSection] = useState<"current" | "next" | "confirm">(() => {
+    const route = resolveAppRoute(window.location.search, savedState);
+    return route.view === "result" ? route.section ?? "current" : "current";
+  });
+  const [, setResourceSection] = useState<"tracks" | "modules" | "curriculum" | "official">(() => {
+    const route = resolveAppRoute(window.location.search, savedState);
+    return route.view === "resources" ? route.section ?? "tracks" : "tracks";
+  });
+  const [, setProfileStage] = useState<"affiliation" | "path">(() => {
+    const route = resolveAppRoute(window.location.search, savedState);
+    return route.view === "diagnosis" && route.step === "profile"
+      ? route.profileStage ?? "affiliation"
+      : "affiliation";
+  });
   const [recommendationStep, setRecommendationStep] = useState<"survey" | "axes">(() => {
     const route = resolveAppRoute(window.location.search, savedState);
     return route.view === "recommendation" ? route.step : "survey";
@@ -739,8 +753,15 @@ function App({ storage }: { storage?: Storage } = {}) {
   function applyRoute(route: AppRoute) {
     setActiveView(viewForRoute(route));
     setPdfInputRoute(route.view === "diagnosis" ? route.input : undefined);
-    if (route.view === "diagnosis") setDiagnosisStep(route.step);
-    if (route.view === "result") setDiagnosisStep("result");
+    if (route.view === "diagnosis") {
+      setDiagnosisStep(route.step);
+      if (route.step === "profile") setProfileStage(route.profileStage ?? "affiliation");
+    }
+    if (route.view === "result") {
+      setDiagnosisStep("result");
+      setResultSection(route.section ?? "current");
+    }
+    if (route.view === "resources") setResourceSection(route.section ?? "tracks");
     if (route.view === "recommendation") {
       setRecommendationStep(route.step);
       setRecommendationAxis(route.axis);
@@ -778,8 +799,10 @@ function App({ storage }: { storage?: Storage } = {}) {
 
   function navigateDiagnosisStep(step: DiagnosisStep) {
     navigateAppRoute(step === "result"
-      ? { view: "result" }
-      : { view: "diagnosis", step });
+      ? { view: "result", section: "current" }
+      : step === "profile"
+        ? { view: "diagnosis", step, profileStage: "affiliation" }
+        : { view: "diagnosis", step });
   }
 
   function openPdfMatchReview(draft: PdfImportDraft) {
@@ -917,7 +940,7 @@ function App({ storage }: { storage?: Storage } = {}) {
       navigateAppRoute({ view: "recommendation", step: "axes" });
       return;
     }
-    navigateAppRoute({ view: viewId as "overview" | "resources" | "modules" | "contact" });
+    navigateAppRoute({ view: viewId as "overview" | "resources" | "contact" });
   }
 
   function startEntryFlow(goal: "check-progress" | "find-track") {
@@ -1238,7 +1261,7 @@ function App({ storage }: { storage?: Storage } = {}) {
                     key={item.id}
                     type="button"
                     onClick={(event) => {
-                      navigateAppRoute({ view: item.id as "overview" | "resources" | "modules" | "contact" });
+                      navigateAppRoute({ view: item.id as "overview" | "resources" | "contact" });
                       event.currentTarget.closest("details")?.removeAttribute("open");
                     }}
                   >
