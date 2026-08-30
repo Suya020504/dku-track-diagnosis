@@ -7,6 +7,7 @@ describe("planner journey view", () => {
     [{ view: "landing" }, "interest"],
     [{ view: "diagnosis", step: "courses" }, "courses"],
     [{ view: "resources", section: "modules" }, "modules"],
+    [{ view: "track-guide", section: "overview" }, "interest"],
     [{ view: "result", section: "current" }, "track"],
     [{ view: "plan", step: "setup" }, "semester"],
   ])("maps %o to the %s planner stage", (route, stage) => {

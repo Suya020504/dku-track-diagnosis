@@ -103,6 +103,10 @@
     grid-template-columns: 172px minmax(0, 1fr);
   }
 
+  .planner-app .planner-shell-layout.is-immersive {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .planner-app .planner-shell-page {
     padding-inline: 20px;
   }

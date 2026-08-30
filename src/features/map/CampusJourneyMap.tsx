@@ -6,24 +6,14 @@ import {
   ClipboardCheck,
   Compass,
   Flag,
-  LocateFixed,
   LockKeyhole,
   MapPinned,
   Route,
   Search,
   Target,
-  ZoomIn,
-  ZoomOut,
   type LucideIcon,
 } from "lucide-react";
-import {
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type PointerEvent as ReactPointerEvent,
-  type RefObject,
-} from "react";
+import { useMemo, type RefObject } from "react";
 import { TrackGlyph } from "../../components/TrackGlyph";
 import { tracks } from "../../data/curriculumData";
 
@@ -122,14 +112,6 @@ const STATE_LABELS: Record<CampusJourneyStopState, string> = {
   locked: "잠김",
 };
 
-const MIN_ZOOM = 1;
-const MAX_ZOOM = 1.5;
-const ZOOM_STEP = 0.1;
-
-function clampZoom(value: number) {
-  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Number(value.toFixed(2))));
-}
-
 export function CampusJourneyMap({
   stops,
   onOpenTrackGuide,
@@ -139,66 +121,10 @@ export function CampusJourneyMap({
   onOpenTrackGuide: () => void;
   headingRef?: RefObject<HTMLHeadingElement | null>;
 }) {
-  const [zoom, setZoom] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const dragRef = useRef<{
-    pointerId: number;
-    startX: number;
-    startY: number;
-    originX: number;
-    originY: number;
-  } | undefined>(undefined);
-  const mapRef = useRef<HTMLDivElement>(null);
-  const currentStop = stops.find((stop) => stop.state === "current") ?? stops[0];
   const stopById = useMemo(
     () => new Map(stops.map((stop) => [stop.id, stop])),
     [stops],
   );
-
-  function setNextZoom(nextZoom: number) {
-    const clamped = clampZoom(nextZoom);
-    setZoom(clamped);
-    if (clamped === MIN_ZOOM) setOffset({ x: 0, y: 0 });
-  }
-
-  function resetMap() {
-    setZoom(1);
-    setOffset({ x: 0, y: 0 });
-    requestAnimationFrame(() => {
-      mapRef.current
-        ?.querySelector<HTMLButtonElement>(`[data-map-stop="${currentStop?.id}"]`)
-        ?.focus();
-    });
-  }
-
-  function startDrag(event: ReactPointerEvent<HTMLDivElement>) {
-    if (zoom <= 1 || (event.target as HTMLElement).closest("button, a")) return;
-    dragRef.current = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      originX: offset.x,
-      originY: offset.y,
-    };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  }
-
-  function moveDrag(event: ReactPointerEvent<HTMLDivElement>) {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    const maxOffset = Math.round((zoom - 1) * 230);
-    setOffset({
-      x: Math.max(-maxOffset, Math.min(maxOffset, drag.originX + event.clientX - drag.startX)),
-      y: Math.max(-maxOffset, Math.min(maxOffset, drag.originY + event.clientY - drag.startY)),
-    });
-  }
-
-  function endDrag(event: ReactPointerEvent<HTMLDivElement>) {
-    if (dragRef.current?.pointerId === event.pointerId) dragRef.current = undefined;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-  }
 
   return (
     <section className="campus-journey" aria-labelledby="campus-journey-title">
@@ -234,24 +160,21 @@ export function CampusJourneyMap({
         </p>
       </header>
 
+      <div className="campus-journey__quick-read" aria-label="서비스 이용 흐름">
+        <span><strong>1</strong> 관심 찾기 또는 바로 진단</span>
+        <ArrowRight aria-hidden="true" />
+        <span><strong>2</strong> 현재 위치와 부족 영역 확인</span>
+        <ArrowRight aria-hidden="true" />
+        <span><strong>3</strong> 다음 과목 또는 선택형 플래너</span>
+      </div>
+
       <div className="campus-journey__map-shell">
         <div
-          className={zoom > 1 ? "campus-journey__viewport is-zoomed" : "campus-journey__viewport"}
-          ref={mapRef}
-          onPointerDown={startDrag}
-          onPointerMove={moveDrag}
-          onPointerUp={endDrag}
-          onPointerCancel={endDrag}
-          aria-label="전공 여정 지도. 확대 후 끌어서 이동할 수 있습니다."
+          className="campus-journey__viewport"
+          data-map-mode="fixed"
+          aria-label="고정형 전공 여정 지도. 모든 경로와 목적지를 한 화면에서 확인할 수 있습니다."
         >
-          <div
-            className="campus-journey__canvas"
-            style={{
-              "--campus-map-x": `${offset.x}px`,
-              "--campus-map-y": `${offset.y}px`,
-              "--campus-map-zoom": zoom,
-            } as CSSProperties}
-          >
+          <div className="campus-journey__canvas">
             <img
               className="campus-journey__background"
               src="/illustrations/academic-journey-campus-map-flat-v2.webp"
@@ -311,34 +234,6 @@ export function CampusJourneyMap({
                 </div>
               );
             })}
-          </div>
-
-          <div className="campus-journey__map-controls" aria-label="지도 조절">
-            <button
-              className="planner-focusable"
-              type="button"
-              aria-label="지도 확대"
-              disabled={zoom >= MAX_ZOOM}
-              onClick={() => setNextZoom(zoom + ZOOM_STEP)}
-            >
-              <ZoomIn aria-hidden="true" />
-              확대
-            </button>
-            <button
-              className="planner-focusable"
-              type="button"
-              aria-label="지도 축소"
-              disabled={zoom <= MIN_ZOOM}
-              onClick={() => setNextZoom(zoom - ZOOM_STEP)}
-            >
-              <ZoomOut aria-hidden="true" />
-              축소
-            </button>
-            <button className="planner-focusable" type="button" onClick={resetMap}>
-              <LocateFixed aria-hidden="true" />
-              현재 위치
-            </button>
-            <output aria-live="polite">{Math.round(zoom * 100)}%</output>
           </div>
         </div>
 

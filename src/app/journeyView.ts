@@ -22,7 +22,7 @@ export function resolveJourneyView(route: AppRoute): JourneyView {
 }
 
 function resolveJourneyStage(route: AppRoute): JourneyStage {
-  if (route.view === "landing" || route.view === "overview" || route.view === "contact") {
+  if (route.view === "landing" || route.view === "contact") {
     return "interest";
   }
 
@@ -33,6 +33,7 @@ function resolveJourneyStage(route: AppRoute): JourneyStage {
   if (route.view === "diagnosis") return "courses";
   if (route.view === "plan") return "semester";
   if (route.view === "result") return route.section === "next" ? "semester" : "track";
+  if (route.view === "track-guide") return "interest";
 
   if (route.view !== "resources") return "interest";
   if (route.section === "modules" || route.section === "curriculum") return "modules";

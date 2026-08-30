@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { ExternalLink, HelpCircle } from "lucide-react";
+import { DEPARTMENT_HOME_URL, DEPARTMENT_YOUTUBE_URL } from "../../data/officialResources";
 import { CompassPathRibbon, type CompassPathItem } from "../journey/CompassPathRibbon";
 import { GuideIndex, type GuideIndexItem } from "./GuideIndex";
 import { LocalSaveStatus, type LocalSaveState } from "./LocalSaveStatus";
@@ -15,12 +16,12 @@ export const DEPARTMENT_EXTERNAL_LINKS = [
   {
     id: "department-home",
     label: "학과 홈페이지",
-    href: "https://cms.dankook.ac.kr/web/ere",
+    href: DEPARTMENT_HOME_URL,
   },
   {
     id: "department-youtube",
     label: "학과 YouTube",
-    href: "https://www.youtube.com/@FoodandResourcesEconomics_dku/videos",
+    href: DEPARTMENT_YOUTUBE_URL,
   },
 ] as const satisfies readonly GuidebookExternalLink[];
 

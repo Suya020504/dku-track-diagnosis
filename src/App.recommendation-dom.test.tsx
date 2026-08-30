@@ -303,39 +303,20 @@ describe("App recommendation browser interactions", () => {
     expect(params.get("step")).toBe("schedule");
   });
 
-  it.each([
-    ["overview", "트랙제 안내", "트랙제 안내", "contact", "문의사항"],
-    ["contact", "문의사항", "문의", "overview", "트랙제 안내"],
-  ] as const)(
-    "keeps %s reachable and names the actual current utility screen",
-    async (view, currentLabel, mobileLabel, destinationView, destinationLabel) => {
-      saveState(createEmptyAppState());
-      history.replaceState({}, "", `/?view=${view}`);
-      await mountApp();
+  it("keeps contact reachable and names it as the current utility screen", async () => {
+    saveState(createEmptyAppState());
+    history.replaceState({}, "", "/?view=contact");
+    await mountApp();
 
-      expect(document.querySelector(".planner-shell-current-step")?.textContent).toContain(currentLabel);
-      const desktopCurrent = [...document.querySelectorAll<HTMLButtonElement>(".planner-shell-utility button")]
-        .find((candidate) => candidate.textContent?.trim() === currentLabel);
-      expect(desktopCurrent?.getAttribute("aria-current")).toBe("page");
-      const mobileCurrent = [...document.querySelectorAll<HTMLButtonElement>(".planner-mobile-nav__menu button")]
-        .find((candidate) => candidate.textContent?.trim() === mobileLabel);
-      expect(mobileCurrent?.getAttribute("aria-current")).toBe("page");
-
-      const destination = [...document.querySelectorAll<HTMLButtonElement>(".planner-shell-utility button")]
-        .find((candidate) => candidate.textContent?.trim() === destinationLabel);
-      expect(destination).not.toBeUndefined();
-      await act(async () => destination?.click());
-      expect(new URLSearchParams(location.search).get("view")).toBe(destinationView);
-      expect(document.querySelector(".planner-shell-current-step")?.textContent).toContain(destinationLabel);
-      expect(document.querySelectorAll("main")).toHaveLength(1);
-
-      const mobileReturn = [...document.querySelectorAll<HTMLButtonElement>(".planner-mobile-nav__menu button")]
-        .find((candidate) => candidate.textContent?.trim() === mobileLabel);
-      await act(async () => mobileReturn?.click());
-      expect(new URLSearchParams(location.search).get("view")).toBe(view);
-      expect(document.querySelector(".planner-shell-current-step")?.textContent).toContain(currentLabel);
-    },
-  );
+    expect(document.querySelector(".planner-shell-current-step")?.textContent).toContain("문의사항");
+    const desktopCurrent = [...document.querySelectorAll<HTMLButtonElement>(".planner-shell-utility button")]
+      .find((candidate) => candidate.textContent?.trim() === "문의사항");
+    expect(desktopCurrent?.getAttribute("aria-current")).toBe("page");
+    const mobileCurrent = [...document.querySelectorAll<HTMLButtonElement>(".planner-mobile-nav__menu button")]
+      .find((candidate) => candidate.textContent?.trim() === "문의");
+    expect(mobileCurrent?.getAttribute("aria-current")).toBe("page");
+    expect(document.querySelectorAll("main")).toHaveLength(1);
+  });
 
   it("renders contact as one focused H1 page on a direct URL", async () => {
     history.replaceState({}, "", "/?view=contact");
@@ -350,17 +331,16 @@ describe("App recommendation browser interactions", () => {
     expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
   });
 
-  it("uses the guidebook read presentation for overview without equal-card dashboard grids", async () => {
+  it("canonicalizes the legacy overview into the evidence-separated track guide", async () => {
     history.replaceState({}, "", "/?view=overview");
     await mountApp();
 
-    expect(document.querySelector(".planner-overview")).not.toBeNull();
-    expect(document.querySelector(".planner-overview__fact-ledger")).not.toBeNull();
-    expect(document.querySelector(".planner-overview__reading-ledger")).not.toBeNull();
+    const params = new URLSearchParams(location.search);
+    expect(params.get("view")).toBe("track-guide");
+    expect(params.get("section")).toBe("overview");
+    expect(document.querySelector(".planner-track-guide")).not.toBeNull();
+    expect(document.querySelector(".planner-overview")).toBeNull();
     expect(document.querySelector(".dku-hero")).toBeNull();
-    expect(document.querySelector(".info-grid")).toBeNull();
-    expect(document.querySelector(".guide-grid")).toBeNull();
-    expect(document.querySelector(".policy-grid")).toBeNull();
     expect(document.querySelectorAll("main")).toHaveLength(1);
     expect(document.querySelectorAll("h1")).toHaveLength(1);
   });
@@ -374,7 +354,7 @@ describe("App recommendation browser interactions", () => {
     expect(document.querySelector(".planner-guidebook-shell")).not.toBeNull();
     expect(document.querySelectorAll("main")).toHaveLength(1);
     const trackIndex = [...document.querySelectorAll<HTMLButtonElement>(".planner-guide-index button")]
-      .find((candidate) => candidate.textContent?.includes("트랙 탐색"));
+      .find((candidate) => candidate.textContent?.includes("트랙 가이드"));
     expect(trackIndex?.getAttribute("aria-current")).toBe("page");
   });
 

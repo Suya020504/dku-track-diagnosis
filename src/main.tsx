@@ -8,6 +8,7 @@ import "./styles/planner-shell.css";
 import "./styles/planner-journey.css";
 import "./styles/planner-landing.css";
 import "./styles/planner-map.css";
+import "./styles/planner-track-guide.css";
 import "./styles/planner-entry.css";
 import "./styles/planner-courses.css";
 import "./styles/planner-results.css";

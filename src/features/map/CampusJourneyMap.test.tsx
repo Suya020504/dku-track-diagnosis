@@ -44,16 +44,16 @@ describe("CampusJourneyMap", () => {
     expect(markup).toContain('aria-describedby="campus-route-list-tracks-reason"');
   });
 
-  it("provides real zoom controls, a current-location reset, and an accessible route list", () => {
+  it("keeps the journey map fixed and provides an accessible route list", () => {
     const markup = renderToStaticMarkup(
       <CampusJourneyMap stops={stops} onOpenTrackGuide={vi.fn()} />,
     );
 
-    expect(markup).toContain('aria-label="지도 확대"');
-    expect(markup).toContain('aria-label="지도 축소"');
-    expect(markup).toContain("현재 위치");
+    expect(markup).toContain('data-map-mode="fixed"');
+    expect(markup).not.toContain('aria-label="지도 확대"');
+    expect(markup).not.toContain('aria-label="지도 축소"');
+    expect(markup).not.toContain('aria-label="지도 조절"');
     expect(markup).toContain("지도 경로를 목록으로 보기");
-    expect(markup).toContain("100%");
   });
 
   it("uses the generated conceptual background and says it is not a real campus map", () => {

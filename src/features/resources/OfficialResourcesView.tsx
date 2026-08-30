@@ -2,9 +2,7 @@ import { CalendarDays, ExternalLink, FileCheck2, School, Youtube } from "lucide-
 import { EvidenceBand } from "../../components/EvidenceBand";
 import { COURSE_OFFERING_SNAPSHOT_META } from "../../data/courseOfferings2026";
 import { OFFICIAL_CURRICULUM_SOURCE } from "../../data/curriculumData";
-
-const DEPARTMENT_URL = "https://cms.dankook.ac.kr/web/ere";
-const DEPARTMENT_YOUTUBE_URL = "https://www.youtube.com/@FoodandResourcesEconomics_dku/videos";
+import { DEPARTMENT_HOME_URL, DEPARTMENT_YOUTUBE_URL } from "../../data/officialResources";
 
 const officialLinks = [
   {
@@ -24,7 +22,7 @@ const officialLinks = [
   {
     title: "식품자원경제학과 홈페이지",
     body: "학과 공지와 개별 이수 문의는 공식 학과 채널에서 확인합니다.",
-    href: DEPARTMENT_URL,
+    href: DEPARTMENT_HOME_URL,
     label: "학과 홈페이지 확인",
     Icon: School,
   },

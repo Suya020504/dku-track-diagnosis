@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { courses, tracks } from "./data/curriculumData";
+import { OFFICIAL_TRACK_VIDEOS, type OfficialTrackVideoId } from "./data/officialResources";
 import { ProfileFlow } from "./features/profile/ProfileFlow";
 import { GraduationPlanResult } from "./features/planning/GraduationPlanResult";
 import { GraduationPlanSetup } from "./features/planning/GraduationPlanSetup";
@@ -29,6 +30,7 @@ import type { LandingPlannerStatus } from "./features/landing/PlannerLanding";
 import { CampusMapLanding } from "./features/map/CampusMapLanding";
 import type { CampusJourneyStop, CampusJourneyStopId } from "./features/map/CampusJourneyMap";
 import { ResourceIndexView } from "./features/resources/ResourceIndexView";
+import { TRACK_GUIDE_SECTION_TITLES, TrackGuideView } from "./features/track-guide/TrackGuideView";
 import type { GuideIndexItem } from "./features/shell/GuideIndex";
 import type { MobileJourneyItem } from "./features/shell/MobileJourneyNav";
 import type { CompassPathItem } from "./features/journey/CompassPathRibbon";
@@ -54,6 +56,7 @@ import {
   type ProfileStage,
   type ResourceSection,
   type ResultSection,
+  type TrackGuideSection,
 } from "./lib/appRouting";
 import {
   resolveDiagnosisStep,
@@ -77,7 +80,7 @@ import type {
   TrackId,
 } from "./types";
 
-type ViewId = "landing" | "overview" | "resources" | "diagnosis" | "recommendation" | "plan" | "result" | "contact";
+type ViewId = "landing" | "resources" | "track-guide" | "diagnosis" | "recommendation" | "plan" | "result" | "contact";
 type GradeFilter = "all" | "1" | "2" | "3" | "4" | "unknown";
 type SemesterFilter = "all" | "1" | "2" | "unknown";
 type GuideStep = {
@@ -515,6 +518,16 @@ function App({ storage }: { storage?: Storage } = {}) {
     const route = resolveExperienceRoute(window.location.search, savedState);
     return route.view === "resources" ? route.section ?? "tracks" : "tracks";
   });
+  const [trackGuideSection, setTrackGuideSection] = useState<TrackGuideSection>(() => {
+    const route = resolveExperienceRoute(window.location.search, savedState);
+    return route.view === "track-guide" ? route.section ?? "overview" : "overview";
+  });
+  const [trackGuideVideoId, setTrackGuideVideoId] = useState<OfficialTrackVideoId>(() => {
+    const route = resolveExperienceRoute(window.location.search, savedState);
+    return route.view === "track-guide" && route.videoId
+      ? route.videoId
+      : OFFICIAL_TRACK_VIDEOS[0].id;
+  });
   const [profileStage, setProfileStage] = useState<ProfileStage>(() => {
     const route = resolveExperienceRoute(window.location.search, savedState);
     return route.view === "diagnosis" && route.step === "profile"
@@ -632,7 +645,7 @@ function App({ storage }: { storage?: Storage } = {}) {
       || activeView === "diagnosis"
       || activeView === "result"
       || activeView === "recommendation"
-      || activeView === "overview"
+      || activeView === "track-guide"
       || activeView === "contact";
     if (!focusEntryHeading) return;
     stepHeadingRef.current?.focus();
@@ -646,6 +659,7 @@ function App({ storage }: { storage?: Storage } = {}) {
     interestQuestionIndex,
     interestCompletedAt,
     resultSection,
+    trackGuideSection,
   ]);
 
   useEffect(() => {
@@ -721,6 +735,10 @@ function App({ storage }: { storage?: Storage } = {}) {
       setResultSection(route.section ?? "current");
     }
     if (route.view === "resources") setResourceSection(route.section ?? "tracks");
+    if (route.view === "track-guide") {
+      setTrackGuideSection(route.section ?? "overview");
+      setTrackGuideVideoId(route.videoId ?? OFFICIAL_TRACK_VIDEOS[0].id);
+    }
     if (route.view === "recommendation") {
       setRecommendationStep(route.step);
       setRecommendationAxis(route.axis);
@@ -770,6 +788,16 @@ function App({ storage }: { storage?: Storage } = {}) {
 
   function navigateResourceSection(section: ResourceSection) {
     navigateAppRoute({ view: "resources", section });
+  }
+
+  function navigateTrackGuideSection(section: TrackGuideSection) {
+    if (section === trackGuideSection) return;
+    navigateAppRoute({ view: "track-guide", section });
+  }
+
+  function navigateTrackGuideVideo(videoId: OfficialTrackVideoId) {
+    if (videoId === trackGuideVideoId) return;
+    navigateAppRoute({ view: "track-guide", section: "videos", videoId });
   }
 
   function openPdfMatchReview(draft: PdfImportDraft) {
@@ -922,7 +950,7 @@ function App({ storage }: { storage?: Storage } = {}) {
       navigateAppRoute({ view: "recommendation", step: "axes" });
       return;
     }
-    navigateAppRoute({ view: viewId as "overview" | "resources" | "contact" });
+    navigateAppRoute({ view: viewId as "resources" | "contact" });
   }
 
   function startEntryFlow(goal: "check-progress" | "find-track") {
@@ -1044,6 +1072,12 @@ function App({ storage }: { storage?: Storage } = {}) {
             ? { view: "result", section: resultSection }
             : activeView === "resources"
               ? { view: "resources", section: resourceSection }
+              : activeView === "track-guide"
+                ? {
+                    view: "track-guide",
+                    section: trackGuideSection,
+                    ...(trackGuideSection === "videos" ? { videoId: trackGuideVideoId } : {}),
+                  }
               : { view: activeView };
   const courseResultReady = Boolean(savedState.profile && savedState.courseInputReviewedAt);
   const exactPathReady = Boolean(courseResultReady && pathProgress);
@@ -1066,26 +1100,35 @@ function App({ storage }: { storage?: Storage } = {}) {
           ? "result"
           : activeView === "plan"
             ? "plan"
-            : "resources";
-  const utilityActiveId = activeView === "overview" || activeView === "contact"
-    ? activeView
-    : undefined;
+            : activeView === "track-guide"
+              ? "tracks"
+              : "resources";
+  const utilityActiveId = activeView === "contact" ? activeView : undefined;
   const mobileActiveId = utilityActiveId ?? guideActiveId;
-  const currentLabel = activeView === "overview"
-    ? "트랙제 안내"
+  const currentLabel = activeView === "track-guide"
+    ? "트랙 가이드"
     : activeView === "contact"
       ? "문의사항"
       : guideActiveId === "start"
-    ? "지도 안내"
-    : guideActiveId === "tracks"
-      ? "트랙 탐색"
-      : guideActiveId === "diagnosis"
-        ? "자가진단"
-        : guideActiveId === "result"
-          ? "결과"
-          : guideActiveId === "plan"
-            ? "학기 플래너 · 선택"
-            : "도구 & 정보";
+        ? "지도 안내"
+        : guideActiveId === "tracks"
+          ? "트랙 탐색"
+          : guideActiveId === "diagnosis"
+            ? "자가진단"
+            : guideActiveId === "result"
+              ? "결과"
+              : guideActiveId === "plan"
+                ? "학기 플래너 · 선택"
+                : "도구 & 정보";
+  useEffect(() => {
+    const baseTitle = "단국대 식품자원경제학과 트랙제 자가진단";
+    const pageTitle = activeView === "track-guide"
+      ? TRACK_GUIDE_SECTION_TITLES[trackGuideSection]
+      : activeView === "landing"
+        ? undefined
+        : currentLabel;
+    document.title = pageTitle ? `${pageTitle} | ${baseTitle}` : baseTitle;
+  }, [activeView, currentLabel, trackGuideSection]);
   const goToDiagnosis = () => navigateDiagnosisStep(
     resolveDiagnosisStep("?view=diagnosis&step=courses", savedState),
   );
@@ -1096,7 +1139,7 @@ function App({ storage }: { storage?: Storage } = {}) {
   );
   const guideItems: GuideIndexItem[] = [
     { id: "start", index: "01", label: "지도 안내", available: true, onSelect: () => navigateAppRoute({ view: "landing" }) },
-    { id: "tracks", index: "02", label: "트랙 탐색", available: true, onSelect: () => navigateAppRoute({ view: "recommendation", step: "survey" }) },
+    { id: "tracks", index: "02", label: "트랙 가이드·탐색", available: true, onSelect: () => navigateAppRoute({ view: "track-guide", section: "overview" }) },
     { id: "diagnosis", index: "03", label: "나의 진단", available: true, onSelect: goToDiagnosis },
     {
       id: "result",
@@ -1123,13 +1166,11 @@ function App({ storage }: { storage?: Storage } = {}) {
     { id: "plan", label: "계획", available: planNavAvailable, unavailableReason: "결과 확인 후 열려요.", onSelect: () => navigateAppRoute({ view: "plan", step: "setup" }) },
   ];
   const mobileMoreItems: MobileJourneyItem[] = [
-    { id: "tracks", label: "트랙", available: true, onSelect: () => navigateAppRoute({ view: "recommendation", step: "survey" }) },
-    { id: "overview", label: "트랙제 안내", available: true, onSelect: () => navigateAppRoute({ view: "overview" }) },
+    { id: "tracks", label: "트랙 가이드", available: true, onSelect: () => navigateAppRoute({ view: "track-guide", section: "overview" }) },
     { id: "resources", label: "자료", available: true, onSelect: () => navigateAppRoute({ view: "resources", section: "tracks" }) },
     { id: "contact", label: "문의", available: true, onSelect: () => navigateAppRoute({ view: "contact" }) },
   ];
   const utilityItems: MobileJourneyItem[] = [
-    { id: "overview", label: "트랙제 안내", available: true, onSelect: () => navigateAppRoute({ view: "overview" }) },
     { id: "contact", label: "문의사항", available: true, onSelect: () => navigateAppRoute({ view: "contact" }) },
   ];
   const currentJourney = resolveJourneyView(shellRoute);
@@ -1318,10 +1359,26 @@ function App({ storage }: { storage?: Storage } = {}) {
         mapStops={landingMapStops}
         plannerStatus={landingPlannerStatus}
         onPlannerAction={landingPlannerAction}
-        onOpenTrackGuide={() => navigateAppRoute({ view: "resources", section: "tracks" })}
+        onOpenTrackGuide={() => navigateAppRoute({ view: "track-guide", section: "overview" })}
       />,
       [],
       true,
+    );
+  }
+
+  if (activeView === "track-guide") {
+    return renderGuidebook(
+      <main className="planner-track-guide-main">
+        <TrackGuideView
+          section={trackGuideSection}
+          headingRef={stepHeadingRef}
+          onSectionChange={navigateTrackGuideSection}
+          onStartInterestSurvey={() => startEntryFlow("find-track")}
+          onStartDiagnosis={() => startEntryFlow("check-progress")}
+          videoId={trackGuideVideoId}
+          onVideoChange={navigateTrackGuideVideo}
+        />
+      </main>,
     );
   }
 
@@ -1500,12 +1557,6 @@ function App({ storage }: { storage?: Storage } = {}) {
       )}
 
       <main className="workspace service-workspace">
-        {activeView === "overview" && (
-          <section className="primary-panel full-panel">
-            <OverviewView headingRef={stepHeadingRef} />
-          </section>
-        )}
-
         {activeView === "resources" && (
           <section className="primary-panel full-panel">
             <ResourceIndexView
@@ -1747,145 +1798,6 @@ function GuideDialog({
         </div>
       </section>
     </div>
-  );
-}
-
-function OverviewView({ headingRef }: { headingRef?: RefObject<HTMLHeadingElement | null> }) {
-  return (
-    <article className="planner-overview" aria-labelledby="overview-page-title">
-      <header className="planner-overview__header">
-        <div>
-          <p>트랙제 안내 · 2026학년도 모듈형 교육과정</p>
-          <h1 id="overview-page-title" ref={headingRef} tabIndex={-1}>
-            단국대학교 식품자원경제학과 트랙제 자가진단
-          </h1>
-          <p>
-            2026학년도 모듈형 교육과정 기준으로, 내가 선택한 트랙에서 남은 과목과 부족 학점을 바로 확인합니다.
-          </p>
-        </div>
-        <aside className="planner-overview__identity" aria-label="학과 안내">
-          <Compass aria-hidden="true" size={34} />
-          <span><strong>식품자원경제학과</strong><small>Food &amp; Resource Economics</small></span>
-        </aside>
-      </header>
-
-      <dl className="planner-overview__fact-ledger" aria-label="서비스 핵심 정보">
-        <div><dt>학습 방향</dt><dd><strong>5</strong>개 트랙</dd></div>
-        <div><dt>과목 묶음</dt><dd><strong>15</strong>개 모듈</dd></div>
-        <div><dt>적용 자료</dt><dd><strong>2026</strong> 교육과정 기준</dd></div>
-      </dl>
-
-      <section className="planner-overview__section" aria-labelledby="overview-definition-title">
-        <header>
-          <span>트랙제 설명</span>
-          <h2 id="overview-definition-title">트랙제는 진로 방향에 맞춰 전공 과목을 모듈 단위로 설계하는 제도입니다.</h2>
-          <p>
-            식품자원경제학과의 2026 개편 교육과정은 전공 과목을 환경경영, 지역개발, 유통무역,
-            농업경제, 머천다이징, 농식품정책, 프라이싱, 농식품산업및경영, 경제성평가와 융합 모듈로 나누고,
-            학생이 선택한 트랙에 맞춰 필요한 모듈 학점을 채우는 방식으로 운영됩니다.
-          </p>
-        </header>
-        <ol className="planner-overview__question-steps">
-          <li>
-            <span>무엇</span>
-            <div><h3>트랙제가 무엇인가요?</h3><p>전공 과목을 진로별 묶음으로 듣는 학습 경로입니다. 내 관심 트랙과 부족 모듈을 확인합니다.</p></div>
-          </li>
-          <li>
-            <span>혜택</span>
-            <div><h3>어떤 혜택이 있나요?</h3><p>다음 학기에 들을 과목을 고르기 쉽고, 내 이수 이력을 진로와 연결해 설명할 수 있습니다.</p></div>
-          </li>
-          <li>
-            <span>구성</span>
-            <div><h3>어떻게 구성되어 있나요?</h3><p>학과전공은 5개 모듈별 6학점, 푸드바이오경제는 학과·융합 모듈을 함께 봅니다.</p></div>
-          </li>
-        </ol>
-      </section>
-
-      <section className="planner-overview__section" aria-labelledby="overview-guide-title">
-        <header>
-          <span>학생용 가이드</span>
-          <h2 id="overview-guide-title">트랙제를 왜 활용해야 할까요?</h2>
-          <p>
-            트랙제는 단순히 신청서를 제출하기 위한 제도가 아니라, 내 전공 선택을 진로 언어로 정리하고
-            다음 학기 수강신청 우선순위를 세우는 기준이 됩니다.
-          </p>
-        </header>
-        <dl className="planner-overview__reading-ledger">
-          <div>
-            <dt>장점</dt>
-            <dd><ul>
-              <li>수강한 과목이 어떤 트랙에 도움이 되는지 바로 확인할 수 있습니다.</li>
-              <li>다음 학기에 먼저 채워야 할 모듈과 부족 학점을 정리할 수 있습니다.</li>
-              <li>복수 트랙을 비교하면서 겹치는 과목을 효율적으로 선택할 수 있습니다.</li>
-            </ul></dd>
-          </div>
-          <div>
-            <dt>의의</dt>
-            <dd><ul>
-              <li>전공 과목을 단순 목록이 아니라 진로별 학습 로드맵으로 보게 해줍니다.</li>
-              <li>학과 상담 전 내 현재 상태를 스스로 점검할 수 있는 기준이 됩니다.</li>
-              <li>졸업 전 누락 과목을 줄이고, 전공 선택의 이유를 더 명확하게 설명할 수 있습니다.</li>
-            </ul></dd>
-          </div>
-          <div>
-            <dt>이런 학생에게 추천</dt>
-            <dd><ul>
-              <li>어떤 전공 방향이 나에게 맞는지 아직 고민 중인 학생</li>
-              <li>푸드마케팅, 유통, 경제학 등 여러 분야를 함께 비교하고 싶은 학생</li>
-              <li>복학, 편입, 교환학생 이후 이수 계획을 다시 정리해야 하는 학생</li>
-            </ul></dd>
-          </div>
-        </dl>
-      </section>
-
-      <section className="planner-overview__section" aria-labelledby="overview-paths-title">
-        <header>
-          <span>구성 방식</span>
-          <h2 id="overview-paths-title">학과전공과 융합전공의 차이를 먼저 읽어보세요</h2>
-        </header>
-        <div className="planner-overview__path-bands">
-          {trackKindGuides.map((guide) => (
-            <article data-track-kind={guide.kind} key={guide.kind}>
-              <span>{guide.kind}</span>
-              <h3>{guide.title}</h3>
-              <p>{guide.description}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="planner-overview__section" aria-labelledby="overview-outcomes-title">
-        <header>
-          <span>핵심 요약</span>
-          <h2 id="overview-outcomes-title">트랙제 이수로 얻는 것</h2>
-        </header>
-        <ul className="planner-overview__outcome-list">
-          <li><strong>진로 중심 전공 설계</strong><p>관심 진로에 맞는 과목 묶음으로 전공 학습 방향을 정리합니다.</p></li>
-          <li><strong>이수 이력 표시</strong><p>트랙 이수 사실이 증명서에 표시되는 방향으로 안내됩니다. 내 전공 방향을 설명할 때 도움이 됩니다.</p></li>
-          <li><strong>복수전공·부전공 지원</strong><p>복수전공·부전공은 1학년 필수 과목을 필수 누락에서 제외할 수 있습니다.</p></li>
-        </ul>
-      </section>
-
-      <section className="planner-overview__section" aria-labelledby="overview-tracks-title">
-        <header>
-          <span>다섯 트랙</span>
-          <h2 id="overview-tracks-title">현재 교육과정의 학습 방향</h2>
-        </header>
-        <ol className="planner-overview__track-list">
-          {tracks.map((track, index) => (
-            <li key={track.id}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <div>
-                <small>{track.kind}</small>
-                <h3>{track.name}</h3>
-                <p>{track.description}</p>
-                <p>{track.careerKeywords.join(" · ")}</p>
-              </div>
-            </li>
-          ))}
-        </ol>
-      </section>
-    </article>
   );
 }
 

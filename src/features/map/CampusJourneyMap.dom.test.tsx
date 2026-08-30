@@ -39,22 +39,17 @@ describe("CampusJourneyMap interactions", () => {
     vi.unstubAllGlobals();
   });
 
-  it("zooms, resets the map, and returns focus to the current stop", () => {
+  it("keeps the map fixed and opens the separate track guide", () => {
+    const onOpenTrackGuide = vi.fn();
     act(() => {
-      root.render(<CampusJourneyMap stops={stops} onOpenTrackGuide={vi.fn()} />);
+      root.render(<CampusJourneyMap stops={stops} onOpenTrackGuide={onOpenTrackGuide} />);
     });
 
-    const zoomIn = host.querySelector<HTMLButtonElement>('[aria-label="지도 확대"]')!;
-    const reset = [...host.querySelectorAll<HTMLButtonElement>(".campus-journey__map-controls button")]
-      .find((button) => button.textContent?.includes("현재 위치"))!;
-    const output = host.querySelector("output")!;
-
-    act(() => zoomIn.click());
-    expect(output.textContent).toBe("110%");
-
-    act(() => reset.click());
-    expect(output.textContent).toBe("100%");
-    expect(document.activeElement).toBe(host.querySelector('[data-map-stop="interest"]'));
+    expect(host.querySelector(".campus-journey__map-controls")).toBeNull();
+    expect(host.querySelector('[data-map-mode="fixed"]')).not.toBeNull();
+    const guide = host.querySelector<HTMLButtonElement>(".campus-journey__track-action")!;
+    act(() => guide.click());
+    expect(onOpenTrackGuide).toHaveBeenCalledTimes(1);
   });
 
   it("runs available route actions and keeps locked stops focusable with their reason", () => {

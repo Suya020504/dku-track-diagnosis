@@ -49,8 +49,9 @@ const resultState: SavedAppStateV2 = {
 describe("canonical app route resolution", () => {
   it.each([
     ["", { view: "landing" }],
-    ["?view=overview", { view: "overview" }],
+    ["?view=overview", { view: "track-guide", section: "overview" }],
     ["?view=resources", { view: "resources", section: "tracks" }],
+    ["?view=track-guide", { view: "track-guide", section: "overview" }],
     ["?view=modules", { view: "resources", section: "modules" }],
     ["?view=contact", { view: "contact" }],
     ["?view=unknown", { view: "landing" }],
@@ -105,6 +106,38 @@ describe("canonical app route resolution", () => {
       view: "resources",
       section: "tracks",
     });
+  });
+
+  it.each(["overview", "benefits", "structure", "videos"] as const)(
+    "restores the %s track-guide section without diagnosis prerequisites",
+    (section) => {
+      expect(resolveAppRoute(
+        `?view=track-guide&section=${section}`,
+        createEmptyAppState(),
+      )).toEqual({ view: "track-guide", section });
+    },
+  );
+
+  it("falls back to the track-guide overview for an unknown section", () => {
+    expect(resolveAppRoute(
+      "?view=track-guide&section=unknown",
+      createEmptyAppState(),
+    )).toEqual({ view: "track-guide", section: "overview" });
+  });
+
+  it("restores only known official videos on the videos guide section", () => {
+    expect(resolveAppRoute(
+      "?view=track-guide&section=videos&video=osc9yOuq0IU",
+      createEmptyAppState(),
+    )).toEqual({ view: "track-guide", section: "videos", videoId: "osc9yOuq0IU" });
+    expect(resolveAppRoute(
+      "?view=track-guide&section=videos&video=unknown",
+      createEmptyAppState(),
+    )).toEqual({ view: "track-guide", section: "videos" });
+    expect(resolveAppRoute(
+      "?view=track-guide&section=overview&video=osc9yOuq0IU",
+      createEmptyAppState(),
+    )).toEqual({ view: "track-guide", section: "overview" });
   });
 
   it("resolves profile stages only on the profile step", () => {
@@ -200,6 +233,11 @@ describe("canonical app route writes", () => {
       "/app?view=diagnosis&step=profile&utm_source=share#top",
       { view: "diagnosis", step: "profile", profileStage: "path" },
     )).toBe("/app?view=diagnosis&step=profile&utm_source=share&profile=path#top");
+
+    expect(buildAppHref(
+      "/app?view=resources&step=old&axis=plan&section=official&utm_source=share#guide",
+      { view: "track-guide", section: "videos", videoId: "osc9yOuq0IU" },
+    )).toBe("/app?view=track-guide&section=videos&utm_source=share&video=osc9yOuq0IU#guide");
   });
 
   it("preserves unrelated query parameters and the hash while replacing route fields", () => {
@@ -228,8 +266,8 @@ describe("canonical app route writes", () => {
 
     expect(buildAppHref(
       "/app?view=diagnosis&step=courses&input=pdf-review&utm_source=share#review",
-      { view: "overview" },
-    )).toBe("/app?view=overview&utm_source=share#review");
+      { view: "contact" },
+    )).toBe("/app?view=contact&utm_source=share#review");
   });
 
   it("removes pdf review state from history when navigating away", () => {
@@ -253,12 +291,12 @@ describe("canonical app route writes", () => {
       },
     });
 
-    writeAppRouteToHistory({ view: "overview" }, "push");
+    writeAppRouteToHistory({ view: "contact" }, "push");
 
     expect(pushState).toHaveBeenCalledWith(
-      { existing: true, view: "overview" },
+      { existing: true, view: "contact" },
       "",
-      "/app?view=overview&theme=dark",
+      "/app?view=contact&theme=dark",
     );
   });
 

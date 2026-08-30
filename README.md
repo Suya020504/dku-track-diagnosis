@@ -8,7 +8,7 @@
 
 2026-08-31에 검증한 평면 전공 여정 지도 재설계는 로컬 작업트리 기준이며 아직 운영 URL에 배포하지 않았습니다. 아래 이미지는 합성 비개인 QA 상태로 만든 로컬 검증 화면입니다.
 
-![평면 전공 여정 캠퍼스 지도 로컬 검증 첫 화면](docs/assets/2026-08-31-campus-map/01-landing-desktop.png)
+![고정형 전공 여정 지도 로컬 검증 첫 화면](docs/assets/2026-08-31-track-guide/01-fixed-landing-desktop.png)
 
 ## 사이트 목적
 
@@ -41,6 +41,7 @@
 | 화면 | 주소 |
 | --- | --- |
 | 랜딩 | / |
+| 트랙 가이드 4개 페이지 | ?view=track-guide&section=overview, benefits, structure, videos · 선택 영상은 video 값으로 복원 |
 | 관심 설문 | ?view=recommendation&step=survey |
 | 소속·이수 경로 | ?view=diagnosis&step=profile&profile=affiliation 또는 profile=path |
 | 과목 직접 선택 | ?view=diagnosis&step=courses |
@@ -71,6 +72,9 @@
 ## 주요 기능
 
 - 평면 캠퍼스 개념 지도, 직선 경로, 실제 목적지 버튼을 사용하는 반응형 여정 랜딩
+- 확대·축소 없이 모든 목적지를 한 화면에서 읽는 고정형 지도와 3단계 서비스 요약
+- 트랙제 정의·장점·5개 구성·공식 영상을 분리한 별도 가이드
+- 사용자가 재생을 선택한 뒤에만 연결되는 공식 YouTube 4부작 플레이어와 원본 링크
 - 학기 플래너를 진단 이후 선택형 보조 서비스로 제공
 - 관심 설문 경로와 직접 진단 경로를 분리한 실제 이용 흐름
 - 과목 목록을 건너뛰어 결과 행동으로 이동하는 키보드 skip link

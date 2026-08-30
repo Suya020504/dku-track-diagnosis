@@ -1,8 +1,10 @@
 import type { SavedAppStateV2 } from "../types";
+import { isOfficialTrackVideoId, type OfficialTrackVideoId } from "../data/officialResources";
 import { resolveDiagnosisStep, type DiagnosisStep } from "./viewRouting";
 
 export type ResultSection = "current" | "next" | "confirm";
 export type ResourceSection = "tracks" | "modules" | "curriculum" | "official";
+export type TrackGuideSection = "overview" | "benefits" | "structure" | "videos";
 export type ProfileStage = "affiliation" | "path";
 
 export type AppRoute =
@@ -21,13 +23,14 @@ export type AppRoute =
   | { view: "plan"; step: "setup" | "schedule" | "checks" }
   | { view: "result"; section?: ResultSection }
   | { view: "resources"; section?: ResourceSection }
-  | { view: "overview" | "contact" };
+  | { view: "track-guide"; section?: TrackGuideSection; videoId?: OfficialTrackVideoId }
+  | { view: "contact" };
 
-const simpleViews = new Set(["overview", "contact"] as const);
 const recommendationAxes = new Set(["interest", "progress", "plan"] as const);
 const planSteps = new Set(["setup", "schedule", "checks"] as const);
 const resultSections = new Set<ResultSection>(["current", "next", "confirm"]);
 const resourceSections = new Set<ResourceSection>(["tracks", "modules", "curriculum", "official"]);
+const trackGuideSections = new Set<TrackGuideSection>(["overview", "benefits", "structure", "videos"]);
 const profileStages = new Set<ProfileStage>(["affiliation", "path"]);
 
 export function resolveAppRoute(
@@ -84,13 +87,21 @@ export function resolveAppRoute(
     return { view: "resources", section: resolveResourceSection(params) };
   }
 
+  if (view === "track-guide") {
+    const section = resolveTrackGuideSection(params);
+    const videoId = section === "videos" ? params.get("video") : null;
+    return isOfficialTrackVideoId(videoId)
+      ? { view: "track-guide", section, videoId }
+      : { view: "track-guide", section };
+  }
+
+  if (view === "overview") return { view: "track-guide", section: "overview" };
+
   if (view === "modules") {
     return { view: "resources", section: "modules" };
   }
 
-  if (simpleViews.has(view as "overview" | "contact")) {
-    return { view: view as "overview" | "contact" };
-  }
+  if (view === "contact") return { view };
 
   return { view: "landing" };
 }
@@ -98,6 +109,7 @@ export function resolveAppRoute(
 export function buildAppHref(currentHref: string, route: AppRoute): string {
   const url = new URL(currentHref, "https://local.invalid");
   url.searchParams.delete("input");
+  url.searchParams.delete("video");
 
   if (route.view === "landing") {
     clearRouteParams(url);
@@ -160,6 +172,16 @@ export function buildAppHref(currentHref: string, route: AppRoute): string {
     return `${url.pathname}${url.search}${url.hash}`;
   }
 
+  if (route.view === "track-guide") {
+    url.searchParams.set("view", "track-guide");
+    url.searchParams.delete("step");
+    url.searchParams.delete("axis");
+    url.searchParams.set("section", route.section ?? "overview");
+    if (route.section === "videos" && route.videoId) url.searchParams.set("video", route.videoId);
+    url.searchParams.delete("profile");
+    return `${url.pathname}${url.search}${url.hash}`;
+  }
+
   url.searchParams.set("view", route.view);
   url.searchParams.delete("step");
   url.searchParams.delete("axis");
@@ -182,6 +204,7 @@ export function writeAppRouteToHistory(
     section: _section,
     profile: _profile,
     input: _input,
+    video: _video,
     ...unrelatedState
   } = currentState;
   const state = { ...unrelatedState, ...routeHistoryState(route) };
@@ -195,6 +218,7 @@ function clearRouteParams(url: URL): void {
   url.searchParams.delete("section");
   url.searchParams.delete("profile");
   url.searchParams.delete("input");
+  url.searchParams.delete("video");
 }
 
 function routeHistoryState(route: AppRoute): Record<string, string> {
@@ -220,6 +244,11 @@ function routeHistoryState(route: AppRoute): Record<string, string> {
   }
   if (route.view === "plan") return { view: route.view, step: route.step };
   if (route.view === "resources") return { view: route.view, section: route.section ?? "tracks" };
+  if (route.view === "track-guide") {
+    return route.section === "videos" && route.videoId
+      ? { view: route.view, section: route.section, video: route.videoId }
+      : { view: route.view, section: route.section ?? "overview" };
+  }
   return { view: route.view };
 }
 
@@ -235,6 +264,13 @@ function resolveResourceSection(params: URLSearchParams): ResourceSection {
   return section && resourceSections.has(section as ResourceSection)
     ? section as ResourceSection
     : "tracks";
+}
+
+function resolveTrackGuideSection(params: URLSearchParams): TrackGuideSection {
+  const section = params.get("section");
+  return section && trackGuideSections.has(section as TrackGuideSection)
+    ? section as TrackGuideSection
+    : "overview";
 }
 
 function resolveProfileStage(params: URLSearchParams): ProfileStage {

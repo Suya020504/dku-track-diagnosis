@@ -134,8 +134,8 @@ describe("App help dialog", () => {
     expect(initialHeading?.tabIndex).toBe(-1);
     expect(document.activeElement).toBe(initialHeading);
 
-    await act(async () => guideButton("트랙 탐색").click());
-    expect(new URLSearchParams(location.search).get("view")).toBe("recommendation");
+    await act(async () => guideButton("트랙 가이드").click());
+    expect(new URLSearchParams(location.search).get("view")).toBe("track-guide");
 
     await act(async () => guideButton("지도 안내").click());
     expect(location.search).toBe("");

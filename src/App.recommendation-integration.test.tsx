@@ -167,7 +167,8 @@ describe("recommendation route integration", () => {
     expect(primaryActionIndex).toBeGreaterThan(-1);
     expect(primaryActionIndex).toBeLessThan(secondaryActionIndex);
     expect(markup.match(/data-map-stop=/g)).toHaveLength(7);
-    expect(markup).toContain("지도 확대");
+    expect(markup).not.toContain("지도 확대");
+    expect(markup).toContain("관심 찾기 또는 바로 진단");
     expect(markup).toContain("자가진단 지름길");
     expect(markup).not.toContain("현재 예시 60%");
     expect(markup).not.toContain("부족 모듈 2개");

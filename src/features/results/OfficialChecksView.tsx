@@ -3,6 +3,7 @@ import { ExternalLink } from "lucide-react";
 import { EvidenceBand } from "../../components/EvidenceBand";
 import { COURSE_OFFERING_SNAPSHOT_META } from "../../data/courseOfferings2026";
 import { OFFICIAL_CURRICULUM_SOURCE } from "../../data/curriculumData";
+import { DEPARTMENT_HOME_URL, OFFICIAL_TRACK_VIDEOS } from "../../data/officialResources";
 import type {
   DiagnosisResult,
   PathProgressResult,
@@ -10,8 +11,7 @@ import type {
 } from "../../types";
 import { getPathLabel } from "./PathProgressSummary";
 
-const DEPARTMENT_URL = "https://cms.dankook.ac.kr/web/ere";
-const TRACK_VIDEO_URL = "https://www.youtube.com/watch?v=osc9yOuq0IU";
+const TRACK_VIDEO_URL = OFFICIAL_TRACK_VIDEOS[2].watchUrl;
 
 const REVIEW_LABELS: Record<PathProgressResult["reviewItems"][number]["code"], string> = {
   "rule-source": "적용 규정 근거",
@@ -151,7 +151,7 @@ export function OfficialChecksView({
             </a>
           </li>
           <li>
-            <a href={DEPARTMENT_URL} target="_blank" rel="noreferrer">
+            <a href={DEPARTMENT_HOME_URL} target="_blank" rel="noopener noreferrer">
               <span><strong>학과 홈페이지</strong><small>개인 적용 및 최신 공지 확인</small></span>
               <ExternalLink aria-hidden="true" size={18} />
             </a>
