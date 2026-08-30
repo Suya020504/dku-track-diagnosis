@@ -293,9 +293,9 @@ describe("recommendation route integration", () => {
       createEmptyAppState(),
     );
 
-    expect(markup).toContain('id="recommendation-axis-tab-interest"');
-    expect(markup).toContain('id="recommendation-axis-tab-progress"');
-    expect(markup).toContain('id="recommendation-axis-tab-plan"');
+    expect(markup).toContain('id="recommendation-axis-destination-interest"');
+    expect(markup).toContain('id="recommendation-axis-destination-progress"');
+    expect(markup).toContain('id="recommendation-axis-destination-plan"');
     expect(markup).toContain('data-recommendation-panel="progress"');
     expect(markup).not.toContain('data-recommendation-panel="interest"');
     expect(markup).not.toContain('data-recommendation-panel="plan"');

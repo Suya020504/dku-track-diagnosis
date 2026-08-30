@@ -1,4 +1,4 @@
-import type { KeyboardEvent, ReactNode, RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
 import { Compass, Heart, Route } from "lucide-react";
 import { TrackGlyph } from "../../components/TrackGlyph";
 import { tracks } from "../../data/curriculumData";
@@ -233,31 +233,11 @@ export function TrackRecommendationAxes({
     plan: plan?.[0]?.trackId,
   };
 
-  function moveAxis(event: KeyboardEvent<HTMLButtonElement>, current: RecommendationAxisId) {
-    const currentIndex = AXIS_PAGES.findIndex((page) => page.id === current);
-    let nextIndex: number | undefined;
-
-    if (event.key === "ArrowDown" || event.key === "ArrowRight") {
-      nextIndex = (currentIndex + 1) % AXIS_PAGES.length;
-    } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
-      nextIndex = (currentIndex - 1 + AXIS_PAGES.length) % AXIS_PAGES.length;
-    } else if (event.key === "Home") {
-      nextIndex = 0;
-    } else if (event.key === "End") {
-      nextIndex = AXIS_PAGES.length - 1;
-    }
-
-    if (nextIndex === undefined) return;
-    event.preventDefault();
-    onAxisChange(AXIS_PAGES[nextIndex].id);
-  }
-
   function renderActiveAxis() {
     if (activeAxis === "interest") {
       return (
         <AxisResultCard
           id="interest"
-          tabId="recommendation-axis-tab-interest"
           title="관심이 향하는 트랙"
           description="열 개 문항의 관심 방향만 반영합니다. 완료 과목이나 졸업 계획은 이 순서에 섞지 않습니다."
           unavailable={interest ? undefined : {
@@ -275,7 +255,6 @@ export function TrackRecommendationAxes({
       return (
         <AxisResultCard
           id="progress"
-          tabId="recommendation-axis-tab-progress"
           title="현재 완료 과목에서 가까운 트랙"
           description="완료로 표시한 과목만 계산해, 트랙별로 추가 확인할 과목과 부족 학점·모듈을 봅니다."
           assumption={progress?.[0]?.assumption === "track-major-hypothesis"}
@@ -293,7 +272,6 @@ export function TrackRecommendationAxes({
     return (
       <AxisResultCard
         id="plan"
-        tabId="recommendation-axis-tab-plan"
         title="졸업 전 계획에 배치하기 쉬운 트랙"
         description="목표 졸업학기와 학기당 수강량을 기준으로 배치 상태, 미배치 과목, 추가 학기를 따로 봅니다."
         assumption={plan?.[0]?.assumption === "track-major-hypothesis"}
@@ -327,33 +305,30 @@ export function TrackRecommendationAxes({
       <div className="recommendation-index-layout">
         <nav className="recommendation-axis-index" aria-label="독립 추천 기준">
           <span className="recommendation-axis-index__title">PAGE EDGE</span>
-          <div role="tablist" aria-label="추천 기준 페이지" aria-orientation="vertical">
+          <ol className="recommendation-axis-destinations">
             {AXIS_PAGES.map((page) => {
               const selected = activeAxis === page.id;
               const leader = axisLeaders[page.id];
               return (
-                <button
-                  className={selected ? "active planner-focusable" : "planner-focusable"}
-                  id={`recommendation-axis-tab-${page.id}`}
-                  data-axis-tab={page.id}
-                  type="button"
-                  role="tab"
-                  aria-controls="recommendation-axis-panel"
-                  aria-selected={selected}
-                  tabIndex={selected ? 0 : -1}
-                  key={page.id}
-                  onClick={() => onAxisChange(page.id)}
-                  onKeyDown={(event) => moveAxis(event, page.id)}
-                >
-                  <span>{page.index}</span>
-                  <span>
-                    <strong>{page.label}</strong>
-                    <small>{leader ? `${page.description} · ${trackName(leader)}` : `${page.description} · 입력 필요`}</small>
-                  </span>
-                </button>
+                <li key={page.id}>
+                  <button
+                    className={selected ? "active planner-focusable" : "planner-focusable"}
+                    id={`recommendation-axis-destination-${page.id}`}
+                    data-axis-destination={page.id}
+                    type="button"
+                    aria-current={selected ? "page" : undefined}
+                    onClick={() => onAxisChange(page.id)}
+                  >
+                    <span>{page.index}</span>
+                    <span>
+                      <strong>{page.label}</strong>
+                      <small>{leader ? `${page.description} · ${trackName(leader)}` : `${page.description} · 입력 필요`}</small>
+                    </span>
+                  </button>
+                </li>
               );
             })}
-          </div>
+          </ol>
         </nav>
 
         <div className="recommendation-active-axis">

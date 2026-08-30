@@ -414,7 +414,7 @@ describe("App recommendation browser interactions", () => {
     expect(document.body.textContent).toContain("5 / 10");
   });
 
-  it("writes axis tab changes to the URL and restores the controlled panel with H1 focus", async () => {
+  it("writes axis page changes to the URL and moves focus to the new H1", async () => {
     saveState({
       ...profileOnlyLandingState(),
       interestSurvey: completeSurvey(),
@@ -424,21 +424,26 @@ describe("App recommendation browser interactions", () => {
     await mountApp();
 
     const heading = document.querySelector<HTMLHeadingElement>("#recommendation-axes-title");
-    const progressTab = document.querySelector<HTMLButtonElement>("#recommendation-axis-tab-progress");
+    const progressDestination = document.querySelector<HTMLButtonElement>("#recommendation-axis-destination-progress");
     expect(heading).not.toBeNull();
     expect(document.activeElement).toBe(heading);
-    expect(progressTab?.getAttribute("aria-selected")).toBe("false");
+    expect(progressDestination?.getAttribute("aria-current")).toBeNull();
+    expect([...document.querySelectorAll<HTMLButtonElement>("[data-axis-destination]")]
+      .every((destination) => destination.tabIndex === 0)).toBe(true);
 
-    await act(async () => progressTab?.click());
+    await act(async () => {
+      progressDestination?.focus();
+      progressDestination?.click();
+    });
 
     expect(new URLSearchParams(location.search).get("axis")).toBe("progress");
     expect(document.querySelector('[data-recommendation-panel="progress"]')).not.toBeNull();
-    expect(document.querySelector("#recommendation-axis-tab-progress")?.getAttribute("aria-selected")).toBe("true");
+    expect(document.querySelector("#recommendation-axis-destination-progress")?.getAttribute("aria-current")).toBe("page");
     expect(document.activeElement).toBe(heading);
 
     await setRouteAndPop("/?view=recommendation&step=axes&axis=plan");
     expect(document.querySelector('[data-recommendation-panel="plan"]')).not.toBeNull();
-    expect(document.querySelector("#recommendation-axis-tab-plan")?.getAttribute("aria-selected")).toBe("true");
+    expect(document.querySelector("#recommendation-axis-destination-plan")?.getAttribute("aria-current")).toBe("page");
     expect(document.activeElement).toBe(heading);
   });
 

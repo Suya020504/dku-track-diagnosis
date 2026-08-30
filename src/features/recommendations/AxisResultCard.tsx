@@ -3,7 +3,6 @@ import { EvidenceBand } from "../../components/EvidenceBand";
 
 type AxisResultCardProps = {
   id: "interest" | "progress" | "plan";
-  tabId: string;
   title: string;
   description: string;
   assumption?: boolean;
@@ -17,7 +16,6 @@ type AxisResultCardProps = {
 
 export function AxisResultCard({
   id,
-  tabId,
   title,
   description,
   assumption = false,
@@ -30,9 +28,8 @@ export function AxisResultCard({
     <section
       className={`axis-result-page axis-${id}`}
       data-recommendation-panel={id}
-      id="recommendation-axis-panel"
-      role="tabpanel"
-      aria-labelledby={tabId}
+      id={`recommendation-axis-section-${id}`}
+      aria-labelledby={headingId}
     >
       <header className="axis-result-page__heading">
         <span>독립 기준</span>

@@ -89,20 +89,22 @@ function renderAxes(
 }
 
 describe("TrackRecommendationAxes", () => {
-  it("renders three controlled edge tabs but only the selected independent axis panel", () => {
+  it("renders three URL page destinations and one normally labelled active section", () => {
     const markup = renderAxes("progress");
 
-    expect(markup).toContain('role="tablist"');
-    expect(markup).toContain('aria-orientation="vertical"');
-    expect(markup).toContain('id="recommendation-axis-tab-progress"');
-    expect(markup.match(/aria-controls="recommendation-axis-panel"/g)).toHaveLength(3);
-    expect(markup).toContain('id="recommendation-axis-panel"');
-    expect(markup).toContain('aria-selected="true"');
+    expect(markup).toContain('id="recommendation-axis-destination-progress"');
+    expect(markup.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(markup).toContain('aria-labelledby="recommendation-axis-heading-progress"');
     expect(markup).toContain('data-recommendation-panel="progress"');
     expect(markup).toContain("현재 완료 과목");
     expect(markup).toContain("추가로 확인할 과목 2개");
     expect(markup).not.toContain('data-recommendation-panel="interest"');
     expect(markup).not.toContain('data-recommendation-panel="plan"');
+    expect(markup).not.toContain('role="tablist"');
+    expect(markup).not.toContain('role="tab"');
+    expect(markup).not.toContain('role="tabpanel"');
+    expect(markup).not.toContain('aria-selected=');
+    expect(markup).not.toContain('aria-controls=');
     expect(markup).not.toContain("91%");
   });
 
@@ -220,7 +222,7 @@ describe("TrackRecommendationAxes", () => {
     expect(markup).not.toContain("융합 산업");
   });
 
-  it("uses arrow keys to request the next URL-controlled axis", async () => {
+  it("keeps every URL destination in the standard tab order and activates by button click", async () => {
     const onAxisChange = vi.fn();
     const container = document.createElement("div");
     const root = createRoot(container);
@@ -240,9 +242,18 @@ describe("TrackRecommendationAxes", () => {
       );
     });
 
-    const interestTab = container.querySelector<HTMLButtonElement>("#recommendation-axis-tab-interest");
+    const destinations = [...container.querySelectorAll<HTMLButtonElement>("[data-axis-destination]")];
+    const interestDestination = container.querySelector<HTMLButtonElement>("#recommendation-axis-destination-interest");
+    const progressDestination = container.querySelector<HTMLButtonElement>("#recommendation-axis-destination-progress");
+
+    expect(destinations).toHaveLength(3);
+    expect(destinations.every((destination) => destination.tabIndex === 0)).toBe(true);
+    expect(interestDestination?.getAttribute("aria-current")).toBe("page");
+    expect(progressDestination?.getAttribute("aria-current")).toBeNull();
+
     await act(async () => {
-      interestTab?.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+      progressDestination?.focus();
+      progressDestination?.click();
     });
 
     expect(onAxisChange).toHaveBeenCalledWith("progress");

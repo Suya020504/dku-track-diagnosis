@@ -72,8 +72,11 @@
   padding-inline: 10px 16px;
 }
 
-.planner-app .recommendation-axis-index [role="tablist"] {
+.planner-app .recommendation-axis-destinations {
   display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .planner-app .recommendation-axis-index button {
@@ -96,7 +99,7 @@
   cursor: pointer;
 }
 
-.planner-app .recommendation-axis-index button:first-child {
+.planner-app .recommendation-axis-destinations li:first-child button {
   border-block-start: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 15%, transparent);
 }
 
@@ -125,12 +128,12 @@
   overflow-wrap: anywhere;
 }
 
-.planner-app .recommendation-axis-index button[aria-selected="true"] {
+.planner-app .recommendation-axis-index button[aria-current="page"] {
   background: var(--planner-mint-sheet);
   color: var(--planner-department-green);
 }
 
-.planner-app .recommendation-axis-index button[aria-selected="true"]::after {
+.planner-app .recommendation-axis-index button[aria-current="page"]::after {
   position: absolute;
   inset-block: 0;
   inset-inline-end: -1px;
@@ -443,12 +446,12 @@
     padding: 10px 12px 10px 8px;
   }
 
-  .planner-app .recommendation-axis-index button[aria-selected="true"]::after {
+  .planner-app .recommendation-axis-index button[aria-current="page"]::after {
     inset-block: 0;
     inset-inline: 0 auto;
   }
 
-  .planner-app .recommendation-axis-index button[aria-selected="true"] {
+  .planner-app .recommendation-axis-index button[aria-current="page"] {
     padding-inline-start: 14px;
   }
 
