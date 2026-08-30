@@ -162,9 +162,9 @@ describe("App recommendation browser interactions", () => {
     expect(reasonId ? document.getElementById(reasonId)?.textContent : undefined)
       .toBe("관심 질문을 마치면 트랙 비교가 열려요.");
 
-    const initialSearch = location.search;
+    const initialHref = window.location.href;
     await act(async () => trackJourney?.click());
-    expect(location.search).toBe(initialSearch);
+    expect(window.location.href).toBe(initialHref);
 
     await click("내 관심 트랙 찾기");
 
@@ -181,7 +181,7 @@ describe("App recommendation browser interactions", () => {
 
     const trackJourney = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
       .find((candidate) => candidate.textContent?.includes("트랙 탐색"));
-    const initialSearch = location.search;
+    const initialHref = window.location.href;
 
     expect(document.body.textContent).toContain("학생 유형");
     expect(document.body.textContent).toContain("이수 경로");
@@ -189,7 +189,7 @@ describe("App recommendation browser interactions", () => {
     expect(trackJourney?.disabled).toBe(true);
     expect(trackJourney?.getAttribute("aria-describedby")).not.toBeNull();
     await act(async () => trackJourney?.click());
-    expect(location.search).toBe(initialSearch);
+    expect(window.location.href).toBe(initialHref);
 
     await click("이수 과목 확인하기");
     const params = new URLSearchParams(location.search);
@@ -234,6 +234,7 @@ describe("App recommendation browser interactions", () => {
     const params = new URLSearchParams(location.search);
     expect(params.get("view")).toBe("recommendation");
     expect(params.get("step")).toBe("axes");
+    expect(params.get("axis")).toBe("interest");
   });
 
   it("keeps targetless reviewed-course track step locked while its comparison action opens axes", async () => {
@@ -242,16 +243,22 @@ describe("App recommendation browser interactions", () => {
 
     const trackJourney = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
       .find((candidate) => candidate.textContent?.includes("트랙 탐색"));
-    const initialSearch = location.search;
+    const initialHref = window.location.href;
+    const plannerPreview = document.querySelector('[data-planner-status="needs-track"]');
+    const previewRows = [...(plannerPreview?.querySelectorAll<HTMLDivElement>("dl > div") ?? [])];
+    const reviewedCoursesRow = previewRows.find(
+      (row) => row.querySelector("dt")?.textContent === "이수 과목",
+    );
+    const targetTrackRow = previewRows.find(
+      (row) => row.querySelector("dt")?.textContent === "목표 트랙",
+    );
 
-    expect(document.body.textContent).toContain("이수 과목");
-    expect(document.body.textContent).toContain("검토 완료");
-    expect(document.body.textContent).toContain("목표 트랙");
-    expect(document.body.textContent).toContain("선택 필요");
+    expect(reviewedCoursesRow?.querySelector("dd")?.textContent).toBe("검토 완료");
+    expect(targetTrackRow?.querySelector("dd")?.textContent).toBe("선택 필요");
     expect(trackJourney?.disabled).toBe(true);
     expect(trackJourney?.getAttribute("aria-describedby")).not.toBeNull();
     await act(async () => trackJourney?.click());
-    expect(location.search).toBe(initialSearch);
+    expect(window.location.href).toBe(initialHref);
 
     await click("트랙 비교 보기");
     const params = new URLSearchParams(location.search);
