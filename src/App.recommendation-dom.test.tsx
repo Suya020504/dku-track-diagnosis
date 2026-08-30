@@ -23,6 +23,15 @@ const planProfile: StudentProfile = {
   ruleApplicability: "reference-only",
 };
 
+const trackMajorProfile: StudentProfile = {
+  goal: "find-track",
+  affiliation: "department-student",
+  studyPath: "track-major",
+  entryYear: 2026,
+  curriculumRuleVersion: "2026-provided-final-plan",
+  ruleApplicability: "reference-only",
+};
+
 const savedPlanPreferences: GraduationPlanPreferences = {
   currentTerm: "2026-2",
   targetGraduationTerm: "2027-2",
@@ -46,6 +55,28 @@ function savedLandingPlanState(): SavedAppStateV2 {
       preferences: savedPlanPreferences,
       generatedAt: "2026-08-30T01:00:00.000Z",
     }),
+  };
+}
+
+function profileOnlyLandingState(): SavedAppStateV2 {
+  return {
+    ...createEmptyAppState(),
+    profile: trackMajorProfile,
+  };
+}
+
+function interestTargetLandingState(): SavedAppStateV2 {
+  return {
+    ...createEmptyAppState(),
+    interestSurvey: { ...completeSurvey(), selectedTrackId: "economics" },
+    targetTrackId: "economics",
+  };
+}
+
+function reviewedCoursesWithoutTargetState(): SavedAppStateV2 {
+  return {
+    ...profileOnlyLandingState(),
+    courseInputReviewedAt: "2026-08-30T00:30:00.000Z",
   };
 }
 
@@ -122,18 +153,49 @@ describe("App recommendation browser interactions", () => {
   it("keeps fresh track exploration locked while interest questions open the survey", async () => {
     await mountApp();
 
-    const interestJourney = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
-      .find((candidate) => candidate.textContent?.includes("관심 질문"));
     const trackJourney = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
       .find((candidate) => candidate.textContent?.includes("트랙 탐색"));
 
     expect(trackJourney?.disabled).toBe(true);
-    expect(trackJourney?.getAttribute("aria-describedby")).not.toBeNull();
-    await act(async () => interestJourney?.click());
+    const reasonId = trackJourney?.getAttribute("aria-describedby");
+    expect(reasonId).not.toBeNull();
+    expect(reasonId ? document.getElementById(reasonId)?.textContent : undefined)
+      .toBe("관심 질문을 마치면 트랙 비교가 열려요.");
+
+    const initialSearch = location.search;
+    await act(async () => trackJourney?.click());
+    expect(location.search).toBe(initialSearch);
+
+    await click("내 관심 트랙 찾기");
 
     const params = new URLSearchParams(location.search);
     expect(params.get("view")).toBe("recommendation");
     expect(params.get("step")).toBe("survey");
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_V2) ?? "null") as SavedAppStateV2;
+    expect(saved.profileDraft?.goal).toBe("find-track");
+  });
+
+  it("keeps profile-only track exploration locked and follows the guarded diagnosis route", async () => {
+    saveState(profileOnlyLandingState());
+    await mountApp();
+
+    const trackJourney = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
+      .find((candidate) => candidate.textContent?.includes("트랙 탐색"));
+    const initialSearch = location.search;
+
+    expect(document.body.textContent).toContain("학생 유형");
+    expect(document.body.textContent).toContain("이수 경로");
+    expect(document.body.textContent).not.toContain("관심 방향");
+    expect(trackJourney?.disabled).toBe(true);
+    expect(trackJourney?.getAttribute("aria-describedby")).not.toBeNull();
+    await act(async () => trackJourney?.click());
+    expect(location.search).toBe(initialSearch);
+
+    await click("이수 과목 확인하기");
+    const params = new URLSearchParams(location.search);
+    expect(params.get("view")).toBe("diagnosis");
+    expect(params.get("step")).toBe("profile");
+    expect(params.get("profile")).toBe("affiliation");
   });
 
   it("keeps a fresh landing unobstructed and opens or closes help only on request", async () => {
@@ -160,15 +222,13 @@ describe("App recommendation browser interactions", () => {
   });
 
   it("routes landing track exploration to axes after an interest direction is saved", async () => {
-    saveState({
-      ...createEmptyAppState(),
-      interestSurvey: { ...completeSurvey(), selectedTrackId: "economics" },
-      targetTrackId: "economics",
-    });
+    saveState(interestTargetLandingState());
     await mountApp();
 
     const trackJourney = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
       .find((candidate) => candidate.textContent?.includes("트랙 탐색"));
+    expect(trackJourney?.disabled).toBe(false);
+    expect(trackJourney?.getAttribute("aria-describedby")).toBeNull();
     await act(async () => trackJourney?.click());
 
     const params = new URLSearchParams(location.search);
@@ -176,9 +236,34 @@ describe("App recommendation browser interactions", () => {
     expect(params.get("step")).toBe("axes");
   });
 
+  it("keeps targetless reviewed-course track step locked while its comparison action opens axes", async () => {
+    saveState(reviewedCoursesWithoutTargetState());
+    await mountApp();
+
+    const trackJourney = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
+      .find((candidate) => candidate.textContent?.includes("트랙 탐색"));
+    const initialSearch = location.search;
+
+    expect(document.body.textContent).toContain("이수 과목");
+    expect(document.body.textContent).toContain("검토 완료");
+    expect(document.body.textContent).toContain("목표 트랙");
+    expect(document.body.textContent).toContain("선택 필요");
+    expect(trackJourney?.disabled).toBe(true);
+    expect(trackJourney?.getAttribute("aria-describedby")).not.toBeNull();
+    await act(async () => trackJourney?.click());
+    expect(location.search).toBe(initialSearch);
+
+    await click("트랙 비교 보기");
+    const params = new URLSearchParams(location.search);
+    expect(params.get("view")).toBe("recommendation");
+    expect(params.get("step")).toBe("axes");
+    expect(params.get("axis")).toBe("interest");
+  });
+
   it("opens an existing saved plan from the landing preview", async () => {
     saveState(savedLandingPlanState());
     await mountApp();
+    expect(document.body.textContent).toContain("저장한 학기 계획이 있어요");
     await click("저장한 계획 보기");
 
     const params = new URLSearchParams(location.search);
@@ -192,6 +277,7 @@ describe("App recommendation browser interactions", () => {
 
     const semesterJourney = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
       .find((candidate) => candidate.textContent?.includes("학기 계획"));
+    expect(semesterJourney?.disabled).toBe(false);
     await act(async () => semesterJourney?.click());
 
     const params = new URLSearchParams(location.search);
