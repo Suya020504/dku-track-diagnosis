@@ -108,7 +108,10 @@ describe("resource reading routes", () => {
 
     expect(location.search).toBe("?view=resources&section=modules");
     expect(resourceButton("modules").getAttribute("aria-current")).toBe("page");
-    expect(document.activeElement).toBe(document.querySelector("#resource-page-modules"));
+    const moduleHeading = document.querySelector("h1#resource-page-modules");
+    expect(moduleHeading).not.toBeNull();
+    expect(document.activeElement?.tagName).toBe("H1");
+    expect(document.activeElement).toBe(moduleHeading);
     expect(scrollTo).toHaveBeenCalledTimes(1);
     expect(scrollTo).toHaveBeenLastCalledWith({ top: 0, left: 0, behavior: "auto" });
 
@@ -117,7 +120,10 @@ describe("resource reading routes", () => {
 
     expect(location.search).toBe("?view=resources&section=curriculum");
     expect(resourceButton("curriculum").getAttribute("aria-current")).toBe("page");
-    expect(document.activeElement).toBe(document.querySelector("#resource-page-curriculum"));
+    const curriculumHeading = document.querySelector("h1#resource-page-curriculum");
+    expect(curriculumHeading).not.toBeNull();
+    expect(document.activeElement?.tagName).toBe("H1");
+    expect(document.activeElement).toBe(curriculumHeading);
     expect(scrollTo).toHaveBeenCalledTimes(1);
     expect(scrollTo).toHaveBeenLastCalledWith({ top: 0, left: 0, behavior: "auto" });
   });
