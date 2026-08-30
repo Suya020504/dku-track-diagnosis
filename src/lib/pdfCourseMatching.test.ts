@@ -216,6 +216,13 @@ describe("buildPdfImportCandidates conservative suggestions", () => {
   it("discards mixed PII/context rows before exact, fuzzy, or unmatched work", () => {
     const sensitiveRows = [
       "식품자원경제학과 홍길동 32212345",
+      "식품자원경제전공 홍길동",
+      "소속 식품자원경제전공 홍길동",
+      "식품자원경제 홍길동",
+      "식품자원경제학부 홍길동",
+      "전공 식품자원경제 홍길동",
+      "이메일 hong@example.com 경제정책",
+      "교과목명: 경제원론",
       "성명 홍길동 경제원론",
       "경제정책 학생 이름 홍길동",
       "지역개발 성적 A+ 2026-08-30",
@@ -229,9 +236,24 @@ describe("buildPdfImportCandidates conservative suggestions", () => {
     );
 
     expect(result).toEqual({ matched: [], ambiguous: [], unmatched: [] });
-    for (const fragment of ["홍길동", "32212345", "2026", "A+"]) {
+    for (const fragment of [
+      "홍길동",
+      "32212345",
+      "2026",
+      "A+",
+      "example.com",
+      "교과목명",
+    ]) {
       expect(JSON.stringify(result)).not.toContain(fragment);
     }
+  });
+
+  it("discards every non-exact whitespace cell instead of copying a mixed row", () => {
+    const result = buildPdfImportCandidates(
+      pages([1, "식품자원경제 홍길동\n경제정책 미확인값"]),
+    );
+
+    expect(result).toEqual({ matched: [], ambiguous: [], unmatched: [] });
   });
 
   it("never copies digits or control characters into an unmatched label", () => {
@@ -244,18 +266,33 @@ describe("buildPdfImportCandidates conservative suggestions", () => {
 
   it("keeps a bounded single-line course-like label and discards overlong cells", () => {
     const result = buildPdfImportCandidates(
-      pages([1, "  경제정책 실습  \n" + `경제${"가".repeat(59)}`]),
+      pages([1, "  경제정책실습  \n" + `경제${"가".repeat(59)}`]),
     );
 
     expect(result.unmatched).toEqual([
       {
         sourceId: "p1-c1",
-        displayLabel: "경제정책 실습",
+        displayLabel: "경제정책실습",
         pageNumbers: [1],
       },
     ]);
     expect(JSON.stringify(result)).not.toContain("\n");
     expect(result.unmatched[0]?.displayLabel.length).toBeLessThanOrEqual(60);
+  });
+
+  it("keeps only full-cell unknown letter-number codes for manual review", () => {
+    const result = buildPdfImportCandidates(
+      pages([1, "a-99/P-1\nA - 99\n123456\n32212345"]),
+    );
+
+    expect(result).toEqual({
+      matched: [],
+      ambiguous: [],
+      unmatched: [
+        { sourceId: "p1-c1", displayLabel: "A-99", pageNumbers: [1] },
+        { sourceId: "p1-c2", displayLabel: "P-1", pageNumbers: [1] },
+      ],
+    });
   });
 
   it("bounds a million-character repeated-code cell without emitting candidates", async () => {
@@ -356,6 +393,15 @@ describe("Task 2 strict candidate-validator integration", () => {
         candidateCourseIds: ["a-1", "b-1", "c-1"],
         pageNumbers: [1],
       },
+    ]);
+  });
+
+  it("accepts sanitized unknown standalone codes through strict draft validation", async () => {
+    const draft = await analyzeSyntheticText("a-99/P-1\n32212345");
+
+    expect(draft.unmatched).toEqual([
+      { sourceId: "p1-c1", displayLabel: "A-99", pageNumbers: [1] },
+      { sourceId: "p1-c2", displayLabel: "P-1", pageNumbers: [1] },
     ]);
   });
 });

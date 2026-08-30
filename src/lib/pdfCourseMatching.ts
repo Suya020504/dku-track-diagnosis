@@ -44,7 +44,8 @@ const DOMAIN_TOKENS = [
 const HEADER_PATTERN =
   /^(?:성적표|과목명|교과목명|이수학점|학점|성적|학수번호|학번|성명|이름)$/u;
 const HEADER_PHRASE_PATTERN = /(?:성적표|수강내역|이수내역)$/u;
-const SENSITIVE_CONTEXT_PATTERN = /(?:학번|성명|이름|학생|성적|점수|학과)/u;
+const SENSITIVE_CONTEXT_PATTERN =
+  /(?:학과|학부|전공|소속|성명|이름|학번|학생|성적|점수|생년|전화|이메일|대학|교과목명|과목명|학수번호|이수학점|수강내역|이수내역)/u;
 const SENSITIVE_CONTROL_PATTERN =
   /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u2028\u2029]/u;
 const STUDENT_NUMBER_PATTERN = /(?:^|[^0-9０-９])[0-9０-９]{7,10}(?![0-9０-９])/u;
@@ -53,6 +54,7 @@ const DATE_PATTERN =
 const GRADE_PATTERN =
   /(?:^|[\s|,;/])(?:a\+?|b\+?|c\+?|d\+?|f|p|np|수|우|미|양|가)(?=$|[\s|,;/])/iu;
 const SCORE_PATTERN = /[0-9０-９]{1,3}(?:[.][0-9０-９]+)?\s*(?:점|\/\s*100)/u;
+const UNKNOWN_COURSE_CODE_PATTERN = /^[A-Za-z]-\d{1,3}$/;
 const MATCH_KIND_ORDER: Record<PdfMatchKind, number> = {
   "internal-code": 0,
   "official-code": 1,
@@ -423,6 +425,19 @@ export function createPdfCourseCandidateBuilder(
         });
         continue;
       }
+
+      if (UNKNOWN_COURSE_CODE_PATTERN.test(cell.displayLabel)) {
+        const displayLabel = cell.displayLabel.toUpperCase();
+        unmatchedByKey.set(cell.normalizedLabel, {
+          type: "unmatched",
+          key: cell.normalizedLabel,
+          displayLabel,
+          pageNumbers: new Set(cell.pageNumbers),
+        });
+        continue;
+      }
+
+      if (/\s/u.test(cell.displayLabel)) continue;
 
       if (
         !isCredibleCourseLabel(cell.displayLabel) ||
