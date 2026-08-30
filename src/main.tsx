@@ -6,6 +6,7 @@ import "./styles/planner-tokens.css";
 import "./styles/planner-components.css";
 import "./styles/planner-shell.css";
 import "./styles/planner-journey.css";
+import "./styles/planner-landing.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

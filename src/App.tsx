@@ -36,6 +36,7 @@ import { PathProgressSummary } from "./features/results/PathProgressSummary";
 import { PdfCourseImportPanel } from "./features/courses/PdfCourseImportPanel";
 import { PdfMatchReview } from "./features/courses/PdfMatchReview";
 import { GuidebookShell } from "./features/shell/GuidebookShell";
+import { PlannerLanding } from "./features/landing/PlannerLanding";
 import type { GuideIndexItem } from "./features/shell/GuideIndex";
 import type { MobileJourneyItem } from "./features/shell/MobileJourneyNav";
 import type { CompassPathItem } from "./features/journey/CompassPathRibbon";
@@ -1187,7 +1188,38 @@ function App({ storage }: { storage?: Storage } = {}) {
     };
   });
 
-  function renderGuidebook(content: ReactNode) {
+  const landingJourneyItems: CompassPathItem[] = [
+    {
+      id: "interest",
+      label: "관심 질문",
+      state: "current",
+      completed: completedJourneyStages.has("interest"),
+      available: true,
+      onSelect: () => navigateAppRoute({ view: "recommendation", step: "survey" }),
+    },
+    {
+      id: "track",
+      label: "트랙 탐색",
+      state: "next",
+      completed: completedJourneyStages.has("track"),
+      available: true,
+      onSelect: () => navigateAppRoute({ view: "recommendation", step: "survey" }),
+    },
+    {
+      id: "semester",
+      label: "학기 계획",
+      state: "next",
+      completed: completedJourneyStages.has("semester"),
+      available: planNavAvailable,
+      unavailableReason: "관심 트랙과 이수 과목을 먼저 확인해 주세요.",
+      onSelect: () => navigateAppRoute({ view: "plan", step: "setup" }),
+    },
+  ];
+
+  function renderGuidebook(
+    content: ReactNode,
+    renderedJourneyItems: readonly CompassPathItem[] = journeyItems,
+  ) {
     return (
       <GuidebookShell
         activeId={guideActiveId}
@@ -1198,7 +1230,7 @@ function App({ storage }: { storage?: Storage } = {}) {
         mobileMoreItems={mobileMoreItems}
         utilityItems={utilityItems}
         utilityActiveId={utilityActiveId}
-        journeyItems={journeyItems}
+        journeyItems={renderedJourneyItems}
         saveState={storageError ? "error" : "saved"}
         onOpenHelp={openGuide}
       >
@@ -1217,10 +1249,12 @@ function App({ storage }: { storage?: Storage } = {}) {
 
   if (activeView === "landing") {
     return renderGuidebook(
-      <LandingPage
+      <PlannerLanding
+        journeyItems={landingJourneyItems}
         onStartDiagnosis={() => startEntryFlow("check-progress")}
         onFindTrack={() => startEntryFlow("find-track")}
-      />
+      />,
+      [],
     );
   }
 

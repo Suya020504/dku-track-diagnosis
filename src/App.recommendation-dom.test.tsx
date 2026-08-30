@@ -163,7 +163,7 @@ describe("App recommendation browser interactions", () => {
     expect(replaceState).toHaveBeenCalled();
     pushState.mockClear();
 
-    await click("자가진단 바로 시작");
+    await click("이수 과목 바로 진단");
 
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_V2) ?? "null") as SavedAppStateV2;
     expect(saved.profileDraft?.goal).toBe("check-progress");

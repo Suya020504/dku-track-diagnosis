@@ -80,8 +80,18 @@ describe("recommendation route integration", () => {
   it("shows the two landing entry actions before asking an empty visitor for a profile", () => {
     const markup = renderApp("");
 
-    expect(markup).toContain("자가진단 바로 시작");
+    const primaryActionIndex = markup.indexOf("내 관심 트랙 찾기");
+    const secondaryActionIndex = markup.indexOf("이수 과목 바로 진단");
+
+    expect(markup.replaceAll("<br/>", "")).toContain("내 관심을 따라, 전공 로드맵을 완성해요");
     expect(markup).toContain("내 관심 트랙 찾기");
+    expect(markup).toContain("이수 과목 바로 진단");
+    expect(primaryActionIndex).toBeGreaterThan(-1);
+    expect(primaryActionIndex).toBeLessThan(secondaryActionIndex);
+    expect(markup.match(/data-journey-stage=/g)).toHaveLength(3);
+    expect(markup).not.toContain("현재 예시 60%");
+    expect(markup).not.toContain("부족 모듈 2개");
+    expect(markup).not.toContain("로그인");
     expect(markup).not.toContain("내 상황에 맞는 이수 기준을 먼저 확인해요");
   });
 
