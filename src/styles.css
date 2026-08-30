@@ -9296,6 +9296,224 @@ html {
 .plan-entry-actions button { min-height: 44px; }
 .plan-entry-shell button:focus-visible { outline: 3px solid rgba(8, 122, 91, 0.38); outline-offset: 3px; }
 
+.graduation-plan-shell {
+  min-height: 100dvh;
+  padding: 0 20px 80px;
+  background:
+    linear-gradient(135deg, rgba(223, 246, 255, 0.55), transparent 38%),
+    var(--bg);
+}
+
+.graduation-plan-topbar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  width: min(1180px, 100%);
+  min-height: 64px;
+  margin: 0 auto;
+  border-bottom: 1px solid var(--line);
+}
+
+.graduation-plan-topbar > span { color: var(--muted); font-size: 12px; }
+.graduation-plan-topbar .text-button { min-height: 44px; padding: 0; }
+.graduation-plan-setup-page,
+.graduation-plan-page {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding-top: clamp(34px, 6vw, 70px);
+}
+
+.graduation-plan-setup-page { max-width: 880px; }
+.graduation-plan-setup-heading { max-width: 760px; margin-bottom: 26px; }
+.graduation-plan-setup-heading > span,
+.plan-status-summary > span,
+.plan-check-heading > span,
+.plan-next-actions > span {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+.graduation-plan-setup-heading h1,
+.plan-status-summary h1 {
+  margin: 10px 0 12px;
+  color: var(--dku-blue-dark);
+  font-size: clamp(30px, 5vw, 46px);
+  line-height: 1.18;
+  letter-spacing: -0.04em;
+}
+.graduation-plan-setup-heading p,
+.plan-status-summary p { margin: 0; color: var(--muted); line-height: 1.7; }
+
+.graduation-plan-form,
+.plan-status-summary,
+.plan-check-section,
+.plan-next-actions {
+  padding: clamp(22px, 4vw, 36px);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--shadow-soft);
+}
+
+.graduation-plan-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.graduation-plan-form-grid label:not(.seasonal-term-option) { display: grid; gap: 8px; }
+.graduation-plan-form-grid label > span { color: var(--dku-blue-dark); font-weight: 800; }
+.graduation-plan-form-grid input:not([type="checkbox"]) {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 13px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+}
+.graduation-plan-form-grid input[aria-invalid="true"] { border-color: #c66c3a; }
+.graduation-plan-form-grid small { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.graduation-plan-form-grid .field-error { color: #9a3f20; font-weight: 700; }
+.seasonal-term-option {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 48px;
+  align-self: end;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-muted);
+}
+.seasonal-term-option input { width: 20px; height: 20px; accent-color: var(--accent); }
+.plan-evidence-notice,
+.seasonal-term-notice,
+.future-offering-warning {
+  margin: 20px 0 0;
+  padding: 14px 16px;
+  border-radius: 11px;
+  background: #eef7fb;
+  color: #365f75;
+  line-height: 1.65;
+}
+.plan-evidence-notice { display: flex; flex-wrap: wrap; gap: 4px; }
+.plan-evidence-notice strong,
+.future-offering-warning strong { margin-right: 6px; color: #1e627f; }
+.plan-evidence-notice a { color: var(--accent-dark); font-weight: 800; }
+.seasonal-term-notice { margin-top: 10px; background: #fff6df; color: #725d10; }
+.graduation-plan-form > .primary-button { min-height: 48px; margin-top: 22px; }
+
+.plan-save-feedback,
+.graduation-plan-shell > .storage-error {
+  width: min(1180px, 100%);
+  margin: 18px auto 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  line-height: 1.5;
+}
+.plan-save-feedback.success { border-color: #b9d9d0; background: var(--accent-soft); color: var(--accent-dark); }
+.plan-save-feedback.error { border-color: #e2ae7c; background: var(--warning-soft); color: #7a3e12; }
+
+.plan-status-summary { border-left: 5px solid var(--accent); }
+.plan-status-summary.status-load-adjustment-needed,
+.plan-status-summary.status-extra-term-possible { border-left-color: #d87a32; }
+.plan-status-summary.status-official-review-required { border-left-color: #a44732; }
+.future-offering-warning { margin: 16px 0 22px; }
+.term-plan-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+.term-plan-column {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--accent);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: var(--shadow-soft);
+}
+.term-plan-column.extra-term { border-top-color: #d87a32; }
+.term-plan-column > header {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 78px;
+  padding: 15px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-muted);
+}
+.term-plan-column > header div { min-width: 0; }
+.term-plan-column > header span { color: var(--muted); font-size: 11px; font-weight: 750; }
+.term-plan-column > header h2 { margin: 4px 0 0; color: var(--dku-blue-dark); font-size: 18px; }
+.term-plan-column > header > small {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  font-weight: 800;
+}
+.term-plan-items { display: grid; gap: 9px; padding: 12px; }
+.term-plan-course {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+.term-plan-course > div { display: grid; gap: 5px; min-width: 0; }
+.term-plan-course strong { overflow-wrap: anywhere; color: var(--text); font-size: 13px; line-height: 1.45; }
+.term-plan-course span { color: var(--muted); font-size: 12px; line-height: 1.45; }
+.term-plan-course.elective-reservation { border-style: dashed; background: #f3f8fb; }
+.historical-pattern-badge {
+  width: fit-content;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: #fff1c8;
+  color: #725d10;
+  font-size: 10px;
+  font-weight: 800;
+}
+.term-plan-empty { margin: 18px 8px; color: var(--muted); font-size: 12px; line-height: 1.55; text-align: center; }
+.plan-result-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+.plan-result-actions button { min-height: 46px; }
+
+.plan-checks-page { display: grid; gap: 18px; max-width: 920px; }
+.plan-check-heading h1,
+.plan-check-heading h2,
+.plan-next-actions h2 { margin: 7px 0 0; color: var(--dku-blue-dark); }
+.plan-check-empty { margin: 20px 0 0; color: var(--muted); line-height: 1.6; }
+.unplaced-course-list,
+.official-review-items ul,
+.official-question-list { margin: 20px 0 0; }
+.unplaced-course-list { display: grid; gap: 10px; padding: 0; list-style: none; }
+.unplaced-course-list li { padding: 15px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-muted); }
+.unplaced-course-list li > div { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.unplaced-course-list li span { padding: 4px 7px; border-radius: 6px; background: #fff1c8; color: #725d10; font-size: 11px; font-weight: 800; }
+.unplaced-course-list p { margin: 9px 0 0; color: var(--muted); line-height: 1.55; }
+.official-review-items { margin-top: 20px; padding: 16px; border-radius: 11px; background: var(--surface-muted); }
+.official-review-items h3 { margin: 0; color: var(--text); font-size: 15px; }
+.official-review-items ul { padding-left: 20px; color: var(--muted); line-height: 1.65; }
+.official-question-list { display: grid; gap: 10px; padding-left: 24px; }
+.official-question-list li { padding: 13px 14px; border: 1px solid var(--line); border-radius: 10px; }
+.official-question-list strong { display: block; color: var(--text); line-height: 1.55; }
+.official-question-list span { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; }
+.plan-next-actions > div { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.plan-next-actions a,
+.plan-next-actions button { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; text-decoration: none; }
+
+.graduation-plan-shell button:focus-visible,
+.graduation-plan-shell input:focus-visible,
+.graduation-plan-shell a:focus-visible {
+  outline: 3px solid rgba(8, 122, 91, 0.38);
+  outline-offset: 3px;
+}
+
 .recommendation-page-shell button:focus-visible,
 .recommendation-page-shell input:focus-visible,
 .recommendation-page-shell [tabindex="-1"]:focus-visible {
@@ -9331,4 +9549,14 @@ html {
   .independent-recommendation-prompt > div { flex-direction: column; }
   .plan-entry-actions { flex-direction: column; }
   .plan-entry-actions button { width: 100%; }
+  .graduation-plan-shell { padding-inline: 14px; }
+  .graduation-plan-topbar { align-items: flex-start; flex-direction: column; justify-content: center; padding: 10px 0; }
+  .graduation-plan-form-grid { grid-template-columns: 1fr; }
+  .graduation-plan-form > .primary-button,
+  .plan-result-actions button,
+  .plan-next-actions a,
+  .plan-next-actions button { width: 100%; }
+  .plan-result-actions,
+  .plan-next-actions > div { flex-direction: column; }
+  .term-plan-board { grid-template-columns: 1fr; }
 }

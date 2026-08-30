@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import { courses, CURRICULUM_YEAR, modules, tracks } from "./data/curriculumData";
 import { StudyPathSetup } from "./features/profile/StudyPathSetup";
+import { GraduationPlanResult } from "./features/planning/GraduationPlanResult";
+import { GraduationPlanSetup } from "./features/planning/GraduationPlanSetup";
 import { InterestSurvey } from "./features/recommendations/InterestSurvey";
 import { TrackRecommendationAxes } from "./features/recommendations/TrackRecommendationAxes";
 import { PathProgressSummary } from "./features/results/PathProgressSummary";
@@ -41,7 +43,13 @@ import {
 } from "./lib/diagnosis";
 import { calculatePathProgress } from "./lib/progressEngine";
 import { buildRecommendationAxes } from "./lib/recommendationEngine";
-import { createEmptyAppState, loadAppState, saveAppState } from "./lib/storage";
+import { calculateGraduationPlan } from "./lib/graduationPlanner";
+import {
+  appendDiagnosisSnapshot,
+  createEmptyAppState,
+  loadAppState,
+  saveAppState,
+} from "./lib/storage";
 import {
   resolveAppRoute,
   writeAppRouteToHistory,
@@ -54,6 +62,8 @@ import {
 import type {
   Course,
   DiagnosisResult,
+  GraduationPlanPreferences,
+  GraduationPlanResult as GraduationPlanResultValue,
   EnrollmentType,
   InterestSurveyState,
   ModuleId,
@@ -61,6 +71,7 @@ import type {
   PlanTerm,
   PlanningSemester,
   PathProgressResult,
+  RecommendationAxes,
   SavedAppStateV2,
   StudentProfile,
   Track,
@@ -413,6 +424,75 @@ export function saveCompletedCoursesManually(
   };
 }
 
+export function createGraduationPlanTransition(
+  current: SavedAppStateV2,
+  preferences: GraduationPlanPreferences,
+  generatedAt: string,
+): {
+  state: SavedAppStateV2;
+  result: GraduationPlanResultValue;
+  route: AppRoute;
+} {
+  if (!current.profile) {
+    throw new Error("A student profile is required before graduation planning");
+  }
+  if (current.profile.studyPath === "track-major" && !current.targetTrackId) {
+    throw new Error("A target track is required before graduation planning");
+  }
+
+  const result = calculateGraduationPlan({
+    profile: current.profile,
+    targetTrackId: current.targetTrackId,
+    courseSelections: current.courseSelections,
+    additionalMajorCredits: current.additionalMajorCredits,
+    preferences,
+    generatedAt,
+  });
+  return {
+    state: {
+      ...current,
+      graduationPlanPreferences: preferences,
+      graduationPlan: result,
+    },
+    result,
+    route: { view: "plan", step: "schedule" },
+  };
+}
+
+export function saveGraduationPlanSnapshotTransition(
+  current: SavedAppStateV2,
+  input: {
+    id: string;
+    createdAt: string;
+    pathResult: PathProgressResult;
+    recommendationAxes: RecommendationAxes;
+    plan: GraduationPlanResultValue;
+  },
+): SavedAppStateV2 {
+  if (!current.profile) {
+    throw new Error("A student profile is required before saving a graduation plan");
+  }
+
+  const stateWithCurrentPlan: SavedAppStateV2 = {
+    ...current,
+    graduationPlanPreferences: input.plan.preferences,
+    graduationPlan: input.plan,
+  };
+  return appendDiagnosisSnapshot(stateWithCurrentPlan, {
+    id: input.id,
+    createdAt: input.createdAt,
+    ruleVersion: current.profile.curriculumRuleVersion,
+    profile: { ...current.profile },
+    courseSelections: current.courseSelections.map((selection) => ({ ...selection })),
+    additionalMajorCredits: current.additionalMajorCredits.map((credit) => ({ ...credit })),
+    targetTrackId: current.targetTrackId,
+    comparisonTrackIds: [...current.comparisonTrackIds],
+    result: input.pathResult,
+    recommendationAxes: input.recommendationAxes,
+    graduationPlan: input.plan,
+  });
+}
+
 function App() {
   const [savedState, setSavedState] = useState<SavedAppStateV2>(() => loadAppState());
   const [storageError, setStorageError] = useState(false);
@@ -433,6 +513,14 @@ function App() {
     const route = resolveAppRoute(window.location.search, savedState);
     return route.view === "recommendation" ? route.axis : undefined;
   });
+  const [planStep, setPlanStep] = useState<"setup" | "schedule" | "checks">(() => {
+    const route = resolveAppRoute(window.location.search, savedState);
+    return route.view === "plan" ? route.step : "setup";
+  });
+  const [planDraft, setPlanDraft] = useState<Partial<GraduationPlanPreferences>>(
+    () => savedState.graduationPlanPreferences ?? {},
+  );
+  const [planSaveStatus, setPlanSaveStatus] = useState<"idle" | "saved" | "error">("idle");
   const selectedTrackIds = useMemo(() => getSelectedTrackIds(savedState), [savedState]);
   const [trackSetupOpen, setTrackSetupOpen] = useState(() => selectedTrackIds.length === 0);
   const [gradeFilter, setGradeFilter] = useState<GradeFilter>("all");
@@ -530,6 +618,7 @@ function App() {
       setRecommendationStep(route.step);
       setRecommendationAxis(route.axis);
     }
+    if (route.view === "plan") setPlanStep(route.step);
   }
 
   function navigateAppRoute(route: AppRoute) {
@@ -696,6 +785,49 @@ function App() {
     });
   }
 
+  function submitGraduationPlan(preferences: GraduationPlanPreferences) {
+    const transition = createGraduationPlanTransition(
+      savedState,
+      preferences,
+      new Date().toISOString(),
+    );
+    const saved = saveAppState(transition.state);
+    setStorageError(!saved);
+    setSavedState(transition.state);
+    setPlanDraft(preferences);
+    setPlanSaveStatus("idle");
+    navigateAppRoute(transition.route);
+  }
+
+  function editGraduationPlanInputs() {
+    setPlanDraft(savedState.graduationPlanPreferences ?? {});
+    setPlanSaveStatus("idle");
+    navigateAppRoute({ view: "plan", step: "setup" });
+  }
+
+  function saveGraduationPlanSnapshot() {
+    if (!pathProgress || !savedState.graduationPlan) return;
+    const createdAt = new Date().toISOString();
+    const id = typeof globalThis.crypto?.randomUUID === "function"
+      ? globalThis.crypto.randomUUID()
+      : `graduation-plan-${createdAt}-${savedState.snapshots.length + 1}`;
+    const next = saveGraduationPlanSnapshotTransition(savedState, {
+      id,
+      createdAt,
+      pathResult: pathProgress,
+      recommendationAxes,
+      plan: savedState.graduationPlan,
+    });
+    const saved = saveAppState(next);
+    setStorageError(!saved);
+    if (!saved) {
+      setPlanSaveStatus("error");
+      return;
+    }
+    setSavedState(next);
+    setPlanSaveStatus("saved");
+  }
+
   if (activeView === "landing") {
     return (
       <LandingPage
@@ -760,13 +892,83 @@ function App() {
   }
 
   if (activeView === "plan") {
+    const missingTargetTrack = savedState.profile?.studyPath === "track-major"
+      && !savedState.targetTrackId;
+    const prerequisitesReady = Boolean(
+      savedState.profile
+      && savedState.courseInputReviewedAt
+      && !missingTargetTrack,
+    );
+    if (!prerequisitesReady) {
+      return (
+        <GraduationPlanPrerequisite
+          hasProfile={Boolean(savedState.profile)}
+          courseInputReady={Boolean(savedState.courseInputReviewedAt)}
+          targetTrackReady={!missingTargetTrack}
+          onBack={() => navigateAppRoute({ view: "recommendation", step: "axes", axis: "plan" })}
+          onEditPrerequisites={openCourseInputFromAxes}
+        />
+      );
+    }
+
+    const visiblePlanStep = planStep !== "setup" && !savedState.graduationPlan
+      ? "setup"
+      : planStep;
     return (
-      <PlanEntryBoundary
-        hasProfile={Boolean(savedState.profile)}
-        courseInputReady={Boolean(savedState.courseInputReviewedAt)}
-        onBack={() => navigateAppRoute({ view: "recommendation", step: "axes", axis: "plan" })}
-        onEditPrerequisites={openCourseInputFromAxes}
-      />
+      <div className="graduation-plan-shell">
+        <div className="graduation-plan-topbar">
+          <button
+            className="text-button"
+            type="button"
+            onClick={() => navigateAppRoute({ view: "recommendation", step: "axes", axis: "plan" })}
+          >
+            추천 비교로 돌아가기
+          </button>
+          <span>저장된 입력은 이 브라우저에서만 사용합니다.</span>
+        </div>
+
+        {storageError && planSaveStatus !== "error" && (
+          <p className="storage-error" role="alert">
+            이 브라우저에 계획 변경을 저장하지 못했습니다. 새로고침 전에 입력을 확인해 주세요.
+          </p>
+        )}
+        {planSaveStatus === "saved" && (
+          <p className="plan-save-feedback success" role="status">
+            계획을 이 브라우저에 저장했습니다.
+          </p>
+        )}
+        {planSaveStatus === "error" && (
+          <p className="plan-save-feedback error" role="alert">
+            계획을 저장하지 못했습니다. 브라우저 저장 공간과 권한을 확인해 주세요.
+          </p>
+        )}
+
+        {visiblePlanStep === "setup" ? (
+          <main className="graduation-plan-setup-page" aria-labelledby="graduation-plan-setup-title">
+            <header className="graduation-plan-setup-heading">
+              <span>졸업 계획 조건</span>
+              <h1 id="graduation-plan-setup-title">학기별 참고 계획의 범위를 정해 주세요</h1>
+              <p>검토한 이수 과목은 그대로 두고, 앞으로 배치할 학기와 한 학기 수강량만 입력합니다.</p>
+            </header>
+            <GraduationPlanSetup
+              value={planDraft}
+              onChange={(value) => {
+                setPlanDraft(value);
+                setPlanSaveStatus("idle");
+              }}
+              onSubmit={submitGraduationPlan}
+            />
+          </main>
+        ) : (
+          <GraduationPlanResult
+            result={savedState.graduationPlan!}
+            step={visiblePlanStep}
+            onEdit={editGraduationPlanInputs}
+            onShowChecks={() => navigateAppRoute({ view: "plan", step: "checks" })}
+            onSave={saveGraduationPlanSnapshot}
+          />
+        )}
+      </div>
     );
   }
 
@@ -976,14 +1178,16 @@ function App() {
   );
 }
 
-function PlanEntryBoundary({
+function GraduationPlanPrerequisite({
   hasProfile,
   courseInputReady,
+  targetTrackReady,
   onBack,
   onEditPrerequisites,
 }: {
   hasProfile: boolean;
   courseInputReady: boolean;
+  targetTrackReady: boolean;
   onBack: () => void;
   onEditPrerequisites: () => void;
 }) {
@@ -1005,6 +1209,12 @@ function PlanEntryBoundary({
             <ClipboardCheck aria-hidden="true" size={20} />
             <span>이수 과목 {courseInputReady ? "검토됨" : "확인 필요"}</span>
           </li>
+          {!targetTrackReady && (
+            <li className="pending">
+              <Compass aria-hidden="true" size={20} />
+              <span>목표 트랙 선택 필요</span>
+            </li>
+          )}
         </ul>
         <div className="plan-entry-actions">
           <button className="primary-button" type="button" onClick={onEditPrerequisites}>
