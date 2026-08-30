@@ -10,6 +10,7 @@ import "./styles/planner-landing.css";
 import "./styles/planner-entry.css";
 import "./styles/planner-courses.css";
 import "./styles/planner-results.css";
+import "./styles/planner-recommendations.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

@@ -1,0 +1,487 @@
+/* Independent recommendation pages: a controlled guidebook edge index, never an aggregate grid. */
+.planner-app .recommendation-axes {
+  width: min(100%, 1040px);
+  margin-inline: auto;
+  padding: 0 0 32px;
+  color: var(--planner-ink);
+}
+
+.planner-app .recommendation-axes-hero {
+  display: block;
+  margin: 0 0 18px;
+  padding: clamp(20px, 4vw, 36px);
+  border: 0;
+  border-inline-start: 6px solid var(--planner-dankook-blue);
+  background: var(--planner-sky-sheet);
+}
+
+.planner-app .recommendation-axes-hero > span,
+.planner-app .recommendation-axis-index__title,
+.planner-app .axis-result-page__heading > span,
+.planner-app .axis-lead-candidate > header > span,
+.planner-app .axis-secondary-candidates > header > span,
+.planner-app .axis-secondary-candidates article > header > span,
+.planner-app .axis-unavailable > span,
+.planner-app .recommendation-compass-path > div > span {
+  color: var(--planner-dankook-blue);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.planner-app .recommendation-axes h1 {
+  max-width: 760px;
+  margin: 8px 0 10px;
+  color: var(--planner-ink);
+  font-size: clamp(1.75rem, 4vw, 2.55rem);
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+}
+
+.planner-app .recommendation-axes h1:focus-visible {
+  outline: 2px solid var(--planner-department-green);
+  outline-offset: 6px;
+  box-shadow: none;
+}
+
+.planner-app .recommendation-axes-hero > p {
+  max-width: 780px;
+  margin: 0;
+  color: var(--planner-ink-muted);
+  line-height: 1.7;
+}
+
+.planner-app .recommendation-index-layout {
+  display: grid;
+  grid-template-columns: minmax(190px, 228px) minmax(0, 1fr);
+  gap: clamp(20px, 3vw, 34px);
+  align-items: start;
+}
+
+.planner-app .recommendation-axis-index {
+  position: sticky;
+  top: 20px;
+  min-width: 0;
+  border-inline-end: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 28%, transparent);
+}
+
+.planner-app .recommendation-axis-index__title {
+  display: block;
+  margin: 0 0 10px;
+  padding-inline: 10px 16px;
+}
+
+.planner-app .recommendation-axis-index [role="tablist"] {
+  display: grid;
+}
+
+.planner-app .recommendation-axis-index button {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  width: 100%;
+  min-width: 0;
+  min-height: 72px;
+  padding: 13px 16px 13px 10px;
+  border: 0;
+  border-block-end: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 15%, transparent);
+  border-radius: 0;
+  background: transparent;
+  color: var(--planner-ink);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.planner-app .recommendation-axis-index button:first-child {
+  border-block-start: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 15%, transparent);
+}
+
+.planner-app .recommendation-axis-index button > span:first-child {
+  color: var(--planner-dankook-blue);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.planner-app .recommendation-axis-index button > span:last-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.planner-app .recommendation-axis-index button strong {
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.planner-app .recommendation-axis-index button small {
+  color: var(--planner-ink-muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.planner-app .recommendation-axis-index button[aria-selected="true"] {
+  background: var(--planner-mint-sheet);
+  color: var(--planner-department-green);
+}
+
+.planner-app .recommendation-axis-index button[aria-selected="true"]::after {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: -1px;
+  width: 5px;
+  background: var(--planner-department-green);
+  content: "";
+}
+
+.planner-app .recommendation-active-axis,
+.planner-app .axis-result-page {
+  min-width: 0;
+}
+
+.planner-app .axis-result-page__heading {
+  padding: 8px 0 20px;
+  border-block-end: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 24%, transparent);
+}
+
+.planner-app .axis-result-page__heading h2 {
+  margin: 7px 0 8px;
+  color: var(--planner-ink);
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+
+.planner-app .axis-result-page__heading p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--planner-ink-muted);
+  line-height: 1.65;
+}
+
+.planner-app .axis-hypothesis-band {
+  margin-block: 16px 0;
+}
+
+.planner-app .axis-hypothesis-band .planner-evidence-band {
+  border-inline-start-color: var(--planner-wheat);
+  background: color-mix(in srgb, var(--planner-wheat) 25%, var(--planner-paper));
+}
+
+.planner-app .axis-hypothesis-band .planner-evidence-band strong {
+  color: #70541b;
+}
+
+.planner-app .axis-candidate-guide {
+  display: grid;
+  gap: 18px;
+  margin-block-start: 18px;
+}
+
+.planner-app .axis-lead-candidate {
+  padding: clamp(18px, 3vw, 28px);
+  border: 0;
+  border-inline-start: 6px solid var(--planner-department-green);
+  background: var(--planner-mint-sheet);
+}
+
+.planner-app .axis-lead-candidate > header,
+.planner-app .axis-secondary-candidates article > header {
+  display: grid;
+  gap: 7px;
+}
+
+.planner-app .axis-lead-candidate > header > div,
+.planner-app .axis-secondary-candidates article > header > div {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.planner-app .axis-lead-candidate .planner-track-glyph {
+  width: 1.85rem;
+  height: 1.85rem;
+}
+
+.planner-app .axis-lead-candidate h3,
+.planner-app .axis-secondary-candidates h4 {
+  margin: 0;
+  color: var(--planner-ink);
+  overflow-wrap: anywhere;
+}
+
+.planner-app .axis-lead-candidate h3 {
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+}
+
+.planner-app .axis-reason-list {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 14px 0 0 20px;
+  border-block-start: 1px solid color-mix(in srgb, var(--planner-department-green) 24%, transparent);
+  color: var(--planner-ink);
+  line-height: 1.65;
+}
+
+.planner-app .axis-evidence-list {
+  display: grid;
+  margin: 16px 0 0;
+  border-block-start: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 20%, transparent);
+}
+
+.planner-app .axis-evidence-list > div {
+  display: grid;
+  grid-template-columns: minmax(74px, 0.28fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 0;
+  border-block-end: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 14%, transparent);
+}
+
+.planner-app .axis-evidence-list dt,
+.planner-app .axis-evidence-list dd {
+  margin: 0;
+}
+
+.planner-app .axis-evidence-list dt {
+  color: var(--planner-ink-muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.planner-app .axis-evidence-list dd {
+  color: var(--planner-ink);
+  font-weight: 720;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.planner-app .axis-secondary-candidates {
+  border-block-start: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 26%, transparent);
+}
+
+.planner-app .axis-secondary-candidates > header {
+  padding: 18px 0 8px;
+}
+
+.planner-app .axis-secondary-candidates > header h3 {
+  margin: 5px 0 0;
+  color: var(--planner-ink);
+  font-size: 1.05rem;
+}
+
+.planner-app .axis-secondary-candidates ol {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.planner-app .axis-secondary-candidates li {
+  border-block-end: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 18%, transparent);
+}
+
+.planner-app .axis-secondary-candidates article {
+  padding: 16px 0 18px;
+}
+
+.planner-app .axis-secondary-candidates article > header > span {
+  color: var(--planner-department-green);
+  letter-spacing: 0.06em;
+  text-transform: none;
+}
+
+.planner-app .axis-secondary-candidates h4 {
+  font-size: 1.05rem;
+}
+
+.planner-app .axis-secondary-candidates .axis-reason-list,
+.planner-app .axis-secondary-candidates .axis-evidence-list {
+  margin-block-start: 10px;
+}
+
+.planner-app .axis-tie-note {
+  margin: 0;
+  padding: 12px 14px;
+  border-inline-start: 5px solid var(--planner-wheat);
+  background: color-mix(in srgb, var(--planner-wheat) 22%, var(--planner-paper));
+  color: #694d14;
+  line-height: 1.55;
+}
+
+.planner-app .axis-unavailable {
+  min-height: 0;
+  margin-block-start: 18px;
+  padding: clamp(18px, 3vw, 28px);
+  border: 0;
+  border-inline-start: 6px solid var(--planner-dankook-blue);
+  background: var(--planner-sky-sheet);
+}
+
+.planner-app .axis-unavailable h3 {
+  margin: 6px 0 8px;
+  color: var(--planner-ink);
+  font-size: 1.2rem;
+}
+
+.planner-app .axis-unavailable p {
+  max-width: 620px;
+  margin: 0;
+  color: var(--planner-ink-muted);
+  line-height: 1.65;
+}
+
+.planner-app .axis-unavailable button {
+  min-height: 44px;
+  margin-block-start: 18px;
+  padding: 9px 15px;
+  border: 1px solid var(--planner-department-green);
+  border-radius: var(--planner-control-radius);
+  background: var(--planner-paper);
+  color: var(--planner-department-green);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.planner-app .recommendation-compass-path {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  margin-block-start: 24px;
+  padding: 16px 0;
+  border-block: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 25%, transparent);
+  color: var(--planner-dankook-blue);
+}
+
+.planner-app .recommendation-compass-path > div:nth-child(2) {
+  display: grid;
+  gap: 5px;
+}
+
+.planner-app .recommendation-compass-path strong {
+  color: var(--planner-ink);
+  line-height: 1.5;
+}
+
+.planner-app .recommendation-compass-path p {
+  margin: 0;
+  color: var(--planner-ink-muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.planner-app .recommendation-compass-path--aligned {
+  border-block-color: color-mix(in srgb, var(--planner-department-green) 38%, transparent);
+  color: var(--planner-department-green);
+}
+
+.planner-app .recommendation-compass-path__tracks {
+  display: grid;
+  gap: 6px;
+  min-width: 150px;
+}
+
+.planner-app .recommendation-compass-path__tracks span {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  padding-block-end: 5px;
+  border-block-end: 1px solid color-mix(in srgb, var(--planner-department-green) 30%, transparent);
+  color: var(--planner-department-green);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.planner-app .recommendation-axes-footer {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  margin: 24px 0 0;
+  padding: 14px 0 0;
+  border: 0;
+  border-block-start: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 18%, transparent);
+  border-radius: 0;
+  background: transparent;
+  color: var(--planner-ink-muted);
+  line-height: 1.55;
+}
+
+@media (max-width: 760px) {
+  .planner-app .recommendation-axes {
+    width: 100%;
+    padding: 0 0 24px;
+  }
+
+  .planner-app .recommendation-axes-hero {
+    margin-block-end: 14px;
+  }
+
+  .planner-app .recommendation-index-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .planner-app .recommendation-axis-index {
+    position: static;
+    border-inline-end: 0;
+  }
+
+  .planner-app .recommendation-axis-index__title {
+    padding-inline: 0;
+  }
+
+  .planner-app .recommendation-axis-index button {
+    min-height: 58px;
+    padding: 10px 12px 10px 8px;
+  }
+
+  .planner-app .recommendation-axis-index button[aria-selected="true"]::after {
+    inset-block: 0;
+    inset-inline: 0 auto;
+  }
+
+  .planner-app .recommendation-axis-index button[aria-selected="true"] {
+    padding-inline-start: 14px;
+  }
+
+  .planner-app .recommendation-compass-path {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .planner-app .recommendation-compass-path__tracks {
+    grid-column: 2;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .planner-app .recommendation-axes-hero {
+    padding: 18px 16px;
+  }
+
+  .planner-app .recommendation-axes h1 {
+    font-size: 1.68rem;
+  }
+
+  .planner-app .recommendation-axis-index button small {
+    font-size: 0.68rem;
+  }
+
+  .planner-app .axis-evidence-list > div {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .planner-app .axis-lead-candidate,
+  .planner-app .axis-unavailable {
+    padding: 18px 15px;
+  }
+}

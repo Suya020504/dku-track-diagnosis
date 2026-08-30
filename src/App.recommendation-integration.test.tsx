@@ -293,9 +293,12 @@ describe("recommendation route integration", () => {
       createEmptyAppState(),
     );
 
-    expect(markup).toContain("관심에 가까운 트랙");
-    expect(markup).toContain("현재 이수 과목으로 가까운 트랙");
-    expect(markup).toContain("졸업 전 계획을 만들기 쉬운 트랙");
+    expect(markup).toContain('id="recommendation-axis-tab-interest"');
+    expect(markup).toContain('id="recommendation-axis-tab-progress"');
+    expect(markup).toContain('id="recommendation-axis-tab-plan"');
+    expect(markup).toContain('data-recommendation-panel="progress"');
+    expect(markup).not.toContain('data-recommendation-panel="interest"');
+    expect(markup).not.toContain('data-recommendation-panel="plan"');
     expect(markup).toContain("이수 과목 입력하기");
   });
 
@@ -314,8 +317,24 @@ describe("recommendation route integration", () => {
     );
 
     expect(markup).toContain("푸드마케팅");
-    expect(markup).toContain("50%");
+    expect(markup).toContain('data-recommendation-panel="interest"');
+    expect(markup).not.toContain("50%");
     expect(markup).not.toContain("관심 설문 시작하기");
+  });
+
+  it("restores the plan axis with its assumption evidence instead of rendering all axes", () => {
+    const markup = renderApp(
+      "?view=recommendation&step=axes&axis=plan",
+      {
+        ...landingState("saved-plan"),
+        profile: { ...landingProfile, studyPath: "advanced-major" },
+      },
+    );
+
+    expect(markup).toContain('data-recommendation-panel="plan"');
+    expect(markup).not.toContain('data-recommendation-panel="interest"');
+    expect(markup).not.toContain('data-recommendation-panel="progress"');
+    expect(markup).toContain("트랙형전공으로 전환한다고 가정한 비교");
   });
 
   it("routes a find-track track-major profile to survey when no target was chosen", () => {

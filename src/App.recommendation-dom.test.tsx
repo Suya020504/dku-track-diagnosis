@@ -407,11 +407,39 @@ describe("App recommendation browser interactions", () => {
 
     replaceState.mockClear();
     await setRouteAndPop("/?view=recommendation&step=axes&axis=interest");
-    expect(document.body.textContent).toContain("관심에 가까운 트랙");
+    expect(document.querySelector('[data-recommendation-panel="interest"]')).not.toBeNull();
     expect(replaceState).toHaveBeenCalled();
 
     await setRouteAndPop("/?view=recommendation&step=survey");
     expect(document.body.textContent).toContain("5 / 10");
+  });
+
+  it("writes axis tab changes to the URL and restores the controlled panel with H1 focus", async () => {
+    saveState({
+      ...profileOnlyLandingState(),
+      interestSurvey: completeSurvey(),
+      courseInputReviewedAt: "2026-08-30T00:30:00.000Z",
+    });
+    history.replaceState({}, "", "/?view=recommendation&step=axes&axis=interest");
+    await mountApp();
+
+    const heading = document.querySelector<HTMLHeadingElement>("#recommendation-axes-title");
+    const progressTab = document.querySelector<HTMLButtonElement>("#recommendation-axis-tab-progress");
+    expect(heading).not.toBeNull();
+    expect(document.activeElement).toBe(heading);
+    expect(progressTab?.getAttribute("aria-selected")).toBe("false");
+
+    await act(async () => progressTab?.click());
+
+    expect(new URLSearchParams(location.search).get("axis")).toBe("progress");
+    expect(document.querySelector('[data-recommendation-panel="progress"]')).not.toBeNull();
+    expect(document.querySelector("#recommendation-axis-tab-progress")?.getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(heading);
+
+    await setRouteAndPop("/?view=recommendation&step=axes&axis=plan");
+    expect(document.querySelector('[data-recommendation-panel="plan"]')).not.toBeNull();
+    expect(document.querySelector("#recommendation-axis-tab-plan")?.getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(heading);
   });
 
   it("persists an explicit survey track choice and pushes the profile transition", async () => {
@@ -453,6 +481,6 @@ describe("App recommendation browser interactions", () => {
       .find((candidate) => candidate.textContent?.includes("새로고침하면 답변이 사라질 수 있습니다"));
     expect(alert).not.toBeNull();
     expect(alert?.textContent ?? "").toContain("새로고침하면 답변이 사라질 수 있습니다");
-    expect(document.body.textContent).toContain("관심에 가까운 트랙");
+    expect(document.body.textContent).toContain("관심이 향하는 트랙");
   });
 });

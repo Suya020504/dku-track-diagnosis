@@ -736,7 +736,7 @@ function App({ storage }: { storage?: Storage } = {}) {
   useEffect(() => {
     const focusEntryHeading = activeView === "diagnosis"
       || activeView === "result"
-      || (activeView === "recommendation" && recommendationStep === "survey");
+      || activeView === "recommendation";
     if (!focusEntryHeading) return;
     stepHeadingRef.current?.focus();
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -745,6 +745,7 @@ function App({ storage }: { storage?: Storage } = {}) {
     diagnosisStep,
     profileStage,
     recommendationStep,
+    recommendationAxis,
     interestQuestionIndex,
     interestCompletedAt,
     resultSection,
@@ -1395,7 +1396,9 @@ function App({ storage }: { storage?: Storage } = {}) {
             axes={recommendationAxes}
             courseInputReady={Boolean(savedState.profile && savedState.courseInputReviewedAt)}
             storageError={storageError}
-            activeAxis={recommendationAxis}
+            activeAxis={recommendationAxis ?? "interest"}
+            headingRef={stepHeadingRef}
+            onAxisChange={(axis) => navigateAppRoute({ view: "recommendation", step: "axes", axis })}
             onOpenInterestSurvey={() => navigateAppRoute({ view: "recommendation", step: "survey" })}
             onOpenCourseInput={openCourseInputFromAxes}
             onOpenGraduationPlan={() => navigateAppRoute({ view: "plan", step: "setup" })}
