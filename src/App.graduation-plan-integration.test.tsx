@@ -111,6 +111,11 @@ function expectFocusedPlanHeading(text: string) {
   expect(document.activeElement?.getAttribute("tabindex")).toBe("-1");
 }
 
+function planReadinessStates(): Array<[string | undefined, string | undefined]> {
+  return [...document.querySelectorAll<HTMLElement>("[data-plan-readiness]")]
+    .map((item) => [item.dataset.planReadiness, item.dataset.state]);
+}
+
 async function click(label: string) {
   await act(async () => {
     button(label).click();
@@ -418,31 +423,89 @@ describe("App graduation plan pages", () => {
     expect(planIndex?.getAttribute("aria-current")).toBe("page");
   });
 
-  it("shows a working prerequisite action instead of calculating with missing inputs", async () => {
+  it.each([
+    [
+      "empty",
+      createEmptyAppState(),
+      [["profile", "pending"], ["courses", "pending"], ["target", "pending"]],
+      "프로필 입력 시작",
+    ],
+    [
+      "minor with unreviewed courses",
+      { ...createEmptyAppState(), profile: minorProfile },
+      [["profile", "ready"], ["courses", "pending"], ["target", "not-applicable"]],
+      "프로필·이수 과목 확인",
+    ],
+    [
+      "track-major with a missing target",
+      {
+        ...createEmptyAppState(),
+        profile: { ...minorProfile, studyPath: "track-major" as const },
+        courseInputReviewedAt: "2026-08-30T00:00:00.000Z",
+        graduationPlanPreferences: preferences,
+      },
+      [["profile", "ready"], ["courses", "ready"], ["target", "pending"]],
+      "목표 트랙 검토로 이동",
+    ],
+  ] as const)(
+    "shows truthful prerequisite states and one recovery action for %s",
+    async (_label, state, expectedStates, recoveryLabel) => {
+      saveState(state as SavedAppStateV2);
+      history.replaceState({}, "", "/?view=plan&step=schedule");
+
+      await mountApp();
+
+      expect(document.body.textContent).toContain("졸업 계획 전에 입력 상태를 확인해 주세요");
+      expect(planReadinessStates()).toEqual(expectedStates);
+      expect(document.querySelectorAll(".plan-entry-actions button")).toHaveLength(1);
+      expect(document.body.textContent).toContain(recoveryLabel);
+      expect(document.body.textContent).not.toContain("계획 저장");
+      expectFocusedPlanHeading("졸업 계획 전에 입력 상태를 확인해 주세요");
+    },
+  );
+
+  it("keeps course readiness pending without a profile even when a legacy review timestamp remains", async () => {
+    saveState({
+      ...createEmptyAppState(),
+      courseInputReviewedAt: "2026-08-30T00:00:00.000Z",
+    });
+    history.replaceState({}, "", "/?view=plan&step=setup");
+
+    await mountApp();
+
+    expect(planReadinessStates()).toEqual([
+      ["profile", "pending"],
+      ["courses", "pending"],
+      ["target", "pending"],
+    ]);
+  });
+
+  it("opens setup for a ready track-major profile without showing the prerequisite boundary", async () => {
     saveState({
       ...createEmptyAppState(),
       profile: { ...minorProfile, studyPath: "track-major" },
       courseInputReviewedAt: "2026-08-30T00:00:00.000Z",
-      graduationPlanPreferences: preferences,
+      targetTrackId: "food-marketing",
     });
-    history.replaceState({}, "", "/?view=plan&step=schedule");
+    history.replaceState({}, "", "/?view=plan&step=setup");
 
     await mountApp();
 
-    expect(document.body.textContent).toContain("졸업 계획 전에 입력 상태를 확인해 주세요");
-    const readinessItems = [...document.querySelectorAll<HTMLElement>("[data-plan-readiness]")];
-    expect(readinessItems).toHaveLength(3);
-    expect(readinessItems.map((item) => [item.dataset.planReadiness, item.dataset.ready])).toEqual([
-      ["profile", "true"],
-      ["courses", "true"],
-      ["target", "false"],
-    ]);
-    expect(document.querySelectorAll(".plan-entry-actions button")).toHaveLength(1);
-    expect(document.body.textContent).toContain("목표 트랙 검토로 이동");
-    expect(document.body.textContent).not.toContain("계획 저장");
-    expectFocusedPlanHeading("졸업 계획 전에 입력 상태를 확인해 주세요");
+    expect(document.querySelectorAll("[data-plan-readiness]")).toHaveLength(0);
+    expectFocusedPlanHeading("학기별 참고 계획의 범위를 정해 주세요");
+  });
+
+  it("does not choose a target track when the missing-target recovery opens comparison", async () => {
+    saveState({
+      ...createEmptyAppState(),
+      profile: { ...minorProfile, studyPath: "track-major" },
+      courseInputReviewedAt: "2026-08-30T00:00:00.000Z",
+    });
+    history.replaceState({}, "", "/?view=plan&step=schedule");
+    await mountApp();
 
     await click("목표 트랙 검토로 이동");
+
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_V2) ?? "null") as SavedAppStateV2;
     expect(saved.targetTrackId).toBeUndefined();
     expect(new URLSearchParams(location.search).get("view")).toBe("recommendation");

@@ -29,6 +29,7 @@ import { ProfileFlow } from "./features/profile/ProfileFlow";
 import { GraduationPlanResult } from "./features/planning/GraduationPlanResult";
 import { GraduationPlanSetup } from "./features/planning/GraduationPlanSetup";
 import { GraduationPlanPrerequisite } from "./features/planning/GraduationPlanPrerequisite";
+import type { GraduationPlanPrerequisiteReadiness } from "./features/planning/GraduationPlanPrerequisite";
 import { InterestSurvey } from "./features/recommendations/InterestSurvey";
 import { TrackRecommendationAxes } from "./features/recommendations/TrackRecommendationAxes";
 import { ResultDetailView } from "./features/results/ResultDetailView";
@@ -1410,21 +1411,29 @@ function App({ storage }: { storage?: Storage } = {}) {
   }
 
   if (activeView === "plan") {
-    const missingTargetTrack = savedState.profile?.studyPath === "track-major"
-      && !savedState.targetTrackId;
-    const prerequisitesReady = Boolean(
-      savedState.profile
-      && savedState.courseInputReviewedAt
-      && !missingTargetTrack,
-    );
+    const hasProfile = Boolean(savedState.profile);
+    const courseInputReady = Boolean(savedState.profile && savedState.courseInputReviewedAt);
+    const targetReadiness: GraduationPlanPrerequisiteReadiness["target"] = !savedState.profile
+      ? "pending"
+      : savedState.profile.studyPath !== "track-major"
+        ? "not-applicable"
+        : savedState.targetTrackId
+          ? "ready"
+          : "pending";
+    const prerequisiteReadiness: GraduationPlanPrerequisiteReadiness = {
+      profile: hasProfile ? "ready" : "pending",
+      courses: courseInputReady ? "ready" : "pending",
+      target: targetReadiness,
+    };
+    const prerequisitesReady = prerequisiteReadiness.profile === "ready"
+      && prerequisiteReadiness.courses === "ready"
+      && prerequisiteReadiness.target !== "pending";
     if (!prerequisitesReady) {
       return renderGuidebook(
         <GraduationPlanPrerequisite
-          hasProfile={Boolean(savedState.profile)}
-          courseInputReady={Boolean(savedState.courseInputReviewedAt)}
-          targetTrackReady={!missingTargetTrack}
+          readiness={prerequisiteReadiness}
           headingRef={planHeadingRef}
-          onRecover={missingTargetTrack && savedState.profile && savedState.courseInputReviewedAt
+          onRecover={prerequisiteReadiness.target === "pending" && courseInputReady
             ? () => navigateAppRoute({ view: "recommendation", step: "axes", axis: "plan" })
             : openCourseInputFromAxes}
         />

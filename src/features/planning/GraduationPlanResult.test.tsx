@@ -158,7 +158,7 @@ describe("GraduationPlanResult distributed pages", () => {
     expect(markup).toContain("수강 한도 초과");
     expect(markup).toContain('data-unplaced-reason="capacity-before-target"');
     expect(markup).toContain('data-check-ledger="official-questions"');
-    expect(markup).toContain('data-evidence-state="historical-2026-snapshot"');
+    expect(markup).toContain('data-evidence-state="project-derived"');
     expect(markup).toContain("학과에 확인할 질문");
     expect(markup).toContain("실제 개설 학기와 폐강 여부");
     expect(markup).toContain("조건 수정");
@@ -167,6 +167,58 @@ describe("GraduationPlanResult distributed pages", () => {
     expect(markup.match(/<h1\b/g)).toHaveLength(1);
     expect(markup).not.toContain("C-2 소비자경제학");
     expect(markup).not.toContain("계획 저장");
+  });
+
+  it("labels review evidence from item.evidence instead of the review code", () => {
+    const result: GraduationPlanResultValue = {
+      ...baseResult,
+      reviewItems: [
+        {
+          code: "future-offering",
+          message: "향후 개설은 학과 확인이 필요합니다.",
+          evidence: "official-review-required",
+        },
+        {
+          code: "seasonal-term",
+          message: "계절학기는 서비스 계산에서 확인 항목으로 남깁니다.",
+          evidence: "project-derived",
+        },
+        {
+          code: "elective-placeholder",
+          message: "선택 전공 자리는 서비스 계산으로 예약했습니다.",
+          evidence: "project-derived",
+        },
+        {
+          code: "rule-source",
+          message: "제공된 최종안을 참고했습니다.",
+          evidence: "provided-final-plan",
+        },
+        {
+          code: "unknown-course",
+          message: "공식 공개 자료에서 확인했습니다.",
+          evidence: "official-public",
+        },
+      ],
+    };
+
+    const markup = renderResult(result, "checks");
+
+    expect(markup).toContain(
+      'data-evidence-state="department-confirmation-required"><span>향후 개설은 학과 확인이 필요합니다.</span><small>학과 확인 필요</small>',
+    );
+    expect(markup).toContain(
+      'data-evidence-state="project-derived"><span>계절학기는 서비스 계산에서 확인 항목으로 남깁니다.</span><small>서비스 참고 계산</small>',
+    );
+    expect(markup).toContain(
+      'data-evidence-state="project-derived"><span>선택 전공 자리는 서비스 계산으로 예약했습니다.</span><small>서비스 참고 계산</small>',
+    );
+    expect(markup).toContain(
+      'data-evidence-state="provided-final-plan-reference"><span>제공된 최종안을 참고했습니다.</span><small>제공 최종안 참고</small>',
+    );
+    expect(markup).toContain(
+      'data-evidence-state="official-public-confirmed"><span>공식 공개 자료에서 확인했습니다.</span><small>공식 공개 확인</small>',
+    );
+    expect(markup).not.toContain('data-evidence-state="historical-2026-snapshot"');
   });
 
   it.each([

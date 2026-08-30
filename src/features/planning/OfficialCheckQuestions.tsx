@@ -1,4 +1,4 @@
-import type { ReviewItem } from "../../types";
+import type { RequirementEvidenceStatus, ReviewItem } from "../../types";
 import { getEvidenceSource, type EvidenceState } from "../../data/evidenceSources";
 
 const officialQuestions: Record<ReviewItem["code"], string> = {
@@ -10,6 +10,30 @@ const officialQuestions: Record<ReviewItem["code"], string> = {
   "seasonal-term": "계절학기에 개설되는 과목과 전공 인정 범위가 있나요?",
   "plan-input": "현재 목표 학기와 수강량에서 조정해야 할 우선순위는 무엇인가요?",
   "elective-placeholder": "선택 전공학점으로 인정되는 과목 목록은 무엇인가요?",
+};
+
+type ReviewEvidenceDisplay = {
+  state: EvidenceState | "project-derived";
+  label: string;
+};
+
+const reviewEvidenceDisplay: Record<RequirementEvidenceStatus, ReviewEvidenceDisplay> = {
+  "official-public": {
+    state: "official-public-confirmed",
+    label: getEvidenceSource("official-public-confirmed").label,
+  },
+  "provided-final-plan": {
+    state: "provided-final-plan-reference",
+    label: getEvidenceSource("provided-final-plan-reference").label,
+  },
+  "project-derived": {
+    state: "project-derived",
+    label: "서비스 참고 계산",
+  },
+  "official-review-required": {
+    state: "department-confirmation-required",
+    label: getEvidenceSource("department-confirmation-required").label,
+  },
 };
 
 export function OfficialCheckQuestions({ items }: { items: ReviewItem[] }) {
@@ -36,18 +60,14 @@ export function OfficialCheckQuestions({ items }: { items: ReviewItem[] }) {
             <h3>계획에서 확인된 검토 항목</h3>
             <ul>
               {items.map((item, index) => {
-                const evidenceState: EvidenceState = item.code === "future-offering"
-                  ? "historical-2026-snapshot"
-                  : item.evidence === "official-review-required"
-                    ? "department-confirmation-required"
-                    : "provided-final-plan-reference";
+                const evidence = reviewEvidenceDisplay[item.evidence];
                 return (
                   <li
                     key={`${item.code}-${index}`}
-                    data-evidence-state={evidenceState}
+                    data-evidence-state={evidence.state}
                   >
                     <span>{item.message}</span>
-                    <small>{getEvidenceSource(evidenceState).label}</small>
+                    <small>{evidence.label}</small>
                   </li>
                 );
               })}

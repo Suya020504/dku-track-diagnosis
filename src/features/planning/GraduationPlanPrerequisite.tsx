@@ -2,28 +2,49 @@ import type { RefObject } from "react";
 import {
   ArrowRight,
   CheckCircle2,
+  CircleDashed,
+  CircleMinus,
   ClipboardCheck,
-  Compass,
 } from "lucide-react";
 
+export type GraduationPlanPrerequisiteState = "ready" | "pending" | "not-applicable";
+
+export type GraduationPlanPrerequisiteReadiness = {
+  profile: GraduationPlanPrerequisiteState;
+  courses: GraduationPlanPrerequisiteState;
+  target: GraduationPlanPrerequisiteState;
+};
+
+function ReadinessIcon({
+  state,
+  kind,
+}: {
+  state: GraduationPlanPrerequisiteState;
+  kind: "profile" | "courses" | "target";
+}) {
+  if (state === "not-applicable") return <CircleMinus aria-hidden="true" size={20} />;
+  if (state === "pending") return <CircleDashed aria-hidden="true" size={20} />;
+  return kind === "courses"
+    ? <ClipboardCheck aria-hidden="true" size={20} />
+    : <CheckCircle2 aria-hidden="true" size={20} />;
+}
+
 export function GraduationPlanPrerequisite({
-  hasProfile,
-  courseInputReady,
-  targetTrackReady,
+  readiness,
   headingRef,
   onRecover,
 }: {
-  hasProfile: boolean;
-  courseInputReady: boolean;
-  targetTrackReady: boolean;
+  readiness: GraduationPlanPrerequisiteReadiness;
   headingRef: RefObject<HTMLHeadingElement | null>;
   onRecover: () => void;
 }) {
-  const recoveryLabel = !hasProfile
+  const recoveryLabel = readiness.profile === "pending"
     ? "프로필 입력 시작"
-    : !courseInputReady
+    : readiness.courses === "pending"
       ? "프로필·이수 과목 확인"
-      : "목표 트랙 검토로 이동";
+      : readiness.target === "pending"
+        ? "목표 트랙 검토로 이동"
+        : "입력 상태 확인";
 
   return (
     <main className="plan-entry-shell" aria-labelledby="plan-entry-title">
@@ -38,28 +59,34 @@ export function GraduationPlanPrerequisite({
         </p>
         <ul aria-label="졸업 계획 사전 입력 상태">
           <li
-            className={hasProfile ? "ready" : "pending"}
+            className={readiness.profile}
             data-plan-readiness="profile"
-            data-ready={hasProfile ? "true" : "false"}
+            data-state={readiness.profile}
           >
-            <CheckCircle2 aria-hidden="true" size={20} />
-            <span>프로필 {hasProfile ? "입력됨" : "입력 필요"}</span>
+            <ReadinessIcon state={readiness.profile} kind="profile" />
+            <span>프로필 {readiness.profile === "ready" ? "입력됨" : "입력 필요"}</span>
           </li>
           <li
-            className={courseInputReady ? "ready" : "pending"}
+            className={readiness.courses}
             data-plan-readiness="courses"
-            data-ready={courseInputReady ? "true" : "false"}
+            data-state={readiness.courses}
           >
-            <ClipboardCheck aria-hidden="true" size={20} />
-            <span>이수 과목 {courseInputReady ? "검토됨" : "확인 필요"}</span>
+            <ReadinessIcon state={readiness.courses} kind="courses" />
+            <span>이수 과목 {readiness.courses === "ready" ? "검토됨" : "확인 필요"}</span>
           </li>
           <li
-            className={targetTrackReady ? "ready" : "pending"}
+            className={readiness.target}
             data-plan-readiness="target"
-            data-ready={targetTrackReady ? "true" : "false"}
+            data-state={readiness.target}
           >
-            <Compass aria-hidden="true" size={20} />
-            <span>목표 트랙 {targetTrackReady ? "준비됨" : "선택 필요"}</span>
+            <ReadinessIcon state={readiness.target} kind="target" />
+            <span>
+              목표 트랙 {readiness.target === "ready"
+                ? "준비됨"
+                : readiness.target === "not-applicable"
+                  ? "적용 대상 아님"
+                  : "선택 필요"}
+            </span>
           </li>
         </ul>
         <div className="plan-entry-actions">

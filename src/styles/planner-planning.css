@@ -70,7 +70,9 @@
 .planner-app .plan-status-summary h1:focus,
 .planner-app .plan-check-heading h1:focus,
 .planner-app .plan-entry-card h1:focus {
-  outline: 0;
+  outline: 2px solid var(--planner-department-green);
+  outline-offset: 5px;
+  background: rgba(221, 243, 232, 0.38);
 }
 
 .planner-app .graduation-plan-setup-heading p,
@@ -536,6 +538,11 @@
 .planner-app .plan-entry-card li.pending {
   background: transparent;
   color: #8d4a39;
+}
+
+.planner-app .plan-entry-card li.not-applicable {
+  background: transparent;
+  color: var(--planner-ink-muted);
 }
 
 .planner-app .plan-entry-actions button {
