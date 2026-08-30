@@ -340,7 +340,7 @@ git commit -m "feat: enforce private pdf import limits"
 **Interfaces:**
 - Consumes: `courses`, `courseOfferings2026`, extracted `readonly PdfTextPage[]`, and the review types introduced by Task 2
 - Produces: `buildPdfImportCandidates(pages): PdfImportCandidates`
-- Produces: `mergeApprovedPdfMatches(current, approvals): PdfMergeResult`
+- Produces: `mergeApprovedPdfMatches(current, candidates, approvals): PdfMergeResult`
 
 - [ ] **Step 1: Reuse Task 2 review types and add merge types**
 

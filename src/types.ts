@@ -78,6 +78,23 @@ export type PdfImportDraft = PdfImportCandidates & {
   extractedCharacters: number;
 };
 
+export type PdfImportApproval = {
+  sourceId: string;
+  courseId: string;
+};
+
+export type PdfMergeConflict = {
+  courseId: string;
+  existingStatus: CourseSelectionStatus;
+  message: string;
+};
+
+export type PdfMergeResult = {
+  courseSelections: CourseSelectionRecord[];
+  addedCourseIds: string[];
+  conflicts: PdfMergeConflict[];
+};
+
 export type TrackId =
   | "food-marketing"
   | "regional-development-consulting"
