@@ -1,0 +1,482 @@
+.planner-app .planner-resources {
+  display: grid;
+  gap: 32px;
+  color: var(--planner-ink);
+}
+
+.planner-app .planner-resource-index {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-block: 1px solid var(--planner-sky-sheet);
+}
+
+.planner-app .planner-resource-index button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--planner-space-2);
+  align-items: center;
+  min-width: 0;
+  padding: var(--planner-space-3) var(--planner-space-5);
+  border: 0;
+  border-inline-end: 1px solid var(--planner-sky-sheet);
+  background: transparent;
+  color: var(--planner-ink-muted);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.planner-app .planner-resource-index button:last-child {
+  border-inline-end: 0;
+}
+
+.planner-app .planner-resource-index button[aria-current="page"] {
+  box-shadow: inset 0 -3px 0 var(--planner-department-green);
+  color: var(--planner-ink);
+}
+
+.planner-app .planner-resource-index button > span {
+  color: var(--planner-dankook-blue);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.planner-app .planner-resource-page,
+.planner-app .planner-resource-stack {
+  display: grid;
+  gap: 32px;
+  min-width: 0;
+}
+
+.planner-app .planner-resource-page__header {
+  max-width: 760px;
+}
+
+.planner-app .planner-resource-page__header > p:first-child,
+.planner-app .planner-resource-section-heading > span,
+.planner-app .planner-resource-concept figcaption,
+.planner-app .planner-campus-source > div > span {
+  display: block;
+  margin: 0 0 var(--planner-space-2);
+  color: var(--planner-department-green);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.planner-app .planner-resource-page__header h1 {
+  margin: 0;
+  max-width: 680px;
+  font-size: clamp(1.8rem, 4vw, 2.7rem);
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.planner-app .planner-resource-page__header > p:last-child,
+.planner-app .planner-resource-section-heading > p {
+  max-width: 720px;
+  margin: var(--planner-space-3) 0 0;
+  color: var(--planner-ink-muted);
+  line-height: 1.75;
+}
+
+.planner-app .planner-resource-concept {
+  display: grid;
+  gap: var(--planner-space-3);
+  margin: 0;
+  padding-block-end: var(--planner-space-5);
+  border-block-end: 1px solid var(--planner-sky-sheet);
+}
+
+.planner-app .planner-resource-concept figcaption {
+  margin: 0;
+}
+
+.planner-app .planner-resource-concept img {
+  display: block;
+  width: 100%;
+  max-width: 960px;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  background: var(--planner-sky-sheet);
+}
+
+.planner-app .planner-resource-concept__fallback {
+  margin: 0;
+  padding: var(--planner-space-5);
+  border-inline-start: 4px solid var(--planner-department-green);
+  background: var(--planner-mint-sheet);
+  color: var(--planner-ink-muted);
+  line-height: 1.7;
+}
+
+.planner-app .planner-resource-reading {
+  display: grid;
+  gap: var(--planner-space-5);
+}
+
+.planner-app .planner-resource-section-heading {
+  max-width: 760px;
+}
+
+.planner-app .planner-resource-section-heading h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.planner-app .planner-track-reading-list,
+.planner-app .planner-module-group > ol,
+.planner-app .planner-module-course-list,
+.planner-app .planner-official-link-list,
+.planner-app .planner-curriculum-table ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.planner-app .planner-track-reading-list {
+  border-block-start: 1px solid var(--planner-sky-sheet);
+}
+
+.planner-app .planner-track-reading-list > li {
+  display: grid;
+  grid-template-columns: 2rem 2rem minmax(0, 1fr);
+  gap: var(--planner-space-3);
+  align-items: start;
+  padding: var(--planner-space-5) 0;
+  border-block-end: 1px solid var(--planner-sky-sheet);
+}
+
+.planner-app .planner-track-reading-list__index {
+  color: var(--planner-dankook-blue);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.planner-app .planner-track-reading-list__copy > p,
+.planner-app .planner-track-reading-list__copy h3,
+.planner-app .planner-track-reading-list__copy dl {
+  margin: 0;
+}
+
+.planner-app .planner-track-reading-list__copy > p:first-child {
+  color: var(--planner-department-green);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.planner-app .planner-track-reading-list__copy h3 {
+  margin-top: var(--planner-space-1);
+  font-size: 1.2rem;
+}
+
+.planner-app .planner-track-reading-list__copy > p:nth-of-type(2) {
+  margin-top: var(--planner-space-2);
+  color: var(--planner-ink-muted);
+  line-height: 1.65;
+}
+
+.planner-app .planner-track-reading-list__copy dl {
+  display: grid;
+  gap: var(--planner-space-2);
+  margin-top: var(--planner-space-3);
+}
+
+.planner-app .planner-track-reading-list__copy dl > div {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: var(--planner-space-3);
+}
+
+.planner-app .planner-track-reading-list__copy dt {
+  color: var(--planner-ink-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.planner-app .planner-track-reading-list__copy dd {
+  margin: 0;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.planner-app .planner-module-group {
+  display: grid;
+  gap: var(--planner-space-3);
+}
+
+.planner-app .planner-module-group > h3 {
+  margin: 0;
+  padding-block-end: var(--planner-space-2);
+  border-block-end: 2px solid var(--planner-dankook-blue);
+  color: var(--planner-dankook-blue);
+  font-size: 1rem;
+}
+
+.planner-app .planner-module-group > ol > li {
+  padding: var(--planner-space-5) 0;
+  border-block-end: 1px solid var(--planner-sky-sheet);
+}
+
+.planner-app .planner-module-group header {
+  display: flex;
+  gap: var(--planner-space-3);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.planner-app .planner-module-group header h4,
+.planner-app .planner-module-group header span {
+  margin: 0;
+}
+
+.planner-app .planner-module-group header span {
+  color: var(--planner-ink-muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.planner-app .planner-module-course-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--planner-space-5);
+  margin-top: var(--planner-space-3);
+}
+
+.planner-app .planner-module-course-list > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--planner-space-1) var(--planner-space-3);
+  padding: var(--planner-space-2) 0;
+  border-block-end: 1px dashed var(--planner-sky-sheet);
+}
+
+.planner-app .planner-module-course-list strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.planner-app .planner-module-course-list span,
+.planner-app .planner-module-course-list small {
+  color: var(--planner-ink-muted);
+  font-size: 0.78rem;
+}
+
+.planner-app .planner-module-course-list small {
+  grid-column: 1 / -1;
+}
+
+.planner-app .planner-resource-source-note {
+  margin: var(--planner-space-3) 0 0;
+  padding-inline-start: var(--planner-space-3);
+  border-inline-start: 3px solid var(--planner-review-coral);
+  color: var(--planner-ink-muted);
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+
+.planner-app .planner-course-track-figure {
+  margin: 0;
+}
+
+.planner-app .planner-curriculum-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.planner-app .planner-curriculum-table caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.planner-app .planner-curriculum-table th,
+.planner-app .planner-curriculum-table td {
+  padding: var(--planner-space-3);
+  border-block-end: 1px solid var(--planner-sky-sheet);
+  text-align: start;
+  vertical-align: top;
+}
+
+.planner-app .planner-curriculum-table thead th {
+  background: var(--planner-sky-sheet);
+  color: var(--planner-dankook-blue);
+}
+
+.planner-app .planner-curriculum-table th:first-child {
+  width: 8.5rem;
+}
+
+.planner-app .planner-curriculum-table tbody th {
+  color: var(--planner-ink);
+}
+
+.planner-app .planner-curriculum-table ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--planner-space-2) var(--planner-space-5);
+}
+
+.planner-app .planner-curriculum-table li {
+  display: grid;
+  gap: var(--planner-space-1);
+  min-width: 0;
+}
+
+.planner-app .planner-curriculum-table li strong,
+.planner-app .planner-curriculum-table li span {
+  overflow-wrap: anywhere;
+}
+
+.planner-app .planner-curriculum-table li span {
+  color: var(--planner-ink-muted);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.planner-app .planner-official-link-list {
+  border-block-start: 1px solid var(--planner-sky-sheet);
+}
+
+.planner-app .planner-official-link-list > li,
+.planner-app .planner-campus-source {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  gap: var(--planner-space-3);
+  align-items: start;
+  padding: var(--planner-space-5) 0;
+  border-block-end: 1px solid var(--planner-sky-sheet);
+}
+
+.planner-app .planner-official-link-list svg,
+.planner-app .planner-campus-source > svg {
+  color: var(--planner-dankook-blue);
+}
+
+.planner-app .planner-official-link-list h3,
+.planner-app .planner-official-link-list p,
+.planner-app .planner-campus-source h2,
+.planner-app .planner-campus-source p {
+  margin: 0;
+}
+
+.planner-app .planner-official-link-list p,
+.planner-app .planner-campus-source p {
+  margin-top: var(--planner-space-1);
+  color: var(--planner-ink-muted);
+  line-height: 1.65;
+}
+
+.planner-app .planner-official-link-list a,
+.planner-app .planner-campus-source a {
+  display: inline-flex;
+  gap: var(--planner-space-1);
+  align-items: center;
+  color: var(--planner-dankook-blue);
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.planner-app .planner-official-link-list a svg,
+.planner-app .planner-campus-source a svg {
+  flex: 0 0 auto;
+  width: 1rem;
+}
+
+.planner-app .planner-campus-source {
+  border-block-start: 3px solid var(--planner-wheat);
+}
+
+.planner-app .planner-campus-source h2 {
+  font-size: 1.25rem;
+}
+
+.planner-app .planner-resource-disclaimer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--planner-space-3);
+  padding-block-start: var(--planner-space-5);
+  border-block-start: 1px solid var(--planner-sky-sheet);
+  color: var(--planner-ink-muted);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.planner-app .planner-resource-disclaimer strong {
+  color: var(--planner-department-green);
+}
+
+@media (max-width: 720px) {
+  .planner-app .planner-resources,
+  .planner-app .planner-resource-page,
+  .planner-app .planner-resource-stack {
+    gap: var(--planner-space-5);
+  }
+
+  .planner-app .planner-resource-index {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .planner-app .planner-resource-index button:nth-child(2) {
+    border-inline-end: 0;
+  }
+
+  .planner-app .planner-resource-index button:nth-child(-n + 2) {
+    border-block-end: 1px solid var(--planner-sky-sheet);
+  }
+
+  .planner-app .planner-track-reading-list__copy dl > div,
+  .planner-app .planner-resource-disclaimer {
+    grid-template-columns: 1fr;
+    gap: var(--planner-space-1);
+  }
+
+  .planner-app .planner-module-course-list,
+  .planner-app .planner-curriculum-table ul {
+    grid-template-columns: 1fr;
+  }
+
+  .planner-app .planner-curriculum-table th,
+  .planner-app .planner-curriculum-table td {
+    padding: var(--planner-space-2);
+  }
+
+  .planner-app .planner-curriculum-table th:first-child {
+    width: 6.5rem;
+  }
+
+  .planner-app .planner-official-link-list > li,
+  .planner-app .planner-campus-source {
+    grid-template-columns: 1.75rem minmax(0, 1fr);
+  }
+
+  .planner-app .planner-official-link-list a,
+  .planner-app .planner-campus-source a {
+    grid-column: 2;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 420px) {
+  .planner-app .planner-resource-index button {
+    padding-inline: var(--planner-space-3);
+  }
+
+  .planner-app .planner-track-reading-list > li {
+    grid-template-columns: 1.5rem 1.5rem minmax(0, 1fr);
+    gap: var(--planner-space-2);
+  }
+
+  .planner-app .planner-resource-page__header h1 {
+    font-size: 1.65rem;
+  }
+}

@@ -41,13 +41,13 @@ import {
 import { GuidebookShell } from "./features/shell/GuidebookShell";
 import { PlannerLanding } from "./features/landing/PlannerLanding";
 import type { LandingPlannerStatus } from "./features/landing/PlannerLanding";
+import { ResourceIndexView } from "./features/resources/ResourceIndexView";
 import type { GuideIndexItem } from "./features/shell/GuideIndex";
 import type { MobileJourneyItem } from "./features/shell/MobileJourneyNav";
 import type { CompassPathItem } from "./features/journey/CompassPathRibbon";
 import { PLANNER_JOURNEY, resolveJourneyView } from "./app/journeyView";
 import {
   calculateDiagnosis,
-  getCoursesByModule,
   getModuleLabel,
   getTracks,
   isRequiredCourseApplicable,
@@ -100,7 +100,7 @@ import type {
   TrackRecommendationStatus,
 } from "./types";
 
-type ViewId = "landing" | "overview" | "resources" | "modules" | "diagnosis" | "recommendation" | "plan" | "result" | "contact";
+type ViewId = "landing" | "overview" | "resources" | "diagnosis" | "recommendation" | "plan" | "result" | "contact";
 type GradeFilter = "all" | "1" | "2" | "3" | "4" | "unknown";
 type SemesterFilter = "all" | "1" | "2" | "unknown";
 type LabPlanningSemester = PlanningSemester | "unselected";
@@ -201,50 +201,6 @@ const guideSteps: GuideStep[] = [
     items: ["트랙제 안내와 이용 방법", "학과 홈페이지와 유튜브", "트랙별 모듈 및 교육과정표"],
     action: "공식 자료 보기",
     viewId: "resources",
-  },
-];
-
-const videoResources = [
-  {
-    id: "RqfQRmLa4g0",
-    title: "트랙제 핵심 소개 영상",
-    description: "모듈형 트랙제의 취지, 증명서 표시 안내, 5개 트랙 구분을 빠르게 이해할 수 있는 요약 영상입니다.",
-  },
-  {
-    id: "nhELHq51gdY",
-    title: "트랙제 안내영상 1",
-    description: "모듈형 교육과정과 트랙제의 기본 흐름을 처음 확인하는 영상입니다.",
-  },
-  {
-    id: "iuXHSSuc0UQ",
-    title: "트랙제 안내영상 2",
-    description: "트랙제가 왜 필요한지, 어떤 기준으로 과목을 묶어 보는지 확인하는 자료입니다.",
-  },
-  {
-    id: "osc9yOuq0IU",
-    title: "트랙제 안내영상 3",
-    description: "트랙별 모듈 구성과 수강 계획을 세울 때 참고할 수 있는 안내 영상입니다.",
-    start: 4,
-  },
-  {
-    id: "Vx9HdOxKEiU",
-    title: "트랙제 안내영상 4",
-    description: "자가진단을 하기 전에 트랙 신청 흐름을 다시 점검하기 좋은 영상입니다.",
-  },
-];
-
-const departmentLinks = [
-  {
-    title: "학과 YouTube",
-    description: "식품자원경제학과 공식 유튜브 영상 모음으로 이동합니다.",
-    href: "https://www.youtube.com/@FoodandResourcesEconomics_dku/videos",
-    label: "채널 바로가기",
-  },
-  {
-    title: "학과 홈페이지",
-    description: "단국대학교 식품자원경제학과 공식 홈페이지로 이동합니다.",
-    href: "https://cms.dankook.ac.kr/web/ere",
-    label: "홈페이지 바로가기",
   },
 ];
 
@@ -1122,8 +1078,8 @@ function App({ storage }: { storage?: Storage } = {}) {
             }
           : activeView === "result"
             ? { view: "result", section: resultSection }
-            : activeView === "resources" || activeView === "modules"
-              ? { view: "resources", section: activeView === "modules" ? "modules" : resourceSection }
+            : activeView === "resources"
+              ? { view: "resources", section: resourceSection }
               : { view: activeView };
   const resultReady = Boolean(savedState.profile && savedState.courseInputReviewedAt && pathProgress);
   const targetTrackReady = savedState.profile?.studyPath !== "track-major" || Boolean(savedState.targetTrackId);
@@ -1617,27 +1573,11 @@ function App({ storage }: { storage?: Storage } = {}) {
 
         {activeView === "resources" && (
           <section className="primary-panel full-panel">
-            <ResourcesView
+            <ResourceIndexView
               section={resourceSection}
-              selectedTrackIds={selectedTrackIds}
               onSectionChange={navigateResourceSection}
             />
           </section>
-        )}
-
-        {activeView === "modules" && (
-          <div className="view-layout">
-            <TrackPicker
-              selectedTrackIds={selectedTrackIds}
-              enrollmentType={enrollmentType}
-              onToggleTrack={toggleTrack}
-              onEditProfile={editProfile}
-              onReset={resetState}
-            />
-            <section className="primary-panel">
-              <ModulesView selectedTrackIds={selectedTrackIds} />
-            </section>
-          </div>
         )}
 
         {activeView === "diagnosis" && pdfInputRoute === "pdf-review" && pdfImportDraft && (
@@ -2682,243 +2622,6 @@ function OverviewView() {
   );
 }
 
-function ResourcesView({
-  section,
-  selectedTrackIds,
-  onSectionChange,
-}: {
-  section: ResourceSection;
-  selectedTrackIds: TrackId[];
-  onSectionChange: (section: ResourceSection) => void;
-}) {
-  return (
-    <div className="view-stack">
-      <SectionHeader
-        eyebrow="도구 & 정보"
-        title="트랙 확인 자료와 교육과정표를 한 곳에서 확인하세요."
-        body="자가진단 전에 참고할 수 있는 공식 링크, 트랙제 안내 영상, 트랙별 모듈/과목표, 2026 교육과정표를 모았습니다."
-      />
-      <div className="resource-index" role="tablist" aria-label="자료 분류">
-        {([
-          ["tracks", "트랙 구성"],
-          ["modules", "모듈 보기"],
-          ["curriculum", "교육과정표"],
-          ["official", "공식 자료"],
-        ] as const).map(([id, label]) => (
-          <button
-            className={section === id ? "active" : ""}
-            data-resource-section={id}
-            type="button"
-            role="tab"
-            aria-selected={section === id}
-            key={id}
-            onClick={() => onSectionChange(id)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-      {section === "tracks" && <TrackModuleReference />}
-      {section === "modules" && <ModulesView selectedTrackIds={selectedTrackIds} />}
-      {section === "curriculum" && <CurriculumBoard />}
-      {section === "official" && (
-        <>
-          <DepartmentLinkSection />
-          <ToolsInfoSection />
-        </>
-      )}
-    </div>
-  );
-}
-
-function DepartmentLinkSection() {
-  return (
-    <section className="resource-section link-section">
-      <div className="resource-head">
-        <span>공식 링크</span>
-        <h3>학과 채널과 홈페이지</h3>
-        <p>최신 학과 소식과 공식 안내는 아래 링크에서 함께 확인하세요.</p>
-      </div>
-      <div className="official-link-grid">
-        {departmentLinks.map((link) => (
-          <a className="official-link-card" href={link.href} key={link.href} target="_blank" rel="noreferrer">
-            <div>
-              <strong>{link.title}</strong>
-              <p>{link.description}</p>
-            </div>
-            <span>
-              {link.label}
-              <ExternalLink aria-hidden="true" size={16} />
-            </span>
-          </a>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ToolsInfoSection() {
-  return (
-    <section className="resource-section">
-      <div className="resource-head">
-        <span>도구 & 정보</span>
-        <h3>트랙제 안내영상</h3>
-        <p>트랙제를 처음 접하는 학생이 모듈형 교육과정과 트랙 신청 흐름을 빠르게 이해할 수 있도록 영상 자료를 모았습니다.</p>
-      </div>
-      <div className="video-grid">
-        {videoResources.slice(0, 2).map((video) => <VideoResourceCard video={video} key={video.id} />)}
-      </div>
-      {videoResources.length > 2 && (
-        <details className="service-disclosure video-disclosure">
-          <summary>
-            <span><small>추가 영상</small><strong>안내영상 {videoResources.length - 2}개 더 보기</strong></span>
-            <small>필요할 때 펼쳐보세요</small>
-          </summary>
-          <div className="video-grid">
-            {videoResources.slice(2).map((video) => <VideoResourceCard video={video} key={video.id} />)}
-          </div>
-        </details>
-      )}
-    </section>
-  );
-}
-
-function VideoResourceCard({ video }: { video: (typeof videoResources)[number] }) {
-  const embedUrl = `https://www.youtube-nocookie.com/embed/${video.id}${video.start ? `?start=${video.start}` : ""}`;
-  const watchUrl = `https://www.youtube.com/watch?v=${video.id}${video.start ? `&t=${video.start}s` : ""}`;
-
-  return (
-    <article className="video-card">
-      <div className="video-frame">
-        <iframe
-          title={video.title}
-          src={embedUrl}
-          loading="lazy"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-        />
-      </div>
-      <div className="video-copy">
-        <span><PlayCircle aria-hidden="true" size={16} />YouTube</span>
-        <h4>{video.title}</h4>
-        <p>{video.description}</p>
-        <a href={watchUrl} target="_blank" rel="noreferrer">
-          YouTube에서 보기 <ExternalLink aria-hidden="true" size={15} />
-        </a>
-      </div>
-    </article>
-  );
-}
-
-function CurriculumBoard() {
-  const unassignedCourses = courses.filter((course) => !course.recommendedSemester);
-
-  return (
-    <section className="curriculum-section">
-      <div className="resource-head">
-        <span>2026 교육과정표</span>
-        <h3>학년·학기별 전공 과목 흐름</h3>
-        <p>수강 계획을 세우기 쉽도록 PDF 과목표를 학년과 학기 기준으로 다시 정리했습니다.</p>
-      </div>
-      <div className="curriculum-grid">
-        {curriculumSlots.map((slot) => {
-          const slotCourses = courses.filter((course) => course.recommendedSemester === slot.key);
-          return (
-            <article className="semester-card" key={slot.key}>
-              <div className="semester-head">
-                <strong>{slot.label}</strong>
-                <span>{slotCourses.length}과목</span>
-              </div>
-              <div className="semester-course-list">
-                {slotCourses.map((course) => (
-                  <CoursePill course={course} key={course.id} />
-                ))}
-              </div>
-            </article>
-          );
-        })}
-      </div>
-      <div className="floating-course-panel">
-        <div>
-          <strong>학기 미정·융합 과목</strong>
-          <span>바이오헬스·식품영양·식품공학 계열 과목은 학기 정보가 별도 확인이 필요합니다.</span>
-        </div>
-        <div className="floating-course-list">
-          {unassignedCourses.map((course) => (
-            <CoursePill course={course} key={course.id} />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function TrackModuleReference() {
-  return (
-    <section className="resource-section track-reference-section">
-      <div className="resource-head">
-        <span>트랙별 모듈/과목표</span>
-        <h3>5개 트랙에서 요구하는 모듈과 과목</h3>
-        <p>자가진단에서 트랙을 선택하기 전에, 각 트랙이 어떤 모듈과 과목으로 구성되는지 먼저 비교할 수 있습니다.</p>
-      </div>
-      <div className="track-reference-grid">
-        {tracks.map((track) => (
-          <article className={`track-reference-card ${track.kind === "융합전공" ? "convergence" : ""}`} key={track.id}>
-            <div className="track-reference-head">
-              <div>
-                <span className={getTrackBadgeClass(track.id)}>{track.kind}</span>
-                <h4>{track.name}</h4>
-                <p>{getTrackQuickMeta(track)}</p>
-              </div>
-              <strong>{track.rule.totalTrackCredits}학점</strong>
-            </div>
-            <div className="track-reference-modules">
-              {getTrackModuleIds(track).map((moduleId) => {
-                const moduleInfo = modules.find((module) => module.id === moduleId);
-                const moduleCourses = getCoursesByModule(moduleId);
-                return (
-                  <div className="track-reference-module" key={`${track.id}-${moduleId}`}>
-                    <div className="track-reference-module-head">
-                      <strong>
-                        {moduleId}. {moduleInfo?.name ?? "모듈"}
-                      </strong>
-                      <span>{moduleCourses.length}과목</span>
-                    </div>
-                    <ul>
-                      {moduleCourses.map((course) => (
-                        <li key={course.id}>
-                          <span>
-                            {course.code} {course.name}
-                          </span>
-                          <small>
-                            {formatSemester(course.recommendedSemester)} · {course.credits}학점
-                          </small>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function CoursePill({ course }: { course: Course }) {
-  return (
-    <div className={course.required ? "course-pill required" : "course-pill"}>
-      <span>{course.code}</span>
-      <strong>{course.name}</strong>
-      <small>
-        {getModuleLabel(course.moduleId)} · {course.credits}학점
-      </small>
-      {course.required && <em>필수</em>}
-    </div>
-  );
-}
 
 export function EnrollmentProfileSummary({
   enrollmentType,
@@ -3035,151 +2738,6 @@ function TrackSetupSummary({
   );
 }
 
-function ModulesView({ selectedTrackIds }: { selectedTrackIds: TrackId[] }) {
-  const selectedTracks = getTracks(selectedTrackIds);
-  const selectedTrackNames = selectedTracks.map((track) => track.name).join(", ");
-  const visibleModuleIds = new Set(selectedTracks.flatMap((track) => getTrackModuleIds(track)));
-
-  return (
-    <div className="view-stack">
-      <SectionHeader
-        eyebrow="트랙별 모듈/과목표"
-        title="선택한 트랙에 필요한 모듈을 깔끔하게 비교하세요."
-        body={
-          selectedTracks.length > 0
-            ? `${selectedTrackNames} 기준으로 필요한 모듈을 비교했습니다. 같은 모듈을 여러 트랙이 공유하는지도 함께 확인할 수 있습니다.`
-            : "위의 트랙 선택 영역에서 비교할 트랙을 먼저 선택하세요."
-        }
-      />
-      <SelectedTrackSummary selectedTracks={selectedTracks} />
-      <ModuleComparison selectedTracks={selectedTracks} />
-      <div className="module-map tidy">
-        {modules
-          .filter((module) => module.category !== "liberal")
-          .filter((module) => selectedTracks.length === 0 || visibleModuleIds.has(module.id))
-          .map((module) => {
-            const moduleCourses = getCoursesByModule(module.id);
-            const matchingTracks = selectedTracks.filter((track) => trackUsesModule(track, module.id));
-            const highlighted = matchingTracks.length > 0;
-            return (
-              <article className={highlighted ? "module-box highlighted" : "module-box"} key={module.id}>
-                <div className="module-box-head">
-                  <strong>
-                    {module.id}. {module.name}
-                  </strong>
-                  <span>{highlighted ? `${matchingTracks.length}개 트랙 포함` : `${module.courseCount}과목`}</span>
-                </div>
-                {matchingTracks.length > 0 && (
-                  <div className="module-memberships">
-                    {matchingTracks.map((track) => (
-                      <small className={getTrackBadgeClass(track.id)} key={track.id}>
-                        {track.name}
-                      </small>
-                    ))}
-                  </div>
-                )}
-                <ul>
-                  {moduleCourses.map((course) => (
-                    <li key={course.id}>
-                      <span>
-                        {course.code} {course.name}
-                      </span>
-                      <small>
-                        {formatSemester(course.recommendedSemester)} · {course.credits}학점
-                      </small>
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function SelectedTrackSummary({ selectedTracks }: { selectedTracks: Track[] }) {
-  if (selectedTracks.length === 0) {
-    return (
-      <div className="empty-state">
-        <strong>선택된 트랙이 없습니다.</strong>
-        <span>트랙을 선택하면 이 영역에 필요한 모듈 코드와 트랙 성격이 정리됩니다.</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="selected-track-strip">
-      {selectedTracks.map((track) => (
-        <article className={`selected-track-card ${track.kind === "융합전공" ? "convergence" : ""}`} key={track.id}>
-          <div className="track-card-meta">
-            <span className={getTrackBadgeClass(track.id)}>{track.name}</span>
-            <span>{track.kind}</span>
-          </div>
-          <h3>{track.name}</h3>
-          <div className="module-code-list">
-            {getTrackModuleIds(track).map((moduleId) => (
-              <small key={moduleId}>{moduleId}</small>
-            ))}
-          </div>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function ModuleComparison({ selectedTracks }: { selectedTracks: Track[] }) {
-  if (selectedTracks.length === 0) return null;
-
-  const comparedModules = modules.filter(
-    (module) =>
-      module.category !== "liberal" && selectedTracks.some((track) => trackUsesModule(track, module.id)),
-  );
-
-  return (
-    <div className="comparison-panel">
-      <div>
-        <h3>선택 트랙별 모듈 매트릭스</h3>
-        <p>체크 표시가 있는 모듈은 해당 트랙 인정 조건에 포함됩니다.</p>
-      </div>
-      <div className="comparison-scroll">
-        <div
-          className="comparison-grid"
-          style={{
-            gridTemplateColumns: `minmax(150px, 1.2fr) repeat(${selectedTracks.length}, minmax(120px, 1fr))`,
-            minWidth: `${170 + selectedTracks.length * 132}px`,
-          }}
-        >
-          <div className="comparison-cell comparison-head">모듈</div>
-          {selectedTracks.map((track) => (
-            <div className="comparison-cell comparison-head selected-track-head" key={track.id}>
-              <strong>{track.name}</strong>
-            </div>
-          ))}
-          {comparedModules.map((module) => (
-            <Fragment key={module.id}>
-              <div className="comparison-cell module-name" key={`${module.id}-name`}>
-                <strong>{module.id}</strong>
-                <span>{module.name}</span>
-              </div>
-              {selectedTracks.map((track) => {
-                const included = trackUsesModule(track, module.id);
-                return (
-                  <div
-                    className={included ? "comparison-cell included" : "comparison-cell muted-cell"}
-                    key={`${module.id}-${track.id}`}
-                  >
-                    {included ? <strong>필요</strong> : "-"}
-                  </div>
-                );
-              })}
-            </Fragment>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function LabView({
   recommendations,
@@ -4608,10 +4166,6 @@ function getTrackModuleIds(track: Track): ModuleId[] {
     ...track.rule.baseModuleIds,
     ...track.rule.convergenceRequirements.flatMap((requirement) => requirement.moduleIds),
   ];
-}
-
-function trackUsesModule(track: Track, moduleId: ModuleId): boolean {
-  return getTrackModuleIds(track).includes(moduleId);
 }
 
 function getTrackBadgeClass(trackId: TrackId): string {

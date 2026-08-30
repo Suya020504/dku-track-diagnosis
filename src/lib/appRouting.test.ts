@@ -187,6 +187,11 @@ describe("canonical app route resolution", () => {
 describe("canonical app route writes", () => {
   it("writes canonical section and profile-stage fields", () => {
     expect(buildAppHref(
+      "/app?view=modules&utm_source=legacy#module-list",
+      { view: "resources", section: "modules" },
+    )).toBe("/app?view=resources&utm_source=legacy&section=modules#module-list");
+
+    expect(buildAppHref(
       "/app?view=modules&utm_source=share#top",
       { view: "resources", section: "official" },
     )).toBe("/app?view=resources&utm_source=share&section=official#top");
