@@ -2,9 +2,15 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import App, { completeProfileTransition } from "./App";
 import * as AppModule from "./App";
+import { calculateGraduationPlan } from "./lib/graduationPlanner";
 import { interestSurveyQuestions } from "./lib/interestSurvey";
 import { STORAGE_KEY_V2, createEmptyAppState } from "./lib/storage";
-import type { InterestSurveyState, SavedAppStateV2, StudentProfile } from "./types";
+import type {
+  GraduationPlanPreferences,
+  InterestSurveyState,
+  SavedAppStateV2,
+  StudentProfile,
+} from "./types";
 
 const findTrackProfile: StudentProfile = {
   goal: "find-track",
@@ -13,6 +19,65 @@ const findTrackProfile: StudentProfile = {
   curriculumRuleVersion: "2026-provided-final-plan",
   ruleApplicability: "reference-only",
 };
+
+const landingProfile: StudentProfile = {
+  ...findTrackProfile,
+  entryYear: 2026,
+};
+
+const landingPlanPreferences: GraduationPlanPreferences = {
+  currentTerm: "2026-2",
+  targetGraduationTerm: "2027-2",
+  maxMajorCoursesPerTerm: 6,
+  considerSeasonalTerm: false,
+};
+
+const completedInterestSurvey: InterestSurveyState = {
+  answers: Object.fromEntries(
+    interestSurveyQuestions.map((question) => [question.id, 3]),
+  ),
+  currentIndex: 9,
+  completedAt: "2026-08-30T00:00:00.000Z",
+  selectedTrackId: "economics",
+};
+
+function landingState(
+  stage: "empty" | "interest" | "courses" | "saved-plan",
+): SavedAppStateV2 {
+  const empty = createEmptyAppState();
+  if (stage === "empty") return empty;
+
+  const interestState: SavedAppStateV2 = {
+    ...empty,
+    interestSurvey: completedInterestSurvey,
+    targetTrackId: "economics",
+  };
+  if (stage === "interest") return interestState;
+
+  const courseState: SavedAppStateV2 = {
+    ...interestState,
+    profile: landingProfile,
+    courseInputReviewedAt: "2026-08-30T00:30:00.000Z",
+  };
+  if (stage === "courses") return courseState;
+
+  return {
+    ...courseState,
+    graduationPlanPreferences: landingPlanPreferences,
+    graduationPlan: calculateGraduationPlan({
+      profile: landingProfile,
+      targetTrackId: "economics",
+      courseSelections: [],
+      additionalMajorCredits: [],
+      preferences: landingPlanPreferences,
+      generatedAt: "2026-08-30T01:00:00.000Z",
+    }),
+  };
+}
+
+function renderedJourneyState(markup: string, stage: "interest" | "track" | "semester") {
+  return markup.match(new RegExp(`data-journey-stage="${stage}" data-state="([^"]+)"`))?.[1];
+}
 
 function createStorage(state?: SavedAppStateV2): Storage {
   const values = new Map<string, string>();
@@ -93,6 +158,54 @@ describe("recommendation route integration", () => {
     expect(markup).not.toContain("부족 모듈 2개");
     expect(markup).not.toContain("로그인");
     expect(markup).not.toContain("내 상황에 맞는 이수 기준을 먼저 확인해요");
+  });
+
+  it.each([
+    {
+      name: "empty input",
+      state: landingState("empty"),
+      journey: ["current", "next", "pending"],
+      title: "관심을 찾으면 계획표가 펼쳐져요",
+      status: "입력 전 잠김",
+      action: undefined,
+    },
+    {
+      name: "completed interest and selected target",
+      state: landingState("interest"),
+      journey: ["complete", "current", "pending"],
+      title: "다음은 학생 유형을 확인할 차례예요",
+      status: "학생 유형 확인 필요",
+      action: "진단 정보 이어가기",
+    },
+    {
+      name: "reviewed courses",
+      state: landingState("courses"),
+      journey: ["complete", "complete", "current"],
+      title: "입력한 상태로 학기 계획을 만들 수 있어요",
+      status: "계획 준비 완료",
+      action: "학기 계획 열기",
+    },
+    {
+      name: "saved graduation plan",
+      state: landingState("saved-plan"),
+      journey: ["complete", "complete", "complete"],
+      title: "저장한 학기 계획이 있어요",
+      status: "저장한 계획 사용 가능",
+      action: "저장한 계획 보기",
+    },
+  ])("renders the real landing progress for $name", ({ name, state, journey, title, status, action }) => {
+    const markup = renderApp("", state);
+
+    expect([
+      renderedJourneyState(markup, "interest"),
+      renderedJourneyState(markup, "track"),
+      renderedJourneyState(markup, "semester"),
+    ]).toEqual(journey);
+    expect(markup).toContain(title);
+    expect(markup).toContain(status);
+    if (action) expect(markup).toContain(action);
+    else expect(markup).not.toContain("planner-landing__planner-action");
+    if (name !== "empty input") expect(markup).not.toContain("입력 전 잠김");
   });
 
   it("allows the interest survey route without a profile and restores its current question", () => {

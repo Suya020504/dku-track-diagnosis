@@ -4,9 +4,11 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
+import { calculateGraduationPlan } from "./lib/graduationPlanner";
 import { interestSurveyQuestions } from "./lib/interestSurvey";
 import { STORAGE_KEY_V2, createEmptyAppState } from "./lib/storage";
 import type {
+  GraduationPlanPreferences,
   InterestSurveyAnswer,
   InterestSurveyState,
   SavedAppStateV2,
@@ -20,6 +22,32 @@ const planProfile: StudentProfile = {
   curriculumRuleVersion: "2026-provided-final-plan",
   ruleApplicability: "reference-only",
 };
+
+const savedPlanPreferences: GraduationPlanPreferences = {
+  currentTerm: "2026-2",
+  targetGraduationTerm: "2027-2",
+  maxMajorCoursesPerTerm: 6,
+  considerSeasonalTerm: false,
+};
+
+function savedLandingPlanState(): SavedAppStateV2 {
+  const ready: SavedAppStateV2 = {
+    ...createEmptyAppState(),
+    profile: planProfile,
+    courseInputReviewedAt: "2026-08-30T00:00:00.000Z",
+  };
+  return {
+    ...ready,
+    graduationPlanPreferences: savedPlanPreferences,
+    graduationPlan: calculateGraduationPlan({
+      profile: planProfile,
+      courseSelections: [],
+      additionalMajorCredits: [],
+      preferences: savedPlanPreferences,
+      generatedAt: "2026-08-30T01:00:00.000Z",
+    }),
+  };
+}
 
 let root: Root | undefined;
 
@@ -91,6 +119,69 @@ afterEach(async () => {
 });
 
 describe("App recommendation browser interactions", () => {
+  it("keeps a fresh landing unobstructed and opens or closes help only on request", async () => {
+    await mountApp();
+
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    expect(button("내 관심 트랙 찾기").disabled).toBe(false);
+
+    await click("도움말");
+    expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+
+    const close = document.querySelector<HTMLButtonElement>('[aria-label="사용법 닫기"]');
+    await act(async () => close?.click());
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it("closes the help dialog when its action navigates to a service screen", async () => {
+    await mountApp();
+    await click("도움말");
+    await click("자가진단 열기");
+
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    expect(new URLSearchParams(location.search).get("view")).toBe("diagnosis");
+  });
+
+  it("routes landing track exploration to axes after an interest direction is saved", async () => {
+    saveState({
+      ...createEmptyAppState(),
+      interestSurvey: { ...completeSurvey(), selectedTrackId: "economics" },
+      targetTrackId: "economics",
+    });
+    await mountApp();
+
+    const trackJourney = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
+      .find((candidate) => candidate.textContent?.includes("트랙 탐색"));
+    await act(async () => trackJourney?.click());
+
+    const params = new URLSearchParams(location.search);
+    expect(params.get("view")).toBe("recommendation");
+    expect(params.get("step")).toBe("axes");
+  });
+
+  it("opens an existing saved plan from the landing preview", async () => {
+    saveState(savedLandingPlanState());
+    await mountApp();
+    await click("저장한 계획 보기");
+
+    const params = new URLSearchParams(location.search);
+    expect(params.get("view")).toBe("plan");
+    expect(params.get("step")).toBe("schedule");
+  });
+
+  it("opens an existing saved plan from the landing semester journey", async () => {
+    saveState(savedLandingPlanState());
+    await mountApp();
+
+    const semesterJourney = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
+      .find((candidate) => candidate.textContent?.includes("학기 계획"));
+    await act(async () => semesterJourney?.click());
+
+    const params = new URLSearchParams(location.search);
+    expect(params.get("view")).toBe("plan");
+    expect(params.get("step")).toBe("schedule");
+  });
+
   it.each([
     ["overview", "트랙제 안내", "트랙제 안내", "contact", "문의사항"],
     ["contact", "문의사항", "문의", "overview", "트랙제 안내"],

@@ -190,6 +190,11 @@
   background: var(--planner-paper);
 }
 
+.planner-landing__locked-planner[data-planner-status="ready"],
+.planner-landing__locked-planner[data-planner-status="saved-plan"] {
+  border-color: color-mix(in srgb, var(--planner-department-green) 42%, transparent);
+}
+
 .planner-landing__locked-planner > header {
   display: flex;
   gap: 20px;
@@ -224,6 +229,31 @@
   color: var(--planner-ink-muted);
   font-size: 0.78rem;
   font-weight: 800;
+}
+
+.planner-landing__planner-controls {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.planner-landing__planner-action {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid var(--planner-department-green);
+  border-radius: var(--planner-row-radius);
+  background: var(--planner-department-green);
+  color: var(--planner-paper);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 850;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
 .planner-landing__planner-ledger {
@@ -531,8 +561,8 @@
   }
 
   .planner-landing__compass-plane img {
-    min-height: 138px;
-    aspect-ratio: 2.3 / 1;
+    min-height: 126px;
+    aspect-ratio: 2.8 / 1;
   }
 
   .planner-landing__compass-plane figcaption {
@@ -560,8 +590,10 @@
   }
 
   .planner-landing__locked-planner {
-    max-height: 238px;
+    max-height: 280px;
     border-radius: 16px;
+    scroll-margin-block-start: 78px;
+    scroll-margin-block-end: calc(94px + env(safe-area-inset-bottom, 0px));
   }
 
   .planner-landing__locked-planner > header {
@@ -572,6 +604,16 @@
 
   .planner-landing__lock-state {
     justify-self: start;
+  }
+
+  .planner-landing__planner-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+  }
+
+  .planner-landing__planner-action {
+    width: 100%;
   }
 
   .planner-landing__planner-ledger {

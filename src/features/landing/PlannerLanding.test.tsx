@@ -30,6 +30,7 @@ async function renderLanding(overrides: Partial<React.ComponentProps<typeof Plan
     onFindTrack: vi.fn(),
     onStartDiagnosis: vi.fn(),
     journeyItems,
+    plannerStatus: "empty",
     ...overrides,
   };
   await act(async () => root?.render(<PlannerLanding {...props} />));
