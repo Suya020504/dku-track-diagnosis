@@ -1,3 +1,41 @@
+export const PDF_IMPORT_LIMITS = {
+  maxFileBytes: 10 * 1024 * 1024,
+  maxPages: 50,
+  timeoutMs: 15_000,
+  maxExtractedCharacters: 1_000_000,
+  headerScanBytes: 1_024,
+} as const;
+
+export type PdfImportFailureCode =
+  | "file-empty"
+  | "file-too-large"
+  | "mime-mismatch"
+  | "signature-mismatch"
+  | "password-protected"
+  | "invalid-or-corrupt"
+  | "page-limit"
+  | "text-limit"
+  | "no-text-layer"
+  | "worker-unavailable"
+  | "timeout"
+  | "cancelled"
+  | "parse-failed";
+
+export class PdfImportError extends Error {
+  constructor(
+    readonly code: PdfImportFailureCode,
+    message: string,
+  ) {
+    super(message);
+    this.name = "PdfImportError";
+  }
+}
+
+export type PdfTextPage = {
+  pageNumber: number;
+  text: string;
+};
+
 export type TrackId =
   | "food-marketing"
   | "regional-development-consulting"
