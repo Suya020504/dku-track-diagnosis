@@ -1,3 +1,4 @@
+import type { RefObject } from "react";
 import { courses } from "../../data/curriculumData";
 import type { UnplacedCourse } from "../../types";
 
@@ -10,12 +11,18 @@ const reasonLabels: Record<UnplacedCourse["reason"], string> = {
   "after-target": "목표 학기 이후 배치 필요",
 };
 
-export function UnplacedCourseList({ items }: { items: UnplacedCourse[] }) {
+export function UnplacedCourseList({
+  items,
+  headingRef,
+}: {
+  items: UnplacedCourse[];
+  headingRef?: RefObject<HTMLHeadingElement | null>;
+}) {
   return (
     <section className="plan-check-section" aria-labelledby="unplaced-course-title">
       <div className="plan-check-heading">
         <span>배치 결과 점검</span>
-        <h1 id="unplaced-course-title">배치하지 못한 과목</h1>
+        <h1 id="unplaced-course-title" ref={headingRef} tabIndex={-1}>배치하지 못한 과목</h1>
       </div>
       {items.length === 0 ? (
         <p className="plan-check-empty">현재 계획에서 따로 남은 과목은 없습니다.</p>

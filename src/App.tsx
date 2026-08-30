@@ -603,6 +603,7 @@ function App() {
   const [guideOpen, setGuideOpen] = useState(() => !loadGuideDismissed());
   const [guideStepIndex, setGuideStepIndex] = useState(0);
   const stepHeadingRef = useRef<HTMLHeadingElement>(null);
+  const planHeadingRef = useRef<HTMLHeadingElement>(null);
   const initialLocationSyncedRef = useRef(false);
   const savingPlanGeneratedAtRef = useRef<string | undefined>(undefined);
   const completedCourseIds = useMemo(
@@ -674,8 +675,16 @@ function App() {
   }, [diagnosisStep]);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    if (activeView !== "plan") {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
   }, [activeView]);
+
+  useEffect(() => {
+    if (activeView !== "plan") return;
+    planHeadingRef.current?.focus();
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [activeView, planStep]);
 
   function persist(updater: (current: SavedAppStateV2) => SavedAppStateV2) {
     setSavedState((current) => {
@@ -990,6 +999,7 @@ function App() {
           hasProfile={Boolean(savedState.profile)}
           courseInputReady={Boolean(savedState.courseInputReviewedAt)}
           targetTrackReady={!missingTargetTrack}
+          headingRef={planHeadingRef}
           onBack={() => navigateAppRoute({ view: "recommendation", step: "axes", axis: "plan" })}
           onEditPrerequisites={openCourseInputFromAxes}
         />
@@ -1032,7 +1042,9 @@ function App() {
           <main className="graduation-plan-setup-page" aria-labelledby="graduation-plan-setup-title">
             <header className="graduation-plan-setup-heading">
               <span>졸업 계획 조건</span>
-              <h1 id="graduation-plan-setup-title">학기별 참고 계획의 범위를 정해 주세요</h1>
+              <h1 id="graduation-plan-setup-title" ref={planHeadingRef} tabIndex={-1}>
+                학기별 참고 계획의 범위를 정해 주세요
+              </h1>
               <p>검토한 이수 과목은 그대로 두고, 앞으로 배치할 학기와 한 학기 수강량만 입력합니다.</p>
             </header>
             <GraduationPlanSetup
@@ -1048,6 +1060,7 @@ function App() {
           <GraduationPlanResult
             result={savedState.graduationPlan!}
             step={planStep}
+            headingRef={planHeadingRef}
             onEdit={editGraduationPlanInputs}
             onShowChecks={() => navigateAppRoute({ view: "plan", step: "checks" })}
             onSave={saveGraduationPlanSnapshot}
@@ -1268,12 +1281,14 @@ function GraduationPlanPrerequisite({
   hasProfile,
   courseInputReady,
   targetTrackReady,
+  headingRef,
   onBack,
   onEditPrerequisites,
 }: {
   hasProfile: boolean;
   courseInputReady: boolean;
   targetTrackReady: boolean;
+  headingRef: RefObject<HTMLHeadingElement | null>;
   onBack: () => void;
   onEditPrerequisites: () => void;
 }) {
@@ -1281,7 +1296,9 @@ function GraduationPlanPrerequisite({
     <main className="plan-entry-shell" aria-labelledby="plan-entry-title">
       <section className="plan-entry-card">
         <span>졸업 계획 준비</span>
-        <h1 id="plan-entry-title">졸업 계획 전에 입력 상태를 확인해 주세요</h1>
+        <h1 id="plan-entry-title" ref={headingRef} tabIndex={-1}>
+          졸업 계획 전에 입력 상태를 확인해 주세요
+        </h1>
         <p>
           이 단계에서는 특정 트랙을 자동으로 고르거나 계획을 계산하지 않습니다.
           프로필과 완료한 이수 과목을 먼저 확인한 뒤, 기준별 추천으로 돌아가 판단해 주세요.

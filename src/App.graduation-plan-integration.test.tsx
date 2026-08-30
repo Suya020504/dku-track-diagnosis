@@ -104,6 +104,13 @@ function checkbox(label: string): HTMLInputElement {
   return match;
 }
 
+function expectFocusedPlanHeading(text: string) {
+  expect(document.activeElement).toBeInstanceOf(HTMLHeadingElement);
+  expect(document.activeElement?.tagName).toBe("H1");
+  expect(document.activeElement?.textContent).toContain(text);
+  expect(document.activeElement?.getAttribute("tabindex")).toBe("-1");
+}
+
 async function click(label: string) {
   await act(async () => {
     button(label).click();
@@ -363,6 +370,7 @@ describe("App graduation plan pages", () => {
     expect(document.body.textContent).toContain("졸업 계획 전에 입력 상태를 확인해 주세요");
     expect(document.body.textContent).toContain("프로필·이수 과목 확인");
     expect(document.body.textContent).not.toContain("계획 저장");
+    expectFocusedPlanHeading("졸업 계획 전에 입력 상태를 확인해 주세요");
   });
 
   it("submits the four-input setup, persists the plan, and routes to schedule", async () => {
@@ -402,6 +410,7 @@ describe("App graduation plan pages", () => {
       expect(history.state).toEqual(expect.objectContaining({ view: "plan", step: "setup" }));
       expect(document.body.textContent).toContain("학기별 참고 계획의 범위를 정해 주세요");
       expect(replaceState).toHaveBeenCalled();
+      expectFocusedPlanHeading("학기별 참고 계획의 범위를 정해 주세요");
     },
   );
 
@@ -449,10 +458,16 @@ describe("App graduation plan pages", () => {
 
     expect(document.body.textContent).toContain("계획 저장");
     expect(document.body.textContent).not.toContain("배치하지 못한 과목");
+    expectFocusedPlanHeading("목표 학기 안에 참고 계획을 만들었어요");
+    vi.mocked(window.scrollTo).mockClear();
+
     await click("확인할 항목 보기");
     expect(new URLSearchParams(location.search).get("step")).toBe("checks");
     expect(document.body.textContent).toContain("배치하지 못한 과목");
     expect(document.body.textContent).not.toContain("계획 저장");
+    expectFocusedPlanHeading("배치하지 못한 과목");
+    expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
+    vi.mocked(window.scrollTo).mockClear();
 
     await act(async () => {
       const popped = new Promise<void>((resolve) => {
@@ -463,6 +478,8 @@ describe("App graduation plan pages", () => {
     });
     expect(new URLSearchParams(location.search).get("step")).toBe("schedule");
     expect(document.body.textContent).toContain("계획 저장");
+    expectFocusedPlanHeading("목표 학기 안에 참고 계획을 만들었어요");
+    expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
   });
 
   it("saves one snapshot only on the explicit save action", async () => {

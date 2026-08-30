@@ -121,7 +121,7 @@ describe("GraduationPlanResult status language", () => {
   ] as const)("uses the safe heading for %s", (status, heading) => {
     const markup = renderResult({ ...baseResult, status });
 
-    expect(markup).toContain(`<h1>${heading}</h1>`);
+    expect(markup).toContain(`<h1 tabindex="-1">${heading}</h1>`);
     expect(markup).not.toMatch(/<h[1-6][^>]*>[^<]*(졸업 가능|이수 확정|개설 보장)[^<]*<\/h[1-6]>/);
   });
 });

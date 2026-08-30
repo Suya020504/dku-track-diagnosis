@@ -1,3 +1,4 @@
+import type { RefObject } from "react";
 import type {
   AcademicTermId,
   GraduationPlanResult as GraduationPlanResultValue,
@@ -50,7 +51,13 @@ function buildTermPlanViews(result: GraduationPlanResultValue): TermPlanView[] {
   });
 }
 
-function PlanStatusSummary({ result }: { result: GraduationPlanResultValue }) {
+function PlanStatusSummary({
+  result,
+  headingRef,
+}: {
+  result: GraduationPlanResultValue;
+  headingRef?: RefObject<HTMLHeadingElement | null>;
+}) {
   const detail = result.status === "load-adjustment-needed"
     ? `학기당 최대 ${result.recommendedMaxMajorCoursesPerTerm ?? result.preferences.maxMajorCoursesPerTerm}과목을 기준으로 다시 배치한 참고안입니다.`
     : result.status === "extra-term-possible"
@@ -64,7 +71,7 @@ function PlanStatusSummary({ result }: { result: GraduationPlanResultValue }) {
   return (
     <header className={`plan-status-summary status-${result.status}`}>
       <span>학기별 참고 계획</span>
-      <h1>{statusHeadings[result.status]}</h1>
+      <h1 ref={headingRef} tabIndex={-1}>{statusHeadings[result.status]}</h1>
       <p>{detail}</p>
     </header>
   );
@@ -77,6 +84,7 @@ export function GraduationPlanResult({
   onShowChecks,
   onSave,
   saveDisabled = false,
+  headingRef,
 }: {
   result: GraduationPlanResultValue;
   step: "schedule" | "checks";
@@ -84,11 +92,12 @@ export function GraduationPlanResult({
   onShowChecks: () => void;
   onSave: () => void;
   saveDisabled?: boolean;
+  headingRef?: RefObject<HTMLHeadingElement | null>;
 }) {
   if (step === "checks") {
     return (
       <main className="graduation-plan-page plan-checks-page">
-        <UnplacedCourseList items={result.unplacedCourses} />
+        <UnplacedCourseList items={result.unplacedCourses} headingRef={headingRef} />
         {result.unplacedElectiveCredits > 0 && (
           <section className="plan-check-section unplaced-elective-summary" aria-labelledby="unplaced-elective-title">
             <div className="plan-check-heading">
@@ -121,7 +130,7 @@ export function GraduationPlanResult({
 
   return (
     <main className="graduation-plan-page plan-schedule-page">
-      <PlanStatusSummary result={result} />
+      <PlanStatusSummary result={result} headingRef={headingRef} />
       <p className="future-offering-warning">
         <strong>최근 개설 패턴 기준</strong>
         2026학년도 개설 이력을 다음 학기에 반복해 배치한 참고안이며, 실제 반복 개설을 보장하지 않습니다.
