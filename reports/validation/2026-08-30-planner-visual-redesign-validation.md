@@ -6,6 +6,12 @@
 
 다만 PDF 과목 불러오기 beta는 합성 fixture에서 자동 일치 0개, 선택 필요 0개, 직접 확인 1개로 남았다. 따라서 PDF beta를 release-ready로 판정하지 않는다. 이 보고서는 화면·동작 검증이며 단국대학교나 학과의 공식 트랙 이수·졸업 판정이 아니다.
 
+### Fix round 1 정정
+
+최초 Task 12 승인 캡처의 04-course-ledger-desktop.png를 통과로 판정한 것은 잘못이었다. DiagnosisPanel이 progress-ring, progress-bar, panel-metrics, mini-row, recommend-row 구조를 계속 렌더링했지만 해당 시각 규칙이 삭제되어, 진행률·선택 수·학점·트랙 행이 붙고 progress fill이 보이지 않았다. 이 항목은 실제 visual release blocker였다.
+
+Fix round 1에서 planner-diagnosis-panel root hook과 planner-courses.css의 namespaced 원장형 스타일을 추가하고, 구조 회귀 테스트와 1440/390/320 실제 Chromium 계산값으로 다시 검증했다. 아래의 최신 캡처·해시·브라우저 계산값이 이 정정을 반영한다.
+
 ## 실행 기준
 
 | 항목 | 값 |
@@ -33,11 +39,13 @@
 
 원본 스냅샷·콘솔·캡처·인쇄물은 Git에서 제외된 output/playwright/visual-redesign-20260830/에 보존했다. 승인 캡처만 docs/assets/2026-08-30-planner-redesign/에 복사했다.
 
+Fix round 1은 부모 커밋 f474dd0bf6c84f87d390e0fb237f725860f736c2에서 실행했다. 프로덕션 미리보기는 같은 127.0.0.1:4217 strictPort, PID 32992였고 visual-redesign-fix1-20260831과 visual-redesign-fix1-empty-20260831 in-memory 세션을 사용했다. 전후 원본과 새 스냅샷은 output/playwright/visual-redesign-20260830/fix-round-1/에 추가 보존했다.
+
 ## 시각 세계와 North Star 비교
 
 승인 North Star의 SHA-256은 BD8494DEC6E9771E12E965A1C6B573E400B14AE0D7068436561C4D7EB8FEB150이다.
 
-랜딩은 왼쪽 안내책자 색인, 하늘색 종이 면, 오른쪽 컴퍼스 풍경, 관심 질문→트랙→학기 계획 리본, 입력 전 잠긴 플래너 예고를 실제 semantic HTML로 구현했다. 플래너는 한 화면에 학기 열을 펼치고, 이름 있는 과목과 익명 선택전공 자리를 구분한다. 생성 시안의 가짜 이름·수치·로고·텍스트는 복제하지 않았다. 육안 비교에서 구성·재료·위계 의도와 충돌하는 material gap은 발견하지 못했다.
+랜딩은 왼쪽 안내책자 색인, 하늘색 종이 면, 오른쪽 컴퍼스 풍경, 관심 질문→트랙→학기 계획 리본, 입력 전 잠긴 플래너 예고를 실제 semantic HTML로 구현했다. 플래너는 한 화면에 학기 열을 펼치고, 이름 있는 과목과 익명 선택전공 자리를 구분한다. 생성 시안의 가짜 이름·수치·로고·텍스트는 복제하지 않았다. 랜딩과 플래너의 구성·재료·위계 의도는 유지됐지만, 최초 course ledger summary 판정에는 위 visual blocker가 있었고 Fix round 1에서 해결했다.
 
 ## 핵심 흐름
 
@@ -76,6 +84,17 @@
 | 320×800 | landing, courses, plan | 각 1/1 | 0px | 0 | 0 | 0/0 |
 
 390×844 과목 화면에서 Tab 1회로 결과로 건너뛰기에 초점이 이동했고, 조작 높이 44px, outline 3px, offset 3px를 확인했다. plan checks H1은 outline 2px로 초점을 표시했다. 화면 끝까지 내렸을 때 마지막 행동 하단과 고정 모바일 내비게이션 상단 사이에는 약 129px가 남아 겹침이 없었다.
+
+### Fix round 1 DiagnosisPanel 계산값
+
+| 상태·뷰포트 | panel | progress track / fill | label 분리 | metric·행 구조 | action·겹침 | overflow·console |
+| --- | --- | --- | ---: | --- | --- | --- |
+| 선택 트랙 1440×900 | grid, gap 0, sticky, 286×679.8px | 248×8px / 76.3×6px, 선언 31% | 12px | metric flex gap 12px, track grid gap 8px, recommendation grid gap 3px | 48px, panel 94–773.8px로 완전 노출 | 0px · 0/0 |
+| 선택 트랙 390×844 | grid, gap 0, static, 322×674px | 292×8px / 89.9×6px, 선언 31% | 12px | 같은 원장 구조 | 292×48px, bottom-nav overlap false | 0px · 0/0 |
+| 선택 트랙 320×800 | grid, gap 0, static, 252×674px | 222×8px / 68.2×6px, 선언 31% | 12px | 같은 원장 구조 | 222×48px, header/bottom-nav overlap false | 0px · 0/0 |
+| no-track 1440/390/320 | grid, progress 없음, mint empty band | 해당 없음 | 해당 없음 | 2개 과목 체크됨과 선택 사항 문구 분리 | 모두 48px, mobile bottom-nav overlap false | 모두 0px · 0/0 |
+
+구조 회귀 테스트는 두 DiagnosisPanel 분기가 planner-diagnosis-panel root 아래 progress, metric, track, recommendation, empty, action hook을 유지하는지 고정한다. 테스트를 구현 전 2건 실패로 확인했고, 구현 뒤 2건 통과했다.
 
 키보드 전용 별도 세션에서는 Tab, Space, Enter, Shift+Tab만 사용해 fresh landing → 직접 진단 → 소속 → 심화전공 → 과목 화면의 결과 skip link → 결과 현재를 완주했다. 결과 H1이 초점되고 scrollY는 0이었다.
 
@@ -136,7 +155,7 @@ Playwright의 print media PDF로 결과와 계획을 저장하고 Poppler로 전
 | docs/assets/2026-08-30-planner-redesign/01-landing-desktop.png | 9DD35508FA41161F2F32866A1E94C5F3D4AB15B0A1712E93005F6995785C9D96 |
 | docs/assets/2026-08-30-planner-redesign/02-interest-survey-desktop.png | 70940D5980D05F91E6D8232973FE9C21E5D8AD52768B41C2989E8E1FC5D23A7D |
 | docs/assets/2026-08-30-planner-redesign/03-profile-desktop.png | 2DFB5185127F50C3E1418A881640BA90DAD4009A366701548633C33EC6656E29 |
-| docs/assets/2026-08-30-planner-redesign/04-course-ledger-desktop.png | 2D5A0D6454C1D2EC7A3D32656FA1EA3F65348A8D12FA10EAC8C9F4B7E14867FB |
+| docs/assets/2026-08-30-planner-redesign/04-course-ledger-desktop.png | D0AED1F8F1B2C693709B9373C603292B734760FF266E197899CB3341E5D5D975 |
 | docs/assets/2026-08-30-planner-redesign/05-pdf-review-zero-match-desktop.png | E3D67E51A6EDCE5DD28231CC111EB939831C3C7D4EEB08D490EBB693A90E31B3 |
 | docs/assets/2026-08-30-planner-redesign/06-result-current-desktop.png | EE71449C420892C58E3EBA6F0DE09B0CAB7C64F3F5805B1A6D83610602DDC91A |
 | docs/assets/2026-08-30-planner-redesign/07-result-next-desktop.png | 06E99A47B28652420F10318B43ED40F99D7E7E4674FC05658A8E46F3C9CB4A84 |
@@ -149,11 +168,17 @@ Playwright의 print media PDF로 결과와 계획을 저장하고 Poppler로 전
 | docs/assets/2026-08-30-planner-redesign/14-mobile-plan-checks-390.png | 49F59B1D8B29B19E0829D9C9DB1ECC96895E9F72D74B2411F2A135EFD3064531 |
 | docs/assets/2026-08-30-planner-redesign/15-mobile-storage-failure-alert-390.png | BDE0C916D36A55297BCE225D6BFC020FF23B7D7F4BFA008EE1CF1CDE63B8C866 |
 
+Fix round 1 전후 해시:
+
+- 04 desktop: before 2D5A0D6454C1D2EC7A3D32656FA1EA3F65348A8D12FA10EAC8C9F4B7E14867FB → after D0AED1F8F1B2C693709B9373C603292B734760FF266E197899CB3341E5D5D975
+- 13 mobile skip/focus: before/after C972314B22E055267EC7D72AF7F2E35BECF0EF00536340B9A15ECAC97152B531. 실제 재캡처했으나 수정된 summary가 초기 모바일 뷰포트 아래에 있어 픽셀 결과가 동일했다.
+
 ## 자동 검증
 
 최종 문서 반영 뒤 실행한 결과를 아래에 기록한다.
 
-- pnpm.cmd test — Vitest 4.1.8, 46개 테스트 파일·544개 테스트 통과
+- focused regression — src/App.diagnosis-panel.test.tsx, 1개 파일·2개 테스트 통과
+- pnpm.cmd test — Vitest 4.1.8, 47개 테스트 파일·546개 테스트 통과
 - pnpm.cmd build — TypeScript noEmit과 Vite 7.3.5 프로덕션 빌드 통과, 1,774개 모듈 변환
 - git diff --check — 공백 오류 0건
 

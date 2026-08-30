@@ -1976,7 +1976,7 @@ export function DiagnosisPanel({
 
   if (result.trackResults.length === 0) {
     return (
-      <aside className="diagnosis-panel" aria-label="진단 결과 요약">
+      <aside className="diagnosis-panel planner-diagnosis-panel" aria-label="진단 결과 요약">
         <div className="status-head">
           <span>단국대학교 식품자원경제학과 · {enrollmentLabel}</span>
           <h2>{allowResult ? "입력한 과목을 확인하세요" : "트랙을 선택하세요"}</h2>
@@ -2005,7 +2005,7 @@ export function DiagnosisPanel({
   }
 
   return (
-    <aside className="diagnosis-panel" aria-label="진단 결과 요약">
+    <aside className="diagnosis-panel planner-diagnosis-panel" aria-label="진단 결과 요약">
       <div className="status-head">
         <span>단국대학교 식품자원경제학과 · {enrollmentLabel}</span>
         <h2>{selectedTrackNames.join(" + ")}</h2>

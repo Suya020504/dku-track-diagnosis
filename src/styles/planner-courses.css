@@ -517,6 +517,260 @@
   font-size: 0.82rem;
 }
 
+/* The diagnosis summary is one planner ledger sheet, not a metric-card dashboard. */
+.planner-app .content-grid > .planner-diagnosis-panel {
+  position: sticky;
+  top: 94px;
+  align-self: start;
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 28%, transparent);
+  border-radius: var(--planner-sheet-radius);
+  background: var(--planner-paper);
+  box-shadow: none;
+}
+
+.planner-app .planner-diagnosis-panel .status-head {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  border-block-end: 2px solid var(--planner-dankook-blue);
+  background: var(--planner-sky-sheet);
+}
+
+.planner-app .planner-diagnosis-panel .status-head > span {
+  color: var(--planner-dankook-blue);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  line-height: 1.5;
+}
+
+.planner-app .planner-diagnosis-panel .status-head h2,
+.planner-app .planner-diagnosis-panel .status-head p {
+  margin: 0;
+}
+
+.planner-app .planner-diagnosis-panel .status-head h2 {
+  color: var(--planner-ink);
+  font-size: clamp(1.25rem, 1.8vw, 1.55rem);
+  letter-spacing: -0.035em;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.planner-app .planner-diagnosis-panel .status-head p {
+  color: var(--planner-ink-muted);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.planner-app .planner-diagnosis-panel .progress-ring {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 12px;
+  align-items: baseline;
+  padding: 14px 18px 16px;
+  border-block-end: 1px solid color-mix(in srgb, var(--planner-ink) 18%, transparent);
+  background: var(--planner-paper);
+}
+
+.planner-app .planner-diagnosis-panel .progress-ring > strong {
+  grid-column: 2;
+  grid-row: 1;
+  color: var(--planner-department-green);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.planner-app .planner-diagnosis-panel .progress-ring > span {
+  grid-column: 1;
+  grid-row: 1;
+  color: var(--planner-ink-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.planner-app .planner-diagnosis-panel .progress-bar {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 30%, transparent);
+  border-radius: 999px;
+  background: #e8eff2;
+}
+
+.planner-app .planner-diagnosis-panel .progress-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--planner-department-green);
+}
+
+.planner-app .planner-diagnosis-panel .panel-metrics {
+  display: grid;
+  gap: 0;
+  padding-inline: 18px;
+  border-block-end: 1px solid color-mix(in srgb, var(--planner-ink) 18%, transparent);
+}
+
+.planner-app .planner-diagnosis-panel .panel-metrics > .metric.compact {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 10px 0;
+  border: 0;
+  border-block-end: 1px solid color-mix(in srgb, var(--planner-ink) 12%, transparent);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.planner-app .planner-diagnosis-panel .panel-metrics > .metric.compact:last-child {
+  border-block-end: 0;
+}
+
+.planner-app .planner-diagnosis-panel .metric.compact span {
+  color: var(--planner-ink-muted);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.planner-app .planner-diagnosis-panel .metric.compact strong {
+  color: var(--planner-ink);
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+  text-align: end;
+}
+
+.planner-app .planner-diagnosis-panel .mini-section {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  padding: 14px 18px;
+  border-block-end: 1px solid color-mix(in srgb, var(--planner-ink) 18%, transparent);
+}
+
+.planner-app .planner-diagnosis-panel .mini-section h3 {
+  margin: 0 0 7px;
+  color: var(--planner-dankook-blue);
+  font-size: 0.76rem;
+  letter-spacing: 0.03em;
+  line-height: 1.4;
+}
+
+.planner-app .planner-diagnosis-panel .mini-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  min-height: 44px;
+  padding-block: 8px;
+  border-block-start: 1px solid color-mix(in srgb, var(--planner-ink) 12%, transparent);
+}
+
+.planner-app .planner-diagnosis-panel .mini-row svg {
+  color: var(--planner-review-coral);
+}
+
+.planner-app .planner-diagnosis-panel .mini-row svg.ok {
+  color: var(--planner-department-green);
+}
+
+.planner-app .planner-diagnosis-panel .mini-row span {
+  min-width: 0;
+  color: var(--planner-ink);
+  font-size: 0.78rem;
+  font-weight: 780;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.planner-app .planner-diagnosis-panel .mini-row strong {
+  color: var(--planner-ink-muted);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+
+.planner-app .planner-diagnosis-panel .recommend-row {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  min-height: 50px;
+  padding-block: 9px;
+  border-block-start: 1px solid color-mix(in srgb, var(--planner-ink) 12%, transparent);
+}
+
+.planner-app .planner-diagnosis-panel .recommend-row span {
+  color: var(--planner-ink);
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.planner-app .planner-diagnosis-panel .recommend-row small,
+.planner-app .planner-diagnosis-panel .empty-text {
+  margin: 0;
+  color: var(--planner-ink-muted);
+  font-size: 0.7rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.planner-app .planner-diagnosis-panel > .empty-state.compact {
+  display: grid;
+  gap: 4px;
+  padding: 14px 18px;
+  border: 0;
+  border-block-end: 1px solid color-mix(in srgb, var(--planner-ink) 18%, transparent);
+  border-radius: 0;
+  background: var(--planner-mint-sheet);
+}
+
+.planner-app .planner-diagnosis-panel > .empty-state.compact strong {
+  color: var(--planner-ink);
+  font-size: 0.9rem;
+}
+
+.planner-app .planner-diagnosis-panel > .empty-state.compact span {
+  color: var(--planner-ink-muted);
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.planner-app .planner-diagnosis-panel > .primary-button {
+  width: calc(100% - 36px);
+  min-height: 48px;
+  margin: 16px 18px 18px;
+  border: 1px solid var(--planner-department-green);
+  border-radius: var(--planner-control-radius);
+  background: var(--planner-department-green);
+  color: #fff;
+  box-shadow: none;
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+@media (max-width: 1050px) {
+  .planner-app .content-grid > .planner-diagnosis-panel {
+    position: static;
+    width: 100%;
+  }
+}
+
 /* PDF beta is a secondary disclosure after the complete direct-selection ledger. */
 .planner-course-selection-view .pdf-import-panel {
   margin: 0;
@@ -664,6 +918,25 @@
   .planner-course-selection-view {
     gap: 16px;
     padding-block-end: 20px;
+  }
+
+  .planner-app .content-grid > .planner-diagnosis-panel {
+    border-radius: var(--planner-control-radius);
+  }
+
+  .planner-app .planner-diagnosis-panel .status-head,
+  .planner-app .planner-diagnosis-panel .progress-ring,
+  .planner-app .planner-diagnosis-panel .mini-section {
+    padding-inline: 14px;
+  }
+
+  .planner-app .planner-diagnosis-panel .panel-metrics {
+    padding-inline: 14px;
+  }
+
+  .planner-app .planner-diagnosis-panel > .primary-button {
+    width: calc(100% - 28px);
+    margin-inline: 14px;
   }
 
   .planner-course-selection-heading {
