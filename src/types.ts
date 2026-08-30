@@ -5,6 +5,15 @@ export type TrackId =
   | "economics"
   | "food-bio-economy";
 
+export type InterestSurveyAnswer = 1 | 2 | 3 | 4 | 5;
+
+export type InterestSurveyState = {
+  answers: Record<string, InterestSurveyAnswer>;
+  currentIndex: number;
+  completedAt?: string;
+  selectedTrackId?: TrackId;
+};
+
 export type EnrollmentType = "primary" | "double-major" | "minor";
 
 export type PlanningSemester =
@@ -199,6 +208,36 @@ export type GraduationPlanInput = {
   additionalMajorCredits: AdditionalMajorCredit[];
   preferences: GraduationPlanPreferences;
   generatedAt: string;
+};
+
+export type InterestAxisCandidate = {
+  trackId: TrackId;
+  score: number;
+  closeLeader: boolean;
+  reasons: string[];
+};
+
+export type ProgressAxisCandidate = {
+  trackId: TrackId;
+  missingCourseCount: number;
+  missingCredits: number;
+  missingModuleLabels: string[];
+  assumption: "current-path" | "track-major-hypothesis";
+};
+
+export type PlanAxisCandidate = {
+  trackId: TrackId;
+  status: GraduationPlanStatus;
+  unplacedCourseCount: number;
+  neededExtraTerms: number;
+  assumption: "current-path" | "track-major-hypothesis";
+};
+
+export type RecommendationAxes = {
+  interest?: InterestAxisCandidate[];
+  progress: ProgressAxisCandidate[];
+  plan?: PlanAxisCandidate[];
+  alignedLeaderTrackIds: TrackId[];
 };
 
 export type CreditProgress = {
