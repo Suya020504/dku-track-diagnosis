@@ -150,6 +150,63 @@ describe("calculateGraduationPlan", () => {
     }));
   });
 
+  it("caps current-term in-progress placements and exposes deterministic overflow", () => {
+    const result = calculateGraduationPlan(minorPlan([
+      ...completed(["b-1", "c-1", "c-3", "d-1", "d-2"]),
+      { courseId: "c-2", status: "in-progress" },
+      { courseId: "b-2", status: "in-progress" },
+    ], { maxMajorCoursesPerTerm: 1 }));
+    const currentPlacements = result.placements.filter((item) => item.termId === "2026-2");
+
+    expect(currentPlacements).toEqual([
+      expect.objectContaining({ courseId: "b-2", origin: "in-progress" }),
+    ]);
+    expect(result.unplacedCourses).toContainEqual(expect.objectContaining({
+      courseId: "c-2",
+      reason: "capacity-before-target",
+    }));
+    expect(result.reviewItems).toContainEqual(expect.objectContaining({ code: "plan-input" }));
+    expect(result.status).toBe("official-review-required");
+  });
+
+  it("rejects reversed public plan terms before a completed-only early return", () => {
+    expect(() => calculateGraduationPlan(minorPlan(
+      completed(["b-1", "b-2", "c-1", "c-2", "c-3", "d-1", "d-2"]),
+      { targetGraduationTerm: "2026-1" },
+    ))).toThrow("Target graduation term must not be earlier than current term");
+  });
+
+  it("rejects reversed public plan terms before an official-conflict early return", () => {
+    expect(() => calculateGraduationPlan({
+      ...minorPlan(completed([
+        "b-2", "c-1", "c-2", "c-3", "f-1", "h-1", "d-1", "d-2",
+        "e-1", "e-2", "g-1", "g-2", "j-1", "j-2", "l-1", "l-2",
+      ]), { targetGraduationTerm: "2026-1" }),
+      profile: externalEconomicsProfile,
+      targetTrackId: "economics",
+    })).toThrow("Target graduation term must not be earlier than current term");
+  });
+
+  it("does not place an in-progress course whose offering evidence is unknown", () => {
+    const result = calculateGraduationPlan(minorPlan([
+      ...completed(["b-1", "b-2", "c-1", "c-2", "c-3", "d-1"]),
+      { courseId: "unknown-current", status: "in-progress" },
+    ]));
+
+    expect(result.placements).not.toContainEqual(expect.objectContaining({
+      courseId: "unknown-current",
+    }));
+    expect(result.unplacedCourses).toContainEqual(expect.objectContaining({
+      courseId: "unknown-current",
+      reason: "offering-unknown",
+    }));
+    expect(result.reviewItems).toContainEqual(expect.objectContaining({
+      code: "future-offering",
+      evidence: "official-review-required",
+    }));
+    expect(result.status).toBe("official-review-required");
+  });
+
   it("does not add capacity for seasonal consideration and adds an independent review item", () => {
     const selections = completed(["b-1", "b-2", "c-1", "c-2", "c-3"]);
     const withoutSeasonal = calculateGraduationPlan(minorPlan(selections));

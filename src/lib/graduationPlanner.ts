@@ -175,6 +175,10 @@ export function scheduleCoursesWithinLoad(
 }
 
 export function calculateGraduationPlan(input: GraduationPlanInput): GraduationPlanResult {
+  const regularHorizon = buildRegularTermHorizon(
+    input.preferences.currentTerm,
+    input.preferences.targetGraduationTerm,
+  );
   const completedSelections = input.courseSelections.filter((item) => item.status === "completed");
   const completedProgress = calculatePathProgress({
     profile: input.profile,
@@ -183,14 +187,8 @@ export function calculateGraduationPlan(input: GraduationPlanInput): GraduationP
     targetTrackId: input.targetTrackId,
   });
   const baseReviewItems = [...completedProgress.reviewItems];
-  const inProgressPlacements = uniqueSelectionIds(
-    input.courseSelections.filter((item) => item.status === "in-progress"),
-  ).map((courseId): PlannedCoursePlacement => ({
-    termId: input.preferences.currentTerm,
-    courseId,
-    origin: "in-progress",
-    offeringEvidence: courseOfferings2026[courseId]?.evidence ?? "unknown",
-  }));
+  const inProgressSchedule = scheduleCurrentTermInProgress(input);
+  const inProgressPlacements = inProgressSchedule.placements;
 
   if (input.preferences.considerSeasonalTerm) {
     baseReviewItems.push({
@@ -203,13 +201,26 @@ export function calculateGraduationPlan(input: GraduationPlanInput): GraduationP
   const completedSatisfied = progressNumericallySatisfied(completedProgress);
   const officialRuleConflict = hasOfficialRuleConflict(baseReviewItems);
   if (completedSatisfied) {
+    const scheduled = withAdditionalUnplaced(
+      emptySchedule(),
+      inProgressSchedule.unplacedCourses,
+    );
+    const reviewItems = buildPlanningReviewItems(
+      baseReviewItems,
+      scheduled,
+      true,
+      0,
+      input.preferences.currentTerm,
+    );
     return buildPlanResult({
       input,
-      status: officialRuleConflict ? "official-review-required" : "currently-satisfied",
+      status: officialRuleConflict || scheduled.unplacedCourses.length > 0
+        ? "official-review-required"
+        : "currently-satisfied",
       inProgressPlacements,
-      scheduled: emptySchedule(),
+      scheduled,
       unallocatedElectiveCredits: 0,
-      reviewItems: baseReviewItems,
+      reviewItems,
     });
   }
 
@@ -236,10 +247,6 @@ export function calculateGraduationPlan(input: GraduationPlanInput): GraduationP
       origin: "generated" as const,
     })),
   ];
-  const regularHorizon = buildRegularTermHorizon(
-    input.preferences.currentTerm,
-    input.preferences.targetGraduationTerm,
-  );
   const schedule = (horizon: AcademicTermId[], maximum: number) => scheduleCoursesWithinLoad({
     horizon,
     maxMajorCoursesPerTerm: maximum,
@@ -286,6 +293,14 @@ export function calculateGraduationPlan(input: GraduationPlanInput): GraduationP
     if (succeeds(extended)) selectedStatus = "extra-term-possible";
   }
 
+  selectedSchedule = withAdditionalUnplaced(
+    selectedSchedule,
+    inProgressSchedule.unplacedCourses,
+  );
+  if (inProgressSchedule.unplacedCourses.length > 0) {
+    selectedStatus = "official-review-required";
+  }
+
   const reviewItems = buildPlanningReviewItems(
     baseReviewItems,
     selectedSchedule,
@@ -306,6 +321,45 @@ export function calculateGraduationPlan(input: GraduationPlanInput): GraduationP
       : undefined,
     reviewItems,
   });
+}
+
+function scheduleCurrentTermInProgress(input: GraduationPlanInput): {
+  placements: PlannedCoursePlacement[];
+  unplacedCourses: UnplacedCourse[];
+} {
+  const placements: PlannedCoursePlacement[] = [];
+  const unplacedCourses: UnplacedCourse[] = [];
+  const courseIds = uniqueSelectionIds(
+    input.courseSelections.filter((item) => item.status === "in-progress"),
+  ).sort((left, right) => courseCode(left).localeCompare(courseCode(right)));
+
+  for (const courseId of courseIds) {
+    const offering = courseOfferings2026[courseId];
+    if (!offering || offering.evidence === "unknown") {
+      unplacedCourses.push({
+        courseId,
+        reason: "offering-unknown",
+        message: `${courseId} 과목의 현재 학기 개설 근거를 확인할 수 없습니다.`,
+      });
+      continue;
+    }
+    if (placements.length >= input.preferences.maxMajorCoursesPerTerm) {
+      unplacedCourses.push({
+        courseId,
+        reason: "capacity-before-target",
+        message: `${courseId} 과목이 현재 학기의 전공과목 수강 한도를 초과합니다.`,
+      });
+      continue;
+    }
+    placements.push({
+      termId: input.preferences.currentTerm,
+      courseId,
+      origin: "in-progress",
+      offeringEvidence: offering.evidence,
+    });
+  }
+
+  return { placements, unplacedCourses };
 }
 
 function deduplicateCandidates(candidates: ScheduleCourseCandidate[]): ScheduleCourseCandidate[] {
@@ -430,6 +484,16 @@ function emptySchedule(): ScheduleCoursesWithinLoadResult {
     electiveAllocations: [],
     remainingElectiveCredits: 0,
     remainingElectiveSlots: 0,
+  };
+}
+
+function withAdditionalUnplaced(
+  scheduled: ScheduleCoursesWithinLoadResult,
+  additional: UnplacedCourse[],
+): ScheduleCoursesWithinLoadResult {
+  return {
+    ...scheduled,
+    unplacedCourses: [...additional, ...scheduled.unplacedCourses],
   };
 }
 
