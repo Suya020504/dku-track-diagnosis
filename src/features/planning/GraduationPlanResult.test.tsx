@@ -105,6 +105,7 @@ function renderResult(
       result={result}
       step={step}
       onEdit={vi.fn()}
+      onShowSchedule={vi.fn()}
       onShowChecks={vi.fn()}
       onSave={vi.fn()}
     />,
@@ -130,6 +131,11 @@ describe("GraduationPlanResult distributed pages", () => {
   it("shows per-term named placements and anonymous elective reservations on schedule only", () => {
     const markup = renderResult(baseResult, "schedule");
 
+    expect(markup).toContain('aria-label="졸업 계획 단계"');
+    expect(markup).toContain('aria-current="page">일정');
+    expect(markup).toContain('data-planner-layout="semester-columns"');
+    expect(markup).toContain('data-plan-item-kind="named-course"');
+    expect(markup).toContain('data-plan-item-kind="elective-reservation"');
     expect(markup).toContain("2027학년도 1학기");
     expect(markup).toContain("C-2 소비자경제학");
     expect(markup).toContain("B-2 통계학기초");
@@ -137,7 +143,7 @@ describe("GraduationPlanResult distributed pages", () => {
     expect(markup).toContain("최근 개설 패턴 기준");
     expect(markup).toContain("반복 개설을 보장하지 않습니다");
     expect(markup).toContain("계획 저장");
-    expect(markup).toContain("확인할 항목 보기");
+    expect(markup).toContain(">확인</button>");
     expect(markup).toContain("조건 수정");
     expect(markup).not.toContain("목표 학기 안의 수강 한도를 초과합니다");
   });
@@ -145,14 +151,20 @@ describe("GraduationPlanResult distributed pages", () => {
   it("shows unplaced reasons, official questions, and working actions on checks only", () => {
     const markup = renderResult(baseResult, "checks");
 
+    expect(markup).toContain('aria-current="page">확인');
+    expect(markup).toContain('>일정</button>');
     expect(markup).toContain("배치하지 못한 과목");
     expect(markup).toContain("D-2 환경영향 및 전과정평가");
     expect(markup).toContain("수강 한도 초과");
+    expect(markup).toContain('data-unplaced-reason="capacity-before-target"');
+    expect(markup).toContain('data-check-ledger="official-questions"');
+    expect(markup).toContain('data-evidence-state="historical-2026-snapshot"');
     expect(markup).toContain("학과에 확인할 질문");
     expect(markup).toContain("실제 개설 학기와 폐강 여부");
     expect(markup).toContain("조건 수정");
     expect(markup).toContain("이수 과목 선택으로 돌아가기");
     expect(markup).toContain("공식 자료 열기");
+    expect(markup.match(/<h1\b/g)).toHaveLength(1);
     expect(markup).not.toContain("C-2 소비자경제학");
     expect(markup).not.toContain("계획 저장");
   });

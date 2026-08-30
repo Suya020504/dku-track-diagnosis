@@ -1,4 +1,5 @@
 import type { ReviewItem } from "../../types";
+import { getEvidenceSource, type EvidenceState } from "../../data/evidenceSources";
 
 const officialQuestions: Record<ReviewItem["code"], string> = {
   "rule-source": "내 입학연도와 이수 경로에 적용되는 공식 기준은 무엇인가요?",
@@ -17,7 +18,11 @@ export function OfficialCheckQuestions({ items }: { items: ReviewItem[] }) {
   ).entries()];
 
   return (
-    <section className="plan-check-section" aria-labelledby="official-check-title">
+    <section
+      className="plan-check-section"
+      aria-labelledby="official-check-title"
+      data-check-ledger="official-questions"
+    >
       <div className="plan-check-heading">
         <span>공식 확인 필요</span>
         <h2 id="official-check-title">학과에 확인할 질문</h2>
@@ -30,9 +35,22 @@ export function OfficialCheckQuestions({ items }: { items: ReviewItem[] }) {
           <div className="official-review-items">
             <h3>계획에서 확인된 검토 항목</h3>
             <ul>
-              {items.map((item, index) => (
-                <li key={`${item.code}-${index}`}>{item.message}</li>
-              ))}
+              {items.map((item, index) => {
+                const evidenceState: EvidenceState = item.code === "future-offering"
+                  ? "historical-2026-snapshot"
+                  : item.evidence === "official-review-required"
+                    ? "department-confirmation-required"
+                    : "provided-final-plan-reference";
+                return (
+                  <li
+                    key={`${item.code}-${index}`}
+                    data-evidence-state={evidenceState}
+                  >
+                    <span>{item.message}</span>
+                    <small>{getEvidenceSource(evidenceState).label}</small>
+                  </li>
+                );
+              })}
             </ul>
           </div>
           <ol className="official-question-list">

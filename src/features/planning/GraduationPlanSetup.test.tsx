@@ -128,6 +128,14 @@ describe("GraduationPlanSetup", () => {
     await renderSetup({});
 
     expect(document.querySelectorAll("form input")).toHaveLength(4);
+    const decisions = [...document.querySelectorAll(".plan-decision-flow > li")];
+    expect(decisions).toHaveLength(4);
+    expect(decisions.map((item) => item.textContent)).toEqual([
+      expect.stringContaining("현재 학기"),
+      expect.stringContaining("목표 졸업 학기"),
+      expect.stringContaining("학기당 최대 전공과목 수"),
+      expect.stringContaining("계절학기 고려 여부"),
+    ]);
     expect(document.querySelector<HTMLAnchorElement>('a[href="?view=resources"]')).not.toBeNull();
     expect(document.body.textContent).toContain("2026학년도 개설 이력");
   });

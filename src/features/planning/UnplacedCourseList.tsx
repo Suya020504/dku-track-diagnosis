@@ -31,7 +31,10 @@ export function UnplacedCourseList({
           {items.map((item) => {
             const course = courseById.get(item.courseId);
             return (
-              <li key={`${item.courseId}-${item.reason}`}>
+              <li
+                key={`${item.courseId}-${item.reason}`}
+                data-unplaced-reason={item.reason}
+              >
                 <div>
                   <strong>{course ? `${course.code} ${course.name}` : item.courseId}</strong>
                   <span>{reasonLabels[item.reason]}</span>

@@ -1,0 +1,643 @@
+.planner-app .graduation-plan-shell {
+  max-width: 100%;
+  overflow-x: clip;
+  padding: 0 var(--planner-space-5) 80px;
+  background: var(--planner-paper);
+}
+
+.planner-app .graduation-plan-topbar {
+  width: min(1160px, 100%);
+  min-height: 58px;
+  border-block-end: 1px solid #c8d8e4;
+}
+
+.planner-app .graduation-plan-topbar > span {
+  color: var(--planner-ink-muted);
+  font-size: 0.8125rem;
+}
+
+.planner-app .graduation-plan-topbar .text-button {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--planner-dankook-blue);
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.planner-app .graduation-plan-setup-page,
+.planner-app .graduation-plan-page {
+  width: min(1160px, 100%);
+  padding-top: clamp(28px, 5vw, 52px);
+}
+
+.planner-app .graduation-plan-setup-page {
+  max-width: 900px;
+}
+
+.planner-app .graduation-plan-setup-heading,
+.planner-app .plan-status-summary,
+.planner-app .plan-check-heading {
+  max-width: 780px;
+}
+
+.planner-app .graduation-plan-setup-heading > span,
+.planner-app .plan-status-summary > span,
+.planner-app .plan-check-heading > span,
+.planner-app .plan-next-actions > span,
+.planner-app .plan-entry-card > span {
+  color: var(--planner-department-green);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.planner-app .graduation-plan-setup-heading h1,
+.planner-app .plan-status-summary h1,
+.planner-app .plan-entry-card h1 {
+  margin: var(--planner-space-2) 0 var(--planner-space-3);
+  color: var(--planner-ink);
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.18;
+  letter-spacing: -0.035em;
+}
+
+.planner-app .graduation-plan-setup-heading h1:focus,
+.planner-app .plan-status-summary h1:focus,
+.planner-app .plan-check-heading h1:focus,
+.planner-app .plan-entry-card h1:focus {
+  outline: 0;
+}
+
+.planner-app .graduation-plan-setup-heading p,
+.planner-app .plan-status-summary p,
+.planner-app .plan-entry-card > p {
+  margin: 0;
+  color: var(--planner-ink-muted);
+  line-height: 1.75;
+}
+
+.planner-app .graduation-plan-form,
+.planner-app .plan-status-summary,
+.planner-app .plan-check-section,
+.planner-app .plan-next-actions,
+.planner-app .plan-entry-card {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.planner-app .graduation-plan-form {
+  margin-top: 28px;
+  padding: 0;
+}
+
+.planner-app .plan-decision-flow {
+  position: relative;
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-block: 1px solid #c8d8e4;
+  background: #fff;
+}
+
+.planner-app .plan-decision-flow::before {
+  position: absolute;
+  inset-block: 30px;
+  inset-inline-start: 31px;
+  width: 1px;
+  background: #9ab9cc;
+  content: "";
+}
+
+.planner-app .plan-decision-flow > li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: var(--planner-space-3);
+  align-items: start;
+  min-width: 0;
+  padding: var(--planner-space-5) var(--planner-space-5) var(--planner-space-5) var(--planner-space-3);
+  border-block-end: 1px solid #d9e5ec;
+}
+
+.planner-app .plan-decision-flow > li:last-child {
+  border-block-end: 0;
+}
+
+.planner-app .plan-decision-number {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--planner-dankook-blue);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--planner-dankook-blue);
+  font-weight: 850;
+  place-items: center;
+}
+
+.planner-app .plan-decision-flow label:not(.seasonal-term-option) {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.65fr) minmax(200px, 1fr);
+  gap: var(--planner-space-2) var(--planner-space-5);
+  align-items: center;
+  min-width: 0;
+}
+
+.planner-app .plan-decision-flow label > span {
+  color: var(--planner-ink);
+  font-weight: 800;
+}
+
+.planner-app .plan-decision-flow input:not([type="checkbox"]) {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--planner-space-3);
+  border: 1px solid #91a9ba;
+  border-radius: var(--planner-control-radius);
+  background: #fff;
+  color: var(--planner-ink);
+  font: inherit;
+}
+
+.planner-app .plan-decision-flow input[aria-invalid="true"] {
+  border-color: var(--planner-review-coral);
+}
+
+.planner-app .plan-decision-flow small {
+  grid-column: 2;
+  color: var(--planner-ink-muted);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.planner-app .plan-decision-flow .field-error {
+  color: #9a3f20;
+  font-weight: 700;
+}
+
+.planner-app .plan-decision-flow .seasonal-term-option {
+  display: flex;
+  gap: var(--planner-space-3);
+  align-items: center;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.planner-app .plan-decision-flow .seasonal-term-option input {
+  width: 22px;
+  height: 22px;
+}
+
+.planner-app .graduation-plan-form > .planner-evidence-band {
+  margin-top: var(--planner-space-5);
+}
+
+.planner-app .graduation-plan-form > .planner-evidence-band a,
+.planner-app .plan-next-actions a {
+  color: var(--planner-dankook-blue);
+  font-weight: 800;
+}
+
+.planner-app .seasonal-term-notice {
+  margin: var(--planner-space-3) 0 0;
+  padding: var(--planner-space-3);
+  border: 0;
+  border-inline-start: 4px solid var(--planner-wheat);
+  border-radius: 0;
+  background: #fff8e7;
+  color: #6c5518;
+  line-height: 1.65;
+}
+
+.planner-app .graduation-plan-form > .primary-button {
+  min-height: 48px;
+  margin-top: var(--planner-space-5);
+}
+
+.planner-app .planner-route-line {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: min(540px, 100%);
+  margin: 0 0 30px;
+}
+
+.planner-app .planner-route-line::before {
+  position: absolute;
+  inset-inline: 16.66%;
+  inset-block-start: 18px;
+  height: 2px;
+  background: #a9c0cf;
+  content: "";
+}
+
+.planner-app .planner-route-line button {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--planner-ink-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.planner-app .planner-route-line button::before {
+  position: absolute;
+  inset-block-start: 12px;
+  inset-inline-start: calc(50% - 7px);
+  width: 14px;
+  height: 14px;
+  border: 2px solid #8da8ba;
+  border-radius: 50%;
+  background: var(--planner-paper);
+  content: "";
+}
+
+.planner-app .planner-route-line button {
+  padding-top: 28px;
+}
+
+.planner-app .planner-route-line button[aria-current="page"] {
+  color: var(--planner-dankook-blue);
+}
+
+.planner-app .planner-route-line button[aria-current="page"]::before {
+  border-color: var(--planner-dankook-blue);
+  background: var(--planner-dankook-blue);
+  box-shadow: inset 0 0 0 3px var(--planner-paper);
+}
+
+.planner-app .plan-status-summary {
+  padding: 0 0 24px;
+  border-block-end: 1px solid #c8d8e4;
+  border-inline-start: 0;
+}
+
+.planner-app .plan-schedule-page > .planner-evidence-band {
+  margin: var(--planner-space-5) 0 26px;
+}
+
+.planner-app .term-plan-board {
+  position: relative;
+  display: grid;
+  grid-auto-columns: minmax(270px, 320px);
+  grid-auto-flow: column;
+  grid-template-columns: none;
+  gap: var(--planner-space-3);
+  align-items: stretch;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 20px 2px 14px;
+  overscroll-behavior-inline: contain;
+  scrollbar-color: #8da8ba transparent;
+}
+
+.planner-app .term-plan-board::before {
+  position: absolute;
+  inset-inline: 20px;
+  inset-block-start: 9px;
+  height: 2px;
+  background: #a9c0cf;
+  content: "";
+}
+
+.planner-app .term-plan-column {
+  position: relative;
+  min-width: 0;
+  overflow: visible;
+  border: 1px solid #c8d8e4;
+  border-block-start: 3px solid var(--planner-dankook-blue);
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 3px 3px 0 #dbe7ed;
+}
+
+.planner-app .term-plan-column::before {
+  position: absolute;
+  inset-block-start: -19px;
+  inset-inline-start: 20px;
+  width: 14px;
+  height: 14px;
+  border: 3px solid var(--planner-paper);
+  border-radius: 50%;
+  background: var(--planner-dankook-blue);
+  content: "";
+}
+
+.planner-app .term-plan-column.extra-term {
+  border-block-start-color: var(--planner-review-coral);
+}
+
+.planner-app .term-plan-column.extra-term::before {
+  background: var(--planner-review-coral);
+}
+
+.planner-app .term-plan-column > header {
+  min-height: 76px;
+  padding: var(--planner-space-3) var(--planner-space-3) var(--planner-space-3) 18px;
+  border-block-end: 1px solid #c8d8e4;
+  background: var(--planner-sky-sheet);
+}
+
+.planner-app .term-plan-column.extra-term > header {
+  background: #fff0eb;
+}
+
+.planner-app .term-plan-column > header h2 {
+  color: var(--planner-ink);
+  font-size: 1.0625rem;
+}
+
+.planner-app .term-plan-column > header > small {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--planner-dankook-blue);
+}
+
+.planner-app .term-plan-items {
+  gap: 0;
+  padding: 0 16px 16px;
+}
+
+.planner-app .term-plan-course {
+  display: block;
+  min-width: 0;
+  padding: var(--planner-space-3) 0;
+  border: 0;
+  border-block-end: 1px solid #d9e5ec;
+  border-radius: 0;
+  background: transparent;
+}
+
+.planner-app .term-plan-course .planner-course-sticker {
+  padding: 0;
+  border-block-end: 0;
+}
+
+.planner-app .term-plan-course.elective-reservation {
+  margin-top: var(--planner-space-3);
+  padding: var(--planner-space-3);
+  border: 1px dashed #6b99b6;
+  background: #eef8fc;
+}
+
+.planner-app .term-plan-course.elective-reservation strong {
+  color: var(--planner-dankook-blue);
+}
+
+.planner-app .historical-pattern-badge {
+  margin-top: var(--planner-space-2);
+  padding: 2px 0;
+  border-radius: 0;
+  background: transparent;
+  color: #7a5b16;
+  font-size: 0.6875rem;
+}
+
+.planner-app .plan-result-actions {
+  margin-top: 26px;
+  padding-top: var(--planner-space-5);
+  border-block-start: 1px solid #c8d8e4;
+}
+
+.planner-app .plan-result-actions button {
+  min-height: 48px;
+}
+
+.planner-app .plan-checks-page {
+  max-width: 960px;
+}
+
+.planner-app .plan-check-section,
+.planner-app .plan-next-actions {
+  padding: 24px 0;
+  border-block-end: 1px solid #c8d8e4;
+}
+
+.planner-app .plan-check-heading h1,
+.planner-app .plan-check-heading h2,
+.planner-app .plan-next-actions h2 {
+  margin: var(--planner-space-2) 0 0;
+  color: var(--planner-ink);
+}
+
+.planner-app .unplaced-course-list {
+  border-block-start: 1px solid #d9e5ec;
+}
+
+.planner-app .unplaced-course-list li {
+  padding: 16px 0;
+  border: 0;
+  border-block-end: 1px solid #d9e5ec;
+  border-radius: 0;
+  background: transparent;
+}
+
+.planner-app .unplaced-course-list li span,
+.planner-app .official-question-list span {
+  border-radius: 2px;
+}
+
+.planner-app .official-review-items {
+  margin-top: var(--planner-space-5);
+  padding: 16px 18px;
+  border-inline-start: 4px solid var(--planner-wheat);
+  border-radius: 0;
+  background: #fff8e7;
+}
+
+.planner-app .official-review-items li {
+  margin-block: var(--planner-space-2);
+}
+
+.planner-app .official-review-items li > span,
+.planner-app .official-review-items li > small {
+  display: block;
+}
+
+.planner-app .official-review-items li > small {
+  margin-top: 2px;
+  color: var(--planner-dankook-blue);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.planner-app .official-question-list {
+  gap: 0;
+  padding-inline-start: 24px;
+}
+
+.planner-app .official-question-list li {
+  padding: 14px 0 14px 4px;
+  border: 0;
+  border-block-end: 1px solid #d9e5ec;
+  border-radius: 0;
+}
+
+.planner-app .plan-next-actions > div {
+  align-items: stretch;
+}
+
+.planner-app .plan-next-actions a,
+.planner-app .plan-next-actions button {
+  min-height: 44px;
+}
+
+.planner-app .plan-entry-shell {
+  min-height: 0;
+  padding: clamp(28px, 6vw, 64px) var(--planner-space-5) 80px;
+  background: var(--planner-paper);
+}
+
+.planner-app .plan-entry-card {
+  width: min(760px, 100%);
+  padding: 0;
+}
+
+.planner-app .plan-entry-card ul {
+  gap: 0;
+  margin: 28px 0 24px;
+  border-block-start: 1px solid #c8d8e4;
+}
+
+.planner-app .plan-entry-card li {
+  min-height: 52px;
+  padding: var(--planner-space-3) 0;
+  border: 0;
+  border-block-end: 1px solid #c8d8e4;
+  border-radius: 0;
+  background: transparent;
+}
+
+.planner-app .plan-entry-card li.ready {
+  background: transparent;
+  color: var(--planner-department-green);
+}
+
+.planner-app .plan-entry-card li.pending {
+  background: transparent;
+  color: #8d4a39;
+}
+
+.planner-app .plan-entry-actions button {
+  min-height: 48px;
+}
+
+.planner-app .graduation-plan-shell button:focus-visible,
+.planner-app .graduation-plan-shell input:focus-visible,
+.planner-app .graduation-plan-shell a:focus-visible,
+.planner-app .plan-entry-shell button:focus-visible {
+  outline: 2px solid var(--planner-department-green);
+  outline-offset: 3px;
+}
+
+@media (max-width: 680px) {
+  .planner-app .graduation-plan-shell {
+    padding-inline: var(--planner-space-3);
+  }
+
+  .planner-app .graduation-plan-topbar {
+    gap: var(--planner-space-2);
+    align-items: flex-start;
+    flex-direction: column;
+    padding-block: var(--planner-space-2);
+  }
+
+  .planner-app .graduation-plan-setup-page,
+  .planner-app .graduation-plan-page {
+    padding-top: 26px;
+  }
+
+  .planner-app .graduation-plan-setup-heading h1,
+  .planner-app .plan-status-summary h1,
+  .planner-app .plan-entry-card h1 {
+    font-size: clamp(1.8rem, 9vw, 2.25rem);
+  }
+
+  .planner-app .plan-decision-flow > li {
+    grid-template-columns: 40px minmax(0, 1fr);
+    padding-inline: var(--planner-space-2) var(--planner-space-3);
+  }
+
+  .planner-app .plan-decision-flow::before {
+    inset-inline-start: 27px;
+  }
+
+  .planner-app .plan-decision-flow label:not(.seasonal-term-option) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .planner-app .plan-decision-flow small {
+    grid-column: 1;
+  }
+
+  .planner-app .planner-route-line {
+    width: 100%;
+    margin-bottom: 24px;
+  }
+
+  .planner-app .planner-route-line button {
+    min-height: 48px;
+    padding-inline: 2px;
+    font-size: 0.8125rem;
+  }
+
+  .planner-app .term-plan-board {
+    grid-auto-columns: auto;
+    grid-auto-flow: row;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--planner-space-5);
+    overflow: visible;
+    padding: 4px 0 4px 28px;
+  }
+
+  .planner-app .term-plan-board::before {
+    inset-block: 8px;
+    inset-inline-start: 8px;
+    width: 2px;
+    height: auto;
+  }
+
+  .planner-app .term-plan-column::before {
+    inset-block-start: 20px;
+    inset-inline-start: -28px;
+  }
+
+  .planner-app .plan-result-actions,
+  .planner-app .plan-next-actions > div,
+  .planner-app .plan-entry-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .planner-app .plan-result-actions button,
+  .planner-app .plan-next-actions a,
+  .planner-app .plan-next-actions button,
+  .planner-app .plan-entry-actions button,
+  .planner-app .graduation-plan-form > .primary-button {
+    width: 100%;
+  }
+
+  .planner-app .plan-entry-shell {
+    padding-inline: var(--planner-space-3);
+  }
+}

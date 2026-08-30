@@ -1,4 +1,5 @@
 import { courses } from "../../data/curriculumData";
+import { CourseSticker } from "../../components/CourseSticker";
 import type {
   AcademicTermId,
   PlannedCoursePlacement,
@@ -22,7 +23,11 @@ export function TermPlanColumn({
   const [year, semester] = termId.split("-");
 
   return (
-    <section className={extraTerm ? "term-plan-column extra-term" : "term-plan-column"}>
+    <section
+      className={extraTerm ? "term-plan-column extra-term" : "term-plan-column"}
+      data-term-plan={termId}
+      data-extra-term={extraTerm ? "true" : "false"}
+    >
       <header>
         <div>
           <span>{extraTerm ? "추가 검토 학기" : "정규학기"}</span>
@@ -35,15 +40,22 @@ export function TermPlanColumn({
         {placements.map((placement) => {
           const course = courseById.get(placement.courseId);
           return (
-            <article className="term-plan-course" key={`${placement.termId}-${placement.courseId}`}>
-              <div>
-                <strong>{course ? `${course.code} ${course.name}` : placement.courseId}</strong>
-                <span>{course ? `${course.credits}학점` : "학점 공식 확인 필요"}</span>
-              </div>
+            <div
+              className="term-plan-course named-course"
+              data-plan-item-kind="named-course"
+              key={`${placement.termId}-${placement.courseId}`}
+            >
+              <CourseSticker
+                courseName={course ? `${course.code} ${course.name}` : placement.courseId}
+                creditsLabel={course ? `${course.credits}학점` : "학점 공식 확인 필요"}
+                evidenceState={placement.offeringEvidence === "historical-2026-snapshot"
+                  ? "historical-2026-snapshot"
+                  : "department-confirmation-required"}
+              />
               {placement.offeringEvidence === "historical-2026-snapshot" && (
                 <small className="historical-pattern-badge">최근 개설 패턴 기준</small>
               )}
-            </article>
+            </div>
           );
         })}
 
@@ -53,6 +65,7 @@ export function TermPlanColumn({
             data-elective-allocation-term={termId}
             data-elective-credits={electiveCredits}
             data-elective-slots={electiveSlots}
+            data-plan-item-kind="elective-reservation"
           >
             <div>
               <strong>전공 선택 과목 {electiveCredits}학점 자리</strong>

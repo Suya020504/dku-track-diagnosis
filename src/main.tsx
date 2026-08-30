@@ -11,6 +11,7 @@ import "./styles/planner-entry.css";
 import "./styles/planner-courses.css";
 import "./styles/planner-results.css";
 import "./styles/planner-recommendations.css";
+import "./styles/planner-planning.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

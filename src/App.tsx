@@ -28,6 +28,7 @@ import { courses, CURRICULUM_YEAR, modules, tracks } from "./data/curriculumData
 import { ProfileFlow } from "./features/profile/ProfileFlow";
 import { GraduationPlanResult } from "./features/planning/GraduationPlanResult";
 import { GraduationPlanSetup } from "./features/planning/GraduationPlanSetup";
+import { GraduationPlanPrerequisite } from "./features/planning/GraduationPlanPrerequisite";
 import { InterestSurvey } from "./features/recommendations/InterestSurvey";
 import { TrackRecommendationAxes } from "./features/recommendations/TrackRecommendationAxes";
 import { ResultDetailView } from "./features/results/ResultDetailView";
@@ -1423,8 +1424,9 @@ function App({ storage }: { storage?: Storage } = {}) {
           courseInputReady={Boolean(savedState.courseInputReviewedAt)}
           targetTrackReady={!missingTargetTrack}
           headingRef={planHeadingRef}
-          onBack={() => navigateAppRoute({ view: "recommendation", step: "axes", axis: "plan" })}
-          onEditPrerequisites={openCourseInputFromAxes}
+          onRecover={missingTargetTrack && savedState.profile && savedState.courseInputReviewedAt
+            ? () => navigateAppRoute({ view: "recommendation", step: "axes", axis: "plan" })
+            : openCourseInputFromAxes}
         />
       );
     }
@@ -1485,6 +1487,7 @@ function App({ storage }: { storage?: Storage } = {}) {
             step={planStep}
             headingRef={planHeadingRef}
             onEdit={editGraduationPlanInputs}
+            onShowSchedule={() => navigateAppRoute({ view: "plan", step: "schedule" })}
             onShowChecks={() => navigateAppRoute({ view: "plan", step: "checks" })}
             onSave={saveGraduationPlanSnapshot}
             saveDisabled={planAlreadySaved}
@@ -1728,62 +1731,6 @@ function App({ storage }: { storage?: Storage } = {}) {
         )}
       </main>
     </div>
-  );
-}
-
-function GraduationPlanPrerequisite({
-  hasProfile,
-  courseInputReady,
-  targetTrackReady,
-  headingRef,
-  onBack,
-  onEditPrerequisites,
-}: {
-  hasProfile: boolean;
-  courseInputReady: boolean;
-  targetTrackReady: boolean;
-  headingRef: RefObject<HTMLHeadingElement | null>;
-  onBack: () => void;
-  onEditPrerequisites: () => void;
-}) {
-  return (
-    <main className="plan-entry-shell" aria-labelledby="plan-entry-title">
-      <section className="plan-entry-card">
-        <span>졸업 계획 준비</span>
-        <h1 id="plan-entry-title" ref={headingRef} tabIndex={-1}>
-          졸업 계획 전에 입력 상태를 확인해 주세요
-        </h1>
-        <p>
-          이 단계에서는 특정 트랙을 자동으로 고르거나 계획을 계산하지 않습니다.
-          프로필과 완료한 이수 과목을 먼저 확인한 뒤, 기준별 추천으로 돌아가 판단해 주세요.
-        </p>
-        <ul aria-label="졸업 계획 사전 입력 상태">
-          <li className={hasProfile ? "ready" : "pending"}>
-            <CheckCircle2 aria-hidden="true" size={20} />
-            <span>프로필 {hasProfile ? "입력됨" : "입력 필요"}</span>
-          </li>
-          <li className={courseInputReady ? "ready" : "pending"}>
-            <ClipboardCheck aria-hidden="true" size={20} />
-            <span>이수 과목 {courseInputReady ? "검토됨" : "확인 필요"}</span>
-          </li>
-          {!targetTrackReady && (
-            <li className="pending">
-              <Compass aria-hidden="true" size={20} />
-              <span>목표 트랙 선택 필요</span>
-            </li>
-          )}
-        </ul>
-        <div className="plan-entry-actions">
-          <button className="primary-button" type="button" onClick={onEditPrerequisites}>
-            프로필·이수 과목 확인
-            <ArrowRight aria-hidden="true" size={18} />
-          </button>
-          <button className="icon-button" type="button" onClick={onBack}>
-            추천 비교로 돌아가기
-          </button>
-        </div>
-      </section>
-    </main>
   );
 }
 

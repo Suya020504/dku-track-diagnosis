@@ -430,9 +430,37 @@ describe("App graduation plan pages", () => {
     await mountApp();
 
     expect(document.body.textContent).toContain("졸업 계획 전에 입력 상태를 확인해 주세요");
-    expect(document.body.textContent).toContain("프로필·이수 과목 확인");
+    const readinessItems = [...document.querySelectorAll<HTMLElement>("[data-plan-readiness]")];
+    expect(readinessItems).toHaveLength(3);
+    expect(readinessItems.map((item) => [item.dataset.planReadiness, item.dataset.ready])).toEqual([
+      ["profile", "true"],
+      ["courses", "true"],
+      ["target", "false"],
+    ]);
+    expect(document.querySelectorAll(".plan-entry-actions button")).toHaveLength(1);
+    expect(document.body.textContent).toContain("목표 트랙 검토로 이동");
     expect(document.body.textContent).not.toContain("계획 저장");
     expectFocusedPlanHeading("졸업 계획 전에 입력 상태를 확인해 주세요");
+
+    await click("목표 트랙 검토로 이동");
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_V2) ?? "null") as SavedAppStateV2;
+    expect(saved.targetTrackId).toBeUndefined();
+    expect(new URLSearchParams(location.search).get("view")).toBe("recommendation");
+  });
+
+  it.each([
+    ["setup", readyState(), "학기별 참고 계획의 범위를 정해 주세요"],
+    ["schedule", stateWithPlan(), "목표 학기 안에 참고 계획을 만들었어요"],
+    ["checks", stateWithPlan(), "배치하지 못한 과목"],
+  ] as const)("renders one main and one focused H1 on the %s step", async (step, state, heading) => {
+    saveState(state);
+    history.replaceState({}, "", `/?view=plan&step=${step}`);
+
+    await mountApp();
+
+    expect(document.querySelectorAll("main")).toHaveLength(1);
+    expect(document.querySelectorAll("h1")).toHaveLength(1);
+    expectFocusedPlanHeading(heading);
   });
 
   it("submits the four-input setup, persists the plan, and routes to schedule", async () => {
@@ -524,7 +552,7 @@ describe("App graduation plan pages", () => {
     expect(history.scrollRestoration).toBe("manual");
     vi.mocked(window.scrollTo).mockClear();
 
-    await click("확인할 항목 보기");
+    await click("확인");
     expect(new URLSearchParams(location.search).get("step")).toBe("checks");
     expect(document.body.textContent).toContain("배치하지 못한 과목");
     expect(document.body.textContent).not.toContain("계획 저장");
@@ -545,6 +573,20 @@ describe("App graduation plan pages", () => {
     expectFocusedPlanHeading("목표 학기 안에 참고 계획을 만들었어요");
     expect(history.scrollRestoration).toBe("manual");
     expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
+  });
+
+  it("routes between checks, schedule, and condition editing with H1 focus", async () => {
+    saveState(stateWithPlan());
+    history.replaceState({}, "", "/?view=plan&step=checks");
+    await mountApp();
+
+    await click("일정");
+    expect(new URLSearchParams(location.search).get("step")).toBe("schedule");
+    expectFocusedPlanHeading("목표 학기 안에 참고 계획을 만들었어요");
+
+    await click("조건 수정");
+    expect(new URLSearchParams(location.search).get("step")).toBe("setup");
+    expectFocusedPlanHeading("학기별 참고 계획의 범위를 정해 주세요");
   });
 
   it("restores the previous history scroll policy after leaving plan", async () => {

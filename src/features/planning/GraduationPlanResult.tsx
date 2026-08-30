@@ -5,6 +5,7 @@ import type {
   GraduationPlanStatus,
   PlannedCoursePlacement,
 } from "../../types";
+import { EvidenceBand } from "../../components/EvidenceBand";
 import { OfficialCheckQuestions } from "./OfficialCheckQuestions";
 import { TermPlanColumn } from "./TermPlanColumn";
 import { UnplacedCourseList } from "./UnplacedCourseList";
@@ -77,10 +78,43 @@ function PlanStatusSummary({
   );
 }
 
+function PlannerRouteLine({
+  step,
+  onShowSchedule,
+  onShowChecks,
+  onEdit,
+}: {
+  step: "schedule" | "checks";
+  onShowSchedule: () => void;
+  onShowChecks: () => void;
+  onEdit: () => void;
+}) {
+  return (
+    <nav className="planner-route-line" aria-label="졸업 계획 단계">
+      <button
+        type="button"
+        aria-current={step === "schedule" ? "page" : undefined}
+        onClick={onShowSchedule}
+      >
+        일정
+      </button>
+      <button
+        type="button"
+        aria-current={step === "checks" ? "page" : undefined}
+        onClick={onShowChecks}
+      >
+        확인
+      </button>
+      <button type="button" onClick={onEdit}>조건 수정</button>
+    </nav>
+  );
+}
+
 export function GraduationPlanResult({
   result,
   step,
   onEdit,
+  onShowSchedule,
   onShowChecks,
   onSave,
   saveDisabled = false,
@@ -89,6 +123,7 @@ export function GraduationPlanResult({
   result: GraduationPlanResultValue;
   step: "schedule" | "checks";
   onEdit: () => void;
+  onShowSchedule: () => void;
   onShowChecks: () => void;
   onSave: () => void;
   saveDisabled?: boolean;
@@ -97,6 +132,12 @@ export function GraduationPlanResult({
   if (step === "checks") {
     return (
       <main className="graduation-plan-page plan-checks-page">
+        <PlannerRouteLine
+          step="checks"
+          onShowSchedule={onShowSchedule}
+          onShowChecks={onShowChecks}
+          onEdit={onEdit}
+        />
         <UnplacedCourseList items={result.unplacedCourses} headingRef={headingRef} />
         {result.unplacedElectiveCredits > 0 && (
           <section className="plan-check-section unplaced-elective-summary" aria-labelledby="unplaced-elective-title">
@@ -130,12 +171,23 @@ export function GraduationPlanResult({
 
   return (
     <main className="graduation-plan-page plan-schedule-page">
+      <PlannerRouteLine
+        step="schedule"
+        onShowSchedule={onShowSchedule}
+        onShowChecks={onShowChecks}
+        onEdit={onEdit}
+      />
       <PlanStatusSummary result={result} headingRef={headingRef} />
-      <p className="future-offering-warning">
-        <strong>최근 개설 패턴 기준</strong>
-        2026학년도 개설 이력을 다음 학기에 반복해 배치한 참고안이며, 실제 반복 개설을 보장하지 않습니다.
-      </p>
-      <div className="term-plan-board" aria-label="학기별 참고 계획">
+      <EvidenceBand state="historical-2026-snapshot">
+        최근 개설 패턴 기준인 2026학년도 개설 이력을 다음 학기에 반복해 배치한 참고안이며,
+        실제 반복 개설을 보장하지 않습니다.
+      </EvidenceBand>
+      <div
+        className="term-plan-board"
+        aria-label="학기별 참고 계획"
+        data-planner-layout="semester-columns"
+        data-mobile-layout="vertical-timeline"
+      >
         {termPlans.map((term) => (
           <TermPlanColumn
             key={term.termId}
@@ -149,8 +201,6 @@ export function GraduationPlanResult({
       </div>
       <div className="plan-result-actions">
         <button className="primary-button" type="button" onClick={onSave} disabled={saveDisabled}>계획 저장</button>
-        <button className="secondary-button" type="button" onClick={onShowChecks}>확인할 항목 보기</button>
-        <button className="text-button" type="button" onClick={onEdit}>조건 수정</button>
       </div>
     </main>
   );
