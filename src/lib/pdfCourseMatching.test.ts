@@ -23,6 +23,33 @@ function pages(...values: Array<[number, string]>): PdfTextPage[] {
   return values.map(([pageNumber, text]) => ({ pageNumber, text }));
 }
 
+async function analyzeSyntheticText(
+  text: string,
+  buildCandidates = buildPdfImportCandidates,
+) {
+  const document = {
+    numPages: 1,
+    getPageText: async () => text,
+    destroy: async () => undefined,
+  };
+  const runtime: PdfRuntime = {
+    open: () => ({
+      promise: Promise.resolve(document),
+      destroy: document.destroy,
+    }),
+  };
+  const bytes = new TextEncoder().encode("%PDF-fixture");
+  const file = new File([bytes], "private-student-name.pdf", {
+    type: "application/pdf",
+  });
+  return analyzePdfText({
+    file,
+    runtime,
+    signal: new AbortController().signal,
+    buildCandidates,
+  });
+}
+
 describe("buildPdfImportCandidates exact matching", () => {
   it.each([
     ["경제원론", "b-1", "exact-name", "경제원론"],
@@ -69,14 +96,37 @@ describe("buildPdfImportCandidates exact matching", () => {
     ]);
   });
 
-  it("finds two non-overlapping exact course names on one line", () => {
+  it.each(["/", ",", "|", "\t", ";"])(
+    "finds complete exact cells separated by %j without surrounding spaces",
+    (separator) => {
+      const result = buildPdfImportCandidates(
+        pages([1, `경제원론${separator}미시경제학`]),
+      );
+
+      expect(result.matched.map(({ courseId }) => courseId)).toEqual([
+        "b-1",
+        "c-1",
+      ]);
+    },
+  );
+
+  it("does not promote a contained alias with unknown prefix or suffix", () => {
     const result = buildPdfImportCandidates(
-      pages([1, "경제원론 / 미시경제학"]),
+      pages([1, "고급 경제원론\n경제원론심화\n미상경제원론"]),
     );
 
-    expect(result.matched.map(({ courseId }) => courseId)).toEqual([
-      "b-1",
-      "c-1",
+    expect(result.matched).toEqual([]);
+  });
+
+  it("preserves a complete multiword canonical name in one bounded cell", () => {
+    const result = buildPdfImportCandidates(pages([1, "상품선물 및 옵션"]));
+
+    expect(result.matched).toEqual([
+      expect.objectContaining({
+        courseId: "j-2",
+        matchKind: "exact-name",
+        displayLabel: "상품선물 및 옵션",
+      }),
     ]);
   });
 
@@ -163,9 +213,38 @@ describe("buildPdfImportCandidates conservative suggestions", () => {
     expect(result).toEqual({ matched: [], ambiguous: [], unmatched: [] });
   });
 
-  it("sanitizes candidate labels to one line and discards labels over 60 characters", () => {
+  it("discards mixed PII/context rows before exact, fuzzy, or unmatched work", () => {
+    const sensitiveRows = [
+      "식품자원경제학과 홍길동 32212345",
+      "성명 홍길동 경제원론",
+      "경제정책 학생 이름 홍길동",
+      "지역개발 성적 A+ 2026-08-30",
+      "통계실습 점수 98점",
+      "환경정책 학번 32212345",
+      "\u0000바이오정책실습",
+    ];
+
     const result = buildPdfImportCandidates(
-      pages([1, "  경제정책\t\u0000 실습  \n" + `경제${"가".repeat(59)}`]),
+      pages([1, sensitiveRows.join("\n")]),
+    );
+
+    expect(result).toEqual({ matched: [], ambiguous: [], unmatched: [] });
+    for (const fragment of ["홍길동", "32212345", "2026", "A+"]) {
+      expect(JSON.stringify(result)).not.toContain(fragment);
+    }
+  });
+
+  it("never copies digits or control characters into an unmatched label", () => {
+    const result = buildPdfImportCandidates(
+      pages([1, "경제정책2\n\u0000지역혁신실습"]),
+    );
+
+    expect(result).toEqual({ matched: [], ambiguous: [], unmatched: [] });
+  });
+
+  it("keeps a bounded single-line course-like label and discards overlong cells", () => {
+    const result = buildPdfImportCandidates(
+      pages([1, "  경제정책 실습  \n" + `경제${"가".repeat(59)}`]),
     );
 
     expect(result.unmatched).toEqual([
@@ -177,6 +256,37 @@ describe("buildPdfImportCandidates conservative suggestions", () => {
     ]);
     expect(JSON.stringify(result)).not.toContain("\n");
     expect(result.unmatched[0]?.displayLabel.length).toBeLessThanOrEqual(60);
+  });
+
+  it("bounds a million-character repeated-code cell without emitting candidates", async () => {
+    const repeatedCodeCell = "a-1 ".repeat(250_000);
+
+    const draft = await analyzeSyntheticText(repeatedCodeCell);
+
+    expect(repeatedCodeCell.length).toBe(1_000_000);
+    expect(draft.matched).toEqual([]);
+    expect(draft.ambiguous).toEqual([]);
+    expect(draft.unmatched).toEqual([]);
+  });
+
+  it("caps deduplicated fuzzy/unmatched work to a fixed small cell budget", () => {
+    const cells = Array.from(
+      { length: 96 },
+      (_, index) => `경제미래${String.fromCharCode(0xac00 + index)}`,
+    );
+
+    const result = buildPdfImportCandidates(pages([1, cells.join(",")]));
+
+    expect(result.matched).toEqual([]);
+    expect(result.ambiguous.length + result.unmatched.length).toBe(64);
+    expect(
+      Math.max(
+        0,
+        ...[...result.ambiguous, ...result.unmatched].map(({ sourceId }) =>
+          Number(sourceId.split("-c")[1]),
+        ),
+      ),
+    ).toBe(64);
   });
 
   it("uses deterministic page/label/course ordering and positional source ids", () => {
@@ -211,29 +321,8 @@ describe("buildPdfImportCandidates conservative suggestions", () => {
 
 describe("Task 2 strict candidate-validator integration", () => {
   it("returns candidate-only exact keys accepted by the parser-owned draft boundary", async () => {
-    const document = {
-      numPages: 1,
-      getPageText: async () => "경제원론",
-      destroy: async () => undefined,
-    };
-    const runtime: PdfRuntime = {
-      open: () => ({
-        promise: Promise.resolve(document),
-        destroy: document.destroy,
-      }),
-    };
-    const bytes = new TextEncoder().encode("%PDF-fixture");
-    const file = new File([bytes], "private-student-name.pdf", {
-      type: "application/pdf",
-    });
-
     const candidates = buildPdfImportCandidates(pages([1, "경제원론"]));
-    const draft = await analyzePdfText({
-      file,
-      runtime,
-      signal: new AbortController().signal,
-      buildCandidates: buildPdfImportCandidates,
-    });
+    const draft = await analyzeSyntheticText("경제원론");
 
     expect(Object.keys(candidates).sort()).toEqual([
       "ambiguous",
@@ -244,6 +333,30 @@ describe("Task 2 strict candidate-validator integration", () => {
       expect.objectContaining({ courseId: "b-1", displayLabel: "경제원론" }),
     );
     expect(JSON.stringify(draft)).not.toContain("private-student-name.pdf");
+  });
+
+  it("caps a four-way exact alias collision before strict draft validation", async () => {
+    const sharedAliases: CourseAlias[] = ["a-1", "b-1", "c-1", "d-1"].map(
+      (courseId) => ({
+        courseId,
+        alias: "경제공유과목",
+        matchKind: "verified-alias" as const,
+      }),
+    );
+    const buildCandidates = createPdfCourseCandidateBuilder(
+      buildCourseAliasIndex(sharedAliases),
+    );
+
+    const draft = await analyzeSyntheticText("경제공유과목", buildCandidates);
+
+    expect(draft.ambiguous).toEqual([
+      {
+        sourceId: "p1-c1",
+        displayLabel: "경제공유과목",
+        candidateCourseIds: ["a-1", "b-1", "c-1"],
+        pageNumbers: [1],
+      },
+    ]);
   });
 });
 
@@ -336,6 +449,38 @@ describe("mergeApprovedPdfMatches", () => {
     ]);
 
     expect(result.addedCourseIds).toEqual(["a-1"]);
+  });
+
+  it("collapses a duplicate choice for one ambiguous source", () => {
+    const result = mergeApprovedPdfMatches([], reviewCandidates, [
+      approval("p1-c2", "a-1"),
+      approval("p1-c2", "a-1"),
+    ]);
+
+    expect(result.addedCourseIds).toEqual(["a-1"]);
+  });
+
+  it("rejects every choice when one ambiguous source selects two candidates", () => {
+    const result = mergeApprovedPdfMatches([], reviewCandidates, [
+      approval("p1-c2", "a-1"),
+      approval("p1-c2", "b-1"),
+    ]);
+
+    expect(result).toEqual({
+      courseSelections: [],
+      addedCourseIds: [],
+      conflicts: [],
+    });
+  });
+
+  it("keeps a matched source pinned to its one course under duplicate manipulation", () => {
+    const result = mergeApprovedPdfMatches([], reviewCandidates, [
+      approval("p1-c1", "b-1"),
+      approval("p1-c1", "b-1"),
+      approval("p1-c1", "a-1"),
+    ]);
+
+    expect(result.addedCourseIds).toEqual(["b-1"]);
   });
 
   it("requires matched and ambiguous approvals to reference an allowed course", () => {
