@@ -148,6 +148,13 @@ export function CourseLedger({
     return status === "completed" || status === "in-progress";
   }).length;
 
+  function focusGroup(event: React.MouseEvent<HTMLAnchorElement>, groupId: string) {
+    event.preventDefault();
+    const heading = document.getElementById(groupId)?.querySelector<HTMLHeadingElement>("h3");
+    heading?.focus();
+    heading?.scrollIntoView?.({ behavior: "auto", block: "center" });
+  }
+
   return (
     <section className="course-ledger" aria-labelledby="course-ledger-title">
       <header className="course-ledger-summary">
@@ -164,7 +171,13 @@ export function CourseLedger({
           aria-label={mode === "semester" ? "학기 그룹 빠른 이동" : "모듈 그룹 빠른 이동"}
         >
           {groups.map((group) => (
-            <a href={`#${group.id}`} key={group.id}>{group.label}</a>
+            <a
+              href={`#${group.id}`}
+              key={group.id}
+              onClick={(event) => focusGroup(event, group.id)}
+            >
+              {group.label}
+            </a>
           ))}
         </nav>
       ) : null}
@@ -179,7 +192,7 @@ export function CourseLedger({
           {groups.map((group) => (
             <section className="course-ledger-group" id={group.id} key={group.id}>
               <header>
-                <h3>{group.label}</h3>
+                <h3 tabIndex={-1}>{group.label}</h3>
                 <span>{group.note}</span>
               </header>
               <div>

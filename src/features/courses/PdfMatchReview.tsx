@@ -10,6 +10,7 @@ type PdfMatchReviewProps = {
   draft: PdfImportDraft;
   conflicts: PdfMergeConflict[];
   saveError?: boolean;
+  existingSelectionCount?: number;
   headingRef?: RefObject<HTMLHeadingElement | null>;
   onApprove: (approvals: PdfImportApproval[]) => void;
   onBack: () => void;
@@ -33,6 +34,7 @@ export function PdfMatchReview({
   draft,
   conflicts,
   saveError = false,
+  existingSelectionCount = 0,
   headingRef,
   onApprove,
   onBack,
@@ -74,7 +76,9 @@ export function PdfMatchReview({
         <h1 id="pdf-review-title" ref={headingRef} tabIndex={-1}>
           추가할 과목을 직접 확인해 주세요
         </h1>
-        <p>아직 어떤 과목도 선택되지 않았어요. 정식 교과목명을 확인하고 필요한 항목만 승인해 주세요.</p>
+        <p>{existingSelectionCount > 0
+          ? `기존 직접 선택 ${existingSelectionCount}개는 그대로 유지됩니다. 승인한 PDF 후보만 새 과목으로 추가해 주세요.`
+          : "아직 어떤 과목도 선택되지 않았어요. 정식 교과목명을 확인하고 필요한 항목만 승인해 주세요."}</p>
         <small className="pdf-review-privacy-note">
           검수 초안은 메모리에만 두며, 원문·파일명은 저장하지 않습니다. 승인 전에는 직접 선택 내역에 합치지 않아요.
         </small>

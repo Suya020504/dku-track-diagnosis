@@ -5,6 +5,7 @@
 }
 
 .planner-course-selection-view :is(a, button, input):focus-visible,
+.course-ledger-group h3:focus-visible,
 .planner-app #diagnosis-result-action:focus-visible,
 .pdf-match-review :is(a, button, input, select):focus-visible {
   outline: 3px solid #000;

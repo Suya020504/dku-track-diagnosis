@@ -757,6 +757,17 @@ function App({ storage }: { storage?: Storage } = {}) {
   }, [activeView, diagnosisStep, pdfInputRoute]);
 
   useEffect(() => {
+    if (
+      activeView !== "diagnosis"
+      || diagnosisStep !== "courses"
+      || pdfInputRoute !== "pdf-review"
+      || !pdfImportDraft
+    ) return;
+    stepHeadingRef.current?.focus();
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [activeView, diagnosisStep, pdfImportDraft, pdfInputRoute]);
+
+  useEffect(() => {
     if (!focusCourseSearchOnReturn || activeView !== "diagnosis" || pdfInputRoute) return;
     courseSearchInputRef.current?.focus();
     courseSearchInputRef.current?.scrollIntoView?.({ behavior: "auto", block: "center" });
@@ -1620,6 +1631,7 @@ function App({ storage }: { storage?: Storage } = {}) {
               draft={pdfImportDraft}
               conflicts={pdfMergeConflicts}
               saveError={pdfReviewSaveError}
+              existingSelectionCount={savedState.courseSelections.length}
               headingRef={stepHeadingRef}
               onApprove={approvePdfMatches}
               onBack={() => returnToDirectCourseInput("push", false)}

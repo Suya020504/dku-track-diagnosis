@@ -80,6 +80,7 @@ describe("PdfMatchReview", () => {
   it("renders canonical course names and generic page-based unmatched rows only", async () => {
     await renderReview();
 
+    expect(document.body.textContent).toContain("아직 어떤 과목도 선택되지 않았어요");
     expect(document.body.textContent).toContain("자동 일치 1개");
     expect(document.body.textContent).toContain("선택 필요 1개");
     expect(document.body.textContent).toContain("직접 확인 1개");
@@ -89,6 +90,14 @@ describe("PdfMatchReview", () => {
     expect(document.body.textContent).toContain("PDF 4쪽에서 확인이 필요한 항목");
     expect(document.body.textContent).not.toContain("민감한 PDF 원문 과목명");
     expect(labeledInput("경제원론", "checkbox").checked).toBe(false);
+  });
+
+  it("explains that existing completed, in-progress, and planned selections stay unchanged", async () => {
+    await renderReview({ existingSelectionCount: 3 });
+
+    expect(document.body.textContent).toContain("기존 직접 선택 3개는 그대로 유지됩니다");
+    expect(document.body.textContent).toContain("승인한 PDF 후보만 새 과목으로 추가");
+    expect(document.body.textContent).not.toContain("아직 어떤 과목도 선택되지 않았어요");
   });
 
   it("submits only explicitly checked matched and ambiguous choices", async () => {

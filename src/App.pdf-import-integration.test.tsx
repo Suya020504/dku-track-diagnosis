@@ -250,8 +250,25 @@ describe("App PDF import integration", () => {
 
     expect(location.search).toContain("input=pdf-review");
     expect(document.body.textContent).toContain("추가할 과목을 직접 확인해 주세요");
+    expect(document.activeElement).toBe(document.querySelector("#pdf-review-title"));
+    expect(document.body.textContent).toContain("기존 직접 선택 3개는 그대로 유지됩니다");
+    expect(document.body.textContent).toContain("승인한 PDF 후보만 새 과목으로 추가");
+    expect(document.body.textContent).not.toContain("아직 어떤 과목도 선택되지 않았어요");
     expect(document.body.textContent).not.toContain(file.name);
     expect(document.body.textContent).not.toContain("private transcript source");
+  });
+
+  it("uses the empty-selection review copy only when no direct selection exists", async () => {
+    saveState(readyState({
+      courseSelections: [],
+      courseInputReviewedAt: undefined,
+      graduationPlan: undefined,
+    }));
+    await mountApp(vi.fn().mockResolvedValue(importedDraft));
+    await openAndAnalyze();
+
+    expect(document.body.textContent).toContain("아직 어떤 과목도 선택되지 않았어요");
+    expect(document.body.textContent).not.toContain("기존 직접 선택");
   });
 
   it("adds only approved new completed courses after storage succeeds", async () => {
