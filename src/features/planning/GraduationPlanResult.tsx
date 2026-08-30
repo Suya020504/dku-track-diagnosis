@@ -21,11 +21,6 @@ function termIndex(termId: AcademicTermId): number {
   return year * 2 + semester - 1;
 }
 
-function termIdFromIndex(index: number): AcademicTermId {
-  const year = Math.floor(index / 2);
-  return `${year}-${index % 2 + 1}` as AcademicTermId;
-}
-
 type TermPlanView = {
   termId: AcademicTermId;
   placements: PlannedCoursePlacement[];
@@ -34,38 +29,20 @@ type TermPlanView = {
 };
 
 function buildTermPlanViews(result: GraduationPlanResultValue): TermPlanView[] {
-  const currentIndex = termIndex(result.preferences.currentTerm);
   const targetIndex = termIndex(result.preferences.targetGraduationTerm);
-  const extraIndexes = result.extraTermPlacements.map((item) => termIndex(item.termId));
-  const finalIndex = Math.max(
-    targetIndex + result.neededExtraTerms,
-    targetIndex,
-    ...extraIndexes,
-  );
   const allPlacements = [...result.placements, ...result.extraTermPlacements];
-  const maximum = result.recommendedMaxMajorCoursesPerTerm
-    ?? result.preferences.maxMajorCoursesPerTerm;
-  let remainingElectiveCredits = result.unallocatedElectiveCredits;
+  const termIds = [...new Set<AcademicTermId>([
+    ...allPlacements.map((item) => item.termId),
+    ...result.electiveAllocations.map((item) => item.termId),
+  ])].sort((left, right) => termIndex(left) - termIndex(right));
+  if (termIds.length === 0) termIds.push(result.preferences.currentTerm);
 
-  return Array.from(
-    { length: finalIndex - currentIndex + 1 },
-    (_, offset) => {
-      const index = currentIndex + offset;
-      const termId = termIdFromIndex(index);
-      const placements = allPlacements.filter((item) => item.termId === termId);
-      const availableSlots = index > currentIndex
-        ? Math.max(0, maximum - placements.length)
-        : 0;
-      const electiveCredits = Math.min(remainingElectiveCredits, availableSlots * 3);
-      remainingElectiveCredits -= electiveCredits;
-      return {
-        termId,
-        placements,
-        electiveCredits,
-        extraTerm: index > targetIndex,
-      };
-    },
-  );
+  return termIds.map((termId) => ({
+    termId,
+    placements: allPlacements.filter((item) => item.termId === termId),
+    electiveCredits: result.electiveAllocations.find((item) => item.termId === termId)?.credits ?? 0,
+    extraTerm: termIndex(termId) > targetIndex,
+  }));
 }
 
 function PlanStatusSummary({ result }: { result: GraduationPlanResultValue }) {
@@ -94,17 +71,33 @@ export function GraduationPlanResult({
   onEdit,
   onShowChecks,
   onSave,
+  saveDisabled = false,
 }: {
   result: GraduationPlanResultValue;
   step: "schedule" | "checks";
   onEdit: () => void;
   onShowChecks: () => void;
   onSave: () => void;
+  saveDisabled?: boolean;
 }) {
   if (step === "checks") {
     return (
       <main className="graduation-plan-page plan-checks-page">
         <UnplacedCourseList items={result.unplacedCourses} />
+        {result.unplacedElectiveCredits > 0 && (
+          <section className="plan-check-section unplaced-elective-summary" aria-labelledby="unplaced-elective-title">
+            <div className="plan-check-heading">
+              <span>학기 배정 필요</span>
+              <h2 id="unplaced-elective-title">
+                학기 미배정 선택전공 {result.unplacedElectiveCredits}학점
+              </h2>
+            </div>
+            <p>
+              목표 학기와 추가 두 학기 안의 입력 수강량으로는 {result.unplacedElectiveSlots}개 자리를
+              배정하지 못했습니다. 과목과 수강 시기는 학과에 공식 확인해 주세요.
+            </p>
+          </section>
+        )}
         <OfficialCheckQuestions items={result.reviewItems} />
         <section className="plan-next-actions" aria-labelledby="plan-next-actions-title">
           <span>다음 행동</span>
@@ -140,7 +133,7 @@ export function GraduationPlanResult({
         ))}
       </div>
       <div className="plan-result-actions">
-        <button className="primary-button" type="button" onClick={onSave}>계획 저장</button>
+        <button className="primary-button" type="button" onClick={onSave} disabled={saveDisabled}>계획 저장</button>
         <button className="secondary-button" type="button" onClick={onShowChecks}>확인할 항목 보기</button>
         <button className="text-button" type="button" onClick={onEdit}>조건 수정</button>
       </div>

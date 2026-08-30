@@ -6,6 +6,7 @@ import {
 import type {
   AcademicSemesterNumber,
   AcademicTermId,
+  ElectiveTermAllocation,
   GraduationPlanInput,
   GraduationPlanResult,
   GraduationPlanStatus,
@@ -27,12 +28,6 @@ export type ScheduleCourseCandidate = {
   courseId: string;
   origin: Exclude<PlannedCourseOrigin, "in-progress">;
   plannedTerm?: PlanTerm;
-};
-
-export type ElectiveTermAllocation = {
-  termId: AcademicTermId;
-  slots: number;
-  credits: number;
 };
 
 export type ScheduleCoursesWithinLoadInput = {
@@ -506,9 +501,15 @@ function buildPlanningReviewItems(
 ): ReviewItem[] {
   const reviewItems = [...baseReviewItems];
   if (unallocatedElectiveCredits > 0) {
+    const allocatedElectiveCredits = scheduled.electiveAllocations.reduce(
+      (sum, allocation) => sum + allocation.credits,
+      0,
+    );
     reviewItems.push({
       code: "elective-placeholder",
-      message: `과목이 정해지지 않은 선택 전공 ${unallocatedElectiveCredits}학점은 3학점 과목 기준 익명 슬롯으로만 예약했습니다.`,
+      message: scheduled.remainingElectiveCredits > 0
+        ? `과목이 정해지지 않은 선택 전공 ${unallocatedElectiveCredits}학점 중 ${allocatedElectiveCredits}학점은 학기별 익명 자리로 배정했고, 학기 미배정 선택전공 ${scheduled.remainingElectiveCredits}학점은 공식 확인 항목으로 남겼습니다.`
+        : `과목이 정해지지 않은 선택 전공 ${unallocatedElectiveCredits}학점은 3학점 과목 기준 학기별 익명 자리로 배정했습니다.`,
       evidence: "project-derived",
     });
   }
@@ -598,8 +599,11 @@ function buildPlanResult(context: BuildPlanResultInput): GraduationPlanResult {
     placements,
     extraTermPlacements,
     unplacedCourses: context.scheduled.unplacedCourses,
+    electiveAllocations: context.scheduled.electiveAllocations,
     unallocatedElectiveCredits: context.unallocatedElectiveCredits,
     unallocatedElectiveSlots: Math.ceil(context.unallocatedElectiveCredits / 3),
+    unplacedElectiveCredits: context.scheduled.remainingElectiveCredits,
+    unplacedElectiveSlots: context.scheduled.remainingElectiveSlots,
     recommendedMaxMajorCoursesPerTerm: context.recommendedMaximum,
     neededExtraTerms,
     reviewItems: deduplicateReviewItems(context.reviewItems),

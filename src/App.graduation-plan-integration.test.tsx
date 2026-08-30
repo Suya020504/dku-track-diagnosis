@@ -4,8 +4,13 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App, {
+  applyPlanningSourceChange,
+  changePlannedCourseTerm,
+  completeProfileTransition,
   createGraduationPlanTransition,
+  chooseInterestTrackTransition,
   saveGraduationPlanSnapshotTransition,
+  startEntryFlowTransition,
 } from "./App";
 import { calculateGraduationPlan } from "./lib/graduationPlanner";
 import { calculatePathProgress } from "./lib/progressEngine";
@@ -88,6 +93,14 @@ function input(label: string): HTMLInputElement {
     .find((candidate) => candidate.textContent?.includes(label))
     ?.querySelector("input");
   if (!(match instanceof HTMLInputElement)) throw new Error(`Input not found: ${label}`);
+  return match;
+}
+
+function checkbox(label: string): HTMLInputElement {
+  const match = [...document.querySelectorAll("label")]
+    .find((candidate) => candidate.textContent?.includes(label))
+    ?.querySelector('input[type="checkbox"]');
+  if (!(match instanceof HTMLInputElement)) throw new Error(`Checkbox not found: ${label}`);
   return match;
 }
 
@@ -179,6 +192,7 @@ describe("graduation plan pure transitions", () => {
     const snapshots = Array.from({ length: 12 }, (_, index) => ({
       ...snapshotBase,
       id: `snapshot-${index}`,
+      graduationPlan: undefined,
     }));
 
     const next = saveGraduationPlanSnapshotTransition(
@@ -201,6 +215,136 @@ describe("graduation plan pure transitions", () => {
       recommendationAxes,
       graduationPlan: current.graduationPlan,
     }));
+  });
+
+  it.each([
+    [
+      "completed course",
+      { courseSelections: [{ courseId: "b-2", status: "completed" as const }] },
+      true,
+    ],
+    [
+      "in-progress course",
+      { courseSelections: [{ courseId: "b-2", status: "in-progress" as const }] },
+      true,
+    ],
+    [
+      "planned term",
+      { courseSelections: [{ courseId: "c-2", status: "planned" as const, plannedTerm: "following" as const }] },
+      false,
+    ],
+    [
+      "additional major credit",
+      { additionalMajorCredits: [{ id: "transfer", label: "인정학점", credits: 3, status: "student-entered" as const }] },
+      true,
+    ],
+    [
+      "target track",
+      { targetTrackId: "food-marketing" as const },
+      true,
+    ],
+    [
+      "profile",
+      { profile: { ...minorProfile, entryYear: 2025 } },
+      true,
+    ],
+  ] as const)(
+    "preserves preferences but invalidates a generated plan after a %s source change",
+    (_label, changes, clearsReview) => {
+      const current = stateWithPlan({
+        courseSelections: [{ courseId: "c-2", status: "planned", plannedTerm: "next" }],
+      });
+
+      const next = applyPlanningSourceChange(
+        current,
+        changes as unknown as Parameters<typeof applyPlanningSourceChange>[1],
+      );
+
+      expect(next.graduationPlanPreferences).toEqual(preferences);
+      expect(next.graduationPlan).toBeUndefined();
+      expect(next.courseInputReviewedAt).toBe(
+        clearsReview ? undefined : current.courseInputReviewedAt,
+      );
+    },
+  );
+
+  it("changes a legacy planned term through the shared invalidation path without clearing review", () => {
+    const current = stateWithPlan({
+      courseSelections: [{ courseId: "c-2", status: "planned", plannedTerm: "next" }],
+    });
+
+    const next = changePlannedCourseTerm(current, "c-2", "following");
+
+    expect(next.courseSelections).toEqual([
+      { courseId: "c-2", status: "planned", plannedTerm: "following" },
+    ]);
+    expect(next.graduationPlan).toBeUndefined();
+    expect(next.graduationPlanPreferences).toEqual(preferences);
+    expect(next.courseInputReviewedAt).toBe(current.courseInputReviewedAt);
+  });
+
+  it("invalidates the old plan when profile completion changes the profile", () => {
+    const current = stateWithPlan();
+
+    const transition = completeProfileTransition(current, {
+      ...minorProfile,
+      entryYear: 2025,
+    });
+
+    expect(transition.state.graduationPlanPreferences).toEqual(preferences);
+    expect(transition.state.graduationPlan).toBeUndefined();
+    expect(transition.state.courseInputReviewedAt).toBeUndefined();
+  });
+
+  it("invalidates plan sources when entry and interest transitions change profile or target", () => {
+    const current = stateWithPlan();
+
+    const entry = startEntryFlowTransition(current, "check-progress");
+    const interest = chooseInterestTrackTransition(current, "economics");
+
+    expect(entry.state.graduationPlan).toBeUndefined();
+    expect(entry.state.courseInputReviewedAt).toBeUndefined();
+    expect(entry.state.graduationPlanPreferences).toEqual(preferences);
+    expect(interest.state.graduationPlan).toBeUndefined();
+    expect(interest.state.courseInputReviewedAt).toBeUndefined();
+    expect(interest.state.graduationPlanPreferences).toEqual(preferences);
+  });
+
+  it("requires a current plan and refuses to append the same generated plan twice", () => {
+    const current = stateWithPlan();
+    const pathResult = calculatePathProgress({
+      profile: minorProfile,
+      courseSelections: current.courseSelections,
+      additionalMajorCredits: current.additionalMajorCredits,
+      courseInputReviewedAt: current.courseInputReviewedAt,
+    });
+    const recommendationAxes = buildRecommendationAxes({
+      profile: minorProfile,
+      courseSelections: current.courseSelections,
+      additionalMajorCredits: current.additionalMajorCredits,
+      graduationPlanPreferences: preferences,
+      generatedAt: current.graduationPlan!.generatedAt,
+    });
+    const input = {
+      id: "one",
+      createdAt: "2026-08-30T12:00:00.000Z",
+      pathResult,
+      recommendationAxes,
+      plan: current.graduationPlan!,
+    };
+    const once = saveGraduationPlanSnapshotTransition(current, input);
+    const twice = saveGraduationPlanSnapshotTransition(once, {
+      ...input,
+      id: "two",
+      createdAt: "2026-08-30T12:01:00.000Z",
+    });
+
+    expect(twice).toBe(once);
+    expect(twice.snapshots).toHaveLength(1);
+    expect(() => saveGraduationPlanSnapshotTransition(
+      { ...current, graduationPlan: undefined },
+      input,
+    )).toThrow("A current graduation plan is required");
   });
 });
 
@@ -238,6 +382,64 @@ describe("App graduation plan pages", () => {
     expect(saved.snapshots).toHaveLength(0);
     expect(new URLSearchParams(location.search).get("step")).toBe("schedule");
     expect(document.body.textContent).toContain("학기별 참고 계획");
+  });
+
+  it.each([
+    ["schedule", false],
+    ["checks", false],
+    ["schedule", true],
+    ["checks", true],
+  ] as const)(
+    "canonicalizes a result-less %s URL to setup (saved preferences: %s)",
+    async (step, withPreferences) => {
+      saveState(readyState(withPreferences ? { graduationPlanPreferences: preferences } : {}));
+      history.replaceState({}, "", `/?view=plan&step=${step}`);
+      const replaceState = vi.spyOn(history, "replaceState");
+
+      await mountApp();
+
+      expect(new URLSearchParams(location.search).get("step")).toBe("setup");
+      expect(history.state).toEqual(expect.objectContaining({ view: "plan", step: "setup" }));
+      expect(document.body.textContent).toContain("학기별 참고 계획의 범위를 정해 주세요");
+      expect(replaceState).toHaveBeenCalled();
+    },
+  );
+
+  it("canonicalizes stale result steps received through popstate", async () => {
+    saveState(readyState({ graduationPlanPreferences: preferences }));
+    history.replaceState({}, "", "/?view=plan&step=setup");
+    await mountApp();
+
+    history.pushState({}, "", "/?view=plan&step=checks");
+    await act(async () => {
+      window.dispatchEvent(new PopStateEvent("popstate", { state: history.state }));
+    });
+
+    expect(new URLSearchParams(location.search).get("step")).toBe("setup");
+    expect(history.state).toEqual(expect.objectContaining({ view: "plan", step: "setup" }));
+    expect(document.body.textContent).toContain("학기별 참고 계획의 범위를 정해 주세요");
+  });
+
+  it("invalidates a generated plan and reviewed input after a completed course changes", async () => {
+    saveState(stateWithPlan());
+    history.replaceState({}, "", "/?view=diagnosis&step=courses");
+    await mountApp();
+
+    await act(async () => {
+      checkbox("통계학기초").click();
+    });
+
+    const changed = JSON.parse(localStorage.getItem(STORAGE_KEY_V2) ?? "null") as SavedAppStateV2;
+    expect(changed.graduationPlanPreferences).toEqual(preferences);
+    expect(changed.graduationPlan).toBeUndefined();
+    expect(changed.courseInputReviewedAt).toBeUndefined();
+
+    history.pushState({}, "", "/?view=plan&step=schedule");
+    await act(async () => {
+      window.dispatchEvent(new PopStateEvent("popstate", { state: history.state }));
+    });
+    expect(new URLSearchParams(location.search).get("step")).toBe("setup");
+    expect(document.body.textContent).not.toContain("계획 저장");
   });
 
   it("keeps schedule and checks as separate canonical pages and restores schedule on back", async () => {
@@ -280,13 +482,35 @@ describe("App graduation plan pages", () => {
       graduationPlan: saved.graduationPlan,
     }));
     expect(document.body.textContent).toContain("계획을 이 브라우저에 저장했습니다");
+    expect(button("계획 저장").disabled).toBe(true);
+
+    await click("계획 저장");
+    const afterSecondClick = JSON.parse(
+      localStorage.getItem(STORAGE_KEY_V2) ?? "null",
+    ) as SavedAppStateV2;
+    expect(afterSecondClick.snapshots).toHaveLength(1);
+  });
+
+  it("guards two rapid save clicks so one generated plan appends one snapshot", async () => {
+    saveState(stateWithPlan());
+    history.replaceState({}, "", "/?view=plan&step=schedule");
+    await mountApp();
+
+    await act(async () => {
+      button("계획 저장").click();
+      button("계획 저장").click();
+    });
+
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_V2) ?? "null") as SavedAppStateV2;
+    expect(saved.snapshots).toHaveLength(1);
+    expect(button("계획 저장").disabled).toBe(true);
   });
 
   it("never shows save success when browser storage fails", async () => {
     saveState(stateWithPlan());
     history.replaceState({}, "", "/?view=plan&step=schedule");
     await mountApp();
-    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("quota exceeded");
     });
 
@@ -294,5 +518,14 @@ describe("App graduation plan pages", () => {
 
     expect(document.body.textContent).toContain("계획을 저장하지 못했습니다");
     expect(document.body.textContent).not.toContain("계획을 이 브라우저에 저장했습니다");
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY_V2) ?? "null").snapshots).toHaveLength(0);
+    expect(button("계획 저장").disabled).toBe(false);
+
+    setItem.mockRestore();
+    await click("계획 저장");
+    const savedAfterRetry = JSON.parse(
+      localStorage.getItem(STORAGE_KEY_V2) ?? "null",
+    ) as SavedAppStateV2;
+    expect(savedAfterRetry.snapshots).toHaveLength(1);
   });
 });

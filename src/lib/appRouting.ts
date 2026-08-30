@@ -51,7 +51,7 @@ export function resolveAppRoute(
     const requested = rawStep && planSteps.has(rawStep as "setup" | "schedule" | "checks")
       ? rawStep as "setup" | "schedule" | "checks"
       : "setup";
-    const step = requested === "schedule" && !state.graduationPlanPreferences
+    const step = requested !== "setup" && !state.graduationPlan
       ? "setup"
       : requested;
     return { view: "plan", step };

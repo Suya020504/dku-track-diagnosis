@@ -337,9 +337,9 @@ export function startEntryFlowTransition(
   current: SavedAppStateV2,
   goal: "check-progress" | "find-track",
 ): { state: SavedAppStateV2; route: AppRoute } {
+  const nextProfile = current.profile ? { ...current.profile, goal } : undefined;
   const state: SavedAppStateV2 = {
-    ...current,
-    profile: current.profile ? { ...current.profile, goal } : undefined,
+    ...applyPlanningSourceChange(current, { profile: nextProfile }),
     profileDraft: {
       ...current.profileDraft,
       goal,
@@ -360,22 +360,92 @@ export function chooseInterestTrackTransition(
   trackId: TrackId,
 ): { state: SavedAppStateV2; route: AppRoute } {
   const interestSurvey = current.interestSurvey ?? emptyInterestSurveyState();
+  const nextProfile = current.profile ? { ...current.profile, goal: "find-track" as const } : undefined;
   return {
     state: {
-      ...current,
-      profile: current.profile ? { ...current.profile, goal: "find-track" } : undefined,
+      ...applyPlanningSourceChange(current, { profile: nextProfile, targetTrackId: trackId }),
       profileDraft: {
         ...current.profileDraft,
         goal: "find-track",
         curriculumRuleVersion: "2026-provided-final-plan",
         ruleApplicability: "reference-only",
       },
-      targetTrackId: trackId,
       comparisonTrackIds: current.comparisonTrackIds.filter((id) => id !== trackId),
       interestSurvey: { ...interestSurvey, selectedTrackId: trackId },
     },
     route: { view: "diagnosis", step: "profile" },
   };
+}
+
+type PlanningSourcePatch = Partial<Pick<
+  SavedAppStateV2,
+  "profile" | "targetTrackId" | "courseSelections" | "additionalMajorCredits"
+>>;
+
+function hasPatchField<K extends keyof PlanningSourcePatch>(
+  patch: PlanningSourcePatch,
+  key: K,
+): patch is PlanningSourcePatch & Required<Pick<PlanningSourcePatch, K>> {
+  return Object.prototype.hasOwnProperty.call(patch, key);
+}
+
+function stablePlanningValue(value: unknown): string {
+  if (!Array.isArray(value)) return JSON.stringify(value);
+  return JSON.stringify(
+    [...value].sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right))),
+  );
+}
+
+function reviewedCourseKey(state: SavedAppStateV2): string {
+  return JSON.stringify(
+    state.courseSelections
+      .filter((selection) => selection.status !== "planned")
+      .map((selection) => `${selection.status}:${selection.courseId}`)
+      .sort(),
+  );
+}
+
+export function applyPlanningSourceChange(
+  current: SavedAppStateV2,
+  patch: PlanningSourcePatch,
+): SavedAppStateV2 {
+  const next: SavedAppStateV2 = { ...current, ...patch };
+  const profileChanged = hasPatchField(patch, "profile") &&
+    stablePlanningValue(current.profile) !== stablePlanningValue(patch.profile);
+  const targetChanged = hasPatchField(patch, "targetTrackId") &&
+    current.targetTrackId !== patch.targetTrackId;
+  const coursesChanged = hasPatchField(patch, "courseSelections") &&
+    stablePlanningValue(current.courseSelections) !== stablePlanningValue(patch.courseSelections);
+  const creditsChanged = hasPatchField(patch, "additionalMajorCredits") &&
+    stablePlanningValue(current.additionalMajorCredits) !== stablePlanningValue(patch.additionalMajorCredits);
+  const reviewedCoursesChanged = coursesChanged && reviewedCourseKey(current) !== reviewedCourseKey(next);
+  const planSourceChanged = profileChanged || targetChanged || coursesChanged || creditsChanged;
+  const reviewedSourceChanged = profileChanged || targetChanged || reviewedCoursesChanged || creditsChanged;
+
+  return {
+    ...next,
+    graduationPlan: planSourceChanged ? undefined : current.graduationPlan,
+    courseInputReviewedAt: reviewedSourceChanged ? undefined : current.courseInputReviewedAt,
+  };
+}
+
+export function changePlannedCourseTerm(
+  current: SavedAppStateV2,
+  courseId: string,
+  plannedTerm: PlanTerm | null,
+): SavedAppStateV2 {
+  const hasReviewedSelection = current.courseSelections.some(
+    (selection) => selection.courseId === courseId && selection.status !== "planned",
+  );
+  if (hasReviewedSelection) return current;
+  const withoutExistingPlan = current.courseSelections.filter(
+    (selection) => !(selection.courseId === courseId && selection.status === "planned"),
+  );
+  return applyPlanningSourceChange(current, {
+    courseSelections: plannedTerm
+      ? [...withoutExistingPlan, { courseId, status: "planned", plannedTerm }]
+      : withoutExistingPlan,
+  });
 }
 
 export function completeProfileTransition(
@@ -389,10 +459,8 @@ export function completeProfileTransition(
       )
     : undefined;
   const state: SavedAppStateV2 = {
-    ...current,
-    profile,
+    ...applyPlanningSourceChange(current, { profile, targetTrackId }),
     profileDraft: undefined,
-    targetTrackId,
     comparisonTrackIds: trackMajor ? current.comparisonTrackIds : [],
   };
   const step = resolveDiagnosisStep("?view=diagnosis&step=courses", state);
@@ -472,13 +540,19 @@ export function saveGraduationPlanSnapshotTransition(
   if (!current.profile) {
     throw new Error("A student profile is required before saving a graduation plan");
   }
+  if (!current.graduationPlan) {
+    throw new Error("A current graduation plan is required before saving a snapshot");
+  }
+  if (JSON.stringify(input.plan) !== JSON.stringify(current.graduationPlan)) {
+    throw new Error("The supplied graduation plan is not the current plan");
+  }
+  if (current.snapshots.some(
+    (snapshot) => snapshot.graduationPlan?.generatedAt === current.graduationPlan?.generatedAt,
+  )) {
+    return current;
+  }
 
-  const stateWithCurrentPlan: SavedAppStateV2 = {
-    ...current,
-    graduationPlanPreferences: input.plan.preferences,
-    graduationPlan: input.plan,
-  };
-  return appendDiagnosisSnapshot(stateWithCurrentPlan, {
+  return appendDiagnosisSnapshot(current, {
     id: input.id,
     createdAt: input.createdAt,
     ruleVersion: current.profile.curriculumRuleVersion,
@@ -489,7 +563,7 @@ export function saveGraduationPlanSnapshotTransition(
     comparisonTrackIds: [...current.comparisonTrackIds],
     result: input.pathResult,
     recommendationAxes: input.recommendationAxes,
-    graduationPlan: input.plan,
+    graduationPlan: current.graduationPlan,
   });
 }
 
@@ -530,6 +604,7 @@ function App() {
   const [guideStepIndex, setGuideStepIndex] = useState(0);
   const stepHeadingRef = useRef<HTMLHeadingElement>(null);
   const initialLocationSyncedRef = useRef(false);
+  const savingPlanGeneratedAtRef = useRef<string | undefined>(undefined);
   const completedCourseIds = useMemo(
     () => savedState.courseSelections
       .filter((selection) => selection.status === "completed")
@@ -634,18 +709,19 @@ function App() {
     const transition = completeProfileTransition(savedState, profile);
     setStorageError(!saveAppState(transition.state));
     setSavedState(transition.state);
+    setPlanSaveStatus("idle");
     setTrackSetupOpen(false);
     navigateAppRoute(transition.route);
   }
 
   function changeTargetTrack(targetTrackId: TrackId | undefined) {
     persist((current) => ({
-      ...current,
-      targetTrackId,
+      ...applyPlanningSourceChange(current, { targetTrackId }),
       comparisonTrackIds: targetTrackId
         ? current.comparisonTrackIds.filter((trackId) => trackId !== targetTrackId)
         : [],
     }));
+    setPlanSaveStatus("idle");
   }
 
   function navigateDiagnosisStep(step: DiagnosisStep) {
@@ -663,11 +739,11 @@ function App() {
         : [...currentTrackIds, trackId];
 
       return {
-        ...current,
-        targetTrackId: nextTrackIds[0],
+        ...applyPlanningSourceChange(current, { targetTrackId: nextTrackIds[0] }),
         comparisonTrackIds: nextTrackIds.slice(1),
       };
     });
+    setPlanSaveStatus("idle");
   }
 
   function toggleCourse(courseId: string) {
@@ -677,13 +753,13 @@ function App() {
           (selection.status === "completed" || selection.status === "in-progress"),
       );
       const remaining = current.courseSelections.filter((selection) => selection.courseId !== courseId);
-      return {
-        ...current,
+      return applyPlanningSourceChange(current, {
         courseSelections: exists
           ? remaining
           : [...remaining, { courseId, status: "completed" }],
-      };
+      });
     });
+    setPlanSaveStatus("idle");
   }
 
   function resetState(nextView: ViewId = activeView) {
@@ -773,8 +849,9 @@ function App() {
       return;
     }
     const nextState: SavedAppStateV2 = {
-      ...savedState,
-      profile: { ...savedState.profile, goal: "check-progress" },
+      ...applyPlanningSourceChange(savedState, {
+        profile: { ...savedState.profile, goal: "check-progress" },
+      }),
       profileDraft: undefined,
     };
     setStorageError(!saveAppState(nextState));
@@ -796,6 +873,7 @@ function App() {
     setSavedState(transition.state);
     setPlanDraft(preferences);
     setPlanSaveStatus("idle");
+    savingPlanGeneratedAtRef.current = undefined;
     navigateAppRoute(transition.route);
   }
 
@@ -807,6 +885,12 @@ function App() {
 
   function saveGraduationPlanSnapshot() {
     if (!pathProgress || !savedState.graduationPlan) return;
+    const planGeneratedAt = savedState.graduationPlan.generatedAt;
+    const alreadySaved = savedState.snapshots.some(
+      (snapshot) => snapshot.graduationPlan?.generatedAt === planGeneratedAt,
+    );
+    if (alreadySaved || savingPlanGeneratedAtRef.current === planGeneratedAt) return;
+    savingPlanGeneratedAtRef.current = planGeneratedAt;
     const createdAt = new Date().toISOString();
     const id = typeof globalThis.crypto?.randomUUID === "function"
       ? globalThis.crypto.randomUUID()
@@ -821,6 +905,7 @@ function App() {
     const saved = saveAppState(next);
     setStorageError(!saved);
     if (!saved) {
+      savingPlanGeneratedAtRef.current = undefined;
       setPlanSaveStatus("error");
       return;
     }
@@ -911,9 +996,9 @@ function App() {
       );
     }
 
-    const visiblePlanStep = planStep !== "setup" && !savedState.graduationPlan
-      ? "setup"
-      : planStep;
+    const planAlreadySaved = Boolean(savedState.graduationPlan && savedState.snapshots.some(
+      (snapshot) => snapshot.graduationPlan?.generatedAt === savedState.graduationPlan?.generatedAt,
+    ));
     return (
       <div className="graduation-plan-shell">
         <div className="graduation-plan-topbar">
@@ -943,7 +1028,7 @@ function App() {
           </p>
         )}
 
-        {visiblePlanStep === "setup" ? (
+        {planStep === "setup" ? (
           <main className="graduation-plan-setup-page" aria-labelledby="graduation-plan-setup-title">
             <header className="graduation-plan-setup-heading">
               <span>졸업 계획 조건</span>
@@ -962,10 +1047,11 @@ function App() {
         ) : (
           <GraduationPlanResult
             result={savedState.graduationPlan!}
-            step={visiblePlanStep}
+            step={planStep}
             onEdit={editGraduationPlanInputs}
             onShowChecks={() => navigateAppRoute({ view: "plan", step: "checks" })}
             onSave={saveGraduationPlanSnapshot}
+            saveDisabled={planAlreadySaved}
           />
         )}
       </div>

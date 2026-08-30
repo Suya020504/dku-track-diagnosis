@@ -134,6 +134,9 @@ describe("calculateGraduationPlan", () => {
 
     expect(result.status).toBe("currently-satisfied");
     expect(result.generatedAt).toBe("2026-08-30T09:00:00.000Z");
+    expect(result.electiveAllocations).toEqual([]);
+    expect(result.unplacedElectiveCredits).toBe(0);
+    expect(result.unplacedElectiveSlots).toBe(0);
   });
 
   it("shows in-progress courses in the current term without treating them as current completion", () => {
@@ -227,6 +230,11 @@ describe("calculateGraduationPlan", () => {
 
     expect(result.status).toBe("regular-plan-possible");
     expect(result.unallocatedElectiveSlots).toBe(2);
+    expect(result.electiveAllocations).toEqual([
+      { termId: "2027-1", slots: 2, credits: 6 },
+    ]);
+    expect(result.unplacedElectiveCredits).toBe(0);
+    expect(result.unplacedElectiveSlots).toBe(0);
     expect(result.recommendedMaxMajorCoursesPerTerm).toBeUndefined();
   });
 
@@ -237,6 +245,8 @@ describe("calculateGraduationPlan", () => {
 
     expect(result.status).toBe("load-adjustment-needed");
     expect(result.recommendedMaxMajorCoursesPerTerm).toBe(3);
+    expect(result.electiveAllocations.reduce((sum, item) => sum + item.credits, 0)
+      + result.unplacedElectiveCredits).toBe(result.unallocatedElectiveCredits);
   });
 
   it("uses at most two added regular terms when raising the load through six is insufficient", () => {
@@ -246,6 +256,35 @@ describe("calculateGraduationPlan", () => {
 
     expect(result.status).toBe("extra-term-possible");
     expect(result.neededExtraTerms).toBe(2);
+    expect(result.electiveAllocations).toEqual([
+      { termId: "2027-1", slots: 3, credits: 9 },
+      { termId: "2027-2", slots: 3, credits: 9 },
+      { termId: "2028-1", slots: 1, credits: 3 },
+    ]);
+    expect(result.unplacedElectiveCredits).toBe(0);
+  });
+
+  it("keeps the exact extended-horizon allocation and exposes every unplaced elective credit", () => {
+    const result = calculateGraduationPlan(minorPlan([], {
+      targetGraduationTerm: "2027-1",
+      maxMajorCoursesPerTerm: 1,
+    }));
+
+    expect(result.status).toBe("official-review-required");
+    expect(result.unallocatedElectiveCredits).toBe(21);
+    expect(result.electiveAllocations).toEqual([
+      { termId: "2027-1", slots: 1, credits: 3 },
+      { termId: "2027-2", slots: 1, credits: 3 },
+      { termId: "2028-1", slots: 1, credits: 3 },
+    ]);
+    expect(result.unplacedElectiveCredits).toBe(12);
+    expect(result.unplacedElectiveSlots).toBe(4);
+    expect(result.reviewItems).toContainEqual(expect.objectContaining({
+      code: "elective-placeholder",
+      message: expect.stringContaining("학기 미배정 선택전공 12학점"),
+    }));
+    expect(result.electiveAllocations.reduce((sum, item) => sum + item.credits, 0)
+      + result.unplacedElectiveCredits).toBe(21);
   });
 
   it("requires official review when a planned course has no offering evidence", () => {

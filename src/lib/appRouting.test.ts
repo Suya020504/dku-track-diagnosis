@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SavedAppStateV2 } from "../types";
+import { calculateGraduationPlan } from "./graduationPlanner";
 import { createEmptyAppState } from "./storage";
 import {
   buildAppHref,
@@ -32,6 +33,17 @@ const plannedState: SavedAppStateV2 = {
     maxMajorCoursesPerTerm: 3,
     considerSeasonalTerm: false,
   },
+};
+
+const resultState: SavedAppStateV2 = {
+  ...plannedState,
+  graduationPlan: calculateGraduationPlan({
+    profile: minorState.profile!,
+    courseSelections: [],
+    additionalMajorCredits: [],
+    preferences: plannedState.graduationPlanPreferences!,
+    generatedAt: "2026-08-30T12:00:00.000Z",
+  }),
 };
 
 describe("canonical app route resolution", () => {
@@ -79,16 +91,29 @@ describe("canonical app route resolution", () => {
     )).toEqual({ view: "recommendation", step: "survey" });
   });
 
-  it("redirects a schedule without saved preferences to plan setup", () => {
-    expect(resolveAppRoute("?view=plan&step=schedule", minorState)).toEqual({
-      view: "plan",
-      step: "setup",
-    });
-    expect(resolveAppRoute("?view=plan&step=schedule", plannedState)).toEqual({
-      view: "plan",
-      step: "schedule",
-    });
-  });
+  it.each(["schedule", "checks"] as const)(
+    "canonicalizes %s to setup whenever the actual plan result is missing",
+    (step) => {
+      expect(resolveAppRoute(`?view=plan&step=${step}`, minorState)).toEqual({
+        view: "plan",
+        step: "setup",
+      });
+      expect(resolveAppRoute(`?view=plan&step=${step}`, plannedState)).toEqual({
+        view: "plan",
+        step: "setup",
+      });
+    },
+  );
+
+  it.each(["schedule", "checks"] as const)(
+    "restores %s only with an actual stored graduation plan",
+    (step) => {
+      expect(resolveAppRoute(`?view=plan&step=${step}`, resultState)).toEqual({
+        view: "plan",
+        step,
+      });
+    },
+  );
 });
 
 describe("canonical app route writes", () => {

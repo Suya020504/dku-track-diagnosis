@@ -395,6 +395,14 @@ function isUnplacedCourse(value: unknown): boolean {
     typeof value.message === "string";
 }
 
+function isElectiveTermAllocation(value: unknown): boolean {
+  return isRecord(value) &&
+    isAcademicTermId(value.termId) &&
+    Number.isInteger(value.slots) && Number(value.slots) > 0 &&
+    isFiniteNumber(value.credits) && value.credits > 0 &&
+    value.credits <= Number(value.slots) * 3;
+}
+
 function isGraduationPlan(value: unknown): boolean {
   if (
     !isRecord(value) ||
@@ -406,8 +414,12 @@ function isGraduationPlan(value: unknown): boolean {
     !value.extraTermPlacements.every(isPlannedCoursePlacement) ||
     !Array.isArray(value.unplacedCourses) ||
     !value.unplacedCourses.every(isUnplacedCourse) ||
+    !Array.isArray(value.electiveAllocations) ||
+    !value.electiveAllocations.every(isElectiveTermAllocation) ||
     !isFiniteNumber(value.unallocatedElectiveCredits) || value.unallocatedElectiveCredits < 0 ||
     !isNonNegativeInteger(value.unallocatedElectiveSlots) ||
+    !isFiniteNumber(value.unplacedElectiveCredits) || value.unplacedElectiveCredits < 0 ||
+    !isNonNegativeInteger(value.unplacedElectiveSlots) ||
     value.recommendedMaxMajorCoursesPerTerm !== undefined &&
       (!Number.isInteger(value.recommendedMaxMajorCoursesPerTerm) ||
         Number(value.recommendedMaxMajorCoursesPerTerm) < 1 ||
@@ -429,7 +441,28 @@ function isGraduationPlan(value: unknown): boolean {
     const placementIndex = academicTermIndex(placement.termId);
     return placementIndex > targetIndex && placementIndex <= targetIndex + 2;
   });
-  return normalPlacementsAreInRange && extraPlacementsAreInRange;
+  const allocationTerms = value.electiveAllocations.map((allocation) => allocation.termId as string);
+  const allocationTermsAreUnique = new Set(allocationTerms).size === allocationTerms.length;
+  const allocationsAreInRange = value.electiveAllocations.every((allocation) => {
+    const allocationIndex = academicTermIndex(allocation.termId);
+    return allocationIndex > currentIndex && allocationIndex <= targetIndex + 2;
+  });
+  const allocatedCredits = value.electiveAllocations.reduce(
+    (sum, allocation) => sum + Number(allocation.credits),
+    0,
+  );
+  const allocatedSlots = value.electiveAllocations.reduce(
+    (sum, allocation) => sum + Number(allocation.slots),
+    0,
+  );
+  const electiveTotalsMatch = allocatedCredits + value.unplacedElectiveCredits
+      === value.unallocatedElectiveCredits
+    && allocatedSlots + value.unplacedElectiveSlots === value.unallocatedElectiveSlots;
+  return normalPlacementsAreInRange &&
+    extraPlacementsAreInRange &&
+    allocationTermsAreUnique &&
+    allocationsAreInRange &&
+    electiveTotalsMatch;
 }
 
 function isInterestAxisCandidate(value: unknown): boolean {
@@ -514,12 +547,44 @@ function isSavedAppStateV2(value: unknown): value is SavedAppStateV2 {
     Array.isArray(state.snapshots) && state.snapshots.every(isDiagnosisSnapshot);
 }
 
+function hasCurrentElectiveAllocationContract(plan: Record<string, unknown>): boolean {
+  return Object.prototype.hasOwnProperty.call(plan, "electiveAllocations") &&
+    Object.prototype.hasOwnProperty.call(plan, "unplacedElectiveCredits") &&
+    Object.prototype.hasOwnProperty.call(plan, "unplacedElectiveSlots");
+}
+
+function migrateLegacyV2PlanningContract(value: unknown): unknown {
+  if (!isRecord(value) || value.version !== 2) return value;
+  let changed = false;
+  const migrated: Record<string, unknown> = { ...value };
+
+  if (isRecord(value.graduationPlan) && !hasCurrentElectiveAllocationContract(value.graduationPlan)) {
+    delete migrated.graduationPlan;
+    changed = true;
+  }
+
+  if (Array.isArray(value.snapshots)) {
+    migrated.snapshots = value.snapshots.map((snapshot) => {
+      if (!isRecord(snapshot) || !isRecord(snapshot.graduationPlan) ||
+        hasCurrentElectiveAllocationContract(snapshot.graduationPlan)) {
+        return snapshot;
+      }
+      const migratedSnapshot = { ...snapshot };
+      delete migratedSnapshot.graduationPlan;
+      changed = true;
+      return migratedSnapshot;
+    });
+  }
+
+  return changed ? migrated : value;
+}
+
 export function loadAppState(storage: Storage = window.localStorage): SavedAppStateV2 {
   for (const key of [STORAGE_KEY_V2, STORAGE_LAST_VALID_KEY_V2]) {
     try {
       const raw = storage.getItem(key);
       if (!raw) continue;
-      const parsed = JSON.parse(raw);
+      const parsed = migrateLegacyV2PlanningContract(JSON.parse(raw));
       if (isSavedAppStateV2(parsed)) {
         return { ...parsed, snapshots: normalizeSnapshotHistory(parsed.snapshots) };
       }

@@ -179,6 +179,12 @@ export type PlannedCoursePlacement = {
   offeringEvidence: CourseOfferingEvidence;
 };
 
+export type ElectiveTermAllocation = {
+  termId: AcademicTermId;
+  slots: number;
+  credits: number;
+};
+
 export type UnplacedCourseReason =
   | "offering-unknown"
   | "user-plan-conflict"
@@ -197,8 +203,11 @@ export type GraduationPlanResult = {
   placements: PlannedCoursePlacement[];
   extraTermPlacements: PlannedCoursePlacement[];
   unplacedCourses: UnplacedCourse[];
+  electiveAllocations: ElectiveTermAllocation[];
   unallocatedElectiveCredits: number;
   unallocatedElectiveSlots: number;
+  unplacedElectiveCredits: number;
+  unplacedElectiveSlots: number;
   recommendedMaxMajorCoursesPerTerm?: number;
   neededExtraTerms: number;
   reviewItems: ReviewItem[];

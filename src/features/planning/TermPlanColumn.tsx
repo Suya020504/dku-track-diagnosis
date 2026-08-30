@@ -46,7 +46,11 @@ export function TermPlanColumn({
         })}
 
         {electiveCredits > 0 && (
-          <article className="term-plan-course elective-reservation">
+          <article
+            className="term-plan-course elective-reservation"
+            data-elective-allocation-term={termId}
+            data-elective-credits={electiveCredits}
+          >
             <div>
               <strong>전공 선택 과목 {electiveCredits}학점 자리</strong>
               <span>과목명은 공식 확인 뒤 정해 주세요.</span>

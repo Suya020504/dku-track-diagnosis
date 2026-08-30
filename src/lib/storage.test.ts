@@ -85,8 +85,11 @@ function makeGraduationPlan(
       reason: "offering-unknown",
       message: "개설 학기 확인 필요",
     }],
+    electiveAllocations: [],
     unallocatedElectiveCredits: 0,
     unallocatedElectiveSlots: 0,
+    unplacedElectiveCredits: 0,
+    unplacedElectiveSlots: 0,
     recommendedMaxMajorCoursesPerTerm: 4,
     neededExtraTerms: 0,
     reviewItems: [{
@@ -275,6 +278,52 @@ describe("diagnosis storage", () => {
     expect(loadAppState(storage)).toEqual(state);
   });
 
+  it("persists planner-owned elective allocations through the target plus two terms", () => {
+    const graduationPlan: GraduationPlanResult = {
+      ...makeGraduationPlan(),
+      electiveAllocations: [
+        { termId: "2026-2", slots: 1, credits: 3 },
+        { termId: "2028-2", slots: 1, credits: 3 },
+      ],
+      unallocatedElectiveCredits: 9,
+      unallocatedElectiveSlots: 3,
+      unplacedElectiveCredits: 3,
+      unplacedElectiveSlots: 1,
+    };
+    const state: SavedAppStateV2 = {
+      ...createEmptyAppState(),
+      graduationPlanPreferences: planPreferences,
+      graduationPlan,
+    };
+    const storage = makeStorage({});
+
+    expect(saveAppState(state, storage)).toBe(true);
+    expect(loadAppState(storage)).toEqual(state);
+  });
+
+  it("preserves v2 inputs and preferences while clearing pre-allocation-contract plans", () => {
+    const oldPlan = { ...makeGraduationPlan() } as Record<string, unknown>;
+    delete oldPlan.electiveAllocations;
+    delete oldPlan.unplacedElectiveCredits;
+    delete oldPlan.unplacedElectiveSlots;
+    const source = {
+      ...createEmptyAppState(),
+      profile: minorProfile,
+      graduationPlanPreferences: planPreferences,
+      graduationPlan: oldPlan,
+      snapshots: [{ ...makeSnapshot("old-plan"), graduationPlan: oldPlan }],
+    };
+
+    const loaded = loadAppState(makeStorage({
+      [STORAGE_KEY_V2]: JSON.stringify(source),
+    }));
+
+    expect(loaded.profile).toEqual(minorProfile);
+    expect(loaded.graduationPlanPreferences).toEqual(planPreferences);
+    expect(loaded.graduationPlan).toBeUndefined();
+    expect(loaded.snapshots[0].graduationPlan).toBeUndefined();
+  });
+
   it.each([
     ["answer outside 1-5", { answers: { "consumer-choice": 6 }, currentIndex: 0 }],
     ["unknown question", { answers: { "made-up-question": 3 }, currentIndex: 0 }],
@@ -329,6 +378,23 @@ describe("diagnosis storage", () => {
     ["invalid offering evidence", { placements: [{ termId: "2026-1", courseId: "f-1", origin: "generated", offeringEvidence: "guaranteed" }] }],
     ["invalid unplaced reason", { unplacedCourses: [{ courseId: "h-1", reason: "unknown", message: "검토" }] }],
     ["invalid plan status", { status: "ready" }],
+    ["invalid allocation term", { electiveAllocations: [{ termId: "2026-3", slots: 1, credits: 3 }] }],
+    ["zero allocation slots", { electiveAllocations: [{ termId: "2026-2", slots: 0, credits: 3 }] }],
+    ["fractional allocation slots", { electiveAllocations: [{ termId: "2026-2", slots: 1.5, credits: 3 }] }],
+    ["zero allocation credits", { electiveAllocations: [{ termId: "2026-2", slots: 1, credits: 0 }] }],
+    ["allocation credits beyond slots", { electiveAllocations: [{ termId: "2026-2", slots: 1, credits: 4 }] }],
+    ["negative unplaced elective credits", { unplacedElectiveCredits: -1 }],
+    ["fractional unplaced elective slots", { unplacedElectiveSlots: 0.5 }],
+    [
+      "elective credit conservation mismatch",
+      {
+        electiveAllocations: [{ termId: "2026-2", slots: 1, credits: 3 }],
+        unallocatedElectiveCredits: 9,
+        unallocatedElectiveSlots: 3,
+        unplacedElectiveCredits: 3,
+        unplacedElectiveSlots: 1,
+      },
+    ],
   ])("recovers after invalid nested graduation plan data: %s", (_, override) => {
     const validState = stateWithTarget("economics");
     const malformedPlan = { ...makeGraduationPlan(), ...override };
@@ -387,6 +453,22 @@ describe("diagnosis storage", () => {
           origin: "generated",
           offeringEvidence: "unknown",
         }],
+      },
+    ],
+    [
+      "elective allocation in current term",
+      {
+        electiveAllocations: [{ termId: "2026-1", slots: 1, credits: 3 }],
+        unallocatedElectiveCredits: 3,
+        unallocatedElectiveSlots: 1,
+      },
+    ],
+    [
+      "elective allocation beyond two additional terms",
+      {
+        electiveAllocations: [{ termId: "2029-1", slots: 1, credits: 3 }],
+        unallocatedElectiveCredits: 3,
+        unallocatedElectiveSlots: 1,
       },
     ],
   ])("recovers literal last-valid state after invalid plan term semantics: %s", (_, override) => {
@@ -449,6 +531,28 @@ describe("diagnosis storage", () => {
           origin: "generated",
           offeringEvidence: "historical-2026-snapshot",
         }],
+      },
+    };
+    const storage = makeStorage({
+      [STORAGE_KEY_V2]: JSON.stringify({
+        ...createEmptyAppState(),
+        snapshots: [invalidSnapshot],
+      }),
+      [STORAGE_LAST_VALID_KEY_V2]: JSON.stringify(lastValid),
+    });
+
+    expect(loadAppState(storage)).toEqual(lastValid);
+  });
+
+  it("applies the same elective allocation guard to graduation plans inside snapshots", () => {
+    const lastValid = stateWithTarget("economics");
+    const invalidSnapshot = {
+      ...makeSnapshot("invalid-plan-allocation"),
+      graduationPlan: {
+        ...makeGraduationPlan(),
+        electiveAllocations: [{ termId: "2026-1", slots: 1, credits: 3 }],
+        unallocatedElectiveCredits: 3,
+        unallocatedElectiveSlots: 1,
       },
     };
     const storage = makeStorage({
