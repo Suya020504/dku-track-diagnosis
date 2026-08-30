@@ -13,6 +13,8 @@ import "./styles/planner-results.css";
 import "./styles/planner-recommendations.css";
 import "./styles/planner-planning.css";
 import "./styles/planner-resources.css";
+import "./styles/planner-responsive.css";
+import "./styles/planner-print.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

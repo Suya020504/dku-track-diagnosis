@@ -126,4 +126,38 @@ describe("ProfileFlow", () => {
       studyPath: "minor",
     }));
   });
+
+  it("blocks completion when an entered admission year is outside 2000–2026", async () => {
+    await mountProfileFlow({
+      profileStage: "path",
+      initialDraft: {
+        affiliation: "external-student",
+        studyPath: "minor",
+        goal: "check-progress",
+        entryYear: 1999,
+      },
+    });
+
+    const year = document.querySelector<HTMLInputElement>('.profile-entry-year input[type="number"]');
+    const complete = document.querySelector<HTMLButtonElement>(".study-path-complete");
+    if (!year || !complete) throw new Error("Missing admission year controls");
+
+    expect(complete.disabled).toBe(true);
+    expect(year.getAttribute("aria-invalid")).toBe("true");
+    expect(document.body.textContent).toContain("2000년부터 2026년 사이");
+
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(year, "2000");
+      year.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(complete.disabled).toBe(false);
+    expect(year.getAttribute("aria-invalid")).toBeNull();
+
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(year, "2027");
+      year.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(complete.disabled).toBe(true);
+    expect(year.getAttribute("aria-invalid")).toBe("true");
+  });
 });

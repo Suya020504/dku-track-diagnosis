@@ -1,4 +1,4 @@
-import type { KeyboardEvent, RefObject } from "react";
+import type { RefObject } from "react";
 import { Printer } from "lucide-react";
 import type { ResultSection } from "../../lib/appRouting";
 import type {
@@ -42,32 +42,19 @@ export function ResultDetailView({
   onGoToPlan: () => void;
   onPrint: () => void;
 }) {
-  function moveSection(event: KeyboardEvent<HTMLButtonElement>, current: ResultSection) {
-    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-    event.preventDefault();
-    const currentIndex = RESULT_PAGES.findIndex((page) => page.id === current);
-    const direction = event.key === "ArrowRight" ? 1 : -1;
-    const nextIndex = (currentIndex + direction + RESULT_PAGES.length) % RESULT_PAGES.length;
-    onSectionChange(RESULT_PAGES[nextIndex].id);
-  }
-
   return (
     <div className="planner-result-view">
       <nav className="planner-result-page-band no-print" aria-label="결과 페이지">
-        <div role="tablist" aria-label="진단 결과 상세 보기">
+        <div>
           {RESULT_PAGES.map((page) => (
             <button
               className={section === page.id ? "active planner-focusable" : "planner-focusable"}
               data-result-section={page.id}
               id={`result-section-${page.id}`}
-              role="tab"
-              aria-controls={`result-panel-${page.id}`}
-              aria-selected={section === page.id}
-              tabIndex={section === page.id ? 0 : -1}
+              aria-current={section === page.id ? "page" : undefined}
               type="button"
               key={page.id}
               onClick={() => onSectionChange(page.id)}
-              onKeyDown={(event) => moveSection(event, page.id)}
             >
               <span className="planner-result-page-band__index">{page.index}</span>
               <span>
@@ -83,8 +70,6 @@ export function ResultDetailView({
         className="planner-result-active-page"
         data-result-panel={section}
         id={`result-panel-${section}`}
-        role="tabpanel"
-        aria-labelledby={`result-section-${section}`}
       >
         {section === "current" ? (
           <CurrentProgressView

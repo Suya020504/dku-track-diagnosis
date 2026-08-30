@@ -134,6 +134,7 @@ describe("GraduationPlanResult distributed pages", () => {
     expect(markup).toContain('aria-label="졸업 계획 단계"');
     expect(markup).toContain('aria-current="page">일정');
     expect(markup).toContain('data-planner-layout="semester-columns"');
+    expect(markup).toContain('<section class="term-plan-board" aria-label="학기별 참고 계획"');
     expect(markup).toContain('data-plan-item-kind="named-course"');
     expect(markup).toContain('data-plan-item-kind="elective-reservation"');
     expect(markup).toContain("2027학년도 1학기");

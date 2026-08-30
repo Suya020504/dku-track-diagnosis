@@ -37,6 +37,10 @@ describe("GuidebookShell", () => {
     expect(markup).toContain("트랙제 안내");
     expect(markup).toContain("문의사항");
     expect(markup).toContain('aria-current="page"');
+    expect(markup).toContain('href="#planner-main-content"');
+    expect(markup).toContain('<span>도움말</span>');
+    expect(markup).toContain('aria-label="도움말 열기"');
+    expect(markup).not.toContain('class="planner-shell-wordmark" aria-label=');
     expect((markup.match(/<main/g) ?? [])).toHaveLength(1);
   });
 

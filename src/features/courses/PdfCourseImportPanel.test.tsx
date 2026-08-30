@@ -174,6 +174,9 @@ describe("PdfCourseImportPanel", () => {
 
     await act(async () => button("분석 취소").click());
     expect(signals[1]?.aborted).toBe(true);
+    expect(document.querySelector('[role="status"]')?.textContent).toContain("PDF 분석을 취소했어요");
+    expect(document.querySelector('[role="alert"]')).toBeNull();
+    expect(document.body.textContent).not.toContain("PDF를 분석하지 못했어요");
 
     await chooseFile(new File(["third"], "third.pdf", { type: "application/pdf" }));
     await act(async () => root?.unmount());

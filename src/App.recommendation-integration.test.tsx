@@ -161,7 +161,7 @@ describe("recommendation route integration", () => {
     const primaryActionIndex = markup.indexOf("내 관심 트랙 찾기");
     const secondaryActionIndex = markup.indexOf("이수 과목 바로 진단");
 
-    expect(markup.replaceAll("<br/>", "")).toContain("내 관심을 따라, 전공 로드맵을 완성해요");
+    expect(markup.replace(/<[^>]+>/g, "")).toContain("내 관심을 따라, 전공 로드맵을 완성해요");
     expect(markup).toContain("내 관심 트랙 찾기");
     expect(markup).toContain("이수 과목 바로 진단");
     expect(primaryActionIndex).toBeGreaterThan(-1);

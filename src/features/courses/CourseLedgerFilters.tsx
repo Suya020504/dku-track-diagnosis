@@ -46,11 +46,10 @@ export function CourseLedgerFilters({
 }: CourseLedgerFiltersProps) {
   return (
     <section className="course-ledger-filters" aria-label="과목 원장 필터">
-      <div className="course-ledger-mode" role="tablist" aria-label="과목 묶음 방식">
+      <div className="course-ledger-mode" aria-label="과목 묶음 방식">
         <button
           type="button"
-          role="tab"
-          aria-selected={mode === "semester"}
+          aria-pressed={mode === "semester"}
           className={mode === "semester" ? "is-active" : undefined}
           onClick={() => onModeChange("semester")}
         >
@@ -58,8 +57,7 @@ export function CourseLedgerFilters({
         </button>
         <button
           type="button"
-          role="tab"
-          aria-selected={mode === "module"}
+          aria-pressed={mode === "module"}
           className={mode === "module" ? "is-active" : undefined}
           onClick={() => onModeChange("module")}
         >

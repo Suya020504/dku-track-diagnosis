@@ -1,12 +1,15 @@
+// @vitest-environment jsdom
+
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { CompassPathRibbon, type CompassPathItem } from "./CompassPathRibbon";
 
 const items: CompassPathItem[] = [
   { id: "interest", label: "관심 질문", state: "complete", completed: true, available: true, onSelect: vi.fn() },
-  { id: "courses", label: "과목", state: "current", completed: false, available: true, onSelect: vi.fn() },
-  { id: "modules", label: "모듈", state: "next", completed: false, available: true, onSelect: vi.fn() },
-  { id: "track", label: "트랙", state: "pending", completed: false, available: false, unavailableReason: "과목 확인 후 열려요.", onSelect: vi.fn() },
+  { id: "courses", label: "과목", state: "complete", completed: true, available: true, onSelect: vi.fn() },
+  { id: "modules", label: "모듈", state: "current", completed: false, available: true, onSelect: vi.fn() },
+  { id: "track", label: "트랙", state: "next", completed: false, available: true, onSelect: vi.fn() },
+  { id: "plan", label: "계획", state: "pending", completed: false, available: false, unavailableReason: "과목 확인 후 열려요.", onSelect: vi.fn() },
 ];
 
 describe("CompassPathRibbon", () => {
@@ -22,5 +25,10 @@ describe("CompassPathRibbon", () => {
     expect(markup).toContain('data-completed="true"');
     expect(markup).toContain("과목 확인 후 열려요.");
     expect(markup).toContain("<button");
+
+    document.body.innerHTML = markup;
+    const completed = [...document.querySelectorAll<HTMLElement>('[data-completed="true"]')];
+    expect(completed).toHaveLength(2);
+    expect(completed.every((item) => item.textContent?.includes("완료"))).toBe(true);
   });
 });

@@ -70,6 +70,11 @@ describe("PlannerLanding", () => {
     expect(document.querySelectorAll("main")).toHaveLength(1);
     expect(document.querySelectorAll("h1")).toHaveLength(1);
     expect(document.querySelector("h1")?.textContent).toBe("내 관심을 따라, 전공 로드맵을 완성해요");
+    expect([...document.querySelectorAll<HTMLElement>("[data-landing-title-line]")]
+      .map((line) => line.textContent)).toEqual([
+        "내 관심을 따라,",
+        "전공 로드맵을 완성해요",
+      ]);
     expect(document.querySelectorAll("[data-journey-stage]")).toHaveLength(3);
   });
 

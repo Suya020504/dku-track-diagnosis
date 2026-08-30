@@ -50,7 +50,14 @@ export function ProfileFlow({
     draft.affiliation && draft.studyPath && allowedPaths.includes(draft.studyPath),
   );
   const targetTrackRequired = draft.studyPath === "track-major" && draft.goal !== "find-track";
-  const valid = pathValid && (!targetTrackRequired || Boolean(draftTargetTrackId));
+  const entryYearValid = draft.entryYear === undefined || (
+    Number.isInteger(draft.entryYear)
+    && draft.entryYear >= 2000
+    && draft.entryYear <= 2026
+  );
+  const valid = pathValid
+    && entryYearValid
+    && (!targetTrackRequired || Boolean(draftTargetTrackId));
 
   function update(patch: Partial<DraftProfile>) {
     const next = { ...draft, ...patch };
@@ -116,6 +123,7 @@ export function ProfileFlow({
           goal={draft.goal as ServiceGoal}
           studyPath={draft.studyPath}
           entryYear={draft.entryYear}
+          entryYearValid={entryYearValid}
           targetTrackId={draftTargetTrackId}
           allowedPaths={allowedPaths}
           valid={valid}

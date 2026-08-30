@@ -291,7 +291,7 @@ export function InterestSurvey({
               );
             })}
           </div>
-          <p id="interest-scale-hint">숫자키 또는 방향키로도 선택할 수 있어요. 정답은 없습니다.</p>
+          <p id="interest-scale-hint">방향키로 선택지를 이동할 수 있어요. 정답은 없습니다.</p>
         </fieldset>
 
         <div className="interest-question-actions">

@@ -264,7 +264,8 @@ describe("path-aware result integration", () => {
 
     await mountApp();
 
-    expect(document.querySelector('[data-result-section="next"]')?.getAttribute("aria-selected")).toBe("true");
+    expect(document.querySelector('[data-result-section="next"]')?.getAttribute("aria-current")).toBe("page");
+    expect(document.querySelector('[data-result-section="next"]')?.getAttribute("aria-selected")).toBeNull();
     expect(document.querySelector('[data-result-panel="next"]')?.textContent).toContain("모듈별 충족 현황");
     expect(document.querySelectorAll("h1")).toHaveLength(1);
     expect(document.querySelector('[data-result-panel="current"]')).toBeNull();
@@ -284,7 +285,7 @@ describe("path-aware result integration", () => {
     expect(document.activeElement).toBe(document.querySelector("h1"));
 
     await setRouteAndPop("/?view=result&section=next");
-    expect(document.querySelector('[data-result-section="next"]')?.getAttribute("aria-selected")).toBe("true");
+    expect(document.querySelector('[data-result-section="next"]')?.getAttribute("aria-current")).toBe("page");
     expect(document.querySelector('[data-result-panel="next"]')?.textContent).toContain("모듈별 충족 현황");
 
     await act(async () => {
@@ -305,11 +306,25 @@ describe("path-aware result integration", () => {
 
     await mountApp();
 
-    expect(document.querySelector('[data-result-section="confirm"]')?.getAttribute("aria-selected")).toBe("true");
+    expect(document.querySelector('[data-result-section="confirm"]')?.getAttribute("aria-current")).toBe("page");
+    expect(document.querySelector('[data-result-section="confirm"]')?.getAttribute("aria-selected")).toBeNull();
     expect(document.querySelector('[data-result-panel="confirm"]')?.textContent).toContain("별도 필수 과목 확인 항목이 없습니다");
     const printButton = document.querySelector<HTMLButtonElement>(".print-button");
     expect(printButton?.closest("[hidden]")).toBeNull();
     await act(async () => printButton?.click());
+    expect(print).toHaveBeenCalledTimes(1);
+  });
+
+  it("prints the mounted current result page through the shared print action", async () => {
+    saveState(state(trackProfile, { targetTrackId: "food-marketing" }));
+    history.replaceState({}, "", "/?view=result&section=current");
+    const print = vi.fn();
+    Object.defineProperty(window, "print", { configurable: true, value: print });
+
+    await mountApp();
+
+    expect(document.querySelector('[data-result-panel="current"]')).not.toBeNull();
+    await act(async () => document.querySelector<HTMLButtonElement>(".print-button")?.click());
     expect(print).toHaveBeenCalledTimes(1);
   });
 });

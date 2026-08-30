@@ -22,7 +22,7 @@
   background: #fff;
 }
 
-.planner-app .planner-result-page-band [role="tablist"] {
+.planner-app .planner-result-page-band > div {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -112,11 +112,9 @@
   overflow-wrap: anywhere;
 }
 
-.planner-app .planner-result-heading h1:focus {
-  outline: none;
-}
-
 .planner-app .planner-result-heading h1:focus-visible {
+  outline: 2px solid var(--planner-department-green);
+  outline-offset: 5px;
   box-shadow: -4px 0 0 var(--planner-department-green);
 }
 

@@ -51,7 +51,7 @@ describe("resource reading routes", () => {
       expect(document.querySelector(`[data-resource-section="${section}"]`)?.getAttribute("aria-current"))
         .toBe("page");
       expect(document.querySelector(`[data-resource-section="${section}"]`)?.getAttribute("aria-selected"))
-        .toBe("true");
+        .toBeNull();
       expect(document.querySelectorAll("[data-resource-page]")).toHaveLength(1);
     }
   });

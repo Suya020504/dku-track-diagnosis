@@ -36,6 +36,8 @@ describe("InterestSurvey", () => {
     expect(markup.match(/name="interest-consumer-scale"/g)).toHaveLength(5);
     expect(markup).toMatch(/<input[^>]*(?:value="4"[^>]*checked|checked[^>]*value="4")/);
     expect(markup).not.toContain('aria-pressed="true"');
+    expect(markup).toContain("방향키로 선택지를 이동할 수 있어요");
+    expect(markup).not.toContain("숫자키");
     expect(markup).toContain("이전");
     expect(markup).toContain("다음");
   });
@@ -80,6 +82,8 @@ describe("InterestSurvey", () => {
     expect(markup).toContain("선택한 트랙으로 자가진단 이어가기");
     expect(markup).toContain('aria-label="경제학 트랙"');
     expect(markup).toContain("공동 상위");
+    expect(markup.match(/aria-pressed=/g)).toHaveLength(3);
+    expect(markup).toContain("다른 트랙도 보기");
     expect(markup).not.toContain("전체 1순위");
   });
 });

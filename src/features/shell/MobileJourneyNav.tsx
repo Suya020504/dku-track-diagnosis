@@ -1,4 +1,5 @@
-import { MoreHorizontal } from "lucide-react";
+import { LockKeyhole, MoreHorizontal } from "lucide-react";
+import { useState } from "react";
 
 export type MobileJourneyItem = {
   id: string;
@@ -12,28 +13,45 @@ function JourneyButton({
   item,
   activeId,
   primary = false,
+  onLocked,
 }: {
   item: MobileJourneyItem;
   activeId: string;
   primary?: boolean;
+  onLocked: (reason: string) => void;
 }) {
   const reasonId = `mobile-journey-${item.id}-reason`;
+  const locked = !item.available;
   return (
-    <div className="planner-mobile-nav__item" data-mobile-primary={primary || undefined}>
+    <div
+      className="planner-mobile-nav__item"
+      data-mobile-primary={primary || undefined}
+      data-mobile-locked={locked || undefined}
+    >
       <button
         className="planner-focusable"
         type="button"
         aria-current={activeId === item.id ? "page" : undefined}
-        aria-describedby={!item.available && item.unavailableReason ? reasonId : undefined}
-        disabled={!item.available}
+        aria-describedby={locked && item.unavailableReason ? reasonId : undefined}
+        aria-disabled={locked || undefined}
         onClick={(event) => {
+          if (locked) {
+            onLocked(item.unavailableReason ?? `${item.label} 화면은 아직 열리지 않았어요.`);
+            return;
+          }
           item.onSelect();
           event.currentTarget.closest("details")?.removeAttribute("open");
         }}
       >
-        {item.label}
+        <span>{item.label}</span>
+        {locked ? (
+          <small data-mobile-lock-label>
+            <LockKeyhole aria-hidden="true" size={12} />
+            잠김
+          </small>
+        ) : null}
       </button>
-      {!item.available && item.unavailableReason ? (
+      {locked && item.unavailableReason ? (
         <span className="sr-only" id={reasonId}>{item.unavailableReason}</span>
       ) : null}
     </div>
@@ -49,11 +67,25 @@ export function MobileJourneyNav({
   primaryItems: readonly MobileJourneyItem[];
   moreItems: readonly MobileJourneyItem[];
 }) {
+  const [lockedReason, setLockedReason] = useState<string>();
+
   return (
     <nav className="planner-mobile-nav" aria-label="주요 화면">
+      {lockedReason ? (
+        <p className="planner-mobile-nav__locked-reason" role="status" aria-live="polite">
+          <LockKeyhole aria-hidden="true" size={15} />
+          {lockedReason}
+        </p>
+      ) : null}
       <div className="planner-mobile-nav__primary">
         {primaryItems.map((item) => (
-          <JourneyButton key={item.id} item={item} activeId={activeId} primary />
+          <JourneyButton
+            key={item.id}
+            item={item}
+            activeId={activeId}
+            primary
+            onLocked={setLockedReason}
+          />
         ))}
         <details className="planner-mobile-nav__more">
           <summary className="planner-focusable">
@@ -62,7 +94,12 @@ export function MobileJourneyNav({
           </summary>
           <div className="planner-mobile-nav__menu">
             {moreItems.map((item) => (
-              <JourneyButton key={item.id} item={item} activeId={activeId} />
+              <JourneyButton
+                key={item.id}
+                item={item}
+                activeId={activeId}
+                onLocked={setLockedReason}
+              />
             ))}
           </div>
         </details>

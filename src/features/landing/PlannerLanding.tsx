@@ -183,7 +183,10 @@ export function PlannerLanding({
       <section className="planner-landing__first-view">
         <div className="planner-landing__hero">
           <div className="planner-landing__copy">
-            <h1 id="planner-landing-title">내 관심을 따라,{" "}<br />전공 로드맵을 완성해요</h1>
+            <h1 id="planner-landing-title">
+              <span data-landing-title-line>내 관심을 따라,</span>{" "}
+              <span data-landing-title-line>전공 로드맵을 완성해요</span>
+            </h1>
             <p>
               관심 질문으로 트랙을 찾고, 완료 과목을 다음 학기 계획까지 연결해 보세요.
             </p>

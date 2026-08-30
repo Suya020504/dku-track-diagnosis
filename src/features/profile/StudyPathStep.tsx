@@ -34,6 +34,7 @@ export function StudyPathStep({
   goal,
   studyPath,
   entryYear,
+  entryYearValid,
   targetTrackId,
   allowedPaths,
   valid,
@@ -49,6 +50,7 @@ export function StudyPathStep({
   goal: ServiceGoal;
   studyPath?: StudyPath;
   entryYear?: number;
+  entryYearValid: boolean;
   targetTrackId?: TrackId;
   allowedPaths: StudyPath[];
   valid: boolean;
@@ -166,11 +168,18 @@ export function StudyPathStep({
           min="2000"
           max="2026"
           inputMode="numeric"
+          aria-invalid={entryYearValid ? undefined : true}
+          aria-describedby={entryYearValid ? undefined : "profile-entry-year-error"}
           value={entryYear ?? ""}
           onChange={(event) => onEntryYearChange(
             event.target.value ? Number(event.target.value) : undefined,
           )}
         />
+        {!entryYearValid ? (
+          <small id="profile-entry-year-error" role="alert">
+            입학연도는 2000년부터 2026년 사이로 입력해 주세요.
+          </small>
+        ) : null}
       </label>
 
       <p className="profile-entry-status" role="status">

@@ -62,7 +62,7 @@
 }
 
 .planner-shell-utility button {
-  min-height: 40px;
+  min-height: 44px;
   padding: 8px 10px;
   border: 0;
   border-radius: var(--planner-control-radius);
@@ -84,7 +84,7 @@
   display: inline-flex;
   gap: 6px;
   align-items: center;
-  min-height: 40px;
+  min-height: 44px;
   padding: 8px 12px;
   border: 0;
   border-radius: var(--planner-control-radius);
@@ -211,13 +211,6 @@
   margin-inline: auto;
 }
 
-/* Legacy inner headers are superseded by the one common, text-only shell header. */
-.planner-app .v2-landing-header,
-.planner-app .recommendation-page-header,
-.planner-app .service-header {
-  display: none;
-}
-
 .planner-app .service-storage-error {
   margin-block-start: 0;
 }
@@ -319,9 +312,9 @@
     color: var(--planner-department-green);
   }
 
-  .planner-mobile-nav__item button:disabled {
+  .planner-mobile-nav__item button[aria-disabled="true"] {
     cursor: not-allowed;
-    opacity: 0.42;
+    opacity: 0.68;
   }
 
   .planner-mobile-nav__more {

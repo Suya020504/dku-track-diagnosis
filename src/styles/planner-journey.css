@@ -90,12 +90,24 @@
 
 @media (max-width: 760px) {
   .planner-compass-path {
-    overflow-x: auto;
+    overflow: visible;
     margin-block-end: 12px;
     padding: 8px;
   }
 
   .planner-compass-path ol {
-    min-width: 500px;
+    grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
+    min-width: 0;
+  }
+
+  .planner-compass-path ol::before {
+    display: none;
+  }
+
+  .planner-compass-path button strong {
+    overflow: visible;
+    line-height: 1.35;
+    text-overflow: clip;
+    white-space: normal;
   }
 }

@@ -1,0 +1,88 @@
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  html,
+  body,
+  #root,
+  .planner-app {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    min-height: 0;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  .planner-app :is(
+    .planner-skip-link,
+    .planner-shell-header,
+    .planner-guide-index,
+    .planner-mobile-nav,
+    .planner-compass-path,
+    .recommendation-page-nav,
+    .graduation-plan-topbar,
+    .planner-route-line,
+    .planner-result-page-band,
+    .planner-result-print,
+    .planner-result-continue,
+    .planner-result-next-actions,
+    .plan-result-actions,
+    .plan-next-actions,
+    .no-print
+  ) {
+    display: none !important;
+  }
+
+  .planner-app :is(
+    .planner-shell-layout,
+    .planner-shell-page,
+    .planner-shell-content,
+    .app-shell,
+    .service-shell,
+    .service-workspace,
+    .primary-panel,
+    .graduation-plan-shell,
+    .graduation-plan-page,
+    .planner-result-view,
+    .planner-result-active-page,
+    .planner-result-section,
+    .planner-path-progress
+  ) {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .planner-app .term-plan-board {
+    display: block !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  .planner-app .term-plan-board::before,
+  .planner-app .term-plan-column::before {
+    display: none !important;
+  }
+
+  .planner-app :is(
+    .term-plan-column,
+    .planner-track-comparison__row,
+    .planner-next-course,
+    .planner-evidence-band,
+    .plan-check-section,
+    .official-review-items
+  ) {
+    break-inside: avoid;
+  }
+
+  .planner-app .term-plan-column {
+    margin-block-end: 14px;
+    box-shadow: none;
+  }
+}

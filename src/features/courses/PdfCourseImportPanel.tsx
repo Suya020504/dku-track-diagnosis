@@ -25,7 +25,7 @@ export function PdfCourseImportPanel({
   analyzeFile = analyzeWithLazyRuntime,
 }: PdfCourseImportPanelProps) {
   const [expanded, setExpanded] = useState(false);
-  const [status, setStatus] = useState<"idle" | "analyzing" | "failed">("idle");
+  const [status, setStatus] = useState<"idle" | "analyzing" | "cancelled" | "failed">("idle");
   const activeControllerRef = useRef<AbortController | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mountedRef = useRef(true);
@@ -76,7 +76,7 @@ export function PdfCourseImportPanel({
     activeControllerRef.current?.abort();
     activeControllerRef.current = undefined;
     clearInput();
-    setStatus("failed");
+    setStatus("cancelled");
   }
 
   return (
@@ -129,6 +129,14 @@ export function PdfCourseImportPanel({
             <div className="pdf-import-failure" role="alert">
               <strong>PDF를 분석하지 못했어요.</strong>
               <span>직접 선택은 그대로 유지됩니다. 다시 시도하거나 직접 선택해 주세요.</span>
+              <button type="button" onClick={() => setStatus("idle")}>직접 선택 계속하기</button>
+            </div>
+          )}
+
+          {status === "cancelled" && (
+            <div className="pdf-import-cancelled" role="status">
+              <strong>PDF 분석을 취소했어요.</strong>
+              <span>직접 선택은 그대로 유지됩니다.</span>
               <button type="button" onClick={() => setStatus("idle")}>직접 선택 계속하기</button>
             </div>
           )}

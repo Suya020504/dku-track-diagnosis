@@ -196,6 +196,13 @@ describe("result decision pages", () => {
     expect(markup).not.toMatch(/\d+과목 보완/);
     expect(markup).not.toContain("result-top-grid");
     expect(markup).not.toContain("현재 입력 기준 충족");
+    expect(markup).toContain('data-result-section="current"');
+    expect(markup.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(markup).not.toContain('role="tablist"');
+    expect(markup).not.toContain('role="tab"');
+    expect(markup).not.toContain('role="tabpanel"');
+    expect(markup).not.toContain("aria-selected=");
+    expect(markup).not.toContain("aria-controls=");
   });
 
   it("renders only the next page with real course evidence, reasons, module contribution, and next actions", () => {

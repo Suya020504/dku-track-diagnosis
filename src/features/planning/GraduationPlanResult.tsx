@@ -182,7 +182,7 @@ export function GraduationPlanResult({
         최근 개설 패턴 기준인 2026학년도 개설 이력을 다음 학기에 반복해 배치한 참고안이며,
         실제 반복 개설을 보장하지 않습니다.
       </EvidenceBand>
-      <div
+      <section
         className="term-plan-board"
         aria-label="학기별 참고 계획"
         data-planner-layout="semester-columns"
@@ -198,7 +198,7 @@ export function GraduationPlanResult({
             extraTerm={term.extraTerm}
           />
         ))}
-      </div>
+      </section>
       <div className="plan-result-actions">
         <button className="primary-button" type="button" onClick={onSave} disabled={saveDisabled}>계획 저장</button>
       </div>

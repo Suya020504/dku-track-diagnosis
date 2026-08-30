@@ -55,7 +55,6 @@ export function ResourceIndexView({ section, onSectionChange }: ResourceIndexVie
         {resourcePages.map((page) => (
           <button
             aria-current={page.id === section ? "page" : undefined}
-            aria-selected={page.id === section}
             className="planner-focusable"
             data-resource-section={page.id}
             key={page.id}

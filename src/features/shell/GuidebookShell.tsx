@@ -34,8 +34,11 @@ export function GuidebookShell({
 }) {
   return (
     <div className="planner-app planner-guidebook-shell">
+      <a className="planner-skip-link planner-focusable" href="#planner-main-content">
+        본문으로 건너뛰기
+      </a>
       <header className="planner-shell-header">
-        <div className="planner-shell-wordmark" aria-label="단국대학교 식품자원경제학과 트랙진단">
+        <div className="planner-shell-wordmark">
           <strong>단국대학교 식품자원경제학과</strong>
           <span>트랙진단 학업 플래너</span>
         </div>
@@ -57,9 +60,14 @@ export function GuidebookShell({
           </nav>
         ) : null}
         <div className="planner-shell-actions">
-          <button className="planner-shell-help planner-focusable" type="button" onClick={onOpenHelp}>
+          <button
+            className="planner-shell-help planner-focusable"
+            type="button"
+            aria-label="도움말 열기"
+            onClick={onOpenHelp}
+          >
             <HelpCircle aria-hidden="true" size={17} />
-            도움말
+            <span>도움말</span>
           </button>
           <LocalSaveStatus state={saveState} />
         </div>
@@ -68,7 +76,7 @@ export function GuidebookShell({
         <GuideIndex items={guideItems} activeId={activeId} />
         <div className="planner-shell-page">
           <CompassPathRibbon items={journeyItems} />
-          <div className="planner-shell-content">{children}</div>
+          <div className="planner-shell-content" id="planner-main-content" tabIndex={-1}>{children}</div>
         </div>
       </div>
       <MobileJourneyNav

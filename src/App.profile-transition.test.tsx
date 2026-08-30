@@ -199,7 +199,10 @@ describe("profile integration transitions", () => {
     await mountApp();
 
     expect(new URLSearchParams(location.search).get("view")).toBe("resources");
-    expect(document.querySelector('[data-resource-section="modules"]')?.getAttribute("aria-selected")).toBe("true");
+    expect(new URLSearchParams(location.search).get("section")).toBe("modules");
+    expect(location.search).toBe("?view=resources&section=modules");
+    expect(document.querySelector('[data-resource-section="modules"]')?.getAttribute("aria-current")).toBe("page");
+    expect(document.querySelector('[data-resource-section="modules"]')?.getAttribute("aria-selected")).toBeNull();
 
     await act(async () => {
       (document.querySelector<HTMLButtonElement>('[data-resource-section="official"]') ??
@@ -208,6 +211,7 @@ describe("profile integration transitions", () => {
     expect(new URLSearchParams(location.search).get("section")).toBe("official");
 
     await setRouteAndPop("/?view=resources&section=curriculum");
-    expect(document.querySelector('[data-resource-section="curriculum"]')?.getAttribute("aria-selected")).toBe("true");
+    expect(document.querySelector('[data-resource-section="curriculum"]')?.getAttribute("aria-current")).toBe("page");
+    expect(document.querySelector('[data-resource-section="curriculum"]')?.getAttribute("aria-selected")).toBeNull();
   });
 });

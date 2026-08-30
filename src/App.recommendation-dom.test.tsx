@@ -125,6 +125,16 @@ async function setRouteAndPop(href: string) {
   });
 }
 
+async function moveNativeHistory(direction: "back" | "forward") {
+  await act(async () => {
+    const popped = new Promise<void>((resolve) => {
+      window.addEventListener("popstate", () => resolve(), { once: true });
+    });
+    history[direction]();
+    await popped;
+  });
+}
+
 beforeEach(() => {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   document.body.innerHTML = '<div id="root"></div>';
@@ -339,6 +349,40 @@ describe("App recommendation browser interactions", () => {
     expect(trackIndex?.getAttribute("aria-current")).toBe("page");
   });
 
+  it("keeps reachable canonical screens free of legacy headers and official identity images", async () => {
+    saveState({
+      ...createEmptyAppState(),
+      profile: {
+        goal: "check-progress",
+        affiliation: "external-student",
+        studyPath: "minor",
+        curriculumRuleVersion: "2026-provided-final-plan",
+        ruleApplicability: "reference-only",
+      },
+    });
+    history.replaceState({}, "", "/?view=recommendation&step=axes&axis=interest");
+    await mountApp();
+
+    const officialIdentitySelector = [
+      'img[src="/dku-seal.svg"]',
+      'img[src="/dku-logo.png"]',
+      'img[src="/department-mark.jpg"]',
+    ].join(",");
+    expect(document.querySelector(".recommendation-page-header")).toBeNull();
+    expect(document.querySelector(officialIdentitySelector)).toBeNull();
+
+    await setRouteAndPop("/?view=diagnosis&step=courses");
+    expect(document.querySelector(".service-header")).toBeNull();
+    expect(document.querySelector(officialIdentitySelector)).toBeNull();
+    expect(document.querySelectorAll("main")).toHaveLength(1);
+    expect(document.querySelectorAll("h1")).toHaveLength(1);
+
+    await setRouteAndPop("/?view=overview");
+    expect(document.querySelector(officialIdentitySelector)).toBeNull();
+    await setRouteAndPop("/?view=contact");
+    expect(document.querySelector(officialIdentitySelector)).toBeNull();
+  });
+
   it("uses the Compass Path Ribbon as real guarded route navigation", async () => {
     saveState(createEmptyAppState());
     history.replaceState({}, "", "/?view=recommendation&step=survey");
@@ -445,6 +489,40 @@ describe("App recommendation browser interactions", () => {
     expect(document.querySelector('[data-recommendation-panel="plan"]')).not.toBeNull();
     expect(document.querySelector("#recommendation-axis-destination-plan")?.getAttribute("aria-current")).toBe("page");
     expect(document.activeElement).toBe(heading);
+  });
+
+  it("restores all recommendation axes through native back, forward, and mounted reload", async () => {
+    saveState({
+      ...profileOnlyLandingState(),
+      interestSurvey: completeSurvey(),
+      courseInputReviewedAt: "2026-08-30T00:30:00.000Z",
+    });
+    history.replaceState({}, "", "/?view=recommendation&step=axes&axis=interest");
+    await mountApp();
+
+    await act(async () => document.querySelector<HTMLButtonElement>(
+      "#recommendation-axis-destination-progress",
+    )?.click());
+    await act(async () => document.querySelector<HTMLButtonElement>(
+      "#recommendation-axis-destination-plan",
+    )?.click());
+    expect(new URLSearchParams(location.search).get("axis")).toBe("plan");
+
+    await moveNativeHistory("back");
+    expect(document.querySelector('[data-recommendation-panel="progress"]')).not.toBeNull();
+    await moveNativeHistory("back");
+    expect(document.querySelector('[data-recommendation-panel="interest"]')).not.toBeNull();
+    await moveNativeHistory("forward");
+    expect(document.querySelector('[data-recommendation-panel="progress"]')).not.toBeNull();
+    await moveNativeHistory("forward");
+    expect(document.querySelector('[data-recommendation-panel="plan"]')).not.toBeNull();
+
+    await act(async () => root?.unmount());
+    root = undefined;
+    await mountApp();
+    expect(new URLSearchParams(location.search).get("axis")).toBe("plan");
+    expect(document.querySelector('[data-recommendation-panel="plan"]')).not.toBeNull();
+    expect(document.activeElement).toBe(document.querySelector("#recommendation-axes-title"));
   });
 
   it("persists an explicit survey track choice and pushes the profile transition", async () => {

@@ -109,11 +109,20 @@ describe("CourseSelectionView", () => {
   it("reflows the semester and module filters into real ledger results", async () => {
     await renderHarness();
 
+    const semesterMode = button("학년·학기별");
+    const moduleMode = button("모듈별");
+    expect(semesterMode.getAttribute("role")).toBeNull();
+    expect(moduleMode.getAttribute("role")).toBeNull();
+    expect(semesterMode.getAttribute("aria-pressed")).toBe("true");
+    expect(moduleMode.getAttribute("aria-pressed")).toBe("false");
+
     await act(async () => button("2학년").click());
     expect(document.body.textContent).toContain("소비자경제학");
     expect(document.body.textContent).not.toContain("경제원론");
 
     await act(async () => button("모듈별").click());
+    expect(semesterMode.getAttribute("aria-pressed")).toBe("false");
+    expect(moduleMode.getAttribute("aria-pressed")).toBe("true");
     expect(document.querySelector('[aria-label="모듈 그룹 빠른 이동"]')).toBeTruthy();
     expect(document.body.textContent).toContain("경제학 전문지식");
   });
