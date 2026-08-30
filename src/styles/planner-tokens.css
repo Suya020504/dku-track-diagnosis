@@ -1,0 +1,24 @@
+.planner-app {
+  --planner-paper: #f8fbfc;
+  --planner-sky-sheet: #ddf2fc;
+  --planner-mint-sheet: #ddf3e8;
+  --planner-dankook-blue: #174b82;
+  --planner-department-green: #087a58;
+  --planner-ink: #14243a;
+  --planner-ink-muted: #5c6c7e;
+  --planner-wheat: #f2c66d;
+  --planner-review-coral: #e67c62;
+  --planner-space-1: 4px;
+  --planner-space-2: 8px;
+  --planner-space-3: 12px;
+  --planner-space-5: 20px;
+  --planner-row-radius: 8px;
+  --planner-control-radius: 12px;
+  --planner-sheet-radius: 20px;
+}
+
+.planner-app .planner-focusable:focus-visible {
+  outline: 2px solid var(--planner-department-green);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--planner-paper);
+}
