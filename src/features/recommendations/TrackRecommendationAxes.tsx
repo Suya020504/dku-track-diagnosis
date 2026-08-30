@@ -1,5 +1,6 @@
 import { ArrowRight, CheckCircle2, Heart, Route } from "lucide-react";
 import { tracks } from "../../data/curriculumData";
+import { findAlignedLeaderTrackIds } from "../../lib/recommendationEngine";
 import type {
   GraduationPlanStatus,
   RecommendationAxes,
@@ -10,6 +11,7 @@ import { AxisResultCard } from "./AxisResultCard";
 export type TrackRecommendationAxesProps = {
   axes?: RecommendationAxes;
   courseInputReady: boolean;
+  storageError: boolean;
   activeAxis?: "interest" | "progress" | "plan";
   onOpenInterestSurvey: () => void;
   onOpenCourseInput: () => void;
@@ -32,6 +34,7 @@ function trackName(trackId: TrackId) {
 export function TrackRecommendationAxes({
   axes,
   courseInputReady,
+  storageError,
   activeAxis,
   onOpenInterestSurvey,
   onOpenCourseInput,
@@ -41,10 +44,16 @@ export function TrackRecommendationAxes({
   const progress = courseInputReady && axes?.progress.length ? axes.progress : undefined;
   const plan = axes?.plan?.length ? axes.plan : undefined;
   const availableAxisCount = Number(Boolean(interest)) + Number(Boolean(progress)) + Number(Boolean(plan));
+  const visibleAlignedLeaderTrackIds = findAlignedLeaderTrackIds(
+    interest,
+    progress ?? [],
+    plan,
+  );
+  const aligned = availableAxisCount >= 2 && visibleAlignedLeaderTrackIds.length > 0;
   const hypothesis = progress?.[0]?.assumption === "track-major-hypothesis"
     || plan?.[0]?.assumption === "track-major-hypothesis";
   const comparisonMessage = availableAxisCount >= 2
-    ? axes && axes.alignedLeaderTrackIds.length > 0
+    ? aligned
       ? "여러 기준이 같은 방향을 가리켜요"
       : "기준에 따라 결과가 달라요. 중요하게 볼 기준을 선택해 비교하세요."
     : "입력을 더하면 기준별 결과를 나란히 비교할 수 있어요.";
@@ -57,13 +66,19 @@ export function TrackRecommendationAxes({
           <h1 id="recommendation-axes-title">한 줄 순위 대신, 세 기준을 따로 확인하세요</h1>
           <p>관심, 현재 이수 과목, 졸업 전 계획은 서로 다른 질문입니다. 각 기준 안의 순서와 근거를 비교해 직접 판단할 수 있습니다.</p>
         </div>
-        <div className={axes?.alignedLeaderTrackIds.length ? "axis-comparison-note aligned" : "axis-comparison-note"} role="status">
-          {axes?.alignedLeaderTrackIds.length
+        <div className={aligned ? "axis-comparison-note aligned" : "axis-comparison-note"} role="status">
+          {aligned
             ? <CheckCircle2 aria-hidden="true" size={22} />
             : <Route aria-hidden="true" size={22} />}
           <strong>{comparisonMessage}</strong>
         </div>
       </header>
+
+      {storageError && (
+        <p className="recommendation-storage-error" role="alert">
+          답변을 이 브라우저에 저장하지 못했습니다. 새로고침하면 답변이 사라질 수 있습니다.
+        </p>
+      )}
 
       {hypothesis && (
         <p className="axes-hypothesis-note">

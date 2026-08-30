@@ -4,6 +4,7 @@ import type { RecommendationAxes } from "../../types";
 import { TrackRecommendationAxes } from "./TrackRecommendationAxes";
 
 const callbacks = {
+  storageError: false,
   onOpenInterestSurvey: vi.fn(),
   onOpenCourseInput: vi.fn(),
   onOpenGraduationPlan: vi.fn(),
@@ -109,5 +110,65 @@ describe("TrackRecommendationAxes", () => {
     expect(markup).toContain("여러 기준이 같은 방향을 가리켜요");
     expect(markup).not.toContain("종합 추천");
     expect(markup).not.toContain("가장 좋은 트랙");
+  });
+
+  it("ignores a hidden progress leader when the visible interest and plan leaders differ", () => {
+    const contaminatedAxes: RecommendationAxes = {
+      ...differingAxes,
+      progress: [
+        { ...differingAxes.progress[1], trackId: "food-marketing", missingCourseCount: 1 },
+      ],
+      plan: [
+        { ...differingAxes.plan![0], trackId: "economics" },
+      ],
+      alignedLeaderTrackIds: ["food-marketing"],
+    };
+
+    const markup = renderToStaticMarkup(
+      <TrackRecommendationAxes
+        axes={contaminatedAxes}
+        courseInputReady={false}
+        {...callbacks}
+      />,
+    );
+
+    expect(markup).toContain("기준에 따라 결과가 달라요. 중요하게 볼 기준을 선택해 비교하세요.");
+    expect(markup).toContain("lucide-route");
+    expect(markup).toContain('class="axis-comparison-note"');
+    expect(markup).not.toContain("여러 기준이 같은 방향을 가리켜요");
+    expect(markup).not.toContain('class="axis-comparison-note aligned"');
+  });
+
+  it("keeps one visible axis neutral even if hidden axes reported alignment", () => {
+    const markup = renderToStaticMarkup(
+      <TrackRecommendationAxes
+        axes={{
+          interest: differingAxes.interest,
+          progress: differingAxes.progress,
+          plan: undefined,
+          alignedLeaderTrackIds: ["food-marketing"],
+        }}
+        courseInputReady={false}
+        {...callbacks}
+      />,
+    );
+
+    expect(markup).toContain("입력을 더하면 기준별 결과를 나란히 비교할 수 있어요.");
+    expect(markup).toContain("lucide-route");
+    expect(markup).not.toContain('class="axis-comparison-note aligned"');
+  });
+
+  it("keeps a persistence warning visible on the axes page", () => {
+    const markup = renderToStaticMarkup(
+      <TrackRecommendationAxes
+        axes={undefined}
+        courseInputReady={false}
+        {...callbacks}
+        storageError
+      />,
+    );
+
+    expect(markup).toContain('role="alert"');
+    expect(markup).toContain("새로고침하면 답변이 사라질 수 있습니다");
   });
 });

@@ -34,12 +34,14 @@ export type GraduationPlanabilityInput = RecommendationBaseInput & {
   generatedAt: string;
 };
 
-type RecommendationAxesOptionalInput = {
+type RecommendationAxesBaseInput = {
+  profile?: StudentProfile;
+  courseSelections: CourseSelectionRecord[];
+  additionalMajorCredits: AdditionalMajorCredit[];
   interestSurvey?: InterestSurveyState;
 };
 
-export type RecommendationAxesInput = RecommendationBaseInput
-  & RecommendationAxesOptionalInput
+export type RecommendationAxesInput = RecommendationAxesBaseInput
   & (
     | {
         graduationPlanPreferences: GraduationPlanPreferences;
@@ -139,8 +141,12 @@ export function buildRecommendationAxes(
     && isInterestSurveyComplete(input.interestSurvey.answers)
     ? buildInterestAxis(input.interestSurvey)
     : undefined;
-  const progress = rankTracksByProgressAccessibility(input);
-  const plan = input.graduationPlanPreferences
+  const progress = input.profile ? rankTracksByProgressAccessibility({
+    profile: input.profile,
+    courseSelections: input.courseSelections,
+    additionalMajorCredits: input.additionalMajorCredits,
+  }) : [];
+  const plan = input.profile && input.graduationPlanPreferences
     ? rankTracksByGraduationPlanability({
         profile: input.profile,
         courseSelections: input.courseSelections,
@@ -154,7 +160,7 @@ export function buildRecommendationAxes(
     interest,
     progress,
     plan,
-    alignedLeaderTrackIds: alignedLeaderTrackIds(interest, progress, plan),
+    alignedLeaderTrackIds: findAlignedLeaderTrackIds(interest, progress, plan),
   };
 }
 
@@ -210,7 +216,7 @@ function comparePlanLeaderMetrics(left: PlanAxisCandidate, right: PlanAxisCandid
     || left.neededExtraTerms - right.neededExtraTerms;
 }
 
-function alignedLeaderTrackIds(
+export function findAlignedLeaderTrackIds(
   interest: InterestAxisCandidate[] | undefined,
   progress: ProgressAxisCandidate[],
   plan: PlanAxisCandidate[] | undefined,

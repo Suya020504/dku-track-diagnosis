@@ -115,6 +115,25 @@ describe("recommendation route integration", () => {
     expect(markup).toContain("이수 과목 입력하기");
   });
 
+  it("shows a completed interest axis without requiring a profile", () => {
+    const interestSurvey: InterestSurveyState = {
+      answers: Object.fromEntries(
+        interestSurveyQuestions.map((question) => [question.id, 3]),
+      ),
+      currentIndex: 9,
+      completedAt: "2026-08-30T00:00:00.000Z",
+    };
+
+    const markup = renderApp(
+      "?view=recommendation&step=axes&axis=interest",
+      { ...createEmptyAppState(), interestSurvey },
+    );
+
+    expect(markup).toContain("푸드마케팅");
+    expect(markup).toContain("50%");
+    expect(markup).not.toContain("관심 설문 시작하기");
+  });
+
   it("routes a find-track track-major profile to survey when no target was chosen", () => {
     const transition = completeProfileTransition(createEmptyAppState(), findTrackProfile);
 
@@ -162,6 +181,25 @@ describe("recommendation route integration", () => {
     });
   });
 
+  it("restores a survey-selected target after a non-track path cleared the active target", () => {
+    const current: SavedAppStateV2 = {
+      ...createEmptyAppState(),
+      interestSurvey: {
+        answers: Object.fromEntries(interestSurveyQuestions.map((question) => [question.id, 4])),
+        currentIndex: 9,
+        completedAt: "2026-08-30T00:00:00.000Z",
+        selectedTrackId: "economics",
+      },
+      targetTrackId: undefined,
+    };
+
+    const completed = completeProfileTransition(current, findTrackProfile);
+
+    expect(completed.state.targetTrackId).toBe("economics");
+    expect(completed.step).toBe("courses");
+    expect(completed.route).toEqual({ view: "diagnosis", step: "courses" });
+  });
+
   it("replaces the active result aggregate with a link to the independent criteria", () => {
     const state: SavedAppStateV2 = {
       ...createEmptyAppState(),
@@ -181,5 +219,28 @@ describe("recommendation route integration", () => {
     expect(markup).toContain("세 기준별 트랙 비교 보기");
     expect(markup).not.toContain("1순위");
     expect(markup).not.toContain("가장 가까워요");
+  });
+
+  it("renders a non-aggregate plan prerequisite boundary for canonical and legacy plan URLs", () => {
+    const state: SavedAppStateV2 = {
+      ...createEmptyAppState(),
+      profile: {
+        goal: "plan-graduation",
+        affiliation: "department-student",
+        studyPath: "advanced-major",
+        curriculumRuleVersion: "2026-provided-final-plan",
+        ruleApplicability: "reference-only",
+      },
+    };
+
+    for (const search of ["?view=plan&step=setup", "?view=experiment"]) {
+      const markup = renderApp(search, state);
+      expect(markup).toContain("졸업 계획 전에 입력 상태를 확인해 주세요");
+      expect(markup).toContain("추천 비교로 돌아가기");
+      expect(markup).toContain("프로필·이수 과목 확인");
+      expect(markup).not.toContain("전략 기준 트랙");
+      expect(markup).not.toContain("가장 가까운 트랙");
+      expect(markup).not.toContain("계획 계산하기");
+    }
   });
 });

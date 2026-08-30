@@ -9265,6 +9265,37 @@ html {
 .independent-recommendation-prompt p { max-width: 720px; color: var(--muted); line-height: 1.7; }
 .independent-recommendation-prompt > div { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
 
+.plan-entry-shell {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding: 32px 20px;
+  background:
+    linear-gradient(135deg, rgba(223, 246, 255, 0.72), transparent 48%),
+    linear-gradient(315deg, rgba(228, 248, 201, 0.55), transparent 44%),
+    var(--bg);
+}
+
+.plan-entry-card {
+  width: min(720px, 100%);
+  padding: clamp(26px, 5vw, 48px);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.plan-entry-card > span { color: var(--accent); font-size: 13px; font-weight: 800; letter-spacing: 0.06em; }
+.plan-entry-card h1 { margin: 10px 0 14px; color: var(--dku-blue-dark); font-size: clamp(30px, 5vw, 43px); line-height: 1.2; letter-spacing: -0.04em; }
+.plan-entry-card > p { margin: 0; color: var(--muted); line-height: 1.75; }
+.plan-entry-card ul { display: grid; gap: 9px; margin: 26px 0; padding: 0; list-style: none; }
+.plan-entry-card li { display: flex; gap: 9px; align-items: center; min-height: 44px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); }
+.plan-entry-card li.ready { border-color: #b9d9d0; background: var(--accent-soft); color: var(--accent-dark); }
+.plan-entry-card li.pending { background: var(--surface-muted); }
+.plan-entry-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.plan-entry-actions button { min-height: 44px; }
+.plan-entry-shell button:focus-visible { outline: 3px solid rgba(8, 122, 91, 0.38); outline-offset: 3px; }
+
 .recommendation-page-shell button:focus-visible,
 .recommendation-page-shell input:focus-visible,
 .recommendation-page-shell [tabindex="-1"]:focus-visible {
@@ -9298,4 +9329,6 @@ html {
   .recommendation-axes-footer { align-items: flex-start; }
   .recommendation-axes-footer > svg:last-child { display: none; }
   .independent-recommendation-prompt > div { flex-direction: column; }
+  .plan-entry-actions { flex-direction: column; }
+  .plan-entry-actions button { width: 100%; }
 }

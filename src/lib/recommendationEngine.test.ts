@@ -103,6 +103,20 @@ const regionalAlmostComplete = selections([
 ]);
 
 describe("independent recommendation axes", () => {
+  it("builds an interest-only axis without inventing a profile or progress input", () => {
+    const result = buildRecommendationAxes({
+      profile: undefined as unknown as StudentProfile,
+      courseSelections: [],
+      additionalMajorCredits: noAdditionalCredits,
+      interestSurvey: { answers: foodMarketingAnswers(), currentIndex: 9 },
+    });
+
+    expect(result.interest?.[0].trackId).toBe("food-marketing");
+    expect(result.progress).toEqual([]);
+    expect(result.plan).toBeUndefined();
+    expect(result.alignedLeaderTrackIds).toEqual([]);
+  });
+
   it("ranks food marketing first on the interest axis", () => {
     const result = buildRecommendationAxes({
       profile: externalMinorProfile,
