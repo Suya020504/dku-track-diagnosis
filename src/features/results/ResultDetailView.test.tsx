@@ -1,4 +1,7 @@
-import { createRef } from "react";
+// @vitest-environment jsdom
+
+import { act, createRef } from "react";
+import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import type {
@@ -118,6 +121,45 @@ const pathProgress: PathProgressResult = {
   status: "current-input-satisfied",
 };
 
+function createFoodBioFixture(trackCredits: number, completionRate: number) {
+  const moduleProgress = [
+    { moduleId: "F" as const, label: "푸드바이오경제 · F. 유통무역", requiredCredits: 3, completedCredits: trackCredits > 0 ? 3 : 0, missingCredits: trackCredits > 0 ? 0 : 3, courseIds: ["f-1"] },
+    { moduleId: "H" as const, label: "푸드바이오경제 · H. 머천다이징", requiredCredits: 3, completedCredits: 0, missingCredits: 3, courseIds: ["h-1"] },
+    { moduleId: "I" as const, label: "푸드바이오경제 · I. 농식품정책", requiredCredits: 3, completedCredits: 0, missingCredits: 3, courseIds: ["i-1"] },
+    { moduleId: "F" as const, label: "F/H/I 학과 모듈 합산", requiredCredits: 15, completedCredits: trackCredits > 0 ? 9 : 0, missingCredits: trackCredits > 0 ? 6 : 15, courseIds: ["f-1", "h-1", "i-1"] },
+    { moduleId: "M" as const, label: "M. 바이오헬스혁신융합", requiredCredits: 8, completedCredits: 0, missingCredits: 8, courseIds: ["m-1"] },
+    { moduleId: "N+O" as const, label: "N+O. 식품영양학/식품공학", requiredCredits: 7, completedCredits: 0, missingCredits: 7, courseIds: ["n-1"] },
+  ];
+  const track: TrackDiagnosisResult = {
+    ...trackProgress,
+    trackId: "food-bio-economy",
+    trackName: "푸드바이오경제",
+    trackKind: "융합전공",
+    trackCredits,
+    moduleProgress,
+    completionRate,
+    missingRequiredCourses: [],
+    recommendedCourses: [],
+    remainingCourses: [],
+  };
+
+  return {
+    diagnosis: {
+      ...diagnosis,
+      selectedTrackIds: ["food-bio-economy"],
+      trackCredits,
+      moduleProgress,
+      trackResults: [track],
+      completionRate,
+    } satisfies DiagnosisResult,
+    path: {
+      ...pathProgress,
+      trackProgress: track,
+      status: "incomplete",
+    } satisfies PathProgressResult,
+  };
+}
+
 function renderSection(section: "current" | "next" | "confirm") {
   return renderToStaticMarkup(
     <ResultDetailView
@@ -147,10 +189,11 @@ describe("result decision pages", () => {
     expect(markup).toContain("트랙형전공");
     expect(markup).toContain("공식 공개 확인");
     expect(markup).toContain("필수과목 진행");
-    expect(markup).toContain("트랙 모듈 진행");
+    expect(markup).toContain("트랙 관련 학점 진행");
     expect(markup).toContain("전체 전공학점 진행");
     expect(markup).toContain("트랙 비교");
-    expect(markup).toContain("2과목 보완");
+    expect(markup).toContain("보완할 트랙 조건이 있어요");
+    expect(markup).not.toMatch(/\d+과목 보완/);
     expect(markup).not.toContain("result-top-grid");
     expect(markup).not.toContain("현재 입력 기준 충족");
   });
@@ -194,4 +237,57 @@ describe("result decision pages", () => {
       expect(markup).not.toContain("이수 확정");
     },
   );
+
+  it.each([
+    ["비어 있는 입력", 0, 0],
+    ["일부 이수 입력", 12, 45],
+  ])("does not invent an exact FoodBio course gap for %s", (_label, trackCredits, completionRate) => {
+    const foodBio = createFoodBioFixture(trackCredits, completionRate);
+    const markup = renderToStaticMarkup(
+      <ResultDetailView
+        result={foodBio.diagnosis}
+        profile={profile}
+        pathProgress={foodBio.path}
+        section="current"
+        headingRef={createRef<HTMLHeadingElement>()}
+        onSectionChange={vi.fn()}
+        onOpenRecommendations={vi.fn()}
+        onGoToPlan={vi.fn()}
+        onPrint={vi.fn()}
+      />,
+    );
+
+    expect(markup).toContain("보완할 트랙 조건이 있어요");
+    expect(markup).not.toMatch(/\d+과목 보완/);
+  });
+
+  it("renders overlapping FoodBio conditions in current and next without duplicate React keys", async () => {
+    (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    const foodBio = createFoodBioFixture(0, 0);
+
+    for (const section of ["current", "next"] as const) {
+      await act(async () => {
+        root.render(
+          <ResultDetailView
+            result={foodBio.diagnosis}
+            profile={profile}
+            pathProgress={foodBio.path}
+            section={section}
+            headingRef={createRef<HTMLHeadingElement>()}
+            onSectionChange={vi.fn()}
+            onOpenRecommendations={vi.fn()}
+            onGoToPlan={vi.fn()}
+            onPrint={vi.fn()}
+          />,
+        );
+      });
+    }
+
+    expect(consoleError.mock.calls.flat().join(" ")).not.toContain("same key");
+    await act(async () => root.unmount());
+    consoleError.mockRestore();
+  });
 });

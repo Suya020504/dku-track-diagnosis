@@ -11,30 +11,13 @@ import {
   PathProgressSummary,
 } from "./PathProgressSummary";
 
-function courseGap(track: TrackDiagnosisResult): number {
-  const missingModuleCourseIds = new Set(
-    track.moduleProgress
-      .filter((module) => module.missingCredits > 0)
-      .flatMap((module) => module.courseIds),
-  );
-  const moduleGap = track.moduleProgress.reduce(
-    (sum, module) => sum + Math.ceil(Math.max(0, module.missingCredits) / 3),
-    0,
-  );
-  const requiredOnlyCredits = track.missingRequiredCourses
-    .filter((course) => !missingModuleCourseIds.has(course.id))
-    .reduce((sum, course) => sum + course.credits, 0);
-
-  return moduleGap + Math.ceil(requiredOnlyCredits / 3);
-}
-
 function shortModuleLabel(label: string, trackName: string): string {
   return label.replace(`${trackName} · `, "");
 }
 
 function TrackComparisonRow({ track }: { track: TrackDiagnosisResult }) {
-  const gap = courseGap(track);
   const missingModules = track.moduleProgress.filter((module) => module.missingCredits > 0);
+  const hasUnmetCondition = missingModules.length > 0 || track.missingRequiredCourses.length > 0;
 
   return (
     <article className="planner-track-comparison__row">
@@ -44,7 +27,9 @@ function TrackComparisonRow({ track }: { track: TrackDiagnosisResult }) {
           <span>{track.trackKind}</span>
           <h3>{track.trackName}</h3>
         </div>
-        <strong>{gap === 0 ? "추가 보완 없음" : `${gap}과목 보완`}</strong>
+        <strong>
+          {hasUnmetCondition ? "보완할 트랙 조건이 있어요" : "참고 계산상 트랙 조건 도달"}
+        </strong>
       </header>
       <dl>
         <div>
@@ -52,7 +37,7 @@ function TrackComparisonRow({ track }: { track: TrackDiagnosisResult }) {
           <dd>{track.trackCredits}학점</dd>
         </div>
         <div>
-          <dt>부족 모듈</dt>
+          <dt>보완 조건</dt>
           <dd>{missingModules.length}개</dd>
         </div>
         <div>
@@ -68,7 +53,7 @@ function TrackComparisonRow({ track }: { track: TrackDiagnosisResult }) {
             ));
 
             return (
-              <li key={`${track.trackId}-${module.moduleId}`}>
+              <li key={`${track.trackId}-${module.moduleId}-${module.label}`}>
                 <div>
                   <strong>{shortModuleLabel(module.label, track.trackName)}</strong>
                   <span>{module.missingCredits}학점 보완 필요</span>
@@ -120,8 +105,8 @@ export function CurrentProgressView({
       <section className="planner-track-comparison" aria-labelledby="track-comparison-title">
         <header>
           <span>트랙 비교</span>
-          <h2 id="track-comparison-title">선택한 트랙의 학점과 과목 부족분</h2>
-          <p>부족 학점을 3학점 과목 단위로 환산해 비교하며, 2학점 과목이 섞인 경우 실제 수는 달라질 수 있습니다.</p>
+          <h2 id="track-comparison-title">선택한 트랙의 학점과 조건별 부족분</h2>
+          <p>서로 겹칠 수 있는 조건의 부족 학점은 합산하지 않습니다. 조건별 남은 학점과 후보 과목을 각각 확인하세요.</p>
         </header>
         {result.trackResults.length > 0 ? (
           <div className="planner-track-comparison__list">

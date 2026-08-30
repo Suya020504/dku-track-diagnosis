@@ -154,7 +154,7 @@ describe("path-aware result integration", () => {
     const markup = renderApp(state(minorProfile), "?view=result&step=result");
 
     expect(markup).toContain("부전공 전공학점");
-    expect(markup).not.toContain("트랙 모듈 진행");
+    expect(markup).not.toContain("트랙 관련 학점 진행");
     expect(markup).not.toContain("<span>전체 진행률</span>");
     expect(markup).not.toContain("<span>트랙 인정 학점</span>");
     expect(markup).not.toContain('id="result-tab-summary"');
@@ -249,7 +249,7 @@ describe("path-aware result integration", () => {
       "?view=result&step=result",
     );
 
-    expect(markup).toContain("트랙 모듈 진행");
+    expect(markup).toContain("트랙 관련 학점 진행");
     expect(markup).toContain('id="result-section-current"');
     expect(markup).toContain('id="result-section-next"');
     expect(markup).toContain("현재 · 계산된 진행 경로");

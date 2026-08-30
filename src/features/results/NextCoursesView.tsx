@@ -81,7 +81,7 @@ function ModuleProgressLedger({ result }: { result: DiagnosisResult }) {
                     ? Math.min(100, Math.round((module.completedCredits / module.requiredCredits) * 100))
                     : 0;
                   return (
-                    <li key={`${track.trackId}-${module.moduleId}`}>
+                    <li key={`${track.trackId}-${module.moduleId}-${module.label}`}>
                       <div>
                         <strong>{module.label.replace(`${track.trackName} · `, "")}</strong>
                         <span>

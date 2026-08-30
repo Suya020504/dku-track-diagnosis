@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { EvidenceBand } from "../../components/EvidenceBand";
-import { courses } from "../../data/curriculumData";
+import { courses, tracks } from "../../data/curriculumData";
 import type { EvidenceState } from "../../data/evidenceSources";
 import type {
   CreditProgress,
@@ -49,10 +49,12 @@ function progressPercentage(progress: CreditProgress): number {
 function ProgressStep({
   label,
   progress,
+  completionLabel = "참고 계산상 기준 도달",
   children,
 }: {
   label: string;
   progress: CreditProgress;
+  completionLabel?: string;
   children?: ReactNode;
 }) {
   const percentage = progressPercentage(progress);
@@ -76,7 +78,7 @@ function ProgressStep({
         {progress.missingCredits > 0 ? (
           <small className="planner-progress-path__missing">{progress.missingCredits}학점 보완 필요</small>
         ) : (
-          <small className="planner-progress-path__complete">참고 계산상 기준 도달</small>
+          <small className="planner-progress-path__complete">{completionLabel}</small>
         )}
         {children}
       </div>
@@ -97,19 +99,23 @@ export function PathProgressSummary({
   const trackProgress = result.trackProgress === "not-applicable"
     ? undefined
     : result.trackProgress;
-  const trackCreditProgress = trackProgress
+  const trackDefinition = trackProgress
+    ? tracks.find((track) => track.id === trackProgress.trackId)
+    : undefined;
+  const trackCreditRequirement = trackDefinition?.rule.totalTrackCredits;
+  const clampedTrackCredits = trackProgress && trackCreditRequirement !== undefined
+    ? Math.min(Math.max(0, trackProgress.trackCredits), trackCreditRequirement)
+    : undefined;
+  const trackCreditProgress = trackProgress && trackCreditRequirement !== undefined
     ? {
-        completedCredits: trackProgress.trackCredits,
-        requiredCredits: trackProgress.moduleProgress.reduce(
-          (sum, module) => sum + module.requiredCredits,
-          0,
-        ),
-        missingCredits: trackProgress.moduleProgress.reduce(
-          (sum, module) => sum + module.missingCredits,
-          0,
-        ),
+        completedCredits: clampedTrackCredits ?? 0,
+        requiredCredits: trackCreditRequirement,
+        missingCredits: trackCreditRequirement - (clampedTrackCredits ?? 0),
       }
     : undefined;
+  const hasUnmetTrackCondition = trackProgress?.moduleProgress.some(
+    (module) => module.missingCredits > 0,
+  ) ?? false;
   const hasIntermediateSteps = result.requiredProgress !== "not-applicable" || trackCreditProgress;
   const missingRequiredCourses = result.requiredProgress === "not-applicable"
     ? []
@@ -155,10 +161,17 @@ export function PathProgressSummary({
         ) : null}
 
         {trackProgress && trackCreditProgress ? (
-          <ProgressStep label="트랙 모듈 진행" progress={trackCreditProgress}>
+          <ProgressStep
+            label="트랙 관련 학점 진행"
+            progress={trackCreditProgress}
+            completionLabel="참고 계산상 학점 기준 도달"
+          >
+            {hasUnmetTrackCondition ? (
+              <small className="planner-progress-path__missing">보완할 트랙 조건이 있어요</small>
+            ) : null}
             <ul className="planner-progress-path__modules" aria-label="트랙 모듈별 진행">
               {trackProgress.moduleProgress.map((module) => (
-                <li key={`${trackProgress.trackId}-${module.moduleId}`}>
+                <li key={`${trackProgress.trackId}-${module.moduleId}-${module.label}`}>
                   <span>{module.label.replace(`${trackProgress.trackName} · `, "")}</span>
                   <small>
                     {module.completedCredits}/{module.requiredCredits}학점
