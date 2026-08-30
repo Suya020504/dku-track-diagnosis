@@ -25,6 +25,7 @@ type TermPlanView = {
   termId: AcademicTermId;
   placements: PlannedCoursePlacement[];
   electiveCredits: number;
+  electiveSlots: number;
   extraTerm: boolean;
 };
 
@@ -37,12 +38,16 @@ function buildTermPlanViews(result: GraduationPlanResultValue): TermPlanView[] {
   ])].sort((left, right) => termIndex(left) - termIndex(right));
   if (termIds.length === 0) termIds.push(result.preferences.currentTerm);
 
-  return termIds.map((termId) => ({
-    termId,
-    placements: allPlacements.filter((item) => item.termId === termId),
-    electiveCredits: result.electiveAllocations.find((item) => item.termId === termId)?.credits ?? 0,
-    extraTerm: termIndex(termId) > targetIndex,
-  }));
+  return termIds.map((termId) => {
+    const electiveAllocation = result.electiveAllocations.find((item) => item.termId === termId);
+    return {
+      termId,
+      placements: allPlacements.filter((item) => item.termId === termId),
+      electiveCredits: electiveAllocation?.credits ?? 0,
+      electiveSlots: electiveAllocation?.slots ?? 0,
+      extraTerm: termIndex(termId) > targetIndex,
+    };
+  });
 }
 
 function PlanStatusSummary({ result }: { result: GraduationPlanResultValue }) {
@@ -128,6 +133,7 @@ export function GraduationPlanResult({
             termId={term.termId}
             placements={term.placements}
             electiveCredits={term.electiveCredits}
+            electiveSlots={term.electiveSlots}
             extraTerm={term.extraTerm}
           />
         ))}

@@ -192,4 +192,33 @@ describe("GraduationPlanResult distributed pages", () => {
     expect(checksMarkup).toContain("학기 미배정 선택전공 12학점");
     expect(scheduleMarkup).not.toContain("학기 미배정 선택전공");
   });
+
+  it("preserves a planner-owned two-slot reservation even when it carries only three credits", () => {
+    const result: GraduationPlanResultValue = {
+      ...baseResult,
+      placements: [],
+      extraTermPlacements: [],
+      unplacedCourses: [],
+      electiveAllocations: [{ termId: "2027-1", slots: 2, credits: 3 }],
+      unallocatedElectiveCredits: 3,
+      unallocatedElectiveSlots: 2,
+      unplacedElectiveCredits: 0,
+      unplacedElectiveSlots: 0,
+      reviewItems: [{
+        code: "elective-placeholder",
+        message: "선택 전공 3학점을 두 자리로 배정했습니다.",
+        evidence: "project-derived",
+      }],
+    };
+
+    const markup = renderResult(result, "schedule");
+
+    expect(markup).toContain("<small>2자리</small>");
+    expect(markup).toContain(
+      'data-elective-allocation-term="2027-1" data-elective-credits="3" data-elective-slots="2"',
+    );
+    expect(markup).toContain("전공 선택 과목 3학점 자리");
+    expect(markup).toContain("2자리 · 과목명은 공식 확인 뒤 정해 주세요.");
+    expect(markup).not.toContain("<small>1자리</small>");
+  });
 });
