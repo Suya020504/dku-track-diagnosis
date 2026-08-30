@@ -58,6 +58,7 @@ function createLifecycle(input?: {
     }>;
   }>;
   loadingDestroyPromise?: Promise<void>;
+  workerDestroyError?: unknown;
 }) {
   const pages: FixturePage[] = input?.pages ?? [
     {
@@ -71,7 +72,11 @@ function createLifecycle(input?: {
   const worker = {
     promise: input?.workerPromise ?? Promise.resolve(),
     port: new BrowserWorkerStub(),
-    destroy: vi.fn<() => void>(),
+    destroy: vi.fn((): void => {
+      if (input?.workerDestroyError !== undefined) {
+        throw input.workerDestroyError;
+      }
+    }),
   };
   const document = {
     numPages: pages.length,
@@ -224,22 +229,46 @@ describe("pdfJsRuntime", () => {
     expect(worker.destroy).toHaveBeenCalledTimes(1);
   });
 
-  it("starts pending cleanup exactly once and returns the same destroy promise", async () => {
+  it("waits for loading-task cleanup before destroying the owned worker", async () => {
     const cleanup = deferred<void>();
     const { lifecycle, loadingTask, worker } = createLifecycle({
       loadingDestroyPromise: cleanup.promise,
     });
     const loading = openPdfDocument(new ArrayBuffer(8), lifecycle);
-    await loading.promise;
+    const document = await loading.promise;
 
-    const first = loading.destroy();
+    const first = document.destroy();
     const second = loading.destroy();
 
     expect(first).toBe(second);
     expect(loadingTask.destroy).toHaveBeenCalledTimes(1);
-    expect(worker.destroy).toHaveBeenCalledTimes(1);
+    expect(worker.destroy).not.toHaveBeenCalled();
     cleanup.resolve();
     await first;
+    expect(worker.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  it("destroys the worker after loading cleanup rejects and preserves the loading error", async () => {
+    const cleanup = deferred<void>();
+    const loadingError = new Error("loading cleanup failed");
+    const workerError = new Error("worker cleanup failed");
+    const { lifecycle, loadingTask, worker } = createLifecycle({
+      loadingDestroyPromise: cleanup.promise,
+      workerDestroyError: workerError,
+    });
+    const loading = openPdfDocument(new ArrayBuffer(8), lifecycle);
+    const document = await loading.promise;
+
+    const cleanupResult = document.destroy();
+    void cleanupResult.catch(() => undefined);
+
+    expect(loadingTask.destroy).toHaveBeenCalledTimes(1);
+    expect(worker.destroy).not.toHaveBeenCalled();
+    cleanup.reject(loadingError);
+    await expect(cleanupResult).rejects.toBe(loadingError);
+    expect(worker.destroy).toHaveBeenCalledTimes(1);
+    await expect(loading.destroy()).rejects.toBe(loadingError);
+    expect(worker.destroy).toHaveBeenCalledTimes(1);
   });
 
   it("rejects a fake worker with safe copy and destroys its owner once", async () => {

@@ -118,31 +118,45 @@ export function openPdfDocument(
     sourceData = undefined;
     if (cancelPending) rejectDestroyed(cancelledError());
 
-    let loadingDestroy: Promise<void>;
-    try {
-      loadingDestroy = loadingTask?.destroy() ?? Promise.resolve();
-    } catch (error) {
-      loadingDestroy = Promise.reject(error);
-    }
-
-    let workerError: unknown;
-    if (!workerDestroyed) {
+    const destroyWorker = (): { failed: boolean; error?: unknown } => {
+      if (workerDestroyed) return { failed: false };
       workerDestroyed = true;
       try {
         worker.destroy();
+        return { failed: false };
       } catch (error) {
-        workerError = error;
+        return { failed: true, error };
       }
-    }
+    };
 
-    destroyPromise = loadingDestroy.then(
-      () => {
-        if (workerError !== undefined) throw workerError;
-      },
-      (error: unknown) => {
-        throw error;
-      },
-    );
+    if (!loadingTask) {
+      const workerResult = destroyWorker();
+      destroyPromise = workerResult.failed
+        ? Promise.reject(workerResult.error)
+        : Promise.resolve();
+    } else {
+      let loadingDestroy: Promise<void>;
+      try {
+        loadingDestroy = loadingTask.destroy();
+      } catch (error) {
+        loadingDestroy = Promise.reject(error);
+      }
+
+      destroyPromise = (async () => {
+        let loadingFailed = false;
+        let loadingError: unknown;
+        try {
+          await loadingDestroy;
+        } catch (error) {
+          loadingFailed = true;
+          loadingError = error;
+        }
+
+        const workerResult = destroyWorker();
+        if (loadingFailed) throw loadingError;
+        if (workerResult.failed) throw workerResult.error;
+      })();
+    }
     void destroyPromise.catch(() => undefined);
     return destroyPromise;
   };
