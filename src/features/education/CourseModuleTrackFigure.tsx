@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { EvidenceBand } from "../../components/EvidenceBand";
 import { TrackGlyph } from "../../components/TrackGlyph";
-import { courses, modules, tracks } from "../../data/curriculumData";
+import { OFFICIAL_CURRICULUM_SOURCE, courses, modules, tracks } from "../../data/curriculumData";
 import { isCourseInTrack } from "../../lib/diagnosis";
 
 export function CourseModuleTrackFigure() {
@@ -45,8 +45,9 @@ export function CourseModuleTrackFigure() {
         </section>
       </div>
 
-      <EvidenceBand state="provided-final-plan-reference">
-        이 그림은 과목과 모듈, 트랙의 연결을 설명합니다. 공식 이수 완료 판정이 아닙니다.
+      <EvidenceBand state="official-public-confirmed">
+        이 관계는 {OFFICIAL_CURRICULUM_SOURCE.title}의 현재 공개본 {OFFICIAL_CURRICULUM_SOURCE.currentPage}쪽에서
+        공식 공개 확인했습니다. 개인별 공식 이수 완료 판정이 아닙니다.
       </EvidenceBand>
     </figure>
   );

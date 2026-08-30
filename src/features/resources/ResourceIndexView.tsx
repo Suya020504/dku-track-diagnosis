@@ -83,7 +83,10 @@ export function ResourceIndexView({ section, onSectionChange }: ResourceIndexVie
 
       <footer className="planner-resource-disclaimer">
         <strong>학생용 참고 도구</strong>
-        <span>이 화면은 학교 로고나 공식 시스템을 모사하지 않으며, 최종 이수 판정은 학교와 학과의 공식 확인을 따릅니다.</span>
+        <span>
+          생성한 개념 설명 이미지에는 학교 로고·인장을 사용하지 않았고 공식 학교 이미지가 아닙니다.
+          이 학생 제작 도구는 학교 공식 페이지와 구분됩니다. 최종 이수 판정은 학교와 학과의 공식 확인을 따릅니다.
+        </span>
       </footer>
     </div>
   );

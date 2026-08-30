@@ -107,5 +107,9 @@ function trackRequirementSummary(track: Track): string {
   if (track.rule.type === "major") {
     return `5개 모듈에서 모듈별 ${track.rule.requiredCreditsPerModule}학점 · 합계 ${track.rule.totalTrackCredits}학점`;
   }
-  return `F/H/I 합산 ${track.rule.requiredBaseCreditsTotal}학점, M ${track.rule.convergenceRequirements[0].requiredCredits}학점, N+O ${track.rule.convergenceRequirements[1].requiredCredits}학점 · 합계 ${track.rule.totalTrackCredits}학점`;
+  const baseGroup = track.rule.baseModuleIds.join("/");
+  const convergenceGroups = track.rule.convergenceRequirements
+    .map((requirement) => `${requirement.moduleIds.join("+")} ${requirement.requiredCredits}학점`)
+    .join(" · ");
+  return `${baseGroup} 각각 ${track.rule.requiredCreditsPerBaseModule}학점 이상 · ${baseGroup} 합산 ${track.rule.requiredBaseCreditsTotal}학점 · ${convergenceGroups} · 합계 ${track.rule.totalTrackCredits}학점`;
 }

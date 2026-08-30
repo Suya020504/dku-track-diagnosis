@@ -60,6 +60,10 @@ describe("resource reading routes", () => {
     await mountAt("?view=resources&section=tracks");
 
     for (const track of tracks) expect(document.body.textContent).toContain(track.name);
+    expect(document.body.textContent).toContain("F/H/I 각각 3학점 이상");
+    expect(document.body.textContent).toContain("F/H/I 합산 15학점");
+    expect(document.body.textContent).toContain("M 8학점");
+    expect(document.body.textContent).toContain("N+O 7학점");
     expect(document.querySelector('[data-evidence-state="official-public-confirmed"]')).not.toBeNull();
     expect(document.querySelector('[data-concept-image="course-module-track"]')?.getAttribute("alt"))
       .toBe("여러 과목이 모듈로 묶이고 다섯 갈래 트랙으로 이어지는 개념 설명 이미지");
@@ -77,6 +81,10 @@ describe("resource reading routes", () => {
     expect(document.body.textContent).toContain("과목에서 트랙까지 이렇게 이어져요");
     expect(document.body.textContent).toContain("식품유통경제학");
     expect(document.body.textContent).toContain("필수 과목 참고안: 6과목 · 18학점");
+    expect(document.querySelector('.planner-course-track-figure [data-evidence-state="official-public-confirmed"]'))
+      .not.toBeNull();
+    expect(document.querySelector(".planner-course-track-figure")?.textContent)
+      .toContain("2026학년도 학사종합안내의 현재 공개본 72쪽");
     expect(document.querySelector('[data-concept-image="progress-next-semester"]')?.getAttribute("alt"))
       .toBe("확인한 진행도에서 다음 과목을 고르고 학기 계획으로 이어지는 개념 설명 이미지");
 
@@ -97,6 +105,11 @@ describe("resource reading routes", () => {
     expect(document.body.textContent).toContain("외부 재사용 허가가 확인되기 전까지 앱 안에 사진을 재현하지 않습니다");
     expect(document.body.textContent).toContain("학생이 만든 학업 계획 보조 도구");
     expect(document.querySelector('[data-official-campus-source] img')).toBeNull();
+
+    const disclaimer = document.querySelector(".planner-resource-disclaimer")?.textContent ?? "";
+    expect(disclaimer).toContain("생성한 개념 설명 이미지에는 학교 로고·인장을 사용하지 않았고 공식 학교 이미지가 아닙니다");
+    expect(disclaimer).toContain("이 학생 제작 도구는 학교 공식 페이지와 구분됩니다");
+    expect(disclaimer).not.toContain("이 화면은 학교 로고나 공식 시스템을 모사하지 않으며");
 
     const externalLinks = [...document.querySelectorAll<HTMLAnchorElement>('[data-resource-page="official"] a[target="_blank"]')];
     expect(externalLinks.length).toBeGreaterThanOrEqual(4);

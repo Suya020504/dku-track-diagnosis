@@ -116,3 +116,50 @@ Flow: `tracks` → 인덱스 클릭 `modules` → `curriculum` → `official`, �
 - 교과목 공개 시간표의 현재 재검증 상태가 `blocked-by-public-access`이므로 2026 이력은 미래 개설 보장이 아니다.
 - 390px의 기존 상단 학업 여정 리본은 자체 가로 스크롤 표현을 유지한다. 이번 리소스 본문과 문서 전체에는 가로 overflow가 없고 하단 nav 겹침도 없지만, 리본 자체의 모바일 표현은 shell 소유 범위에서 별도 정리할 수 있다.
 - `.playwright-cli/`와 외부 브라우저 저장소는 무시했고 삭제·커밋하지 않았다.
+
+---
+
+## Fix round 1/5 — Important findings
+
+### 수정 내용
+
+1. **푸드바이오 조건 문구 완전성**
+   - `TrackSystemOverview`의 융합 조건 문구를 `baseModuleIds`, `requiredCreditsPerBaseModule`, `requiredBaseCreditsTotal`, `convergenceRequirements`, `totalTrackCredits`에서 파생하도록 변경했다.
+   - 실제 표시: `F/H/I 각각 3학점 이상 · F/H/I 합산 15학점 · M 8학점 · N+O 7학점 · 합계 30학점`.
+   - 테스트가 `각각 3학점`과 `합산 15학점`을 별도로 고정해 어느 한 조건만 사라져도 실패한다.
+
+2. **과목→모듈→트랙 관계 근거 상태**
+   - `CourseModuleTrackFigure`의 관계 EvidenceBand를 `official-public-confirmed`로 변경했다.
+   - 출처 문구를 `2026학년도 학사종합안내의 현재 공개본 72쪽`에서 공식 공개 확인한 관계라고 명시했다.
+   - 개인별 이수 완료 판정은 아니라는 경계는 유지했다.
+   - 같은 교육과정 페이지의 필수 6과목·18학점 최종안 참고 EvidenceBand는 `provided-final-plan-reference` 그대로 유지했다.
+
+3. **로고 disclaimer 범위**
+   - 광범위한 `이 화면은 학교 로고나 공식 시스템을 모사하지 않는다` 주장을 제거했다.
+   - 생성한 개념 설명 이미지에 학교 로고·인장을 사용하지 않았고 공식 학교 이미지가 아니라는 범위로 한정했다.
+   - 학생 제작 도구와 학교 공식 페이지가 구분되며 최종 판정은 공식 확인을 따른다고 명시했다.
+   - 새 공식 로고·사진·학교 UI 자산은 추가하지 않았다.
+
+### RED / GREEN
+
+- RED: `pnpm.cmd exec vitest run src/features/resources/ResourceIndexView.test.tsx src/features/education/CourseModuleTrackFigure.test.tsx`
+  - 2 files, 5 tests 중 4 failed / 1 passed.
+  - 실패 원인: `각각 3학점` 누락, 관계 도식이 final-plan evidence 상태, 공식 출처 문구 누락, disclaimer 범위 과장.
+- GREEN: 동일 focused command — 2 files / 5 tests passed.
+- Full suite: `pnpm.cmd run test` — 45 files / 526 tests passed.
+- Build: `pnpm.cmd run build` — TypeScript/Vite exit 0, 1,772 modules transformed.
+
+### 브라우저 copy/source smoke
+
+- localhost `http://127.0.0.1:5173/`, Browser runtime이 선택한 Chrome session에서 읽기 전용 확인.
+- `tracks`: 푸드바이오 문구가 `F/H/I 각각 3학점 이상 · F/H/I 합산 15학점 · M 8학점 · N+O 7학점 · 합계 30학점`으로 표시됨.
+- `curriculum`: 관계 도식 evidence state `official-public-confirmed`, figure 내부 final-plan evidence 0개, 페이지 전체 final-plan evidence 1개.
+- 관계 출처: `2026학년도 학사종합안내의 현재 공개본 72쪽` 문구 확인.
+- `official`: 새 disclaimer 정확히 표시, 기존 과장 문구 0개, 공식 캠퍼스 출처 카드 이미지 0개.
+- 확인한 세 경로 모두 browser error/warn log 0; 문서 `scrollWidth=clientWidth`.
+
+### 범위 경계
+
+- 이미지 파일, 외부 링크, fallback, resource routes는 변경하지 않았다.
+- 검토의 두 Minor finding은 이번 loop에서 구현하지 않았고 Task 11/12 ledger에 남긴다.
+- `.playwright-cli/`는 계속 무시하며 삭제·커밋하지 않는다.
