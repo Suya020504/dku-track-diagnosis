@@ -1139,7 +1139,7 @@ function App({ storage }: { storage?: Storage } = {}) {
   );
   const guideItems: GuideIndexItem[] = [
     { id: "start", index: "01", label: "지도 안내", available: true, onSelect: () => navigateAppRoute({ view: "landing" }) },
-    { id: "tracks", index: "02", label: "트랙 가이드·탐색", available: true, onSelect: () => navigateAppRoute({ view: "track-guide", section: "overview" }) },
+    { id: "tracks", index: "02", label: "트랙 가이드", available: true, onSelect: () => navigateAppRoute({ view: "track-guide", section: "overview" }) },
     { id: "diagnosis", index: "03", label: "나의 진단", available: true, onSelect: goToDiagnosis },
     {
       id: "result",
@@ -1379,6 +1379,7 @@ function App({ storage }: { storage?: Storage } = {}) {
           onVideoChange={navigateTrackGuideVideo}
         />
       </main>,
+      [],
     );
   }
 

@@ -6,7 +6,7 @@
 
 [https://dku-track-diagnosis.vercel.app](https://dku-track-diagnosis.vercel.app)
 
-2026-08-31에 검증한 평면 전공 여정 지도 재설계는 로컬 작업트리 기준이며 아직 운영 URL에 배포하지 않았습니다. 아래 이미지는 합성 비개인 QA 상태로 만든 로컬 검증 화면입니다.
+2026-08-31에 검증한 평면 전공 여정 지도 재설계와 2026-09-02 트랙 가이드 리벨런싱은 로컬 브랜치 기준이며 아직 운영 URL에 배포하지 않았습니다. 최신 마감 검증은 [2026-09-02 디자인 리벨런싱·마감 QA](reports/validation/2026-09-02-design-rebalance-qa.md)에서 확인할 수 있습니다. 아래 이미지는 합성 비개인 QA 상태로 만든 로컬 검증 화면입니다.
 
 ![고정형 전공 여정 지도 로컬 검증 첫 화면](docs/assets/2026-08-31-track-guide/01-fixed-landing-desktop.png)
 

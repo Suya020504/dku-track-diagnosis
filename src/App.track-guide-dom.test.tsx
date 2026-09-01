@@ -72,6 +72,10 @@ describe("separate track guide journey", () => {
     expect(document.querySelectorAll("main")).toHaveLength(1);
     expect(document.activeElement).toBe(document.querySelector("h1"));
     expect(document.title).toBe("트랙제란? | 단국대 식품자원경제학과 트랙제 자가진단");
+    expect(document.querySelector('nav[aria-label="학업 여정"]')).toBeNull();
+    const guideLabel = [...document.querySelectorAll<HTMLElement>(".planner-guide-index strong")]
+      .find((candidate) => candidate.textContent?.includes("트랙 가이드"));
+    expect(guideLabel?.textContent).toBe("트랙 가이드");
 
     await click("트랙제의 장점");
     expect(new URLSearchParams(location.search).get("section")).toBe("benefits");
