@@ -61,6 +61,17 @@ afterEach(async () => {
 });
 
 describe("separate track guide journey", () => {
+  it.each(["overview", "benefits", "outcomes", "structure"])(
+    "keeps the full source ledger in the dedicated materials tab, not %s",
+    async (section) => {
+      await mountAt(`/?view=track-guide&section=${section}`);
+      expect(document.querySelector(".planner-track-guide__sources")).toBeNull();
+      await click("공식 영상·자료");
+      expect(document.querySelectorAll(".planner-track-guide__sources")).toHaveLength(1);
+      expect(document.querySelector('a[href="https://cms.dankook.ac.kr/web/ere/-6"]')).not.toBeNull();
+    },
+  );
+
   it("opens from the optional landing guide action and restores one guide section through native history", async () => {
     await mountAt("/");
 
@@ -145,6 +156,7 @@ describe("separate track guide journey", () => {
     expect(document.body.textContent).toContain("5개 트랙");
     expect(document.body.textContent).toContain("15개 모듈");
     expect(document.querySelectorAll("[data-track-guide-track]")).toHaveLength(5);
+    await click("공식 영상·자료");
     expect(document.querySelector('a[href^="https://www.dankook.ac.kr/documents/"]')).not.toBeNull();
     expect(document.querySelector('a[href="https://cms.dankook.ac.kr/web/ere/-6"]')).not.toBeNull();
     expect(document.querySelector('a[href="https://www.youtube.com/@FoodandResourcesEconomics_dku/videos"]')).not.toBeNull();

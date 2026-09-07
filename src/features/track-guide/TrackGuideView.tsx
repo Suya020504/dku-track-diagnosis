@@ -46,31 +46,31 @@ const GUIDE_SECTIONS: readonly {
   {
     id: "overview",
     label: "트랙제란?",
-    title: "과목을 모듈로 묶고, 나만의 전공 방향을 만드는 제도예요",
-    description: "트랙제를 처음 보는 학생도 과목·모듈·트랙의 관계부터 이해할 수 있게 정리했습니다.",
+    title: "트랙제 알아보기",
+    description: "관심 분야에 맞는 과목을 모듈로 묶어 이수하고, 전공 안에서 나의 전문 분야를 정하는 제도예요.",
   },
   {
     id: "benefits",
     label: "트랙제의 장점",
-    title: "왜 트랙을 고르는지, 학생 입장에서 먼저 살펴보세요",
-    description: "공식 구조에서 확인되는 의미와 이 서비스가 돕는 판단을 분리해서 보여드립니다.",
+    title: "트랙을 이수하면 좋은 점",
+    description: "진로에 맞춰 과목을 선택하고, 배운 내용을 하나의 전문 분야로 연결할 수 있어요.",
   },
   {
     id: "outcomes",
     label: "학위·이수 결과",
-    title: "학위명과 트랙 표기는 같은 말이 아니에요",
+    title: "학위와 트랙 이수 기록",
     description: "공식 학위·전공 명칭과 트랙 이수 뒤 남는 기록을 근거별로 나누어 설명합니다.",
   },
   {
     id: "structure",
     label: "5개 트랙 구성",
-    title: "5개 트랙은 서로 다른 모듈 조합으로 구성됩니다",
+    title: "다섯 트랙 비교하기",
     description: "2026학년도 학교 공개본의 트랙·모듈 구성을 한 화면에서 비교합니다.",
   },
   {
     id: "videos",
     label: "공식 영상·자료",
-    title: "학과 공식 영상으로 직접 듣고, 최신 적용은 다시 확인하세요",
+    title: "공식 영상과 자료",
     description: "2024년 공식 설명 영상은 바로 재생하고, 현재 이수 기준은 2026 공개본과 학과 답변을 우선합니다.",
   },
 ] as const;
@@ -110,11 +110,11 @@ export function TrackGuideView({
           <h1 id="track-guide-title" ref={headingRef} tabIndex={-1}>{sectionMeta.title}</h1>
           <p>{sectionMeta.description}</p>
         </div>
-        <dl aria-label="공식 공개본 핵심 수치">
+        {section === "overview" || section === "structure" ? <dl aria-label="공식 공개본 핵심 수치">
           <div><dt>개설</dt><dd>2024</dd></div>
           <div><dt>트랙</dt><dd>5개</dd></div>
           <div><dt>모듈</dt><dd>15개</dd></div>
-        </dl>
+        </dl> : null}
       </header>
 
       <nav className="planner-track-guide__tabs" aria-label="트랙 가이드 목차">
@@ -155,7 +155,7 @@ export function TrackGuideView({
       {section === "structure" ? <StructureSection onStartDiagnosis={onStartDiagnosis} /> : null}
       {section === "videos" ? <VideosSection videoId={videoId} onVideoChange={onVideoChange} /> : null}
 
-      <OfficialSourceLedger />
+      {section === "videos" ? <OfficialSourceLedger /> : null}
     </article>
   );
 }
@@ -195,10 +195,10 @@ function OverviewSection({
         </section>
         <section className="planner-track-guide__interpretation" aria-labelledby="track-guide-service-meaning">
           <span>서비스에서 이렇게 이해해요</span>
-          <h2 id="track-guide-service-meaning">전공 과목을 ‘왜 듣는지’ 연결해 보는 구조</h2>
+          <h2 id="track-guide-service-meaning">내 이수 과목으로 확인해 보세요</h2>
           <p>
-            이 서비스는 트랙을 대신 결정하지 않습니다. 관심 방향과 완료 과목을 따로 확인한 뒤,
-            어떤 모듈을 더 살펴볼지 학생이 판단하도록 돕습니다.
+            들은 과목을 체크하면 트랙별 진행도와 남은 과목을 확인할 수 있어요.
+            관심 분야가 아직 정해지지 않았다면 관심 설문부터 시작해도 됩니다.
           </p>
         </section>
       </div>

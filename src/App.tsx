@@ -31,7 +31,6 @@ import { RESOURCE_SECTION_TITLES, ResourceIndexView } from "./features/resources
 import { TRACK_GUIDE_SECTION_TITLES, TrackGuideView } from "./features/track-guide/TrackGuideView";
 import type { MobileJourneyItem } from "./features/shell/MobileJourneyNav";
 import type { CompassPathItem } from "./features/journey/CompassPathRibbon";
-import { PLANNER_JOURNEY, resolveJourneyView } from "./app/journeyView";
 import {
   calculateDiagnosis,
   getTracks,
@@ -1221,46 +1220,34 @@ function App({ storage }: { storage?: Storage } = {}) {
   const utilityItems: MobileJourneyItem[] = [
     { id: "contact", label: "문의사항", available: true, onSelect: () => navigateAppRoute({ view: "contact" }) },
   ];
-  const currentJourney = resolveJourneyView(shellRoute);
-  const reviewedCourses = Boolean(savedState.profile && savedState.courseInputReviewedAt);
-  const completedJourneyStages = new Set([
-    ...(savedState.interestSurvey?.completedAt || savedState.interestSurvey?.selectedTrackId
-      ? ["interest"]
-      : []),
-    ...(reviewedCourses ? ["courses", "modules"] : []),
-    ...(savedState.profile?.studyPath === "track-major"
-      ? savedState.targetTrackId ? ["track"] : []
-      : reviewedCourses ? ["track"] : []),
-    ...(savedState.graduationPlan ? ["semester"] : []),
-  ]);
-  const journeyItems: CompassPathItem[] = PLANNER_JOURNEY.map((item) => {
-    const available = item.stage !== "semester" || planNavAvailable;
-    const completed = completedJourneyStages.has(item.stage);
-    return {
-      id: item.stage,
-      label: item.label,
-      state: item.index === currentJourney.index
-        ? "current"
-        : completed
-          ? "complete"
-          : item.index > currentJourney.index
-            ? "next"
-            : "pending",
-      completed,
-      available,
-      unavailableReason: available ? undefined : "결과 확인과 목표 트랙 선택 후 열려요.",
-      onSelect: () => {
-        if (item.stage === "interest") startEntryFlow("find-track");
-        if (item.stage === "courses") goToDiagnosis();
-        if (item.stage === "modules") navigateAppRoute({ view: "resources", section: "modules" });
-        if (item.stage === "track") {
-          if (activeView === "result") navigateAppRoute({ view: "result", section: resultSection });
-          else navigateAppRoute({ view: "recommendation", step: "axes" });
-        }
-        if (item.stage === "semester") navigateAppRoute({ view: "plan", step: "setup" });
-      },
-    };
-  });
+  const isProgressComparison = activeView === "recommendation"
+    && recommendationStep === "axes" && recommendationAxis === "progress" && courseResultReady;
+  const inDiagnosisFlow = activeView === "diagnosis" || activeView === "result" || isProgressComparison;
+  const viewingResult = activeView === "result" || isProgressComparison;
+  const journeyItems: CompassPathItem[] = inDiagnosisFlow ? [
+    {
+      id: "profile", label: "이수 유형", available: true,
+      completed: Boolean(savedState.profile),
+      state: activeView === "diagnosis" && diagnosisStep === "profile"
+        ? "current" : savedState.profile ? "complete" : "pending",
+      onSelect: editProfile,
+    },
+    {
+      id: "courses", label: "이수 과목", available: Boolean(savedState.profile),
+      completed: courseResultReady,
+      state: activeView === "diagnosis" && diagnosisStep === "courses"
+        ? "current" : courseResultReady ? "complete" : "next",
+      unavailableReason: "이수 유형을 먼저 선택해 주세요.",
+      onSelect: goToDiagnosis,
+    },
+    {
+      id: "result", label: "진단 결과", available: courseResultReady,
+      completed: false,
+      state: viewingResult ? "current" : "next",
+      unavailableReason: "과목 선택 후 ‘진단 결과 확인’을 눌러 주세요.",
+      onSelect: goToResult,
+    },
+  ] : [];
 
   const hasSavedPlan = Boolean(savedState.graduationPlan);
   const hasStartedLanding = Boolean(
@@ -1294,7 +1281,7 @@ function App({ storage }: { storage?: Storage } = {}) {
   ) {
     return (
       <GuidebookShell
-        serviceView={shellRoute.view}
+        serviceView={isProgressComparison ? "result" : shellRoute.view}
         activeId={guideActiveId}
         mobileActiveId={mobileActiveId}
         currentLabel={currentLabel}

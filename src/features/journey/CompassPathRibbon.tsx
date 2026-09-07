@@ -26,7 +26,7 @@ export function CompassPathRibbon({ items }: { items: readonly CompassPathItem[]
     <nav
       className="planner-compass-path"
       data-path-layout="linear-progress"
-      aria-label="학업 여정"
+      aria-label="자가진단 단계"
     >
       <ol className="planner-compass-path__route">
         {items.map((item) => {

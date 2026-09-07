@@ -4,6 +4,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
+import { createEmptyAppState, STORAGE_KEY_V2 } from "./lib/storage";
 
 let root: Root | undefined;
 
@@ -37,6 +38,42 @@ afterEach(async () => {
 });
 
 describe("resource-only navigation", () => {
+  it("keeps diagnosis steps inside the diagnosis flow and leaves module browsing in the course filter", async () => {
+    localStorage.setItem(STORAGE_KEY_V2, JSON.stringify({
+      ...createEmptyAppState(),
+      profile: {
+        affiliation: "department-student", goal: "check-progress", studyPath: "advanced-major",
+        curriculumRuleVersion: "2026-provided-final-plan", ruleApplicability: "reference-only",
+      },
+      courseSelections: [{ courseId: "b-1", status: "completed" }],
+    }));
+    await mountAt("/?view=diagnosis&step=courses");
+    const nav = document.querySelector('nav[aria-label="자가진단 단계"]');
+    expect(nav).not.toBeNull();
+    expect([...nav!.querySelectorAll("button > strong")].map((node) => node.textContent))
+      .toEqual(["이수 유형", "이수 과목", "진단 결과"]);
+    expect(nav!.querySelector<HTMLButtonElement>('[data-journey-stage="result"] button')?.disabled).toBe(true);
+    await act(async () => document.querySelector<HTMLButtonElement>("#diagnosis-result-action")!.click());
+    expect(new URLSearchParams(location.search).get("view")).toBe("result");
+    expect(document.querySelector('[data-journey-stage="result"] button')?.getAttribute("aria-current"))
+      .toBe("step");
+    await act(async () => document.querySelector<HTMLButtonElement>('[data-journey-stage="courses"] button')!.click());
+    await act(async () => [...document.querySelectorAll<HTMLButtonElement>(".course-ledger-mode button")]
+      .find((node) => node.textContent === "모듈별")!.click());
+    expect(new URLSearchParams(location.search).get("view")).toBe("diagnosis");
+    expect(new URLSearchParams(location.search).get("step")).toBe("courses");
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_V2)!);
+    expect(saved.courseSelections).toEqual([{ courseId: "b-1", status: "completed" }]);
+  });
+
+  it.each(["?view=recommendation&step=survey", "?view=plan&step=setup"])(
+    "does not present optional services as required diagnosis steps: %s",
+    async (query) => {
+      await mountAt(`/${query}`);
+      expect(document.querySelector(".planner-compass-path")).toBeNull();
+    },
+  );
+
   it("uses four local resource tabs without the global academic journey ribbon", async () => {
     await mountAt("/?view=resources&section=modules");
 
