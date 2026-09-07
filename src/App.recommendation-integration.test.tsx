@@ -174,9 +174,9 @@ describe("recommendation route integration", () => {
       name: "empty input",
       state: landingState("empty"),
       resumeState: "empty",
-      title: "처음이어도 괜찮아요",
+      title: "내 트랙 확인하기",
       action: undefined,
-      copy: ["학생 유형과 들은 과목부터 차례로 확인합니다", "자동 저장"],
+      copy: ["학생 유형 → 이수 과목 → 진단 결과", "자동 저장"],
       forbidden: ["저장한 학기 계획이 있어요"],
     },
     {
@@ -227,7 +227,13 @@ describe("recommendation route integration", () => {
   ])("renders the real resume state for $name", ({ state, resumeState, title, action, copy, forbidden }) => {
     const markup = renderApp("", state);
 
-    expect(markup).toContain(`data-resume-state="${resumeState}"`);
+    if (resumeState === "empty") {
+      expect(markup).not.toContain("data-resume-state=");
+      expect(markup).toContain('class="track-home__save-note"');
+      expect(markup).toContain('data-action-priority="primary"');
+    } else {
+      expect(markup).toContain(`data-resume-state="${resumeState}"`);
+    }
     expect(markup).toContain(title);
     if (action) expect(markup).toContain(action);
     copy.forEach((value) => expect(markup).toContain(value));
@@ -289,7 +295,8 @@ describe("recommendation route integration", () => {
 
     expect(markup).toContain('data-recommendation-panel="progress"');
     expect(markup).toContain("현재 완료 과목에서 가까운 트랙");
-    expect(markup).toContain("함께 비교할 네 후보");
+    expect(markup.match(/data-track-id=/g)).toHaveLength(5);
+    expect(markup).toContain("위 후보에서 진단할 트랙을 선택해 주세요");
     expect(markup).toMatch(/planner-shell-primary-nav[\s\S]*?aria-current="page"[^>]*>진단 결과<\/button>/);
     expect(markup).toContain("현재 · 트랙 비교");
     expect(markup).not.toContain('data-result-panel="current"');
@@ -434,7 +441,8 @@ describe("recommendation route integration", () => {
 
     const markup = renderApp("?view=result&step=result", state);
 
-    expect(markup).toContain("현재 상태에서 이어지는 수강 후보를 살펴봐요");
+    expect(markup).toContain('class="dku-results-forward no-print"');
+    expect(markup).toContain("입력한 완료 과목을 기준으로 계산했어요");
     expect(markup).toContain("다음 수강 후보 확인");
     expect(markup).not.toContain("세 기준별 트랙 비교 보기");
     expect(markup).not.toContain("1순위");
@@ -456,7 +464,9 @@ describe("recommendation route integration", () => {
     for (const search of ["?view=plan&step=setup", "?view=experiment"]) {
       const markup = renderApp(search, state);
       expect(markup).toContain("졸업 계획 전에 입력 상태를 확인해 주세요");
-      expect(markup).toContain("추천 비교로 돌아가기");
+      expect(markup).toContain('data-plan-readiness="profile" data-state="ready"');
+      expect(markup).toContain('data-plan-readiness="courses" data-state="pending"');
+      expect(markup).toContain('data-plan-readiness="target" data-state="not-applicable"');
       expect(markup).toContain("프로필·이수 과목 확인");
       expect(markup).not.toContain("전략 기준 트랙");
       expect(markup).not.toContain("가장 가까운 트랙");

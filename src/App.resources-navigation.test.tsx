@@ -74,17 +74,22 @@ describe("resource-only navigation", () => {
     },
   );
 
-  it("uses four local resource tabs without the global academic journey ribbon", async () => {
+  it("uses five local resource tabs including verified timetable without the global academic journey ribbon", async () => {
     await mountAt("/?view=resources&section=modules");
 
     expect(document.querySelector('nav[aria-label="학업 여정"]')).toBeNull();
     expect(document.querySelector(".planner-shell-layout")?.classList.contains("is-immersive")).toBe(true);
     expect(document.querySelector('nav[aria-label="주요 서비스"]')).not.toBeNull();
     expect(document.querySelector(".planner-guide-index")).toBeNull();
-    expect(document.querySelectorAll("[data-resource-section]")).toHaveLength(4);
+    expect([...document.querySelectorAll("[data-resource-section]")].map(node => node.getAttribute("data-resource-section")))
+      .toEqual(["tracks", "modules", "curriculum", "timetable", "official"]);
     expect(document.querySelector('[data-resource-section="modules"]')?.getAttribute("aria-current"))
       .toBe("page");
     expect(document.title).toBe("모듈·과목 자료 | 단국대 식품자원경제학과 트랙제 자가진단");
+    await act(async () => document.querySelector<HTMLButtonElement>('[data-resource-section="timetable"]')!.click());
+    expect(new URLSearchParams(location.search).get("section")).toBe("timetable");
+    expect(document.querySelector('[data-resource-section="timetable"]')?.getAttribute("aria-current")).toBe("page");
+    expect(document.querySelector(".dku-resource-page")).not.toBeNull();
   });
 
   it("keeps the contact utility in the same top-navigation shell without an academic ribbon", async () => {

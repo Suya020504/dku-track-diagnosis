@@ -269,12 +269,18 @@ describe("App recommendation browser interactions", () => {
     expect(params.get("step")).toBe("schedule");
   });
 
-  it("marks the optional plan step ready when a saved plan exists", async () => {
+  it("keeps the saved plan separate from the three required diagnosis steps and resumes it", async () => {
     saveState(savedLandingPlanState());
     await mountApp();
 
-    expect(document.querySelector('[data-step-state="ready"]')).not.toBeNull();
+    expect([...document.querySelectorAll(".track-home__steps strong")].map(node => node.textContent))
+      .toEqual(["이수 유형", "이수 과목", "진단 결과"]);
+    expect(document.querySelectorAll(".track-home__steps [data-step-state='complete']")).toHaveLength(3);
+    expect(document.querySelector(".track-home__optional")?.textContent).toContain("필수 진단에 포함되지 않아요");
     expect(document.querySelector('[data-resume-state="saved-plan"]')).not.toBeNull();
+    await click("저장한 계획 보기");
+    expect(new URLSearchParams(location.search).get("view")).toBe("plan");
+    expect(new URLSearchParams(location.search).get("step")).toBe("schedule");
   });
 
   it("keeps contact reachable and names it as the current utility screen", async () => {
@@ -299,7 +305,7 @@ describe("App recommendation browser interactions", () => {
     const heading = document.querySelector<HTMLHeadingElement>("#contact-page-title");
     expect(document.querySelectorAll("main")).toHaveLength(1);
     expect(document.querySelectorAll("h1")).toHaveLength(1);
-    expect(heading?.textContent).toBe("개인 프로젝트 운영자에게 문의하기");
+    expect(heading?.textContent).toBe("무엇을 확인하고 싶으세요?");
     expect(heading?.tabIndex).toBe(-1);
     expect(document.activeElement).toBe(heading);
     expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
