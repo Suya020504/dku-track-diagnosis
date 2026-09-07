@@ -87,6 +87,7 @@ export function CourseLedgerRow({
           {showTerm ? <small>{formatSemester(course.recommendedSemester)}</small> : null}
         </span>
 
+        <span className="dku-check-row-meta">
         <span className="dku-check-credit">{course.credits}학점</span>
         {status ? (
           <span className={`dku-check-status dku-check-status--${status}`}>
@@ -94,6 +95,7 @@ export function CourseLedgerRow({
             {statusLabel}
           </span>
         ) : <span className="sr-only">미선택</span>}
+        </span>
       </label>
 
       <details className="dku-check-row-details">

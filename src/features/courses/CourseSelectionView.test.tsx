@@ -201,4 +201,13 @@ describe("CourseSelectionView", () => {
     await act(async () => button("지금 저장").click());
     expect(onSave).toHaveBeenCalledTimes(1);
   });
+  it("keeps applied filters visible and can clear them without reopening the filter panel", async () => {
+    await renderHarness();
+    await act(async () => button("2학년").click());
+    const applied = document.querySelector('[aria-label="적용 중인 필터"]');
+    expect(applied?.textContent).toContain("2학년");
+    await act(async () => button("필터 초기화").click());
+    expect(document.querySelectorAll(".dku-check-row")).toHaveLength(45);
+    expect(document.querySelector('[aria-label="적용 중인 필터"]')).toBeNull();
+  });
 });

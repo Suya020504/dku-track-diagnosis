@@ -120,6 +120,15 @@ export function CourseLedgerFilters({
           </div>
         </div>
       </details>
+      {gradeFilter !== "all" || semesterFilter !== "all" ? (
+        <div className="dku-check-applied-filters" aria-label="적용 중인 필터">
+          <span>{gradeLabel} · {semesterLabel}</span>
+          <button type="button" onClick={() => {
+            onGradeFilterChange("all");
+            onSemesterFilterChange("all");
+          }}>필터 초기화</button>
+        </div>
+      ) : null}
     </section>
   );
 }

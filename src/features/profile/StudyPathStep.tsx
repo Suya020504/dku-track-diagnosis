@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, ListChecks } from "lucide-react";
-import type { RefObject } from "react";
+import { useState, type RefObject } from "react";
 import { TrackGlyph } from "../../components/TrackGlyph";
 import { tracks } from "../../data/curriculumData";
 import type {
@@ -70,6 +70,7 @@ export function StudyPathStep({
   onBack: () => void;
   onComplete: () => void;
 }) {
+  const [entryYearOpen, setEntryYearOpen] = useState(!entryYearValid);
   if (!affiliation) {
     return (
       <section className="dku-profile-step" data-profile-region="path">
@@ -196,8 +197,8 @@ export function StudyPathStep({
         </details>
       ) : null}
 
-      <details className="dku-profile-options" open={!entryYearValid || undefined}>
-      <summary>입학연도 입력 (선택){entryYear ? ` · ${entryYear}년` : ""}</summary>
+      <details className="dku-profile-options" open={entryYearOpen} onToggle={(event) => setEntryYearOpen(event.currentTarget.open)}>
+      <summary>입학연도 입력 (선택){entryYear ? ` · ${entryYear}년` : ""}{!entryYearValid ? " · 2000~2026년으로 수정 필요" : ""}</summary>
       <label className="dku-profile-year">
         <span>입학연도 <small>(선택)</small></span>
         <input

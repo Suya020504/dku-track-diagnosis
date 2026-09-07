@@ -151,6 +151,9 @@ describe("ProfileFlow", () => {
     expect(complete.disabled).toBe(true);
     expect(year.getAttribute("aria-invalid")).toBe("true");
     expect(document.body.textContent).toContain("2000년부터 2026년 사이");
+    const disclosure = year.closest("details");
+    expect(disclosure?.open).toBe(true);
+    year.focus();
 
     await act(async () => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(year, "2000");
@@ -158,6 +161,8 @@ describe("ProfileFlow", () => {
     });
     expect(complete.disabled).toBe(false);
     expect(year.getAttribute("aria-invalid")).toBeNull();
+    expect(disclosure?.open).toBe(true);
+    expect(document.activeElement).toBe(year);
 
     await act(async () => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(year, "2027");
@@ -165,6 +170,12 @@ describe("ProfileFlow", () => {
     });
     expect(complete.disabled).toBe(true);
     expect(year.getAttribute("aria-invalid")).toBe("true");
+    await act(async () => disclosure?.querySelector("summary")?.click());
+    expect(disclosure?.open).toBe(false);
+    expect(disclosure?.querySelector("summary")?.textContent).toContain("2000~2026년으로 수정 필요");
+    await act(async () => disclosure?.querySelector("summary")?.click());
+    expect(disclosure?.open).toBe(true);
+    expect(year.value).toBe("2027");
   });
 
   it("lets a progress-checking track-major continue without choosing a target and clear an old target", async () => {
@@ -210,6 +221,12 @@ describe("ProfileFlow", () => {
     });
 
     expect(document.body.textContent).not.toContain("아직 정하지 않았어요 · 5개 트랙 비교");
+    expect(document.querySelector<HTMLButtonElement>(".study-path-complete")?.disabled).toBe(true);
+    const targetDisclosure = document.querySelector('input[name="targetTrackId"]')?.closest("details");
+    expect(targetDisclosure?.open).toBe(true);
+    await act(async () => targetDisclosure?.querySelector("summary")?.click());
+    expect(targetDisclosure?.open).toBe(false);
+    expect(targetDisclosure?.querySelector("summary")?.textContent).toContain("(필수)");
     expect(document.querySelector<HTMLButtonElement>(".study-path-complete")?.disabled).toBe(true);
   });
 });
