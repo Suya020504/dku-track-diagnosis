@@ -73,8 +73,8 @@
 
 - [x] npm test; npx tsc --noEmit; npm run build; git diff --check를 실행한다. 53파일·598테스트, 타입·빌드 통과.
 - [x] 출처·구형 URL·임시 파일 공개 범위를 검토하고 README/CHANGELOG에 변경·검증·한계를 적는다.
-- [ ] 관련 파일만 스테이징하고 커밋·현재 브랜치 push.
-- [ ] 기존 Vercel 프로젝트에 배포하고 production URL에서 홈·가이드·진단 여정을 재검수한다.
+- [x] 관련 파일만 스테이징하고 커밋·현재 브랜치 push. 구현 dc93697.
+- [x] 기존 Vercel 프로젝트에 배포하고 production URL에서 홈·가이드·진단 여정을 재검수한다. dpl_5tzC1ZafacXuR9hMqaZBfyXcyLGJ Ready, https://dku-track-diagnosis.vercel.app . 공개 모바일 과목 체크→새로고침→결과, 430/1920 안내 화면 확인.
 
 ## Self-review
 
