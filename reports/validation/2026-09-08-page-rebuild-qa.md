@@ -27,7 +27,7 @@
 
 공식 학과 교육과정 47과목과 2026-2 천안 실제 시간표 37분반을 반영했습니다. 트랙 구성 49과목, 직접 진단 전공 45과목과 범위를 구분합니다. [자료 출처와 대조 방법](../../docs/research/2026-09-08-official-curriculum-timetable.md)을 별도로 기록했습니다.
 
-코드 검토와 로컬·배포용 빌드 검증은 통과했습니다. 운영 반영 결과는 아래 배포 항목에 별도로 기록합니다.
+코드 검토, 로컬·배포용 빌드, 공개 운영 주소의 재검증까지 통과했습니다. 보호된 배포 전용 주소의 브라우저 검증은 인증 화면 때문에 차단된 것으로 구분했습니다.
 
 ## Verification
 
@@ -89,11 +89,23 @@
 
 ### 배포
 
-RELEASE_PENDING — 코드 검토 승인과 로컬 게이트 통과 후 GitHub·Vercel 반영 및 공개 URL 재검수 결과를 추가합니다. 보호된 배포 전용 주소의 브라우저 검사와 공개 운영 주소 검사는 구분합니다.
+| 항목 | 결과 |
+| --- | --- |
+| GitHub | `codex/track-service-expansion` 브랜치에 제품 변경과 문서 푸시. 배포 소스 `c4494a8`, 제품 코드 `3e31b8b` |
+| 운영 주소 | https://dku-track-diagnosis.vercel.app |
+| 배포 | `dpl_HbVcZpZ6CSh3mfVGsyzows5vWjKq`, production, Ready, 약 40초 |
+| 배포 전용 주소 | https://dku-track-diagnosis-h7kwv12r8-startlink0504.vercel.app |
+| 보호된 주소의 브라우저 | BLOCKED · Vercel 로그인 화면. 보호를 끄거나 로그인하지 않았음 |
+| 보호된 주소의 인증 CLI 검사 | PASS · 앱 HTML, JS/CSS, 후보 분리 필드, 시간표 과목코드, 새 홈·시간표 화면 코드 확인 후 운영으로 승격 |
+| 배포용 로컬 미리보기 | PASS · http://127.0.0.1:4238 에서 핵심 흐름·17개 복구·12개 후보 확인 검사 |
+| 공개 운영 브라우저 | PASS · 23개 화면×9개 크기 207개 조합, 핵심 흐름·17개 복구·12개 후보 확인 검사. 앱 콘솔 오류·경고와 오버레이 0 |
+| 배포 로그 확인 | 해당 배포 최근 1시간 error 조회 결과 없음. 상시 감시나 별도 로그 수집기는 설정하지 않음 |
+
+원격 빌드는 Vite 7.3.6으로 완료됐습니다. 설치 단계에서 esbuild의 allowScripts 검토 안내가 있었으나 빌드는 성공했고, 별도 권한 설정이나 의존성 변경은 하지 않았습니다. 로컬 Vite 7.3.5 빌드와 원격 JS 해시가 달라 직접 공개 주소의 실행 결과를 재검증했습니다. CSS는 `index-BgW089aA.css`로 일치합니다.
 
 ### 로컬 증거 위치
 
-저장소의 무시된 `.superpowers/sdd/2026-09-08-page-by-page-rebuild/` 폴더에 `final-local-matrix.json`, `final-local-{페이지}-{폭}.png`, `core-flow-local.json`, `edge-local.json`, `pending-target-local.json`, 빌드 미리보기 결과, 합성 PDF 화면, 계획 인쇄 PDF·렌더 이미지와 페이지별 리뷰 기록을 보관했습니다. 개인 브라우저의 기록이 아닌 독립 검수 환경을 사용했습니다. 이 임시 증거 폴더와 사용자 원본은 삭제하지 않았습니다.
+저장소의 무시된 `.superpowers/sdd/2026-09-08-page-by-page-rebuild/` 폴더에 `final-local-matrix.json`, `final-local-{페이지}-{폭}.png`, `core-flow-local.json`, `edge-local.json`, `pending-target-local.json`, 빌드 미리보기 결과, 같은 이름의 `production` 결과, 합성 PDF 화면, 계획 인쇄 PDF·렌더 이미지와 페이지별 리뷰 기록을 보관했습니다. 개인 브라우저의 기록이 아닌 독립 검수 환경을 사용했습니다. 이 임시 증거 폴더와 사용자 원본은 삭제하지 않았습니다.
 
 ## Remaining Risk
 
