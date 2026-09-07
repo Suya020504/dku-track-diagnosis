@@ -268,6 +268,28 @@ export function startEntryFlowTransition(
   };
 }
 
+export function chooseRecommendedTrackTransition(
+  current: SavedAppStateV2,
+  trackId: TrackId,
+): { state: SavedAppStateV2; route: AppRoute } {
+  const context = { ...current.profile, ...current.profileDraft };
+  return {
+    state: {
+      ...applyPlanningSourceChange(current, { targetTrackId: trackId }),
+      profileDraft: {
+        ...context,
+        curriculumRuleVersion: "2026-provided-final-plan",
+        ruleApplicability: "reference-only",
+        goal: "check-progress",
+        studyPath: "track-major",
+      },
+    },
+    route: context?.affiliation
+      ? { view: "diagnosis", step: "profile", profileStage: "path" }
+      : { view: "diagnosis", step: "profile", profileStage: "affiliation" },
+  };
+}
+
 export function chooseInterestTrackTransition(
   current: SavedAppStateV2,
   trackId: TrackId,
@@ -1017,6 +1039,13 @@ function App({ storage }: { storage?: Storage } = {}) {
     navigateAppRoute(transition.route);
   }
 
+  function chooseRecommendedTrack(trackId: TrackId) {
+    const transition = chooseRecommendedTrackTransition(savedState, trackId);
+    setStorageError(!saveAppState(transition.state, appStorage));
+    setSavedState(transition.state);
+    navigateAppRoute(transition.route);
+  }
+
   function openCourseInputFromAxes() {
     if (!savedState.profile) {
       startEntryFlow("check-progress");
@@ -1384,6 +1413,7 @@ function App({ storage }: { storage?: Storage } = {}) {
             onAxisChange={(axis) => navigateAppRoute({ view: "recommendation", step: "axes", axis })}
             onOpenInterestSurvey={() => startEntryFlow("find-track")}
             onOpenCourseInput={openCourseInputFromAxes}
+            onChooseTrack={chooseRecommendedTrack}
             onOpenGraduationPlan={() => navigateAppRoute({ view: "plan", step: "setup" })}
           />
         )}

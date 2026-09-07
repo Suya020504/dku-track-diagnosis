@@ -226,14 +226,14 @@ describe("App recommendation browser interactions", () => {
     expect(params.get("step")).toBe("survey");
     expect(params.get("audience")).toBe("department-student");
     expect(document.querySelector("[data-survey-audience-step]")).toBeNull();
-    expect(document.querySelector(".interest-result")).not.toBeNull();
+    expect(document.querySelector(".dku-survey-results")).not.toBeNull();
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_V2) ?? "null") as SavedAppStateV2;
     expect(saved.interestSurvey).toEqual(previous.interestSurvey);
 
     await click("기준별 비교");
     await click("관심 설문");
     expect(new URLSearchParams(location.search).get("audience")).toBe("department-student");
-    expect(document.querySelector(".interest-result")).not.toBeNull();
+    expect(document.querySelector(".dku-survey-results")).not.toBeNull();
   });
 
   it("opens progress comparison and recovers planner setup through target choice", async () => {
@@ -312,7 +312,7 @@ describe("App recommendation browser interactions", () => {
     const params = new URLSearchParams(location.search);
     expect(params.get("view")).toBe("track-guide");
     expect(params.get("section")).toBe("overview");
-    expect(document.querySelector(".planner-track-guide")).not.toBeNull();
+    expect(document.querySelector(".dku-guide-page")).not.toBeNull();
     expect(document.querySelector(".planner-overview")).toBeNull();
     expect(document.querySelector(".dku-hero")).toBeNull();
     expect(document.querySelectorAll("main")).toHaveLength(1);
@@ -368,15 +368,13 @@ describe("App recommendation browser interactions", () => {
     expect(document.querySelectorAll('img[src="/dku-logo.png"]')).toHaveLength(1);
   });
 
-  it("uses the academic progress strip as real guarded route navigation", async () => {
+  it("keeps optional survey outside required progress and safely opens diagnosis", async () => {
     saveState(createEmptyAppState());
     history.replaceState({}, "", "/?view=recommendation&step=survey");
     await mountApp();
 
-    const courses = [...document.querySelectorAll<HTMLButtonElement>(".planner-compass-path button")]
-      .find((candidate) => candidate.textContent?.includes("과목"));
-    expect(courses).not.toBeUndefined();
-    await act(async () => courses?.click());
+    expect(document.querySelector(".planner-compass-path")).toBeNull();
+    await act(async () => button("설문을 건너뛰고 자가진단 바로가기").click());
 
     const params = new URLSearchParams(location.search);
     expect(params.get("view")).toBe("diagnosis");

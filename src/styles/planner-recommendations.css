@@ -1,490 +1,78 @@
-/* Independent recommendation pages: a controlled guidebook edge index, never an aggregate grid. */
-.planner-app .recommendation-axes {
-  width: min(100%, 1040px);
-  margin-inline: auto;
-  padding: 0 0 32px;
-  color: var(--planner-ink);
-}
-
-.planner-app .recommendation-axes-hero {
-  display: block;
-  margin: 0 0 18px;
-  padding: clamp(20px, 4vw, 36px);
-  border: 0;
-  border-inline-start: 6px solid var(--planner-dankook-blue);
-  background: var(--planner-sky-sheet);
-}
-
-.planner-app .recommendation-axes-hero > span,
-.planner-app .recommendation-axis-index__title,
-.planner-app .axis-result-page__heading > span,
-.planner-app .axis-lead-candidate > header > span,
-.planner-app .axis-secondary-candidates > header > span,
-.planner-app .axis-secondary-candidates article > header > span,
-.planner-app .axis-unavailable > span,
-.planner-app .recommendation-axis-summary > div > span {
-  color: var(--planner-dankook-blue);
-  font-size: 0.72rem;
-  font-weight: 850;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.planner-app .recommendation-axes h1 {
-  max-width: 760px;
-  margin: 8px 0 10px;
-  color: var(--planner-ink);
-  font-size: clamp(1.75rem, 4vw, 2.55rem);
-  line-height: 1.2;
-  letter-spacing: -0.035em;
-}
-
-.planner-app .recommendation-axes h1:focus-visible {
-  outline: 2px solid var(--planner-department-green);
-  outline-offset: 6px;
-  box-shadow: none;
-}
-
-.planner-app .recommendation-axes-hero > p {
-  max-width: 780px;
-  margin: 0;
-  color: var(--planner-ink-muted);
-  line-height: 1.7;
-}
-
-.planner-app .recommendation-index-layout {
-  display: grid;
-  grid-template-columns: minmax(190px, 228px) minmax(0, 1fr);
-  gap: clamp(20px, 3vw, 34px);
-  align-items: start;
-}
-
-.planner-app .recommendation-axis-index {
-  position: sticky;
-  top: 20px;
-  min-width: 0;
-  border-inline-end: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 28%, transparent);
-}
-
-.planner-app .recommendation-axis-index__title {
-  display: block;
-  margin: 0 0 10px;
-  padding-inline: 10px 16px;
-}
-
-.planner-app .recommendation-axis-destinations {
-  display: grid;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.planner-app .recommendation-axis-index button {
-  position: relative;
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  gap: 10px;
-  align-items: start;
-  width: 100%;
-  min-width: 0;
-  min-height: 72px;
-  padding: 13px 16px 13px 10px;
-  border: 0;
-  border-block-end: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 15%, transparent);
-  border-radius: 0;
-  background: transparent;
-  color: var(--planner-ink);
-  font: inherit;
-  text-align: start;
-  cursor: pointer;
-}
-
-.planner-app .recommendation-axis-destinations li:first-child button {
-  border-block-start: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 15%, transparent);
-}
-
-.planner-app .recommendation-axis-index button > span:first-child {
-  color: var(--planner-dankook-blue);
-  font-size: 0.72rem;
-  font-weight: 850;
-  letter-spacing: 0.08em;
-}
-
-.planner-app .recommendation-axis-index button > span:last-child {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
-}
-
-.planner-app .recommendation-axis-index button strong {
-  font-size: 0.92rem;
-  line-height: 1.35;
-}
-
-.planner-app .recommendation-axis-index button small {
-  color: var(--planner-ink-muted);
-  font-size: 0.72rem;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-}
-
-.planner-app .recommendation-axis-index button[aria-current="page"] {
-  background: var(--planner-mint-sheet);
-  color: var(--planner-department-green);
-}
-
-.planner-app .recommendation-axis-index button[aria-current="page"]::after {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-end: -1px;
-  width: 5px;
-  background: var(--planner-department-green);
-  content: "";
-}
-
-.planner-app .recommendation-active-axis,
-.planner-app .axis-result-page {
-  min-width: 0;
-}
-
-.planner-app .axis-result-page__heading {
-  padding: 8px 0 20px;
-  border-block-end: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 24%, transparent);
-}
-
-.planner-app .axis-result-page__heading h2 {
-  margin: 7px 0 8px;
-  color: var(--planner-ink);
-  font-size: clamp(1.45rem, 3vw, 2rem);
-  line-height: 1.25;
-  letter-spacing: -0.025em;
-}
-
-.planner-app .axis-result-page__heading p {
-  max-width: 720px;
-  margin: 0;
-  color: var(--planner-ink-muted);
-  line-height: 1.65;
-}
-
-.planner-app .axis-hypothesis-band {
-  margin-block: 16px 0;
-}
-
-.planner-app .axis-hypothesis-band .planner-evidence-band {
-  border-inline-start-color: var(--planner-wheat);
-  background: color-mix(in srgb, var(--planner-wheat) 25%, var(--planner-paper));
-}
-
-.planner-app .axis-hypothesis-band .planner-evidence-band strong {
-  color: #70541b;
-}
-
-.planner-app .axis-candidate-guide {
-  display: grid;
-  gap: 18px;
-  margin-block-start: 18px;
-}
-
-.planner-app .axis-lead-candidate {
-  padding: clamp(18px, 3vw, 28px);
-  border: 0;
-  border-inline-start: 6px solid var(--planner-department-green);
-  background: var(--planner-mint-sheet);
-}
-
-.planner-app .axis-lead-candidate > header,
-.planner-app .axis-secondary-candidates article > header {
-  display: grid;
-  gap: 7px;
-}
-
-.planner-app .axis-lead-candidate > header > div,
-.planner-app .axis-secondary-candidates article > header > div {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  min-width: 0;
-}
-
-.planner-app .axis-lead-candidate .planner-track-glyph {
-  width: 1.85rem;
-  height: 1.85rem;
-}
-
-.planner-app .axis-lead-candidate h3,
-.planner-app .axis-secondary-candidates h4 {
-  margin: 0;
-  color: var(--planner-ink);
-  overflow-wrap: anywhere;
-}
-
-.planner-app .axis-lead-candidate h3 {
-  font-size: clamp(1.35rem, 3vw, 1.85rem);
-}
-
-.planner-app .axis-reason-list {
-  display: grid;
-  gap: 8px;
-  margin: 16px 0 0;
-  padding: 14px 0 0 20px;
-  border-block-start: 1px solid color-mix(in srgb, var(--planner-department-green) 24%, transparent);
-  color: var(--planner-ink);
-  line-height: 1.65;
-}
-
-.planner-app .axis-evidence-list {
-  display: grid;
-  margin: 16px 0 0;
-  border-block-start: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 20%, transparent);
-}
-
-.planner-app .axis-evidence-list > div {
-  display: grid;
-  grid-template-columns: minmax(74px, 0.28fr) minmax(0, 1fr);
-  gap: 12px;
-  padding: 10px 0;
-  border-block-end: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 14%, transparent);
-}
-
-.planner-app .axis-evidence-list dt,
-.planner-app .axis-evidence-list dd {
-  margin: 0;
-}
-
-.planner-app .axis-evidence-list dt {
-  color: var(--planner-ink-muted);
-  font-size: 0.78rem;
-  font-weight: 750;
-}
-
-.planner-app .axis-evidence-list dd {
-  color: var(--planner-ink);
-  font-weight: 720;
-  line-height: 1.55;
-  overflow-wrap: anywhere;
-}
-
-.planner-app .axis-secondary-candidates {
-  border-block-start: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 26%, transparent);
-}
-
-.planner-app .axis-secondary-candidates > header {
-  padding: 18px 0 8px;
-}
-
-.planner-app .axis-secondary-candidates > header h3 {
-  margin: 5px 0 0;
-  color: var(--planner-ink);
-  font-size: 1.05rem;
-}
-
-.planner-app .axis-secondary-candidates ol {
-  display: grid;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.planner-app .axis-secondary-candidates li {
-  border-block-end: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 18%, transparent);
-}
-
-.planner-app .axis-secondary-candidates article {
-  padding: 16px 0 18px;
-}
-
-.planner-app .axis-secondary-candidates article > header > span {
-  color: var(--planner-department-green);
-  letter-spacing: 0.06em;
-  text-transform: none;
-}
-
-.planner-app .axis-secondary-candidates h4 {
-  font-size: 1.05rem;
-}
-
-.planner-app .axis-secondary-candidates .axis-reason-list,
-.planner-app .axis-secondary-candidates .axis-evidence-list {
-  margin-block-start: 10px;
-}
-
-.planner-app .axis-tie-note {
-  margin: 0;
-  padding: 12px 14px;
-  border-inline-start: 5px solid var(--planner-wheat);
-  background: color-mix(in srgb, var(--planner-wheat) 22%, var(--planner-paper));
-  color: #694d14;
-  line-height: 1.55;
-}
-
-.planner-app .axis-unavailable {
-  min-height: 0;
-  margin-block-start: 18px;
-  padding: clamp(18px, 3vw, 28px);
-  border: 0;
-  border-inline-start: 6px solid var(--planner-dankook-blue);
-  background: var(--planner-sky-sheet);
-}
-
-.planner-app .axis-unavailable h3 {
-  margin: 6px 0 8px;
-  color: var(--planner-ink);
-  font-size: 1.2rem;
-}
-
-.planner-app .axis-unavailable p {
-  max-width: 620px;
-  margin: 0;
-  color: var(--planner-ink-muted);
-  line-height: 1.65;
-}
-
-.planner-app .axis-unavailable button {
-  min-height: 44px;
-  margin-block-start: 18px;
-  padding: 9px 15px;
-  border: 1px solid var(--planner-department-green);
-  border-radius: var(--planner-control-radius);
-  background: var(--planner-paper);
-  color: var(--planner-department-green);
-  font: inherit;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.planner-app .recommendation-axis-summary {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: start;
-  margin-block-start: 24px;
-  padding: 16px 0;
-  border-block: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 25%, transparent);
-  color: var(--planner-dankook-blue);
-}
-
-.planner-app .recommendation-axis-summary > div:nth-child(2) {
-  display: grid;
-  gap: 5px;
-}
-
-.planner-app .recommendation-axis-summary strong {
-  color: var(--planner-ink);
-  line-height: 1.5;
-}
-
-.planner-app .recommendation-axis-summary p {
-  margin: 0;
-  color: var(--planner-ink-muted);
-  font-size: 0.86rem;
-  line-height: 1.55;
-}
-
-.planner-app .recommendation-axis-summary--aligned {
-  border-block-color: color-mix(in srgb, var(--planner-department-green) 38%, transparent);
-  color: var(--planner-department-green);
-}
-
-.planner-app .recommendation-axis-summary__tracks {
-  display: grid;
-  gap: 6px;
-  min-width: 150px;
-}
-
-.planner-app .recommendation-axis-summary__tracks span {
-  display: flex;
-  gap: 7px;
-  align-items: center;
-  padding-block-end: 5px;
-  border-block-end: 1px solid color-mix(in srgb, var(--planner-department-green) 30%, transparent);
-  color: var(--planner-department-green);
-  font-size: 0.78rem;
-  font-weight: 800;
-}
-
-.planner-app .recommendation-axes-footer {
-  display: flex;
-  gap: 9px;
-  align-items: flex-start;
-  margin: 24px 0 0;
-  padding: 14px 0 0;
-  border: 0;
-  border-block-start: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 18%, transparent);
-  border-radius: 0;
-  background: transparent;
-  color: var(--planner-ink-muted);
-  line-height: 1.55;
-}
-
-@media (max-width: 760px) {
-  .planner-app .recommendation-axes {
-    width: 100%;
-    padding: 0 0 24px;
-  }
-
-  .planner-app .recommendation-axes-hero {
-    margin-block-end: 14px;
-  }
-
-  .planner-app .recommendation-index-layout {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 20px;
-  }
-
-  .planner-app .recommendation-axis-index {
-    position: static;
-    border-inline-end: 0;
-  }
-
-  .planner-app .recommendation-axis-index__title {
-    padding-inline: 0;
-  }
-
-  .planner-app .recommendation-axis-index button {
-    min-height: 58px;
-    padding: 10px 12px 10px 8px;
-  }
-
-  .planner-app .recommendation-axis-index button[aria-current="page"]::after {
-    inset-block: 0;
-    inset-inline: 0 auto;
-  }
-
-  .planner-app .recommendation-axis-index button[aria-current="page"] {
-    padding-inline-start: 14px;
-  }
-
-  .planner-app .recommendation-axis-summary {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .planner-app .recommendation-axis-summary__tracks {
-    grid-column: 2;
-    min-width: 0;
-  }
-}
-
-@media (max-width: 420px) {
-  .planner-app .recommendation-axes-hero {
-    padding: 18px 16px;
-  }
-
-  .planner-app .recommendation-axes h1 {
-    font-size: 1.68rem;
-  }
-
-  .planner-app .recommendation-axis-index button small {
-    font-size: 0.68rem;
-  }
-
-  .planner-app .axis-evidence-list > div {
-    grid-template-columns: 64px minmax(0, 1fr);
-    gap: 8px;
-  }
-
-  .planner-app .axis-lead-candidate,
-  .planner-app .axis-unavailable {
-    padding: 18px 15px;
-  }
-}
+/* New isolated question and comparison compositions. */
+.planner-app :is(.dku-survey-page,.dku-comparison-page){width:min(100%,1280px);margin:auto;padding:24px 0 48px;color:#163c40;line-height:1.65}
+.planner-app :is(.dku-survey-page,.dku-comparison-page) h1{font-size:clamp(25px,3vw,40px);line-height:1.3;letter-spacing:-.04em;margin:8px 0 12px;word-break:keep-all;overflow-wrap:break-word}
+.planner-app :is(.dku-survey-page,.dku-comparison-page) h2{font-size:24px;line-height:1.4;margin:8px 0}
+.planner-app :is(.dku-survey-page,.dku-comparison-page) button{min-height:44px;white-space:normal;word-break:keep-all;overflow-wrap:break-word;cursor:pointer}
+.planner-app :is(.dku-survey-page,.dku-comparison-page) button:disabled{opacity:.5;cursor:not-allowed}
+.planner-app :is(.dku-survey-page,.dku-comparison-page) :is(button,input):focus-visible{outline:3px solid #207bd0;outline-offset:4px}
+.planner-app :is(.ds-survey-head,.ds-audience-heading,.ds-result-hero,.dc-axes-hero){padding:12px 0 24px;border-bottom:1px solid #c4dcd8;margin-bottom:24px}
+.planner-app .ds-survey-head{display:flex;justify-content:space-between;gap:24px}
+.planner-app .ds-save-state{display:flex;align-items:center;gap:8px;flex-shrink:0;font-size:13px;align-self:flex-start;padding:8px 12px;background:#e2f4ee;border-radius:24px}
+.planner-app .ds-question-workspace{display:grid;grid-template-columns:250px minmax(0,1fr);gap:28px;align-items:start}
+.planner-app .ds-audience-context{display:flex;flex-direction:column;gap:16px;padding:26px;background:#e3f2ed;border-radius:18px}
+.planner-app .ds-audience-context>span:not(.ds-step-label){font-size:23px;font-weight:750;word-break:keep-all}
+.planner-app .ds-step-label{font-size:12px;color:#456d67}
+.planner-app .ds-audience-context button{border:0;background:transparent;padding:8px 0;display:flex;align-items:center;gap:8px;text-align:left;color:#176552}
+.planner-app .ds-question-panel{padding:30px;border:1px solid #c4dcd8;border-radius:18px;background:#fff;min-width:0}
+.planner-app .ds-progress-row{display:flex;justify-content:space-between;gap:12px;margin-bottom:10px}
+.planner-app .ds-question-panel progress{width:100%;height:6px;accent-color:#08745b;margin-bottom:32px}
+.planner-app .ds-question-card{border:0;padding:0;margin:0;min-width:0}
+.planner-app .ds-question-card legend{font-size:clamp(22px,2.3vw,30px);font-weight:750;line-height:1.55;word-break:keep-all;margin-bottom:28px}
+.planner-app .ds-planner-scale{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.planner-app .ds-planner-scale label{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid #b8cfcd;border-radius:12px;min-height:132px;padding:15px 8px;cursor:pointer;text-align:center}
+.planner-app .ds-planner-scale label.selected{background:#e4f6ed;border:2px solid #08745b}
+.planner-app .ds-planner-scale input{position:absolute;top:10px;left:10px;accent-color:#08745b}
+.planner-app .ds-planner-scale label>span{font-size:26px;font-weight:750}
+.planner-app .ds-planner-scale small{font-size:14px;word-break:keep-all}
+.planner-app .ds-question-card>p{font-size:13px;color:#53706d;margin:22px 0}
+.planner-app .ds-question-actions{display:flex;justify-content:space-between;gap:16px;padding-top:20px;border-top:1px solid #dbe6e3}
+.planner-app .dku-survey-page .primary-button,.planner-app .dc-confirm-choice{background:#08745b;color:#fff;border:0;border-radius:8px;padding:14px 24px;min-height:50px}
+.planner-app .ds-question-actions .primary-button{min-width:180px;justify-content:center}
+.planner-app .ds-skip-button,.planner-app .dc-text-button{display:flex;align-items:center;gap:8px;margin:22px 0 0;background:transparent;border:0;color:#456763;padding:10px 0}
+.planner-app .ds-audience-heading{display:flex;gap:20px;align-items:center}
+.planner-app .ds-audience-options{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.planner-app .ds-audience-option{display:flex;align-items:center;gap:20px;text-align:left;background:#f3faf7;border:1px solid #b8d9ce;border-radius:16px;padding:30px;color:#164e42}
+.planner-app .ds-audience-option>span:nth-child(2){display:grid;gap:10px;flex:1}
+.planner-app .ds-audience-option strong{font-size:25px;word-break:keep-all}
+.planner-app .ds-audience-option b{font-weight:450}
+.planner-app .ds-audience-note{font-size:14px;margin-top:24px}
+.planner-app .dc-axis-index__title{font-size:13px}
+.planner-app .dc-axis-destinations{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;list-style:none;padding:0;margin:10px 0 28px}
+.planner-app .dc-axis-destinations button{display:flex;gap:12px;width:100%;height:100%;text-align:left;padding:18px;border:1px solid #bcd5d0;border-radius:10px;background:#fff;color:#28514a}
+.planner-app .dc-axis-destinations button.active{background:#e2f3ec;border-color:#08745b;box-shadow:inset 0 -3px #08745b}
+.planner-app .dc-axis-destinations button>span:last-child{display:grid;gap:6px}
+.planner-app .dc-axis-destinations strong{font-size:19px}
+.planner-app .dc-axis-destinations small{font-size:13px;line-height:1.6}
+.planner-app .dc-result-page__heading{margin-bottom:20px}
+.planner-app .dc-result-page__heading>span{color:#08745b;font-size:13px}
+.planner-app .dc-hypothesis-band{margin-bottom:16px}
+.planner-app .dc-ledger-caption{display:flex;justify-content:space-between;padding:12px 0;gap:16px}
+.planner-app .dc-ledger-caption>span{font-size:13px}
+.planner-app .dc-ledger-rows{list-style:none;padding:0;margin:0;border:1px solid #bdd6d0;border-radius:14px;overflow:hidden}
+.planner-app .dc-track-row{display:grid;grid-template-columns:minmax(230px,.8fr) minmax(0,2fr);gap:28px;padding:22px 26px;background:#fff;border-bottom:1px solid #d8e5e1}
+.planner-app .dc-track-row--lead{background:#eaf7f1}
+.planner-app .dc-track-row header>span{font-size:12px;color:#52766c}
+.planner-app .dc-track-row h3{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:21px;line-height:1.5;word-break:keep-all}
+.planner-app .dc-evidence-list{display:grid;grid-template-columns:1fr 1fr 1.8fr;gap:20px;margin:0}
+.planner-app .dc-evidence-list dt{font-size:12px;color:#52766c}
+.planner-app .dc-evidence-list dd{margin:6px 0 0;word-break:keep-all}
+.planner-app .dc-reason-list{margin:8px 0;padding-left:20px}
+.planner-app .dc-tie-note{font-size:14px}
+.planner-app .dc-axis-summary{display:flex;align-items:flex-start;gap:14px;margin:20px 0;padding:18px;background:#f0f5f3;font-size:14px}
+.planner-app .dc-axis-summary>svg{flex-shrink:0}
+.planner-app .dc-axis-summary strong{display:block}.planner-app .dc-axis-summary__tracks{display:none}
+.planner-app .dc-choice-workspace{border-top:2px solid #17715c;margin-top:32px;padding-top:24px}
+.planner-app .dc-track-options{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:20px 0}
+.planner-app .dc-track-options button{display:flex;align-items:center;gap:8px;text-align:left;border:1px solid #bfd6ce;border-radius:10px;padding:16px;background:#fff;color:#194f43;font-weight:700;min-width:0}
+.planner-app .dc-track-options button[aria-pressed=true]{background:#e1f3ea;border:2px solid #08745b}
+.planner-app .dc-track-options svg{flex-shrink:0}
+.planner-app .dc-axes-footer{display:flex;gap:10px;font-size:13px;margin-top:28px}
+.planner-app .dc-unavailable{padding:32px;background:#eaf4f0;border-radius:14px}.planner-app .dc-unavailable button{background:#08745b;color:#fff;border:0;border-radius:8px;padding:12px 20px}
+.planner-app .dc-storage-error{color:#8d3924;background:#fff0e6;padding:16px}
+.planner-app .ds-result-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(250px,1fr);gap:28px}
+.planner-app .ds-result-list ol{padding:0;list-style:none;display:grid;gap:14px}.planner-app .ds-result-list article{border:1px solid #c3dace;border-radius:12px;padding:22px;background:#fff}.planner-app .ds-result-list .selected article{background:#e7f5ed;border-color:#08745b}
+.planner-app .ds-result-title-row,.planner-app .ds-result-title-row>div{display:flex;align-items:center;gap:10px}.planner-app .ds-result-title-row{justify-content:space-between;font-size:21px;word-break:keep-all}.planner-app .ds-result-title-row small{display:block;font-size:12px}
+.planner-app .ds-score-bar{height:6px;background:#e4eae7;margin:16px 0}.planner-app .ds-score-bar>span{display:block;height:100%;background:#08745b}
+.planner-app .ds-result-list article button{background:#fff;color:#096149;border:1px solid #8fbca9;padding:8px 16px;border-radius:8px}.planner-app .ds-choice-summary{background:#e6f2ec;padding:24px;align-self:start;border-radius:12px}.planner-app .ds-choice-summary h2{display:flex;align-items:center;gap:10px;word-break:keep-all}.planner-app .ds-result-actions{display:flex;gap:16px;flex-wrap:wrap}
+@media(max-width:1000px){.planner-app .ds-question-workspace{grid-template-columns:200px minmax(0,1fr);gap:18px}.planner-app .ds-question-panel{padding:22px}.planner-app .ds-survey-head{display:block}.planner-app .ds-save-state{width:fit-content;margin-top:14px}.planner-app .dc-track-options{grid-template-columns:repeat(2,minmax(0,1fr))}.planner-app .dc-track-row{grid-template-columns:210px minmax(0,1fr);gap:20px}.planner-app .dc-evidence-list{grid-template-columns:1fr 1fr}.planner-app .dc-evidence-list>div:last-child{grid-column:1/-1}}
+@media(max-width:640px){.planner-app :is(.dku-survey-page,.dku-comparison-page){padding:12px 0 30px}.planner-app .ds-question-workspace,.planner-app .ds-audience-options,.planner-app .ds-result-grid{grid-template-columns:1fr}.planner-app .ds-audience-context{padding:18px;gap:8px}.planner-app .ds-audience-context p{margin:0}.planner-app .ds-audience-context>span:not(.ds-step-label){font-size:20px}.planner-app .ds-question-panel{padding:20px 16px}.planner-app .ds-planner-scale{grid-template-columns:1fr;gap:8px}.planner-app .ds-planner-scale label{flex-direction:row;justify-content:flex-start;min-height:52px;padding:10px 16px;gap:18px}.planner-app .ds-planner-scale input{position:static}.planner-app .ds-planner-scale label>span{font-size:19px}.planner-app .ds-planner-scale small{font-size:16px}.planner-app .ds-question-actions .primary-button{min-width:130px}.planner-app .ds-audience-option{padding:22px 16px;gap:12px}.planner-app .ds-audience-option strong{font-size:22px}.planner-app .dc-axis-destinations{grid-template-columns:1fr;gap:8px}.planner-app .dc-axis-destinations button{padding:12px 16px}.planner-app .dc-axis-destinations button>span:last-child{gap:2px}.planner-app .dc-track-row{grid-template-columns:1fr;gap:12px;padding:20px}.planner-app .dc-track-row h3{font-size:22px}.planner-app .dc-track-options{grid-template-columns:1fr}.planner-app .dc-confirm-choice{width:100%}.planner-app .dc-ledger-caption{flex-direction:column;gap:2px}.planner-app .ds-result-title-row{align-items:flex-start}.planner-app .ds-result-actions{flex-direction:column}.planner-app .ds-result-actions .primary-button{width:100%}}

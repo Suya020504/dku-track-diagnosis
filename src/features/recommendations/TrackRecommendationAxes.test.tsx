@@ -103,6 +103,20 @@ function renderAxes(
 }
 
 describe("TrackRecommendationAxes", () => {
+  it("lets a student select one of five tracks then explicitly open diagnosis confirmation", async () => {
+    const onChooseTrack = vi.fn();
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    await act(async () => root.render(<TrackRecommendationAxes axes={differingAxes} courseInputReady activeAxis="progress" {...callbacks} onChooseTrack={onChooseTrack} />));
+    const options = [...container.querySelectorAll<HTMLButtonElement>(".dc-track-options button")];
+    expect(options).toHaveLength(5);
+    expect(container.querySelector<HTMLButtonElement>(".dc-confirm-choice")?.disabled).toBe(true);
+    await act(async () => options.find((button) => button.textContent?.includes("경제학"))?.click());
+    expect(onChooseTrack).not.toHaveBeenCalled();
+    await act(async () => container.querySelector<HTMLButtonElement>(".dc-confirm-choice")?.click());
+    expect(onChooseTrack).toHaveBeenCalledWith("economics");
+    await act(async () => root.unmount());
+  });
   it("renders three URL page destinations and one normally labelled active section", () => {
     const markup = renderAxes("progress");
 
@@ -122,7 +136,7 @@ describe("TrackRecommendationAxes", () => {
     expect(markup).not.toContain("91%");
   });
 
-  it("shows the lead and only two secondary interest candidates without presenting a combined winner", () => {
+  it("shows every available interest candidate without presenting a combined winner", () => {
     const markup = renderAxes("interest");
 
     expect(markup).toContain('data-lead-track="food-marketing"');
@@ -130,7 +144,7 @@ describe("TrackRecommendationAxes", () => {
     expect(markup).toContain("선두와 가까운 후보");
     expect(markup).toContain("자료 분석");
     expect(markup).toContain("유통 흐름");
-    expect(markup).not.toContain("융합 산업");
+    expect(markup).toContain("융합 산업");
     expect(markup).not.toContain("전체 1순위");
     expect(markup).not.toContain("종합 순위");
     expect(markup).not.toContain("91%");
@@ -154,7 +168,7 @@ describe("TrackRecommendationAxes", () => {
     expect(markup).toContain("정규학기 계획 가능");
     expect(markup).toContain("계획에 못 담은 과목 0개");
     expect(markup).toContain("트랙형전공으로 전환한다고 가정한 비교");
-    expect(markup).toContain("axis-hypothesis-band");
+    expect(markup).toContain("dc-hypothesis-band");
     expect(markup).toContain("planner-evidence-band");
   });
 
@@ -246,7 +260,7 @@ describe("TrackRecommendationAxes", () => {
     const markup = renderAxes("interest", tiedAxes);
 
     expect(markup).toContain("선두가 같은 후보: 푸드마케팅 · 경제학 · 농식품유통 · 푸드바이오경제");
-    expect(markup).not.toContain("융합 산업");
+    expect(markup).toContain("융합 산업");
   });
 
   it("keeps every URL destination in the standard tab order and activates by button click", async () => {

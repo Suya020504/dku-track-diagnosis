@@ -38,12 +38,12 @@ export function SurveyAudienceStep({
 }) {
   return (
     <main
-      className="interest-survey survey-audience-step"
+      className="dku-survey-page dku-survey-entry"
       data-survey-audience-step
       aria-labelledby="survey-audience-title"
     >
-      <header className="survey-audience-step__heading">
-        <div className="survey-audience-step__icon"><UsersRound aria-hidden="true" /></div>
+      <header className="ds-audience-heading">
+        <div className="ds-audience-icon"><UsersRound aria-hidden="true" /></div>
         <div>
           <span>관심 트랙 추천 · 1단계</span>
           <h1 id="survey-audience-title" ref={headingRef} tabIndex={-1}>
@@ -54,22 +54,22 @@ export function SurveyAudienceStep({
       </header>
 
       {storageError ? (
-        <p className="recommendation-storage-error" role="alert">
+        <p className="dc-storage-error" role="alert">
           <AlertTriangle aria-hidden="true" size={18} />
           저장하지 못했어요. 현재 화면을 닫기 전에 선택 내용을 확인해 주세요.
         </p>
       ) : null}
 
-      <section className="survey-audience-step__options" aria-label="설문 대상 선택">
+      <section className="ds-audience-options" aria-label="설문 대상 선택">
         {audienceOptions.map(({ value, title, description, detail, Icon }) => (
           <button
-            className="survey-audience-step__option planner-focusable"
+            className="ds-audience-option planner-focusable"
             data-survey-audience={value}
             type="button"
             key={value}
             onClick={() => onSelect(value)}
           >
-            <span className="survey-audience-step__option-icon"><Icon aria-hidden="true" /></span>
+            <span className="ds-audience-option-icon"><Icon aria-hidden="true" /></span>
             <span>
               <strong>{title}</strong>
               <b>{description}</b>
@@ -80,11 +80,11 @@ export function SurveyAudienceStep({
         ))}
       </section>
 
-      <p className="survey-audience-step__note">
+      <p className="ds-audience-note">
         소속을 바꾸면 관심 설문 답변만 새로 시작하며, 입력한 과목과 저장한 진단·계획은 유지됩니다.
       </p>
       {onSkip ? (
-        <button className="interest-skip-button" type="button" onClick={onSkip}>
+        <button className="ds-skip-button" type="button" onClick={onSkip}>
           설문을 건너뛰고 자가진단 바로가기
           <ArrowRight aria-hidden="true" size={17} />
         </button>

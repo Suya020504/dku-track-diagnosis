@@ -115,11 +115,11 @@ export function InterestSurvey({
 
     return (
       <main
-        className="interest-survey interest-result"
+        className="dku-survey-page dku-survey-results"
         data-survey-audience={audience}
         aria-labelledby="interest-result-title"
       >
-        <header className="interest-result-hero">
+        <header className="ds-result-hero">
           <div>
             <span>관심 적합도 결과</span>
             {comparison.isCloseMatch ? (
@@ -145,15 +145,15 @@ export function InterestSurvey({
         </header>
 
         {storageError && (
-          <p className="recommendation-storage-error" role="alert">
+          <p className="dc-storage-error" role="alert">
             <AlertTriangle aria-hidden="true" size={18} />
             저장하지 못했어요. 현재 화면을 닫거나 새로고침하면 답변이 사라질 수 있습니다.
           </p>
         )}
 
-        <section className="interest-result-grid" aria-label="관심 트랙 비교 결과">
-          <div className="interest-result-list">
-            <div className="interest-result-section-head">
+        <section className="ds-result-grid" aria-label="관심 트랙 비교 결과">
+          <div className="ds-result-list">
+            <div className="ds-result-section-head">
               <span>관심 기준 안에서 비교</span>
               <h2>상위 관심 트랙을 직접 골라 주세요</h2>
             </div>
@@ -165,7 +165,7 @@ export function InterestSurvey({
                 return (
                   <li className={selected ? "selected" : ""} key={result.trackId}>
                     <article>
-                      <div className="interest-result-title-row">
+                      <div className="ds-result-title-row">
                         <div>
                           <TrackGlyph trackId={result.trackId} />
                           <strong>{result.trackName}</strong>
@@ -176,7 +176,7 @@ export function InterestSurvey({
                         </span>
                       </div>
                       <div
-                        className="interest-score-bar"
+                        className="ds-score-bar"
                         role="img"
                         aria-label={`${result.trackName} 관심 점수 ${result.score}%`}
                       >
@@ -197,7 +197,7 @@ export function InterestSurvey({
               })}
             </ol>
             <button
-              className="recommendation-text-button"
+              className="dc-text-button"
               type="button"
               onClick={() => setShowAllResults((current) => !current)}
             >
@@ -205,7 +205,7 @@ export function InterestSurvey({
             </button>
           </div>
 
-          <aside className="interest-choice-summary">
+          <aside className="ds-choice-summary">
             {selectedResult ? (
               <>
                 <span>내가 고른 방향</span>
@@ -228,10 +228,10 @@ export function InterestSurvey({
           </aside>
         </section>
 
-        <p className="interest-result-note">
+        <p className="ds-result-note">
           관심 점수는 흥미 방향을 보여주는 참고 결과이며, 현재 이수 가능도나 졸업 계획과는 별도 기준입니다.
         </p>
-        <div className="interest-result-actions">
+        <div className="ds-result-actions">
           <button
             className="primary-button"
             type="button"
@@ -255,11 +255,11 @@ export function InterestSurvey({
 
   return (
     <main
-      className="interest-survey"
+      className="dku-survey-page"
       data-survey-audience={audience}
       aria-labelledby="interest-survey-title"
     >
-      <header className="interest-survey-head">
+      <header className="ds-survey-head">
         <div>
           <span>{audience === "department-student" ? "전공 안에서 관심 트랙 찾기" : "내 전공과 연결할 트랙 찾기"}</span>
           <h1 id="interest-survey-title" ref={headingRef} tabIndex={-1}>
@@ -269,7 +269,7 @@ export function InterestSurvey({
           </h1>
           <p>한 화면에 한 문항씩, 지금의 생각과 가장 가까운 답을 선택하면 됩니다.</p>
         </div>
-        <div className={storageError ? "interest-save-state error" : "interest-save-state"} role="status">
+        <div className={storageError ? "ds-save-state error" : "ds-save-state"} role="status">
           {storageError
             ? <AlertTriangle aria-hidden="true" size={17} />
             : <Save aria-hidden="true" size={17} />}
@@ -277,24 +277,28 @@ export function InterestSurvey({
         </div>
       </header>
 
-      <div className="interest-audience-context">
+      <div className="ds-question-workspace">
+      <aside className="ds-audience-context">
+        <span className="ds-step-label">소속 확인 → 관심 질문 → 결과 탐색</span>
         <span>{audience === "department-student" ? "식품자원경제학과 학생" : "타 학과 학생"}</span>
+        <p>점수에 맞추려 하지 않아도 괜찮아요. 지금 관심이 가는 활동을 생각해 주세요.</p>
         <button type="button" onClick={() => onAudienceChange(
           audience === "department-student" ? "external-student" : "department-student",
         )}>
           소속 바꾸기
         </button>
-      </div>
+        <button type="button" onClick={restartSurvey}><RotateCcw size={17} aria-hidden="true" />처음부터 다시 답하기</button>
+      </aside>
 
       {storageError && (
-        <p className="recommendation-storage-error" role="alert">
+        <p className="dc-storage-error" role="alert">
           <AlertTriangle aria-hidden="true" size={18} />
           저장하지 못했어요. 현재 화면을 닫기 전에 답변을 확인해 주세요.
         </p>
       )}
 
-      <section className="interest-question-panel">
-        <div className="interest-progress-row">
+      <section className="ds-question-panel">
+        <div className="ds-progress-row">
           <strong>{currentIndex + 1} / {interestSurveyQuestions.length}</strong>
           <span>{answeredCount}개 답변 완료</span>
         </div>
@@ -304,9 +308,9 @@ export function InterestSurvey({
           max={interestSurveyQuestions.length}
         />
 
-        <fieldset className="interest-question-card" aria-describedby="interest-scale-hint">
+        <fieldset className="ds-question-card" aria-describedby="interest-scale-hint">
           <legend>{currentQuestion.statement}</legend>
-          <div className="interest-planner-scale">
+          <div className="ds-planner-scale">
             {answerOptions.map((option) => {
               const selected = selectedAnswer === option.value;
               return (
@@ -330,7 +334,7 @@ export function InterestSurvey({
           <p id="interest-scale-hint">방향키로 선택지를 이동할 수 있어요. 정답은 없습니다.</p>
         </fieldset>
 
-        <div className="interest-question-actions">
+        <div className="ds-question-actions">
           <button
             className="icon-button"
             type="button"
@@ -363,8 +367,9 @@ export function InterestSurvey({
           )}
         </div>
       </section>
+      </div>
 
-      <button className="interest-skip-button" type="button" onClick={onSkipToDiagnosis}>
+      <button className="ds-skip-button" type="button" onClick={onSkipToDiagnosis}>
         설문을 건너뛰고 자가진단 바로가기
         <ArrowRight aria-hidden="true" size={17} />
       </button>

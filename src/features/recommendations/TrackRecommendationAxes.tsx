@@ -1,4 +1,4 @@
-import type { ReactNode, RefObject } from "react";
+import { useState, type ReactNode, type RefObject } from "react";
 import { CheckCircle2, Heart, SlidersHorizontal } from "lucide-react";
 import { TrackGlyph } from "../../components/TrackGlyph";
 import { tracks } from "../../data/curriculumData";
@@ -25,6 +25,7 @@ export type TrackRecommendationAxesProps = {
   onOpenInterestSurvey: () => void;
   onOpenCourseInput: () => void;
   onOpenGraduationPlan: () => void;
+  onChooseTrack?: (trackId: TrackId) => void;
 };
 
 const AXIS_PAGES: ReadonlyArray<{
@@ -68,8 +69,8 @@ function CandidateCollection<T extends { trackId: TrackId }>({
   relationLabel,
   renderEvidence,
   leaderTieTrackIds,
-  secondaryLimit = 2,
-  secondaryTitle = "함께 비교할 두 후보",
+  secondaryLimit = 4,
+  secondaryTitle = "함께 비교할 네 후보",
 }: {
   candidates: T[];
   relationLabel: (candidate: T, index: number) => string;
@@ -83,45 +84,25 @@ function CandidateCollection<T extends { trackId: TrackId }>({
   if (!lead) return null;
 
   return (
-    <div className="axis-candidate-guide">
-      <article className="axis-lead-candidate" data-lead-track={lead.trackId}>
-        <header>
-          <span>{relationLabel(lead, 0)}</span>
-          <div>
-            <TrackGlyph trackId={lead.trackId} decorative />
-            <h3>{trackName(lead.trackId)}</h3>
-          </div>
-        </header>
-        {renderEvidence(lead)}
-      </article>
-
-      {secondary.length > 0 ? (
-        <section className="axis-secondary-candidates" aria-labelledby="axis-secondary-candidates-title">
-          <header>
-            <span>다른 방향도 확인</span>
-            <h3 id="axis-secondary-candidates-title">{secondaryTitle}</h3>
-          </header>
-          <ol>
-            {secondary.map((candidate, index) => (
-              <li key={candidate.trackId}>
-                <article data-track-id={candidate.trackId}>
-                  <header>
-                    <span>{relationLabel(candidate, index + 1)}</span>
-                    <div>
-                      <TrackGlyph trackId={candidate.trackId} decorative />
-                      <h4>{trackName(candidate.trackId)}</h4>
-                    </div>
-                  </header>
-                  {renderEvidence(candidate)}
-                </article>
-              </li>
-            ))}
-          </ol>
-        </section>
-      ) : null}
+    <div className="dc-comparison-ledger">
+      <div className="dc-ledger-caption"><strong>트랙별 근거 비교</strong><span>{secondaryTitle}</span></div>
+      <ol className="dc-ledger-rows">
+        {[lead, ...secondary].map((candidate, index) => (
+          <li key={candidate.trackId}>
+            <article className={index === 0 ? "dc-track-row dc-track-row--lead" : "dc-track-row"}
+              data-track-id={candidate.trackId} data-lead-track={index === 0 ? candidate.trackId : undefined}>
+              <header>
+                <span>{relationLabel(candidate, index)}</span>
+                <h3><TrackGlyph trackId={candidate.trackId} decorative />{trackName(candidate.trackId)}</h3>
+              </header>
+              <div className="dc-track-evidence">{renderEvidence(candidate)}</div>
+            </article>
+          </li>
+        ))}
+      </ol>
 
       {leaderTieTrackIds.length > 1 ? (
-        <p className="axis-tie-note">
+        <p className="dc-tie-note">
           동점 후보 사이에는 우열을 정하지 않습니다. 선두가 같은 후보: {leaderTieTrackIds.map(trackName).join(" · ")}
         </p>
       ) : null}
@@ -147,7 +128,7 @@ function InterestCandidates({ candidates }: { candidates: InterestAxisCandidate[
         return "비교 후보";
       }}
       renderEvidence={(candidate) => (
-        <ul className="axis-reason-list">
+        <ul className="dc-reason-list">
           {candidate.reasons.map((reason) => <li key={reason}>{reason}</li>)}
         </ul>
       )}
@@ -173,7 +154,7 @@ function ProgressCandidates({ candidates }: { candidates: ProgressAxisCandidate[
         return index === 0 ? "기준 안의 선두 후보" : "비교 후보";
       }}
       renderEvidence={(candidate) => (
-        <dl className="axis-evidence-list">
+        <dl className="dc-evidence-list">
           <div><dt>과목</dt><dd>추가로 확인할 과목 {candidate.missingCourseCount}개</dd></div>
           <div><dt>학점</dt><dd>부족 {candidate.missingCredits}학점</dd></div>
           <div>
@@ -206,7 +187,7 @@ function PlanCandidates({ candidates }: { candidates: PlanAxisCandidate[] }) {
         return index === 0 ? "기준 안의 선두 후보" : "비교 후보";
       }}
       renderEvidence={(candidate) => (
-        <dl className="axis-evidence-list">
+        <dl className="dc-evidence-list">
           <div><dt>배치 상태</dt><dd>{planStatusLabels[candidate.status]}</dd></div>
           <div><dt>미배치</dt><dd>계획에 못 담은 과목 {candidate.unplacedCourseCount}개</dd></div>
           <div><dt>학기</dt><dd>추가로 필요한 학기 {candidate.neededExtraTerms}개</dd></div>
@@ -226,7 +207,9 @@ export function TrackRecommendationAxes({
   onOpenInterestSurvey,
   onOpenCourseInput,
   onOpenGraduationPlan,
+  onChooseTrack,
 }: TrackRecommendationAxesProps) {
+  const [chosenTrack, setChosenTrack] = useState<TrackId>();
   const interest = axes?.interest?.length ? axes.interest : undefined;
   const progress = courseInputReady && axes?.progress.length ? axes.progress : undefined;
   const plan = axes?.plan?.length ? axes.plan : undefined;
@@ -245,7 +228,7 @@ export function TrackRecommendationAxes({
         <AxisResultCard
           id="interest"
           title="관심이 향하는 트랙"
-          description="열 개 문항의 관심 방향만 반영합니다. 완료 과목이나 졸업 계획은 이 순서에 섞지 않습니다."
+          description="소속별 관심 질문의 답변만 반영합니다. 완료 과목이나 졸업 계획은 이 순서에 섞지 않습니다."
           unavailable={interest ? undefined : {
             message: "관심 설문을 완료하면 흥미 방향에 가까운 트랙을 비교할 수 있어요.",
             actionLabel: "관심 설문 시작하기",
@@ -293,32 +276,32 @@ export function TrackRecommendationAxes({
   }
 
   return (
-    <main className="recommendation-axes" aria-labelledby="recommendation-axes-title">
-      <header className="recommendation-axes-hero">
-        <span>INDEPENDENT TRACK INDEX</span>
+    <main className="dku-comparison-page" aria-labelledby="recommendation-axes-title">
+      <header className="dc-axes-hero">
+        <span>TRACK COMPARISON · 트랙 비교</span>
         <h1 id="recommendation-axes-title" ref={headingRef} tabIndex={-1}>
-          세 기준은 합치지 않고, 한 장씩 비교해요
+          나에게 맞는 방향, 다섯 트랙을 비교해요
         </h1>
         <p>관심, 현재 완료 과목, 졸업 전 계획은 서로 다른 질문입니다. 기준을 바꾸며 각 페이지의 실제 근거를 확인해 주세요.</p>
       </header>
 
       {storageError ? (
-        <p className="recommendation-storage-error" role="alert">
+        <p className="dc-storage-error" role="alert">
           답변을 이 브라우저에 저장하지 못했습니다. 새로고침하면 답변이 사라질 수 있습니다.
         </p>
       ) : null}
 
-      <div className="recommendation-index-layout">
-        <nav className="recommendation-axis-index" aria-label="독립 추천 기준">
-          <span className="recommendation-axis-index__title">비교 기준</span>
-          <ol className="recommendation-axis-destinations">
+      <div className="dc-index-layout">
+        <nav className="dc-axis-index" aria-label="독립 추천 기준">
+          <span className="dc-axis-index__title">비교 기준</span>
+          <ol className="dc-axis-destinations">
             {AXIS_PAGES.map((page) => {
               const selected = activeAxis === page.id;
               const leader = axisLeaders[page.id];
               return (
                 <li key={page.id}>
                   <button
-                    className={selected ? "active planner-focusable" : "planner-focusable"}
+                    className={selected ? "active dc-focusable" : "dc-focusable"}
                     id={`recommendation-axis-destination-${page.id}`}
                     data-axis-destination={page.id}
                     type="button"
@@ -337,11 +320,11 @@ export function TrackRecommendationAxes({
           </ol>
         </nav>
 
-        <div className="recommendation-active-axis">
+        <div className="dc-active-axis">
           {renderActiveAxis()}
 
           {aligned ? (
-            <aside className="recommendation-axis-summary recommendation-axis-summary--aligned" aria-label="두 기준 이상에서 같은 선두 후보">
+            <aside className="dc-axis-summary recommendation-axis-summary--aligned" aria-label="두 기준 이상에서 같은 선두 후보">
               <CheckCircle2 aria-hidden="true" size={22} />
               <div>
                 <span>기준 비교 요약</span>
@@ -350,7 +333,7 @@ export function TrackRecommendationAxes({
                 </strong>
                 <p>기준이 겹친다는 뜻일 뿐 세 축을 합친 결론이 아닙니다. 각 축의 근거를 다시 확인해 주세요.</p>
               </div>
-              <div className="recommendation-axis-summary__tracks">
+              <div className="dc-axis-summary__tracks">
                 {alignedLeaderTrackIds.map((trackId) => (
                   <span key={trackId}>
                     <TrackGlyph trackId={trackId} decorative />
@@ -360,7 +343,7 @@ export function TrackRecommendationAxes({
               </div>
             </aside>
           ) : (
-            <aside className="recommendation-axis-summary recommendation-axis-summary--diverged" aria-label="기준마다 다른 선두 후보">
+            <aside className="dc-axis-summary recommendation-axis-summary--diverged" aria-label="기준마다 다른 선두 후보">
               <SlidersHorizontal aria-hidden="true" size={22} />
               <div>
                 <span>기준 비교 요약</span>
@@ -372,7 +355,31 @@ export function TrackRecommendationAxes({
         </div>
       </div>
 
-      <footer className="recommendation-axes-footer">
+      {onChooseTrack ? (
+        <section className="dc-choice-workspace" aria-labelledby="dc-choice-title">
+          <div>
+            <span>내가 결정하는 다음 단계</span>
+            <h2 id="dc-choice-title">진단할 트랙을 골라 주세요</h2>
+            <p>선택 후 소속과 이수 유형을 확인합니다. 기존 이수 유형은 아직 변경되지 않습니다.</p>
+          </div>
+          <div className="dc-track-options" role="group" aria-label="진단할 트랙 선택">
+            {tracks.map((track) => (
+              <button type="button" key={track.id} aria-pressed={chosenTrack === track.id}
+                onClick={() => setChosenTrack(track.id)}>
+                <TrackGlyph trackId={track.id} decorative />
+                <span>{track.name}</span>
+                {chosenTrack === track.id ? <CheckCircle2 size={18} aria-hidden="true" /> : null}
+              </button>
+            ))}
+          </div>
+          <button className="dc-confirm-choice" type="button" disabled={!chosenTrack}
+            onClick={() => chosenTrack && onChooseTrack(chosenTrack)}>
+            {chosenTrack ? `${trackName(chosenTrack)} 트랙으로 진단 조건 확인` : "진단할 트랙을 먼저 선택해 주세요"}
+          </button>
+        </section>
+      ) : null}
+
+      <footer className="dc-axes-footer">
         <Heart aria-hidden="true" size={19} />
         <span>어느 축도 최종 결정을 대신하지 않습니다. 트랙 상세와 공식 안내도 함께 확인하세요.</span>
       </footer>
