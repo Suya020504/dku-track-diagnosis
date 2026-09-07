@@ -3,7 +3,7 @@ import { isOfficialTrackVideoId, type OfficialTrackVideoId } from "../data/offic
 import { resolveDiagnosisStep, type DiagnosisStep } from "./viewRouting";
 
 export type ResultSection = "current" | "next" | "confirm";
-export type ResourceSection = "tracks" | "modules" | "curriculum" | "official";
+export type ResourceSection = "tracks" | "modules" | "curriculum" | "timetable" | "official";
 export type TrackGuideSection = "overview" | "benefits" | "outcomes" | "structure" | "videos";
 export type ProfileStage = "affiliation" | "path";
 
@@ -31,7 +31,7 @@ const recommendationAxes = new Set(["interest", "progress", "plan"] as const);
 const surveyAudiences = new Set<InterestSurveyAudience>(["department-student", "external-student"]);
 const planSteps = new Set(["setup", "schedule", "checks"] as const);
 const resultSections = new Set<ResultSection>(["current", "next", "confirm"]);
-const resourceSections = new Set<ResourceSection>(["tracks", "modules", "curriculum", "official"]);
+const resourceSections = new Set<ResourceSection>(["tracks", "modules", "curriculum", "timetable", "official"]);
 const trackGuideSections = new Set<TrackGuideSection>(["overview", "benefits", "outcomes", "structure", "videos"]);
 const profileStages = new Set<ProfileStage>(["affiliation", "path"]);
 

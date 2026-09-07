@@ -1,91 +1,26 @@
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
-import { EvidenceBand } from "../../components/EvidenceBand";
-import { COURSE_OFFERING_SNAPSHOT_META, courseOfferings2026 } from "../../data/courseOfferings2026";
+import { courseOfferings2026 } from "../../data/courseOfferings2026";
 import { courses, modules } from "../../data/curriculumData";
-
-const moduleGroups = [
-  { id: "foundation", label: "학문·경제 기초", categories: ["liberal", "foundation"] },
-  { id: "major", label: "학과전공 모듈", categories: ["major"] },
-  { id: "convergence", label: "융합전공 모듈", categories: ["convergence"] },
-] as const;
+import { normalizeCourseSearch } from "../../data/officialTimetable2026";
 
 export function ModuleReferenceView() {
+  const [query, setQuery] = useState("");
   const [openModuleId, setOpenModuleId] = useState<string | undefined>("A");
-
-  return (
-    <div className="planner-resource-stack">
-      <section className="planner-resource-reading" aria-labelledby="module-reference-title">
-        <div className="planner-resource-section-heading">
-          <span>15개 모듈</span>
-          <h2 id="module-reference-title">모듈 이름과 포함 과목을 기준 자료 그대로 확인하세요</h2>
-          <p>모듈별 과목과 2026년에 확인된 개설 이력을 함께 읽되, 이력은 다음 학기 개설 보장이 아닙니다.</p>
-        </div>
-
-        {moduleGroups.map((group) => (
-          <section className="planner-module-group" aria-labelledby={`module-group-${group.id}`} key={group.id}>
-            <h3 id={`module-group-${group.id}`}>{group.label}</h3>
-            <ol>
-              {modules
-                .filter((curriculumModule) => group.categories.includes(curriculumModule.category as never))
-                .map((curriculumModule) => {
-                  const moduleCourses = courses.filter((course) => course.moduleId === curriculumModule.id);
-                  const expanded = openModuleId === curriculumModule.id;
-                  return (
-                    <li key={curriculumModule.id} data-module-id={curriculumModule.id}>
-                      <details
-                        data-module-disclosure={curriculumModule.id}
-                        open={expanded}
-                      >
-                        <summary
-                          className="planner-focusable"
-                          onClick={(event) => {
-                            event.preventDefault();
-                            setOpenModuleId(expanded ? undefined : curriculumModule.id);
-                          }}
-                        >
-                          <span className="planner-module-letter">{curriculumModule.id}</span>
-                          <h4>{curriculumModule.id}. {curriculumModule.name}</h4>
-                          <span>{moduleCourses.length}과목</span>
-                          <ChevronDown aria-hidden="true" size={21} />
-                        </summary>
-                        <div className="planner-module-detail">
-                          <ul className="planner-module-course-list">
-                            {moduleCourses.map((course) => {
-                              const offering = courseOfferings2026[course.id];
-                              return (
-                                <li key={course.id}>
-                                  <strong>{course.code} · {course.name}</strong>
-                                  <span>{course.credits}학점</span>
-                                  <small>
-                                    {offering
-                                      ? `2026 확인 학기 ${offering.observedProgramSemesters.join(", ")}`
-                                      : "2026 개설 이력 없음"}
-                                  </small>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                          {curriculumModule.sourceNote ? (
-                            <p className="planner-resource-source-note">{curriculumModule.sourceNote}</p>
-                          ) : null}
-                        </div>
-                      </details>
-                    </li>
-                  );
-                })}
-            </ol>
-          </section>
-        ))}
-      </section>
-
-      <EvidenceBand state="historical-2026-snapshot">
-        {COURSE_OFFERING_SNAPSHOT_META.observedAt} 관찰 자료를 {COURSE_OFFERING_SNAPSHOT_META.recheckedAt}에 다시 점검했습니다.
-        2026년에 확인한 개설 이력이며, 이후 개설을 보장하지 않습니다.
-      </EvidenceBand>
-      <EvidenceBand state="department-confirmation-required">
-        M/N/O 모듈의 코드 정규화와 과목 수 차이는 원자료 주석을 함께 표시했습니다. 개인별 인정 여부는 학과에 확인하세요.
-      </EvidenceBand>
-    </div>
-  );
+  const needle = normalizeCourseSearch(query);
+  const visible = courses.filter((course) => normalizeCourseSearch(`${course.code} ${course.name} ${courseOfferings2026[course.id]?.officialCourseCode} ${courseOfferings2026[course.id]?.timetableName ?? ""} ${modules.find((item) => item.id === course.moduleId)?.name}`).includes(needle));
+  return <section className="dku-resource-modules" aria-label="모듈별 과목 자료">
+    <div className="dku-resource-toolbar"><label>모듈·과목 검색<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="과목명, 모듈명, 학사 과목코드" /></label><span role="status">{visible.length} / 49과목</span></div>
+    <p className="dku-resource-note">A 학문기초 4과목을 포함한 트랙 구성 전체입니다. 직접 진단의 전공 입력 목록은 A를 제외한 45과목입니다.</p>
+    {visible.length === 0 && <p className="dku-resource-empty" role="status">조건에 맞는 과목이 없습니다. 검색어를 바꿔보세요.</p>}
+    <div className="dku-resource-module-grid">{modules.map((module) => {
+      const rows = visible.filter((course) => course.moduleId === module.id);
+      if (!rows.length) return null;
+      return <details key={`${module.id}-${Boolean(needle)}`} data-module-disclosure={module.id} data-module-id={module.id} open={Boolean(needle) || module.id === openModuleId}>
+        <summary onClick={(event) => { if (!needle) { event.preventDefault(); setOpenModuleId(openModuleId === module.id ? undefined : module.id); } }}><span className="dku-resource-letter" aria-hidden="true">{module.id}</span><strong>{module.id}. {module.name}</strong><span>{rows.length}과목</span></summary>
+        <ul>{rows.map((course) => <li key={course.id}><strong>{course.name}</strong><span>{course.credits}학점</span><small>학사 과목코드 {courseOfferings2026[course.id]?.officialCourseCode} · 트랙 자료 코드 {course.code}</small></li>)}</ul>
+        {module.sourceNote && <p className="dku-resource-note">{module.sourceNote}</p>}
+      </details>;
+    })}</div>
+    <details className="dku-resource-method"><summary>자료 범위와 해석 주의</summary><p>2026 학사종합안내의 트랙 구성과 제공된 최종안을 구분해 참고합니다. M/N/O 코드 정규화와 과목 수 차이는 원자료에도 남아 있습니다. 이 화면의 과목 목록은 이번 학기 실제 개설 목록이 아닙니다.</p></details>
+  </section>;
 }

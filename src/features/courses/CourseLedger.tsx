@@ -1,6 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import { useMemo, useState } from "react";
 import { modules } from "../../data/curriculumData";
+import { courseOfferings2026 } from "../../data/courseOfferings2026";
 import {
   getModuleLabel,
   isModuleInAnyTrack,
@@ -127,14 +128,16 @@ export function CourseLedger({
     () => new Map(courseSelections.map((selection) => [selection.courseId, selection])),
     [courseSelections],
   );
-  const normalizedQuery = query.trim().toLocaleLowerCase("ko");
+  const normalizedQuery = query.replace(/\s+/g, "").toLocaleLowerCase("ko");
   const matchingCourses = useMemo(() => ledgerCourses
     .filter((course) => matchesSemesterFilters(course, gradeFilter, semesterFilter))
     .filter((course) => !normalizedQuery || [
       course.code,
       course.name,
+      courseOfferings2026[course.id]?.officialCourseCode,
+      courseOfferings2026[course.id]?.timetableName,
       getModuleLabel(course.moduleId),
-    ].join(" ").toLocaleLowerCase("ko").includes(normalizedQuery))
+    ].join(" ").replace(/\s+/g, "").toLocaleLowerCase("ko").includes(normalizedQuery))
     .sort((left, right) => semesterRank(left.recommendedSemester) - semesterRank(right.recommendedSemester)
       || left.moduleId.localeCompare(right.moduleId)
       || left.code.localeCompare(right.code)), [

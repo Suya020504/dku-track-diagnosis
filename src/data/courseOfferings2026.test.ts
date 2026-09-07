@@ -27,7 +27,7 @@ describe("2026 historical course offering snapshot", () => {
     expect(COURSE_OFFERING_SNAPSHOT_META).toMatchObject({
       observedAt: "2026-08-11",
       recheckedAt: "2026-08-30",
-      currentPublicVerification: "blocked-by-public-access",
+      currentPublicVerification: "historical-pattern-not-reverified; 2026-2-sections-verified-separately-2026-09-08",
       allowsFutureOfferingGuarantee: false,
     });
   });

@@ -163,6 +163,7 @@ export function CourseSelectionView({
           <ChevronDown aria-hidden="true" size={17} />
         </summary>
         <p>{policy.description}</p>
+        <p>직접 진단은 트랙 전공 45과목을 대상으로 합니다. 학과 교육과정 47과목·트랙 구성 49과목·실제 시간표 37분반은 서로 범위가 다릅니다. 학사 과목코드나 시간표 과목명으로도 검색할 수 있습니다. 트랙 밖 과목은 이 목록과 진단 학점에 자동 포함되지 않습니다.</p>
       </details>
 
       <section className="dku-check-save-band" aria-label="과목 선택 저장 상태">

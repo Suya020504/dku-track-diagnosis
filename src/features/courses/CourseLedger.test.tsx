@@ -102,6 +102,20 @@ afterEach(async () => {
 });
 
 describe("CourseLedger", () => {
+  it("matches official codes and ignores whitespace without changing selection semantics", () => {
+    const markup = renderLedger({ query: " 345 790 " });
+    expect(markup).toContain("미시경제학");
+    expect(markup).not.toContain("소비자경제학");
+    expect(markup).toContain("학사 과목코드");
+    expect(markup).toContain("트랙 자료 코드");
+    expect(markup).toContain("수강 중");
+    expect(renderLedger({ query: "미 시 경 제 학" })).toContain("미시경제학");
+  });
+  it("recognizes the existing official timetable alias", () => {
+    const course: Course = { id: "m-1", code: "M-1", name: "인체의 신비", credits: 2, moduleId: "M" };
+    expect(renderLedger({ courses: [course], query: "바이오 헬스 인체의 신비" })).toContain("인체의 신비");
+    expect(renderLedger({ courses: [course], query: "541980" })).toContain("인체의 신비");
+  });
   it("shows every planning status with real course, module, credit, term, and evidence text", () => {
     document.body.innerHTML = renderLedger();
 

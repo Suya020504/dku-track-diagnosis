@@ -7,7 +7,7 @@ import type {
 export const COURSE_OFFERING_SNAPSHOT_META = {
   observedAt: "2026-08-11",
   recheckedAt: "2026-08-30",
-  currentPublicVerification: "blocked-by-public-access",
+  currentPublicVerification: "historical-pattern-not-reverified; 2026-2-sections-verified-separately-2026-09-08",
   allowsFutureOfferingGuarantee: false,
   timetableSearchUrl:
     "https://webinfo.dankook.ac.kr/tiac/univ/lssn/lpci/views/lssnPopup/tmtbl2.do",

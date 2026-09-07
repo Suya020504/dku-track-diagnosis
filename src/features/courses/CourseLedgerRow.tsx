@@ -1,4 +1,5 @@
 import { Check, ChevronDown, CircleDot, Clock3, Info } from "lucide-react";
+import { courseOfferings2026 } from "../../data/courseOfferings2026";
 import type {
   Course,
   CourseSelectionRecord,
@@ -106,7 +107,8 @@ export function CourseLedgerRow({
           <ChevronDown aria-hidden="true" size={15} />
         </summary>
         <div>
-          <span><small>과목 코드</small><strong>{course.code}</strong></span>
+          <span><small>학사 과목코드</small><strong>{courseOfferings2026[course.id]?.officialCourseCode ?? "미표기"}</strong></span>
+          <span><small>트랙 자료 코드</small><strong>{course.code}</strong></span>
           <span data-module-marker={course.moduleId}><small>모듈</small><strong>{moduleLabel}</strong></span>
           <span><small>권장 학기</small><strong>{formatSemester(course.recommendedSemester)}</strong></span>
         </div>

@@ -94,6 +94,10 @@ describe("canonical app route resolution", () => {
   });
 
   it("resolves resource sections and canonicalizes the legacy modules alias", () => {
+    const timetableRoute = { view: "resources", section: "timetable" } as const;
+    const timetableHref = buildAppHref("/", timetableRoute);
+    expect(timetableHref).toBe("/?view=resources&section=timetable");
+    expect(resolveAppRoute(timetableHref.slice(1), createEmptyAppState())).toEqual(timetableRoute);
     expect(resolveAppRoute("?view=resources&section=official", reviewedMinorState)).toEqual({
       view: "resources",
       section: "official",
