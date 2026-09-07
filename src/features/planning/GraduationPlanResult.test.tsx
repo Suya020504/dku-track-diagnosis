@@ -128,6 +128,12 @@ describe("GraduationPlanResult status language", () => {
 });
 
 describe("GraduationPlanResult distributed pages", () => {
+  it("keeps named course identity accessible and distinguishes unconfirmed credit reservations without repeating historical caveats in rows", () => {
+    const markup = renderResult(baseResult);
+    expect(markup).toContain('aria-label="C-2 소비자경제학 과목 정보"');
+    expect(markup).toContain("과목 미정 · 학점 예약");
+    expect(markup.match(/최근 개설 패턴 기준/g)).toHaveLength(1);
+  });
   it("shows per-term named placements and anonymous elective reservations on schedule only", () => {
     const markup = renderResult(baseResult, "schedule");
 

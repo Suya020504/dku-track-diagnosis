@@ -128,7 +128,7 @@ describe("GraduationPlanSetup", () => {
     await renderSetup({});
 
     expect(document.querySelectorAll("form input")).toHaveLength(4);
-    const decisions = [...document.querySelectorAll(".plan-decision-flow > li")];
+    const decisions = [...document.querySelectorAll("form fieldset label")];
     expect(decisions).toHaveLength(4);
     expect(decisions.map((item) => item.textContent)).toEqual([
       expect.stringContaining("현재 학기"),

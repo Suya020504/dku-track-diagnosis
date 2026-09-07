@@ -39,21 +39,20 @@ export function GraduationPlanSetup({
 
   return (
     <form
-      className="graduation-plan-form"
+      className="dku-plan-form"
       onSubmit={(event) => {
         event.preventDefault();
         if (valid) onSubmit(currentValue as GraduationPlanPreferences);
       }}
     >
-      <ol className="plan-decision-flow" aria-label="졸업 계획 조건 입력 순서">
-        <li>
-          <span className="plan-decision-number" aria-hidden="true">1</span>
+      <fieldset className="dku-plan-date-fields">
+        <legend>계획할 기간</legend>
           <label>
             <span>현재 학기</span>
             <input
               aria-describedby="current-term-help"
               aria-invalid={!currentValid}
-              inputMode="numeric"
+              inputMode="text"
               pattern="[0-9]{4}-[12]"
               placeholder="2026-2"
               value={currentValue.currentTerm ?? ""}
@@ -64,16 +63,12 @@ export function GraduationPlanSetup({
             />
             <small id="current-term-help">연도-학기 형식으로 입력해 주세요. 예: 2026-2</small>
           </label>
-        </li>
-
-        <li>
-          <span className="plan-decision-number" aria-hidden="true">2</span>
           <label>
             <span>목표 졸업 학기</span>
             <input
               aria-describedby={reversedTarget ? "target-term-error" : undefined}
               aria-invalid={!targetValid}
-              inputMode="numeric"
+              inputMode="text"
               pattern="[0-9]{4}-[12]"
               placeholder="2028-1"
               value={currentValue.targetGraduationTerm ?? ""}
@@ -88,10 +83,9 @@ export function GraduationPlanSetup({
               </small>
             )}
           </label>
-        </li>
-
-        <li>
-          <span className="plan-decision-number" aria-hidden="true">3</span>
+      </fieldset>
+      <fieldset className="dku-plan-load-fields">
+        <legend>수강 여유</legend>
           <label>
             <span>학기당 최대 전공과목 수</span>
             <input
@@ -109,11 +103,7 @@ export function GraduationPlanSetup({
             />
             <small id="major-load-help">한 학기에 1~6과목 사이의 정수로 입력해 주세요.</small>
           </label>
-        </li>
-
-        <li>
-          <span className="plan-decision-number" aria-hidden="true">4</span>
-          <label className="seasonal-term-option">
+          <label className="dku-plan-seasonal">
             <input
               type="checkbox"
               checked={currentValue.considerSeasonalTerm ?? false}
@@ -124,8 +114,7 @@ export function GraduationPlanSetup({
             />
             <span>계절학기 고려 여부</span>
           </label>
-        </li>
-      </ol>
+      </fieldset>
 
       <EvidenceBand state="historical-2026-snapshot">
         최근 개설 패턴 기준인 2026학년도 개설 이력을 참고합니다. 이후 반복 개설은 보장하지 않으며,

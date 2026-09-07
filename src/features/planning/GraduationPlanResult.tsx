@@ -70,8 +70,8 @@ function PlanStatusSummary({
           : "입력한 목표 학기와 수강량 안에서 과목과 익명 선택 전공 자리를 나눴습니다.";
 
   return (
-    <header className={`plan-status-summary status-${result.status}`}>
-      <span>학기별 참고 계획</span>
+    <header className={`dku-plan-heading status-${result.status}`}>
+      <span className="dku-plan-eyebrow">선택 도구 · 학기별 참고 계획</span>
       <h1 ref={headingRef} tabIndex={-1}>{statusHeadings[result.status]}</h1>
       <p>{detail}</p>
     </header>
@@ -90,7 +90,7 @@ function PlannerRouteLine({
   onEdit: () => void;
 }) {
   return (
-    <nav className="planner-route-line" aria-label="졸업 계획 단계">
+    <nav className="dku-plan-tabs" aria-label="졸업 계획 단계">
       <button
         type="button"
         aria-current={step === "schedule" ? "page" : undefined}
@@ -131,17 +131,18 @@ export function GraduationPlanResult({
 }) {
   if (step === "checks") {
     return (
-      <main className="graduation-plan-page plan-checks-page">
+      <main className="dku-plan-page dku-plan-checks">
         <PlannerRouteLine
           step="checks"
           onShowSchedule={onShowSchedule}
           onShowChecks={onShowChecks}
           onEdit={onEdit}
         />
+        <div className="dku-plan-check-layout">
         <UnplacedCourseList items={result.unplacedCourses} headingRef={headingRef} />
         {result.unplacedElectiveCredits > 0 && (
-          <section className="plan-check-section unplaced-elective-summary" aria-labelledby="unplaced-elective-title">
-            <div className="plan-check-heading">
+          <section className="dku-plan-unplaced-credits" aria-labelledby="unplaced-elective-title">
+            <div className="dku-plan-subheading">
               <span>학기 배정 필요</span>
               <h2 id="unplaced-elective-title">
                 학기 미배정 선택전공 {result.unplacedElectiveCredits}학점
@@ -154,7 +155,8 @@ export function GraduationPlanResult({
           </section>
         )}
         <OfficialCheckQuestions items={result.reviewItems} />
-        <section className="plan-next-actions" aria-labelledby="plan-next-actions-title">
+        </div>
+        <section className="dku-plan-next-actions" aria-labelledby="plan-next-actions-title">
           <span>다음 행동</span>
           <h2 id="plan-next-actions-title">확인 결과를 반영해 계획을 다듬어 주세요</h2>
           <div>
@@ -170,7 +172,7 @@ export function GraduationPlanResult({
   const termPlans = buildTermPlanViews(result);
 
   return (
-    <main className="graduation-plan-page plan-schedule-page">
+    <main className="dku-plan-page dku-plan-schedule">
       <PlannerRouteLine
         step="schedule"
         onShowSchedule={onShowSchedule}
@@ -178,10 +180,16 @@ export function GraduationPlanResult({
         onEdit={onEdit}
       />
       <PlanStatusSummary result={result} headingRef={headingRef} />
+      <dl className="dku-plan-conditions">
+        <div><dt>시작 학기</dt><dd>{result.preferences.currentTerm}</dd></div>
+        <div><dt>목표 졸업 학기</dt><dd>{result.preferences.targetGraduationTerm}</dd></div>
+        <div><dt>학기당 입력 한도</dt><dd>전공 {result.preferences.maxMajorCoursesPerTerm}과목</dd></div>
+      </dl>
       <EvidenceBand state="historical-2026-snapshot">
         최근 개설 패턴 기준인 2026학년도 개설 이력을 다음 학기에 반복해 배치한 참고안이며,
         실제 반복 개설을 보장하지 않습니다.
       </EvidenceBand>
+      <p className="dku-plan-legend"><span>실선: 과목을 정한 참고 배치</span><span>점선: 과목 미정 · 학점 예약</span></p>
       <section
         className="term-plan-board"
         aria-label="학기별 참고 계획"
@@ -199,9 +207,10 @@ export function GraduationPlanResult({
           />
         ))}
       </section>
-      <div className="plan-result-actions">
+      <footer className="dku-plan-result-actions">
+        <p>실제 시간표와 학점 인정은 확인 화면에서 점검해 주세요.</p>
         <button className="primary-button" type="button" onClick={onSave} disabled={saveDisabled}>계획 저장</button>
-      </div>
+      </footer>
     </main>
   );
 }

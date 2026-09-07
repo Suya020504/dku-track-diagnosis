@@ -1455,14 +1455,14 @@ function App({ storage }: { storage?: Storage } = {}) {
       (snapshot) => snapshot.graduationPlan?.generatedAt === savedState.graduationPlan?.generatedAt,
     ));
     return renderGuidebook(
-      <div className="graduation-plan-shell">
-        <div className="graduation-plan-topbar">
+      <div className="dku-plan-shell">
+        <div className="dku-plan-topbar">
           <button
             className="text-button"
             type="button"
             onClick={() => navigateAppRoute({ view: "recommendation", step: "axes", axis: "plan" })}
           >
-            추천 비교로 돌아가기
+            계획 기준 트랙 비교 열기
           </button>
           <span>저장된 입력은 이 브라우저에서만 사용합니다.</span>
         </div>
@@ -1484,9 +1484,9 @@ function App({ storage }: { storage?: Storage } = {}) {
         )}
 
         {planStep === "setup" ? (
-          <main className="graduation-plan-setup-page" aria-labelledby="graduation-plan-setup-title">
-            <header className="graduation-plan-setup-heading">
-              <span>졸업 계획 조건</span>
+          <main className="dku-plan-page dku-plan-setup" aria-labelledby="graduation-plan-setup-title">
+            <header className="dku-plan-heading">
+              <span className="dku-plan-eyebrow">선택 도구 · 졸업 계획 조건</span>
               <h1 id="graduation-plan-setup-title" ref={planHeadingRef} tabIndex={-1}>
                 학기별 참고 계획의 범위를 정해 주세요
               </h1>

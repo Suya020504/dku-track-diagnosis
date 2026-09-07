@@ -43,11 +43,11 @@ export function OfficialCheckQuestions({ items }: { items: ReviewItem[] }) {
 
   return (
     <section
-      className="plan-check-section"
+      className="dku-plan-official"
       aria-labelledby="official-check-title"
       data-check-ledger="official-questions"
     >
-      <div className="plan-check-heading">
+      <div className="dku-plan-subheading">
         <span>공식 확인 필요</span>
         <h2 id="official-check-title">학과에 확인할 질문</h2>
       </div>
@@ -56,8 +56,8 @@ export function OfficialCheckQuestions({ items }: { items: ReviewItem[] }) {
         <p className="plan-check-empty">현재 계산에서 추가로 생성된 공식 확인 항목은 없습니다.</p>
       ) : (
         <>
-          <div className="official-review-items">
-            <h3>계획에서 확인된 검토 항목</h3>
+          <details className="official-review-items" open>
+            <summary>계획에서 확인된 검토 항목 · {items.length}건</summary>
             <ul>
               {items.map((item, index) => {
                 const evidence = reviewEvidenceDisplay[item.evidence];
@@ -72,7 +72,7 @@ export function OfficialCheckQuestions({ items }: { items: ReviewItem[] }) {
                 );
               })}
             </ul>
-          </div>
+          </details>
           <ol className="official-question-list">
             {questions.map(([question, item]) => (
               <li key={question}>

@@ -408,8 +408,8 @@ describe("graduation plan pure transitions", () => {
 
 describe("App graduation plan pages", () => {
   it.each([
-    ["empty", createEmptyAppState(), []],
-    ["profile only", { ...createEmptyAppState(), profile: minorProfile }, []],
+    ["empty", createEmptyAppState(), ["pending", "pending", "pending"]],
+    ["profile only", { ...createEmptyAppState(), profile: minorProfile }, ["ready", "pending", "not-applicable"]],
     [
       "reviewed courses with a missing track-major target",
       {
@@ -417,7 +417,7 @@ describe("App graduation plan pages", () => {
         profile: { ...minorProfile, studyPath: "track-major" as const },
         courseInputReviewedAt: "2026-08-30T00:00:00.000Z",
       },
-      ["courses", "modules"],
+      ["ready", "ready", "pending"],
     ],
     [
       "selected target with incomplete course input",
@@ -426,28 +426,27 @@ describe("App graduation plan pages", () => {
         profile: { ...minorProfile, studyPath: "track-major" as const },
         targetTrackId: "food-marketing" as const,
       },
-      ["track"],
+      ["ready", "pending", "ready"],
     ],
-    ["saved graduation plan", stateWithPlan(), ["courses", "modules", "track", "semester"]],
+    ["saved graduation plan", stateWithPlan(), []],
   ] as const)(
-    "derives Ribbon completion from saved milestones for %s",
-    async (_label, state, completedStages) => {
+    "shows optional planner readiness from saved milestones for %s",
+    async (_label, state, expectedReadiness) => {
       saveState(state as SavedAppStateV2);
       history.replaceState({}, "", "/?view=plan&step=setup");
       await mountApp();
 
-      const stages = ["interest", "courses", "modules", "track", "semester"];
-      const completed = completedStages as readonly string[];
-      for (const stage of stages) {
-        const item = document.querySelector<HTMLElement>(`[data-journey-stage="${stage}"]`);
-        expect(item, stage).not.toBeNull();
-        expect(item?.dataset.completed, stage).toBe(completed.includes(stage) ? "true" : "false");
-        if (stage !== "semester" && !completed.includes(stage)) {
-          expect(item?.dataset.state, stage).toBe("pending");
-        }
+      expect(document.querySelector(".planner-compass-path")).toBeNull();
+      expect(planReadinessStates().map(([, value]) => value)).toEqual(expectedReadiness);
+      if (expectedReadiness.length === 0) {
+        expect(document.querySelectorAll("main form input")).toHaveLength(4);
+      } else {
+        expect(document.querySelector("main form")).toBeNull();
       }
-      expect(document.querySelector('[data-journey-stage="semester"]')?.getAttribute("data-state")).toBe("current");
+      expect(new URLSearchParams(location.search).get("view")).toBe("plan");
+      expect(new URLSearchParams(location.search).get("step")).toBe("setup");
       expect(document.querySelectorAll("main")).toHaveLength(1);
+      expect(document.querySelectorAll("h1")).toHaveLength(1);
     },
   );
 
@@ -498,7 +497,7 @@ describe("App graduation plan pages", () => {
 
       expect(document.body.textContent).toContain("졸업 계획 전에 입력 상태를 확인해 주세요");
       expect(planReadinessStates()).toEqual(expectedStates);
-      expect(document.querySelectorAll(".plan-entry-actions button")).toHaveLength(1);
+      expect(document.querySelectorAll(".dku-plan-prerequisite .dku-plan-result-actions button")).toHaveLength(1);
       expect(document.body.textContent).toContain(recoveryLabel);
       expect(document.body.textContent).not.toContain("계획 저장");
       expectFocusedPlanHeading("졸업 계획 전에 입력 상태를 확인해 주세요");
@@ -709,7 +708,7 @@ describe("App graduation plan pages", () => {
     await mountApp();
     expect(history.scrollRestoration).toBe("manual");
 
-    await click("추천 비교로 돌아가기");
+    await click("계획 기준 트랙 비교 열기");
 
     expect(new URLSearchParams(location.search).get("view")).toBe("recommendation");
     expect(history.scrollRestoration).toBe("auto");

@@ -1,650 +1,108 @@
-.planner-app .graduation-plan-shell {
-  max-width: 100%;
-  overflow-x: clip;
-  padding: 0 var(--planner-space-5) 80px;
-  background: var(--planner-paper);
-}
-
-.planner-app .graduation-plan-topbar {
-  width: min(1160px, 100%);
-  min-height: 58px;
-  border-block-end: 1px solid #c8d8e4;
-}
-
-.planner-app .graduation-plan-topbar > span {
-  color: var(--planner-ink-muted);
-  font-size: 0.8125rem;
-}
-
-.planner-app .graduation-plan-topbar .text-button {
-  min-height: 44px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--planner-dankook-blue);
-  font: inherit;
-  font-weight: 800;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  cursor: pointer;
-}
-
-.planner-app .graduation-plan-setup-page,
-.planner-app .graduation-plan-page {
-  width: min(1160px, 100%);
-  padding-top: clamp(28px, 5vw, 52px);
-}
-
-.planner-app .graduation-plan-setup-page {
-  max-width: 900px;
-}
-
-.planner-app .graduation-plan-setup-heading,
-.planner-app .plan-status-summary,
-.planner-app .plan-check-heading {
-  max-width: 780px;
-}
-
-.planner-app .graduation-plan-setup-heading > span,
-.planner-app .plan-status-summary > span,
-.planner-app .plan-check-heading > span,
-.planner-app .plan-next-actions > span,
-.planner-app .plan-entry-card > span {
-  color: var(--planner-department-green);
-  font-size: 0.8125rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
-
-.planner-app .graduation-plan-setup-heading h1,
-.planner-app .plan-status-summary h1,
-.planner-app .plan-entry-card h1 {
-  margin: var(--planner-space-2) 0 var(--planner-space-3);
-  color: var(--planner-ink);
-  font-size: clamp(2rem, 4vw, 2.75rem);
-  line-height: 1.18;
-  letter-spacing: -0.035em;
-}
-
-.planner-app .graduation-plan-setup-heading h1:focus,
-.planner-app .plan-status-summary h1:focus,
-.planner-app .plan-check-heading h1:focus,
-.planner-app .plan-entry-card h1:focus {
-  outline: 2px solid var(--planner-department-green);
-  outline-offset: 5px;
-  background: rgba(221, 243, 232, 0.38);
-}
-
-.planner-app .graduation-plan-setup-heading p,
-.planner-app .plan-status-summary p,
-.planner-app .plan-entry-card > p {
-  margin: 0;
-  color: var(--planner-ink-muted);
-  line-height: 1.75;
-}
-
-.planner-app .graduation-plan-form,
-.planner-app .plan-status-summary,
-.planner-app .plan-check-section,
-.planner-app .plan-next-actions,
-.planner-app .plan-entry-card {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.planner-app .graduation-plan-form {
-  margin-top: 28px;
-  padding: 0;
-}
-
-.planner-app .plan-decision-flow {
-  position: relative;
-  display: grid;
-  gap: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-block: 1px solid #c8d8e4;
-  background: #fff;
-}
-
-.planner-app .plan-decision-flow::before {
-  position: absolute;
-  inset-block: 30px;
-  inset-inline-start: 31px;
-  width: 1px;
-  background: #9ab9cc;
-  content: "";
-}
-
-.planner-app .plan-decision-flow > li {
-  position: relative;
-  display: grid;
-  grid-template-columns: 48px minmax(0, 1fr);
-  gap: var(--planner-space-3);
-  align-items: start;
-  min-width: 0;
-  padding: var(--planner-space-5) var(--planner-space-5) var(--planner-space-5) var(--planner-space-3);
-  border-block-end: 1px solid #d9e5ec;
-}
-
-.planner-app .plan-decision-flow > li:last-child {
-  border-block-end: 0;
-}
-
-.planner-app .plan-decision-number {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--planner-dankook-blue);
-  border-radius: 50%;
-  background: #fff;
-  color: var(--planner-dankook-blue);
-  font-weight: 850;
-  place-items: center;
-}
-
-.planner-app .plan-decision-flow label:not(.seasonal-term-option) {
-  display: grid;
-  grid-template-columns: minmax(170px, 0.65fr) minmax(200px, 1fr);
-  gap: var(--planner-space-2) var(--planner-space-5);
-  align-items: center;
-  min-width: 0;
-}
-
-.planner-app .plan-decision-flow label > span {
-  color: var(--planner-ink);
-  font-weight: 800;
-}
-
-.planner-app .plan-decision-flow input:not([type="checkbox"]) {
-  width: 100%;
-  min-height: 48px;
-  padding: 0 var(--planner-space-3);
-  border: 1px solid #91a9ba;
-  border-radius: var(--planner-control-radius);
-  background: #fff;
-  color: var(--planner-ink);
-  font: inherit;
-}
-
-.planner-app .plan-decision-flow input[aria-invalid="true"] {
-  border-color: var(--planner-review-coral);
-}
-
-.planner-app .plan-decision-flow small {
-  grid-column: 2;
-  color: var(--planner-ink-muted);
-  font-size: 0.8125rem;
-  line-height: 1.55;
-}
-
-.planner-app .plan-decision-flow .field-error {
-  color: #9a3f20;
-  font-weight: 700;
-}
-
-.planner-app .plan-decision-flow .seasonal-term-option {
-  display: flex;
-  gap: var(--planner-space-3);
-  align-items: center;
-  min-height: 48px;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
-.planner-app .plan-decision-flow .seasonal-term-option input {
-  width: 22px;
-  height: 22px;
-}
-
-.planner-app .graduation-plan-form > .planner-evidence-band {
-  margin-top: var(--planner-space-5);
-}
-
-.planner-app .graduation-plan-form > .planner-evidence-band a,
-.planner-app .plan-next-actions a {
-  color: var(--planner-dankook-blue);
-  font-weight: 800;
-}
-
-.planner-app .seasonal-term-notice {
-  margin: var(--planner-space-3) 0 0;
-  padding: var(--planner-space-3);
-  border: 0;
-  border-inline-start: 4px solid var(--planner-wheat);
-  border-radius: 0;
-  background: #fff8e7;
-  color: #6c5518;
-  line-height: 1.65;
-}
-
-.planner-app .graduation-plan-form > .primary-button {
-  min-height: 48px;
-  margin-top: var(--planner-space-5);
-}
-
-.planner-app .planner-route-line {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  width: min(540px, 100%);
-  margin: 0 0 30px;
-}
-
-.planner-app .planner-route-line::before {
-  position: absolute;
-  inset-inline: 16.66%;
-  inset-block-start: 18px;
-  height: 2px;
-  background: #a9c0cf;
-  content: "";
-}
-
-.planner-app .planner-route-line button {
-  position: relative;
-  z-index: 1;
-  min-width: 0;
-  min-height: 44px;
-  border: 0;
-  background: transparent;
-  color: var(--planner-ink-muted);
-  font: inherit;
-  font-size: 0.875rem;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.planner-app .planner-route-line button::before {
-  position: absolute;
-  inset-block-start: 12px;
-  inset-inline-start: calc(50% - 7px);
-  width: 14px;
-  height: 14px;
-  border: 2px solid #8da8ba;
-  border-radius: 50%;
-  background: var(--planner-paper);
-  content: "";
-}
-
-.planner-app .planner-route-line button {
-  padding-top: 28px;
-}
-
-.planner-app .planner-route-line button[aria-current="page"] {
-  color: var(--planner-dankook-blue);
-}
-
-.planner-app .planner-route-line button[aria-current="page"]::before {
-  border-color: var(--planner-dankook-blue);
-  background: var(--planner-dankook-blue);
-  box-shadow: inset 0 0 0 3px var(--planner-paper);
-}
-
-.planner-app .plan-status-summary {
-  padding: 0 0 24px;
-  border-block-end: 1px solid #c8d8e4;
-  border-inline-start: 0;
-}
-
-.planner-app .plan-schedule-page > .planner-evidence-band {
-  margin: var(--planner-space-5) 0 26px;
-}
-
-.planner-app .term-plan-board {
-  position: relative;
-  display: grid;
-  grid-auto-columns: minmax(270px, 320px);
-  grid-auto-flow: column;
-  grid-template-columns: none;
-  gap: var(--planner-space-3);
-  align-items: stretch;
-  max-width: 100%;
-  overflow-x: auto;
-  padding: 20px 2px 14px;
-  overscroll-behavior-inline: contain;
-  scrollbar-color: #8da8ba transparent;
-}
-
-.planner-app .term-plan-board::before {
-  position: absolute;
-  inset-inline: 20px;
-  inset-block-start: 9px;
-  height: 2px;
-  background: #a9c0cf;
-  content: "";
-}
-
-.planner-app .term-plan-column {
-  position: relative;
-  min-width: 0;
-  overflow: visible;
-  border: 1px solid #c8d8e4;
-  border-block-start: 3px solid var(--planner-dankook-blue);
-  border-radius: 2px;
-  background: #fff;
-  box-shadow: 3px 3px 0 #dbe7ed;
-}
-
-.planner-app .term-plan-column::before {
-  position: absolute;
-  inset-block-start: -19px;
-  inset-inline-start: 20px;
-  width: 14px;
-  height: 14px;
-  border: 3px solid var(--planner-paper);
-  border-radius: 50%;
-  background: var(--planner-dankook-blue);
-  content: "";
-}
-
-.planner-app .term-plan-column.extra-term {
-  border-block-start-color: var(--planner-review-coral);
-}
-
-.planner-app .term-plan-column.extra-term::before {
-  background: var(--planner-review-coral);
-}
-
-.planner-app .term-plan-column > header {
-  min-height: 76px;
-  padding: var(--planner-space-3) var(--planner-space-3) var(--planner-space-3) 18px;
-  border-block-end: 1px solid #c8d8e4;
-  background: var(--planner-sky-sheet);
-}
-
-.planner-app .term-plan-column.extra-term > header {
-  background: #fff0eb;
-}
-
-.planner-app .term-plan-column > header h2 {
-  color: var(--planner-ink);
-  font-size: 1.0625rem;
-}
-
-.planner-app .term-plan-column > header > small {
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--planner-dankook-blue);
-}
-
-.planner-app .term-plan-items {
-  gap: 0;
-  padding: 0 16px 16px;
-}
-
-.planner-app .term-plan-course {
-  display: block;
-  min-width: 0;
-  padding: var(--planner-space-3) 0;
-  border: 0;
-  border-block-end: 1px solid #d9e5ec;
-  border-radius: 0;
-  background: transparent;
-}
-
-.planner-app .term-plan-course .planner-course-sticker {
-  padding: 0;
-  border-block-end: 0;
-}
-
-.planner-app .term-plan-course.elective-reservation {
-  margin-top: var(--planner-space-3);
-  padding: var(--planner-space-3);
-  border: 1px dashed #6b99b6;
-  background: #eef8fc;
-}
-
-.planner-app .term-plan-course.elective-reservation strong {
-  color: var(--planner-dankook-blue);
-}
-
-.planner-app .historical-pattern-badge {
-  margin-top: var(--planner-space-2);
-  padding: 2px 0;
-  border-radius: 0;
-  background: transparent;
-  color: #7a5b16;
-  font-size: 0.6875rem;
-}
-
-.planner-app .plan-result-actions {
-  margin-top: 26px;
-  padding-top: var(--planner-space-5);
-  border-block-start: 1px solid #c8d8e4;
-}
-
-.planner-app .plan-result-actions button {
-  min-height: 48px;
-}
-
-.planner-app .plan-checks-page {
-  max-width: 960px;
-}
-
-.planner-app .plan-check-section,
-.planner-app .plan-next-actions {
-  padding: 24px 0;
-  border-block-end: 1px solid #c8d8e4;
-}
-
-.planner-app .plan-check-heading h1,
-.planner-app .plan-check-heading h2,
-.planner-app .plan-next-actions h2 {
-  margin: var(--planner-space-2) 0 0;
-  color: var(--planner-ink);
-}
-
-.planner-app .unplaced-course-list {
-  border-block-start: 1px solid #d9e5ec;
-}
-
-.planner-app .unplaced-course-list li {
-  padding: 16px 0;
-  border: 0;
-  border-block-end: 1px solid #d9e5ec;
-  border-radius: 0;
-  background: transparent;
-}
-
-.planner-app .unplaced-course-list li span,
-.planner-app .official-question-list span {
-  border-radius: 2px;
-}
-
-.planner-app .official-review-items {
-  margin-top: var(--planner-space-5);
-  padding: 16px 18px;
-  border-inline-start: 4px solid var(--planner-wheat);
-  border-radius: 0;
-  background: #fff8e7;
-}
-
-.planner-app .official-review-items li {
-  margin-block: var(--planner-space-2);
-}
-
-.planner-app .official-review-items li > span,
-.planner-app .official-review-items li > small {
-  display: block;
-}
-
-.planner-app .official-review-items li > small {
-  margin-top: 2px;
-  color: var(--planner-dankook-blue);
-  font-size: 0.75rem;
-  font-weight: 800;
-}
-
-.planner-app .official-question-list {
-  gap: 0;
-  padding-inline-start: 24px;
-}
-
-.planner-app .official-question-list li {
-  padding: 14px 0 14px 4px;
-  border: 0;
-  border-block-end: 1px solid #d9e5ec;
-  border-radius: 0;
-}
-
-.planner-app .plan-next-actions > div {
-  align-items: stretch;
-}
-
-.planner-app .plan-next-actions a,
-.planner-app .plan-next-actions button {
-  min-height: 44px;
-}
-
-.planner-app .plan-entry-shell {
-  min-height: 0;
-  padding: clamp(28px, 6vw, 64px) var(--planner-space-5) 80px;
-  background: var(--planner-paper);
-}
-
-.planner-app .plan-entry-card {
-  width: min(760px, 100%);
-  padding: 0;
-}
-
-.planner-app .plan-entry-card ul {
-  gap: 0;
-  margin: 28px 0 24px;
-  border-block-start: 1px solid #c8d8e4;
-}
-
-.planner-app .plan-entry-card li {
-  min-height: 52px;
-  padding: var(--planner-space-3) 0;
-  border: 0;
-  border-block-end: 1px solid #c8d8e4;
-  border-radius: 0;
-  background: transparent;
-}
-
-.planner-app .plan-entry-card li.ready {
-  background: transparent;
-  color: var(--planner-department-green);
-}
-
-.planner-app .plan-entry-card li.pending {
-  background: transparent;
-  color: #8d4a39;
-}
-
-.planner-app .plan-entry-card li.not-applicable {
-  background: transparent;
-  color: var(--planner-ink-muted);
-}
-
-.planner-app .plan-entry-actions button {
-  min-height: 48px;
-}
-
-.planner-app .graduation-plan-shell button:focus-visible,
-.planner-app .graduation-plan-shell input:focus-visible,
-.planner-app .graduation-plan-shell a:focus-visible,
-.planner-app .plan-entry-shell button:focus-visible {
-  outline: 2px solid var(--planner-department-green);
-  outline-offset: 3px;
-}
-
-@media (max-width: 680px) {
-  .planner-app .graduation-plan-shell {
-    padding-inline: var(--planner-space-3);
-  }
-
-  .planner-app .graduation-plan-topbar {
-    gap: var(--planner-space-2);
-    align-items: flex-start;
-    flex-direction: column;
-    padding-block: var(--planner-space-2);
-  }
-
-  .planner-app .graduation-plan-setup-page,
-  .planner-app .graduation-plan-page {
-    padding-top: 26px;
-  }
-
-  .planner-app .graduation-plan-setup-heading h1,
-  .planner-app .plan-status-summary h1,
-  .planner-app .plan-entry-card h1 {
-    font-size: clamp(1.8rem, 9vw, 2.25rem);
-  }
-
-  .planner-app .plan-decision-flow > li {
-    grid-template-columns: 40px minmax(0, 1fr);
-    padding-inline: var(--planner-space-2) var(--planner-space-3);
-  }
-
-  .planner-app .plan-decision-flow::before {
-    inset-inline-start: 27px;
-  }
-
-  .planner-app .plan-decision-flow label:not(.seasonal-term-option) {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .planner-app .plan-decision-flow small {
-    grid-column: 1;
-  }
-
-  .planner-app .planner-route-line {
-    width: 100%;
-    margin-bottom: 24px;
-  }
-
-  .planner-app .planner-route-line button {
-    min-height: 48px;
-    padding-inline: 2px;
-    font-size: 0.8125rem;
-  }
-
-  .planner-app .term-plan-board {
-    grid-auto-columns: auto;
-    grid-auto-flow: row;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--planner-space-5);
-    overflow: visible;
-    padding: 4px 0 4px 28px;
-  }
-
-  .planner-app .term-plan-board::before {
-    inset-block: 8px;
-    inset-inline-start: 8px;
-    width: 2px;
-    height: auto;
-  }
-
-  .planner-app .term-plan-column::before {
-    inset-block-start: 20px;
-    inset-inline-start: -28px;
-  }
-
-  .planner-app .plan-result-actions,
-  .planner-app .plan-next-actions > div,
-  .planner-app .plan-entry-actions {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .planner-app .plan-result-actions button,
-  .planner-app .plan-next-actions a,
-  .planner-app .plan-next-actions button,
-  .planner-app .plan-entry-actions button,
-  .planner-app .graduation-plan-form > .primary-button {
-    width: 100%;
-  }
-
-  .planner-app .plan-entry-shell {
-    padding-inline: var(--planner-space-3);
-  }
+.dku-plan-shell { background:#fbf7ec; padding:0 24px 64px; }
+.dku-plan-topbar { max-width:1240px; margin:auto; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid #ddceb0; font-size:13px; color:#68593c; }
+.dku-plan-topbar button { min-height:44px; border:0; background:none; color:#634612; font:inherit; font-weight:700; text-decoration:underline; cursor:pointer; }
+.dku-plan-page { --plan-line:#ddceb0; width:100%; max-width:1240px; margin:auto; padding:28px 0; color:#342c1e; font-family:inherit; line-height:1.65; }
+.dku-plan-page *, .dku-plan-shell * { box-sizing:border-box; }
+.dku-plan-page h1 { font-size:clamp(25px,3vw,36px); line-height:1.35; letter-spacing:-.04em; margin:8px 0 12px; color:#342c1e; }
+.dku-plan-page h2 { font-size:20px; line-height:1.4; margin:0 0 12px; color:#342c1e; }
+.dku-plan-page p { margin:8px 0; }
+.dku-plan-page .dku-plan-heading { max-width:900px; margin:0 0 22px; }
+.dku-plan-page .dku-plan-heading p { color:#68593c; max-width:780px; }
+.dku-plan-page .dku-plan-eyebrow { color:#775716; font-size:13px; font-weight:800; }
+.dku-plan-page .dku-plan-subheading { padding:0 0 12px; border-bottom:1px solid var(--plan-line); }
+.dku-plan-page .dku-plan-subheading > span { font-size:13px; color:#775716; }
+.dku-plan-page .dku-plan-subheading h2 { margin:4px 0; }
+.dku-plan-page button, .dku-plan-page a { min-height:44px; }
+.dku-plan-page button { font:inherit; cursor:pointer; }
+.dku-plan-page :focus-visible, .dku-plan-topbar :focus-visible { outline:3px solid #7f5b13; outline-offset:4px; }
+.dku-plan-page .primary-button { display:inline-flex; justify-content:center; align-items:center; gap:10px; min-height:48px; border:1px solid #5e461e; border-radius:8px; padding:12px 22px; background:#5e461e; color:#fff; font-weight:750; box-shadow:none; }
+.dku-plan-page button:disabled { opacity:1; background:#e5dfd0; color:#716953; border-color:#d1c7b4; cursor:not-allowed; }
+.dku-plan-page .secondary-button { display:inline-flex; align-items:center; padding:10px 16px; border:1px solid var(--plan-line); background:#fffdf7; border-radius:8px; color:#594315; }
+.dku-plan-page .planner-evidence-band { margin:16px 0; padding:12px 16px; border:1px solid #decda5; border-radius:8px; background:#f6edda; color:#594315; font-size:13px; box-shadow:none; }
+.dku-plan-page .planner-evidence-band strong, .dku-plan-page .planner-evidence-band a { color:#594315; }
+.dku-plan-page .planner-evidence-band p { margin:2px 0; }
+.dku-plan-page.dku-plan-setup { max-width:920px; }
+.dku-plan-page .dku-plan-form { display:grid; grid-template-columns:1.2fr 1fr; gap:20px; }
+.dku-plan-page .dku-plan-form fieldset { min-width:0; margin:0; padding:18px; border:1px solid var(--plan-line); border-radius:10px; background:#fffdf7; display:grid; align-content:start; gap:16px; }
+.dku-plan-page .dku-plan-form legend { padding:0 6px; font-weight:800; color:#775716; }
+.dku-plan-page .dku-plan-form label { display:grid; gap:6px; font-weight:700; }
+.dku-plan-page .dku-plan-form input:not([type=checkbox]) { min-width:0; width:100%; height:46px; border:1px solid #b6a783; border-radius:6px; background:white; padding:10px 12px; color:#342c1e; font:inherit; }
+.dku-plan-page .dku-plan-form small { font-size:12px; color:#68593c; font-weight:400; }
+.dku-plan-page .dku-plan-form .field-error { color:#a13424; }
+.dku-plan-page .dku-plan-form input[aria-invalid=true] { border-color:#a46a46; }
+.dku-plan-page .dku-plan-form .dku-plan-seasonal { display:flex; align-items:center; min-height:44px; gap:10px; }
+.dku-plan-page .dku-plan-seasonal input { width:22px; height:22px; accent-color:#775716; }
+.dku-plan-page .dku-plan-form > .planner-evidence-band { grid-column:1/-1; margin:0; }
+.dku-plan-page .seasonal-term-notice { margin:0; color:#68593c; font-size:13px; align-self:center; }
+.dku-plan-page .dku-plan-tabs { display:flex; gap:4px; border-bottom:1px solid var(--plan-line); margin-bottom:24px; }
+.dku-plan-page .dku-plan-tabs button { padding:10px 22px; border:0; border-bottom:3px solid transparent; background:none; color:#68593c; font-weight:700; }
+.dku-plan-page .dku-plan-tabs button[aria-current=page] { border-bottom-color:#88651d; background:#f0e4c8; color:#49350e; }
+.dku-plan-page .dku-plan-conditions { display:grid; grid-template-columns:repeat(3,1fr); border-block:1px solid var(--plan-line); margin:0; padding:14px 0; }
+.dku-plan-page .dku-plan-conditions div { padding:0 20px; border-right:1px solid var(--plan-line); }
+.dku-plan-page .dku-plan-conditions div:last-child { border:0; }
+.dku-plan-page dt { font-size:12px; color:#68593c; }
+.dku-plan-page dd { margin:2px 0 0; font-weight:800; font-variant-numeric:tabular-nums; }
+.dku-plan-page .dku-plan-legend { display:flex; flex-wrap:wrap; gap:8px 24px; font-size:12px; color:#68593c; }
+.dku-plan-page .term-plan-board { display:grid; grid-template-columns:repeat(auto-fit,minmax(245px,1fr)); gap:14px; padding:8px 0; overflow:visible; background:none; }
+.dku-plan-page .term-plan-board::before { display:none; }
+.dku-plan-page .dku-plan-term { min-width:0; border:1px solid var(--plan-line); border-radius:10px; background:#fffdf7; overflow:hidden; }
+.dku-plan-page .dku-plan-term > header { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px; background:#efe3c7; border-bottom:1px solid var(--plan-line); }
+.dku-plan-page .dku-plan-term header span { font-size:11px; color:#68593c; }
+.dku-plan-page .dku-plan-term h2 { font-size:17px; margin:2px 0 0; }
+.dku-plan-page .dku-plan-term header small { white-space:nowrap; font-size:12px; }
+.dku-plan-page .dku-plan-term.extra-term > header { background:#f6dfce; }
+.dku-plan-page .dku-plan-term-items { display:grid; gap:10px; padding:12px; }
+.dku-plan-page .dku-plan-course { padding:12px; border:1px solid #d7c69e; border-left:4px solid #98752e; background:white; border-radius:6px; }
+.dku-plan-page .dku-plan-course strong { display:block; font-size:14px; overflow-wrap:anywhere; }
+.dku-plan-page .dku-plan-course-meta { display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px; font-size:12px; color:#68593c; margin-top:6px; }
+.dku-plan-page .dku-plan-course small { color:#9b3c26; }
+.dku-plan-page .dku-plan-reservation { border:1px dashed #aa9568; border-radius:6px; padding:12px; background:#faf6eb; }
+.dku-plan-page .dku-plan-reservation small, .dku-plan-page .dku-plan-reservation strong, .dku-plan-page .dku-plan-reservation span { display:block; }
+.dku-plan-page .dku-plan-reservation small { color:#775716; font-size:11px; }
+.dku-plan-page .dku-plan-reservation strong { font-size:14px; margin:3px 0; }
+.dku-plan-page .dku-plan-reservation span, .dku-plan-page .term-plan-empty { color:#68593c; font-size:12px; }
+.dku-plan-page .dku-plan-result-actions { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-top:24px; padding-top:20px; border-top:1px solid var(--plan-line); }
+.dku-plan-page .dku-plan-result-actions p { font-size:13px; color:#68593c; }
+.dku-plan-page .dku-plan-check-layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:28px; }
+.dku-plan-page .dku-plan-unplaced { grid-column:1; }
+.dku-plan-page .dku-plan-official { grid-column:2; grid-row:1/3; }
+.dku-plan-page .unplaced-course-list, .dku-plan-page .official-question-list { margin:16px 0; padding:0; list-style:none; }
+.dku-plan-page .unplaced-course-list li, .dku-plan-page .official-question-list li { padding:16px 0; border-bottom:1px solid var(--plan-line); }
+.dku-plan-page .unplaced-course-list span, .dku-plan-page .official-question-list span { display:block; font-size:12px; color:#885024; margin-top:4px; }
+.dku-plan-page .unplaced-course-list p { font-size:13px; }
+.dku-plan-page .official-review-items { padding:14px; border:1px solid var(--plan-line); border-radius:8px; background:#f4ead5; }
+.dku-plan-page .official-review-items summary { cursor:pointer; font-weight:700; min-height:44px; }
+.dku-plan-page .official-review-items ul { padding-left:20px; margin:0; }
+.dku-plan-page .official-review-items li { margin-bottom:12px; font-size:13px; }
+.dku-plan-page .official-review-items small { display:block; color:#68593c; }
+.dku-plan-page .plan-check-empty { padding:20px; border:1px dashed var(--plan-line); color:#68593c; }
+.dku-plan-page .dku-plan-next-actions { border-top:1px solid var(--plan-line); padding-top:22px; margin-top:24px; }
+.dku-plan-page .dku-plan-next-actions > div { display:flex; gap:12px; flex-wrap:wrap; }
+.dku-plan-page.dku-plan-prerequisite { max-width:900px; padding:36px 24px 64px; }
+.dku-plan-page .dku-plan-readiness { border-block:1px solid var(--plan-line); padding:22px 0; }
+.dku-plan-page .dku-plan-readiness ul { display:grid; grid-template-columns:repeat(3,1fr); list-style:none; margin:18px 0 0; padding:0; gap:12px; }
+.dku-plan-page .dku-plan-readiness li { display:flex; align-items:center; gap:10px; min-height:70px; padding:14px; background:#f4ead5; border:1px solid var(--plan-line); border-radius:8px; }
+.dku-plan-page .dku-plan-readiness svg { flex-shrink:0; }
+.dku-plan-shell .plan-save-feedback, .dku-plan-shell .storage-error { max-width:1240px; margin:12px auto; padding:14px; border:1px solid #b98965; background:#fff0e3; color:#793421; }
+.dku-plan-shell .plan-save-feedback.success { color:#295a40; background:#edf5eb; border-color:#9db697; }
+@media(max-width:650px) {
+ .dku-plan-shell { padding-inline:16px; }
+ .dku-plan-topbar { flex-wrap:wrap; gap:0; }
+ .dku-plan-page .dku-plan-form, .dku-plan-page .dku-plan-check-layout, .dku-plan-page .dku-plan-readiness ul { grid-template-columns:1fr; }
+ .dku-plan-page .dku-plan-official, .dku-plan-page .dku-plan-unplaced { grid-column:auto; grid-row:auto; }
+ .dku-plan-page .dku-plan-conditions div { padding:0 8px; }
+ .dku-plan-page dd { font-size:14px; }
+ .dku-plan-page .term-plan-board { grid-template-columns:1fr; }
+ .dku-plan-page .dku-plan-result-actions { align-items:stretch; flex-direction:column; gap:10px; }
+ .dku-plan-page .dku-plan-tabs button { flex:1; padding-inline:10px; }
+}
+@media print {
+ .dku-plan-shell { background:white; padding:0; }
+ .dku-plan-topbar, .dku-plan-page .dku-plan-tabs, .dku-plan-page .dku-plan-result-actions, .dku-plan-page .dku-plan-next-actions { display:none; }
+ .dku-plan-page { max-width:none; padding:0; color:black; }
+ .dku-plan-page .term-plan-board { grid-template-columns:repeat(2,minmax(0,1fr)); overflow:visible; }
+ .dku-plan-page .dku-plan-term, .dku-plan-page li { break-inside:avoid; }
+ .dku-plan-page .dku-plan-check-layout { display:block; }
+ .dku-plan-page details::details-content { content-visibility:visible; display:block; }
+ .dku-plan-page details > *:not(summary) { display:block !important; }
 }

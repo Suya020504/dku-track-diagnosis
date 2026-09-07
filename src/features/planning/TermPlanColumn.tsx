@@ -1,5 +1,4 @@
 import { courses } from "../../data/curriculumData";
-import { CourseSticker } from "../../components/CourseSticker";
 import type {
   AcademicTermId,
   PlannedCoursePlacement,
@@ -24,7 +23,7 @@ export function TermPlanColumn({
 
   return (
     <section
-      className={extraTerm ? "term-plan-column extra-term" : "term-plan-column"}
+      className={extraTerm ? "dku-plan-term extra-term" : "dku-plan-term"}
       data-term-plan={termId}
       data-extra-term={extraTerm ? "true" : "false"}
     >
@@ -36,38 +35,34 @@ export function TermPlanColumn({
         <small>{placements.length + electiveSlots}자리</small>
       </header>
 
-      <div className="term-plan-items">
+      <div className="dku-plan-term-items">
         {placements.map((placement) => {
           const course = courseById.get(placement.courseId);
           return (
             <div
-              className="term-plan-course named-course"
+              className="dku-plan-course"
               data-plan-item-kind="named-course"
               key={`${placement.termId}-${placement.courseId}`}
             >
-              <CourseSticker
-                courseName={course ? `${course.code} ${course.name}` : placement.courseId}
-                creditsLabel={course ? `${course.credits}학점` : "학점 공식 확인 필요"}
-                evidenceState={placement.offeringEvidence === "historical-2026-snapshot"
-                  ? "historical-2026-snapshot"
-                  : "department-confirmation-required"}
-              />
-              {placement.offeringEvidence === "historical-2026-snapshot" && (
-                <small className="historical-pattern-badge">최근 개설 패턴 기준</small>
-              )}
+              <article aria-label={`${course ? `${course.code} ${course.name}` : placement.courseId} 과목 정보`}>
+                <strong>{course ? `${course.code} ${course.name}` : placement.courseId}</strong>
+                <div className="dku-plan-course-meta"><span>{course ? `${course.credits}학점` : "학점 공식 확인 필요"}</span><span>{placement.origin === "user-planned" ? "직접 지정" : "참고 배치"}</span></div>
+                {placement.offeringEvidence !== "historical-2026-snapshot" && <small>개설 여부 학과 확인 필요</small>}
+              </article>
             </div>
           );
         })}
 
         {electiveCredits > 0 && (
           <article
-            className="term-plan-course elective-reservation"
+            className="dku-plan-reservation"
             data-elective-allocation-term={termId}
             data-elective-credits={electiveCredits}
             data-elective-slots={electiveSlots}
             data-plan-item-kind="elective-reservation"
           >
             <div>
+              <small>과목 미정 · 학점 예약</small>
               <strong>전공 선택 과목 {electiveCredits}학점 자리</strong>
               <span>{electiveSlots}자리 · 과목명은 공식 확인 뒤 정해 주세요.</span>
             </div>

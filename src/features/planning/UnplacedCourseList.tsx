@@ -19,11 +19,11 @@ export function UnplacedCourseList({
   headingRef?: RefObject<HTMLHeadingElement | null>;
 }) {
   return (
-    <section className="plan-check-section" aria-labelledby="unplaced-course-title">
-      <div className="plan-check-heading">
-        <span>배치 결과 점검</span>
+    <section className="dku-plan-unplaced" aria-labelledby="unplaced-course-title">
+      <header className="dku-plan-heading">
+        <span className="dku-plan-eyebrow">선택 도구 · 배치 결과 점검</span>
         <h1 id="unplaced-course-title" ref={headingRef} tabIndex={-1}>배치하지 못한 과목</h1>
-      </div>
+      </header>
       {items.length === 0 ? (
         <p className="plan-check-empty">현재 계획에서 따로 남은 과목은 없습니다.</p>
       ) : (

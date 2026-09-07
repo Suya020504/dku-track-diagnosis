@@ -47,16 +47,19 @@ export function GraduationPlanPrerequisite({
         : "입력 상태 확인";
 
   return (
-    <main className="plan-entry-shell" aria-labelledby="plan-entry-title">
-      <section className="plan-entry-card">
-        <span>졸업 계획 준비</span>
+    <main className="dku-plan-page dku-plan-prerequisite" aria-labelledby="plan-entry-title">
+      <header className="dku-plan-heading">
+        <span className="dku-plan-eyebrow">선택 도구 · 졸업 계획 준비</span>
         <h1 id="plan-entry-title" ref={headingRef} tabIndex={-1}>
           졸업 계획 전에 입력 상태를 확인해 주세요
         </h1>
         <p>
           이 단계에서는 특정 트랙을 자동으로 고르거나 계획을 계산하지 않습니다.
-          아래 입력 상태를 확인하고, 추천 비교로 돌아가기까지 한 복구 경로로 보완해 주세요.
+          먼저 필요한 입력을 확인해 주세요. 현재 이수 진단만 원한다면 이 도구를 쓰지 않아도 됩니다.
         </p>
+      </header>
+      <section className="dku-plan-readiness">
+        <h2>계획에 필요한 세 가지</h2>
         <ul aria-label="졸업 계획 사전 입력 상태">
           <li
             className={readiness.profile}
@@ -89,13 +92,13 @@ export function GraduationPlanPrerequisite({
             </span>
           </li>
         </ul>
-        <div className="plan-entry-actions">
+      </section>
+        <div className="dku-plan-result-actions">
           <button className="primary-button" type="button" onClick={onRecover}>
             {recoveryLabel}
             <ArrowRight aria-hidden="true" size={18} />
           </button>
         </div>
-      </section>
     </main>
   );
 }
