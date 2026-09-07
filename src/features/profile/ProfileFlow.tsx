@@ -92,8 +92,8 @@ export function ProfileFlow({
   }
 
   return (
-    <section className="profile-flow" aria-labelledby="profile-entry-title" data-profile-stage={profileStage}>
-      <ol className="profile-stage-markers" aria-label="프로필 입력 단계">
+    <section className="dku-profile-page" aria-labelledby="dku-profile-title" data-profile-stage={profileStage}>
+      <ol className="dku-profile-stages" aria-label="프로필 입력 단계">
         <li
           data-profile-stage-marker="affiliation"
           aria-current={profileStage === "affiliation" ? "step" : undefined}

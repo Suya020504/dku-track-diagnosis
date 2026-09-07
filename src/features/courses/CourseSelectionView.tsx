@@ -96,11 +96,12 @@ export function CourseSelectionView({
   }
 
   return (
-    <div className="planner-course-selection-view">
-      <header className="planner-course-selection-heading">
-        <span>자가진단 · 과목 입력</span>
+    <div className="dku-courses-page">
+      <header className="dku-courses-heading">
+        <span>나의 진단 / 02 이수 과목</span>
         <h1 ref={headingRef} tabIndex={-1}>지금까지 이수한 과목을 선택하세요.</h1>
-        <p className="course-selection-help">들었던 과목만 체크하세요. 코드와 근거는 필요할 때 펼쳐볼 수 있습니다.</p>
+        <p className="dku-courses-help">들었던 과목만 체크하세요. 아직 이수한 과목이 없어도 결과를 볼 수 있어요.</p>
+        <p className="dku-courses-total" aria-label="전체 선택 과목 수" aria-live="polite">선택한 과목 <strong>{relevantSelections.length}개</strong></p>
       </header>
 
       <a
@@ -111,8 +112,8 @@ export function CourseSelectionView({
         결과로 건너뛰기
       </a>
 
-      <section className="course-selection-action-bar" aria-label="과목 입력 현황과 다음 행동">
-        <div className="course-selection-status-summary">
+      <section className="dku-courses-actions" aria-label="과목 입력 현황과 다음 행동">
+        <div className="dku-courses-counts">
           <span>이수 완료 <strong>{completedCount}</strong></span>
           <span>수강 중 <strong>{inProgressCount}</strong></span>
           <span>계획 <strong>{plannedCount}</strong></span>
@@ -127,6 +128,7 @@ export function CourseSelectionView({
         </button>
       </section>
 
+      <div className="dku-courses-workspace">
       <CourseLedgerFilters
         mode={mode}
         gradeFilter={gradeFilter}
@@ -150,8 +152,9 @@ export function CourseSelectionView({
         query={query}
         onToggleCourse={onToggleCourse}
       />
+      </div>
 
-      <details className="course-ledger-policy">
+      <details className="dku-check-policy">
         <summary>
           <ShieldCheck aria-hidden="true" size={18} />
           <span>현재 계산 기준</span>
@@ -162,7 +165,7 @@ export function CourseSelectionView({
         <p>{policy.description}</p>
       </details>
 
-      <section className="course-ledger-save-band" aria-label="과목 선택 저장 상태">
+      <section className="dku-check-save-band" aria-label="과목 선택 저장 상태">
         <div>
           <strong>{completedCount}개 과목 이수 완료</strong>
           <span>입력 즉시 이 브라우저에 자동 저장됩니다.</span>

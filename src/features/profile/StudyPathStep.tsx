@@ -72,10 +72,10 @@ export function StudyPathStep({
 }) {
   if (!affiliation) {
     return (
-      <section className="profile-entry-step" data-profile-region="path">
-        <header className="profile-entry-band profile-entry-band--mint">
+      <section className="dku-profile-step" data-profile-region="path">
+        <header className="dku-profile-band dku-profile-band--mint">
           <span>맞춤 진단 준비 · 이수 경로</span>
-          <h1 id="profile-entry-title" ref={headingRef} tabIndex={-1}>
+          <h1 id="dku-profile-title" ref={headingRef} tabIndex={-1}>
             소속 확인이 먼저 필요해요
           </h1>
         </header>
@@ -97,24 +97,26 @@ export function StudyPathStep({
   }
 
   return (
-    <section className="profile-entry-step" data-profile-region="path">
-      <header className="profile-entry-band profile-entry-band--mint">
+    <section className="dku-profile-step" data-profile-region="path">
+      <header className="dku-profile-band dku-profile-band--mint">
         <span>맞춤 진단 준비 · 이수 경로</span>
-        <h1 id="profile-entry-title" ref={headingRef} tabIndex={-1}>
+        <h1 id="dku-profile-title" ref={headingRef} tabIndex={-1}>
           확인할 이수 경로를 정해 주세요
         </h1>
         <p>{AFFILIATION_LABELS[affiliation]}에게 적용되는 선택지만 보여드립니다.</p>
       </header>
 
-      <p className="profile-entry-status profile-entry-status--midyear">
+      <p className="dku-profile-status dku-profile-status--midyear">
         {"2·3학년도 현재 이수 과목으로 참고 진단할 수 있습니다. 실제 트랙 신청 가능 시기, 적용 학번과 최종 인정 범위는 학과 확인이 필요합니다."}
       </p>
 
-      <fieldset className="profile-entry-fieldset">
+      <details className="dku-profile-options">
+        <summary>진단 목적 변경 · {GOAL_LABELS[affiliation][goal]}</summary>
+      <fieldset className="dku-profile-fieldset">
         <legend>지금 확인하고 싶은 것</legend>
-        <div className="profile-entry-rows profile-entry-rows--compact">
+        <div className="dku-profile-rows dku-profile-rows--compact">
           {(Object.keys(GOAL_LABELS[affiliation]) as ServiceGoal[]).map((candidateGoal) => (
-            <label className="profile-entry-row" key={candidateGoal}>
+            <label className="dku-profile-row" key={candidateGoal}>
               <input
                 type="radio"
                 name="goal"
@@ -127,12 +129,13 @@ export function StudyPathStep({
           ))}
         </div>
       </fieldset>
+      </details>
 
-      <fieldset className="profile-entry-fieldset">
+      <fieldset className="dku-profile-fieldset">
         <legend>이수 경로</legend>
-        <div className="profile-entry-rows profile-entry-rows--compact">
+        <div className="dku-profile-rows dku-profile-rows--compact">
           {allowedPaths.map((candidatePath) => (
-            <label className="profile-entry-row" key={candidatePath}>
+            <label className="dku-profile-row" key={candidatePath}>
               <input
                 type="radio"
                 name="studyPath"
@@ -147,15 +150,17 @@ export function StudyPathStep({
       </fieldset>
 
       {studyPath === "track-major" ? (
-        <fieldset className="profile-entry-fieldset">
+        <details className="dku-profile-options" open={goal === "plan-graduation" || undefined} key={goal}>
+        <summary>{goal === "plan-graduation" ? "계획할 트랙 선택 (필수)" : "목표 트랙 선택 (선택)"} · {tracks.find((track) => track.id === targetTrackId)?.name ?? "아직 정하지 않았어요"}</summary>
+        <fieldset className="dku-profile-fieldset">
           <legend>
             진단할 트랙
             {goal === "find-track" ? <small> (설문 전에는 선택하지 않아도 됩니다)</small> : null}
             {goal === "check-progress" ? <small> (선택 · 목표 없이 5개 트랙 비교 가능)</small> : null}
           </legend>
-          <div className="profile-track-rows">
+          <div className="dku-profile-track-rows">
             {goal === "check-progress" ? (
-              <label className="profile-track-row">
+              <label className="dku-profile-track-row">
                 <input
                   type="radio"
                   name="targetTrackId"
@@ -171,7 +176,7 @@ export function StudyPathStep({
               </label>
             ) : null}
             {tracks.map((track) => (
-              <label className="profile-track-row" key={track.id}>
+              <label className="dku-profile-track-row" key={track.id}>
                 <input
                   type="radio"
                   name="targetTrackId"
@@ -188,9 +193,12 @@ export function StudyPathStep({
             ))}
           </div>
         </fieldset>
+        </details>
       ) : null}
 
-      <label className="profile-entry-year">
+      <details className="dku-profile-options" open={!entryYearValid || undefined}>
+      <summary>입학연도 입력 (선택){entryYear ? ` · ${entryYear}년` : ""}</summary>
+      <label className="dku-profile-year">
         <span>입학연도 <small>(선택)</small></span>
         <input
           type="number"
@@ -198,26 +206,27 @@ export function StudyPathStep({
           max="2026"
           inputMode="numeric"
           aria-invalid={entryYearValid ? undefined : true}
-          aria-describedby={entryYearValid ? undefined : "profile-entry-year-error"}
+          aria-describedby={entryYearValid ? undefined : "dku-profile-year-error"}
           value={entryYear ?? ""}
           onChange={(event) => onEntryYearChange(
             event.target.value ? Number(event.target.value) : undefined,
           )}
         />
         {!entryYearValid ? (
-          <small id="profile-entry-year-error" role="alert">
+          <small id="dku-profile-year-error" role="alert">
             입학연도는 2000년부터 2026년 사이로 입력해 주세요.
           </small>
         ) : null}
       </label>
+      </details>
 
-      <p className="profile-entry-status" role="status">
+      <p className="dku-profile-status" role="status">
         {studyPath && allowedPaths.includes(studyPath)
           ? `${AFFILIATION_LABELS[affiliation]} · ${STUDY_PATH_LABELS[studyPath]} 기준을 사용합니다.`
           : "이수 경로를 선택해 주세요."}
       </p>
 
-      <div className="profile-entry-actions profile-entry-actions--split">
+      <div className="dku-profile-actions dku-profile-actions--split">
         <button className="profile-back-action planner-focusable" type="button" onClick={onBack}>
           <ArrowLeft aria-hidden="true" size={18} />
           소속으로 돌아가기

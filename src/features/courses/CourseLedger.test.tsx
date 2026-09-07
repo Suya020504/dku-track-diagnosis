@@ -105,7 +105,7 @@ describe("CourseLedger", () => {
   it("shows every planning status with real course, module, credit, term, and evidence text", () => {
     document.body.innerHTML = renderLedger();
 
-    const rows = [...document.querySelectorAll<HTMLElement>(".course-ledger-row")];
+    const rows = [...document.querySelectorAll<HTMLElement>(".dku-check-row")];
     const rowFor = (courseName: string) => rows.find((row) => row.textContent?.includes(courseName));
     expect(rows).toHaveLength(4);
     expect(rowFor("경제원론")?.textContent).toContain("이수 완료");
@@ -120,19 +120,19 @@ describe("CourseLedger", () => {
     expect(rowFor("미시경제학")?.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked).toBe(true);
     expect(rowFor("소비자경제학")?.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked).toBe(false);
     expect(rows.every((row) => row.querySelector('[data-touch-target="44"]'))).toBe(true);
-    expect(rows.every((row) => row.querySelector("details.course-ledger-row-details:not([open])"))).toBe(true);
-    expect(rowFor("경제원론")?.querySelector(".course-ledger-row-details summary .sr-only")?.textContent)
+    expect(rows.every((row) => row.querySelector("details.dku-check-row-details:not([open])"))).toBe(true);
+    expect(rowFor("경제원론")?.querySelector(".dku-check-row-details summary .sr-only")?.textContent)
       .toBe("경제원론 과목 정보");
   });
 
   it("starts as a compact accordion with only the first semester expanded", () => {
     document.body.innerHTML = renderLedger();
 
-    const groups = [...document.querySelectorAll<HTMLDetailsElement>("details.course-ledger-group")];
+    const groups = [...document.querySelectorAll<HTMLDetailsElement>("details.dku-check-group")];
     expect(groups).toHaveLength(4);
     expect(groups[0]?.open).toBe(true);
     expect(groups.slice(1).every((group) => !group.open)).toBe(true);
-    expect(document.querySelector(".course-ledger-index")).toBeNull();
+    expect(document.querySelector(".dku-check-index")).toBeNull();
     expect(groups[0]?.querySelector("summary")?.textContent).toContain("선택 1 / 1");
   });
 
@@ -148,8 +148,8 @@ describe("CourseLedger", () => {
     const moduleMarkup = renderLedger({ mode: "module", query: "미시" });
     expect(moduleMarkup).toContain("미시경제학");
     expect(moduleMarkup).not.toContain("소비자경제학");
-    expect(moduleMarkup).toContain('data-course-ledger-mode="module"');
-    expect(moduleMarkup).toContain('id="course-ledger-group-module-c"');
+    expect(moduleMarkup).toContain('data-dku-check-mode="module"');
+    expect(moduleMarkup).toContain('id="dku-check-group-module-c"');
   });
 
   it("can reduce the ledger to courses that already have a saved status", async () => {
@@ -161,7 +161,7 @@ describe("CourseLedger", () => {
     await act(async () => toggle.click());
 
     expect(toggle.getAttribute("aria-pressed")).toBe("true");
-    expect(document.querySelectorAll(".course-ledger-row")).toHaveLength(3);
+    expect(document.querySelectorAll(".dku-check-row")).toHaveLength(3);
     expect(document.body.textContent).not.toContain("환경경제학");
   });
 });

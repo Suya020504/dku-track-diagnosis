@@ -58,7 +58,7 @@ describe("resource-only navigation", () => {
     expect(document.querySelector('[data-journey-stage="result"] button')?.getAttribute("aria-current"))
       .toBe("step");
     await act(async () => document.querySelector<HTMLButtonElement>('[data-journey-stage="courses"] button')!.click());
-    await act(async () => [...document.querySelectorAll<HTMLButtonElement>(".course-ledger-mode button")]
+    await act(async () => [...document.querySelectorAll<HTMLButtonElement>(".dku-check-mode button")]
       .find((node) => node.textContent === "모듈별")!.click());
     expect(new URLSearchParams(location.search).get("view")).toBe("diagnosis");
     expect(new URLSearchParams(location.search).get("step")).toBe("courses");

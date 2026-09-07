@@ -61,7 +61,7 @@ function buildSemesterGroups(visibleCourses: Course[]): LedgerGroup[] {
   const groups = semesterSlots.flatMap((slot) => {
     const groupedCourses = visibleCourses.filter((course) => course.recommendedSemester === slot.key);
     return groupedCourses.length > 0 ? [{
-      id: `course-ledger-group-semester-${slot.key}`,
+      id: `dku-check-group-semester-${slot.key}`,
       label: slot.label,
       note: `${groupedCourses.length}개 과목`,
       courses: groupedCourses,
@@ -69,7 +69,7 @@ function buildSemesterGroups(visibleCourses: Course[]): LedgerGroup[] {
   });
   const unknownCourses = visibleCourses.filter((course) => !course.recommendedSemester);
   return unknownCourses.length > 0 ? [...groups, {
-    id: "course-ledger-group-semester-unknown",
+    id: "dku-check-group-semester-unknown",
     label: "학기 미정",
     note: "개설 학기는 학과 확인 필요",
     courses: unknownCourses,
@@ -82,7 +82,7 @@ function buildModuleGroups(visibleCourses: Course[], selectedTrackIds: TrackId[]
   return moduleIds.map((moduleId) => {
     const groupedCourses = visibleCourses.filter((course) => course.moduleId === moduleId);
     return {
-      id: `course-ledger-group-module-${moduleId.toLowerCase()}`,
+      id: `dku-check-group-module-${moduleId.toLowerCase()}`,
       label: getModuleLabel(moduleId),
       note: isModuleInAnyTrack(selectedTrackIds, moduleId)
         ? "선택 트랙 관련 모듈"
@@ -156,18 +156,18 @@ export function CourseLedger({
 
   return (
     <section
-      className="course-ledger"
-      data-course-ledger-mode={mode}
-      aria-labelledby="course-ledger-title"
+      className="dku-check"
+      data-dku-check-mode={mode}
+      aria-labelledby="dku-check-title"
     >
-      <header className="course-ledger-summary">
+      <header className="dku-check-summary">
         <div>
           <span>빠른 과목 체크</span>
-          <h2 id="course-ledger-title" tabIndex={-1}>
+          <h2 id="dku-check-title" tabIndex={-1}>
             {mode === "semester" ? "학기별 과목" : "모듈별 과목"}
           </h2>
         </div>
-        <div className="course-ledger-summary-actions">
+        <div className="dku-check-summary-actions">
           <p><strong>{selectedMatchingCount}</strong> / {matchingCourses.length}개 선택</p>
           <button
             type="button"
@@ -180,7 +180,7 @@ export function CourseLedger({
       </header>
 
       {groups.length === 0 ? (
-        <div className="course-ledger-empty" role="status">
+        <div className="dku-check-empty" role="status">
           <strong>{selectedOnly ? "선택한 과목이 없습니다." : "조건에 맞는 과목이 없습니다."}</strong>
           <span>{selectedOnly ? "전체 과목으로 돌아가 처음부터 체크해 보세요." : "검색어나 학년·학기 필터를 바꿔보세요."}</span>
           {selectedOnly ? (
@@ -188,13 +188,13 @@ export function CourseLedger({
           ) : null}
         </div>
       ) : (
-        <div className="course-ledger-groups">
+        <div className="dku-check-groups">
           {groups.map((group, index) => {
             const groupSelectedCount = group.courses.filter((course) => selectionByCourseId.has(course.id)).length;
             const groupOpen = forceGroupsOpen || (groupOpenState[group.id] ?? index === 0);
             return (
             <details
-              className="course-ledger-group"
+              className="dku-check-group"
               id={group.id}
               key={`${group.id}-${expansionKey}`}
               open={groupOpen}
@@ -207,7 +207,7 @@ export function CourseLedger({
               }}
             >
               <summary>
-                <span className="course-ledger-group-title">
+                <span className="dku-check-group-title">
                   <h3>{group.label}</h3>
                   {mode === "module" && group.note === "선택 트랙 관련 모듈" ? <small>{group.note}</small> : null}
                 </span>

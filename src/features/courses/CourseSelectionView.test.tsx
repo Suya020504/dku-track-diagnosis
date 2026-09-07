@@ -88,13 +88,17 @@ afterEach(async () => {
 });
 
 describe("CourseSelectionView", () => {
+  it("announces the real total without confusing planned courses with completed courses", async () => {
+    await renderHarness();
+    expect(document.querySelector('[aria-label="전체 선택 과목 수"]')?.textContent).toContain("3개");
+  });
   it("puts direct-selection controls and the ledger before secondary save metadata", async () => {
     await renderHarness();
 
-    const filters = document.querySelector(".course-ledger-filters");
-    const ledger = document.querySelector(".course-ledger");
-    const saveBand = document.querySelector(".course-ledger-save-band");
-    const policy = document.querySelector(".course-ledger-policy");
+    const filters = document.querySelector(".dku-check-filters");
+    const ledger = document.querySelector(".dku-check");
+    const saveBand = document.querySelector(".dku-check-save-band");
+    const policy = document.querySelector(".dku-check-policy");
     if (!filters || !ledger || !saveBand || !policy) throw new Error("Missing course selection regions");
 
     expect(Boolean(filters.compareDocumentPosition(ledger) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
@@ -105,9 +109,9 @@ describe("CourseSelectionView", () => {
   it("places one compact result action and saved-status summary before the course controls", async () => {
     await renderHarness();
 
-    const view = document.querySelector(".planner-course-selection-view");
-    const actionBar = view?.querySelector(".course-selection-action-bar");
-    const filters = view?.querySelector(".course-ledger-filters");
+    const view = document.querySelector(".dku-courses-page");
+    const actionBar = view?.querySelector(".dku-courses-actions");
+    const filters = view?.querySelector(".dku-check-filters");
     if (!actionBar || !filters) throw new Error("Missing compact course hierarchy");
 
     expect(actionBar.textContent).toContain("이수 완료 1");
@@ -115,13 +119,13 @@ describe("CourseSelectionView", () => {
     expect(actionBar.textContent).toContain("계획 1");
     expect(actionBar.querySelector("#diagnosis-result-action")?.textContent).toContain("진단 결과 확인");
     expect(Boolean(actionBar.compareDocumentPosition(filters) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
-    expect(view?.querySelector(".course-ledger-start")).toBeNull();
+    expect(view?.querySelector(".dku-check-start")).toBeNull();
   });
 
   it("keeps secondary grade and semester filters in a named collapsed disclosure", async () => {
     await renderHarness();
 
-    const disclosure = document.querySelector<HTMLDetailsElement>(".course-ledger-more-filters");
+    const disclosure = document.querySelector<HTMLDetailsElement>(".dku-check-more-filters");
     expect(disclosure).not.toBeNull();
     expect(disclosure?.open).toBe(false);
     expect(disclosure?.querySelector("summary")?.textContent).toContain("추가 필터");
@@ -132,11 +136,11 @@ describe("CourseSelectionView", () => {
   it("keeps the complete 45-course direct ledger ahead of the optional PDF beta", async () => {
     await renderHarness();
 
-    expect(document.querySelectorAll(".course-ledger-row")).toHaveLength(45);
+    expect(document.querySelectorAll(".dku-check-row")).toHaveLength(45);
     expect(document.querySelector("h1")?.textContent).toContain("지금까지 이수한 과목을 선택하세요");
     expect(document.body.textContent).toContain("직접 선택만으로 진단을 완료할 수 있어요");
 
-    const ledger = document.querySelector(".course-ledger");
+    const ledger = document.querySelector(".dku-check");
     const pdf = document.querySelector(".pdf-import-panel");
     expect(ledger).toBeTruthy();
     expect(pdf).toBeTruthy();
@@ -162,7 +166,7 @@ describe("CourseSelectionView", () => {
     await act(async () => button("모듈별").click());
     expect(semesterMode.getAttribute("aria-pressed")).toBe("false");
     expect(moduleMode.getAttribute("aria-pressed")).toBe("true");
-    expect(document.querySelector('[data-course-ledger-mode="module"]')).toBeTruthy();
+    expect(document.querySelector('[data-dku-check-mode="module"]')).toBeTruthy();
     expect(document.body.textContent).toContain("경제학 전문지식");
   });
 
@@ -184,7 +188,7 @@ describe("CourseSelectionView", () => {
   it("keeps every course detail behind a collapsed disclosure", async () => {
     await renderHarness();
 
-    const details = [...document.querySelectorAll<HTMLDetailsElement>(".course-ledger-row-details")];
+    const details = [...document.querySelectorAll<HTMLDetailsElement>(".dku-check-row-details")];
     expect(details).toHaveLength(45);
     expect(details.every((detail) => !detail.open)).toBe(true);
     expect(details[0]?.querySelector("summary")?.textContent).toContain("과목 정보");

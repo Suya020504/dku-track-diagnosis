@@ -1561,7 +1561,7 @@ function App({ storage }: { storage?: Storage } = {}) {
         )}
 
         {activeView === "diagnosis" && pdfInputRoute !== "pdf-review" && (
-          <div className="view-layout">
+          <div className="dku-courses-layout">
             {requiresTrack && (trackSetupOpen ? (
               <TrackPicker
                 selectedTrackIds={selectedTrackIds}
@@ -1578,8 +1578,8 @@ function App({ storage }: { storage?: Storage } = {}) {
                 onEdit={() => setTrackSetupOpen(true)}
               />
             ))}
-            <div className="course-input-layout">
-              <section className="primary-panel course-input-panel">
+            <div className="dku-courses-content">
+              <section className="dku-courses-surface">
                 {pdfImportRecoveryNotice && (
                   <p className="pdf-import-recovery-notice" role="status">
                     개인정보 보호를 위해 PDF 검수 내용은 새로고침 후 저장하지 않았어요. 직접 선택은 그대로 유지됩니다.
@@ -1870,7 +1870,7 @@ function TrackSetupSummary({
   onEdit: () => void;
 }) {
   return (
-    <section className="track-setup-summary" aria-label="선택한 이수 유형과 트랙">
+    <section className="dku-courses-profile-summary" aria-label="선택한 이수 유형과 트랙">
       <div>
         <span>1단계 입력 완료</span>
         <strong>

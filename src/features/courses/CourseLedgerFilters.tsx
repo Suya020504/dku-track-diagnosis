@@ -48,8 +48,8 @@ export function CourseLedgerFilters({
   const semesterLabel = semesterOptions.find((option) => option.value === semesterFilter)?.label ?? "전체 학기";
 
   return (
-    <section className="course-ledger-filters" aria-label="과목 원장 필터">
-      <label className="course-ledger-search">
+    <section className="dku-check-filters" aria-label="과목 원장 필터">
+      <label className="dku-check-search">
         <Search aria-hidden="true" size={18} />
         <span className="sr-only">과목 검색</span>
         <input
@@ -61,7 +61,7 @@ export function CourseLedgerFilters({
         />
       </label>
 
-      <div className="course-ledger-mode" aria-label="과목 묶음 방식">
+      <div className="dku-check-mode" aria-label="과목 묶음 방식">
         <button
           type="button"
           aria-pressed={mode === "semester"}
@@ -80,16 +80,16 @@ export function CourseLedgerFilters({
         </button>
       </div>
 
-      <details className="course-ledger-more-filters">
+      <details className="dku-check-more-filters">
         <summary>
           <span>추가 필터</span>
           <small>{gradeLabel} · {semesterLabel}</small>
           <ChevronDown aria-hidden="true" size={18} />
         </summary>
-        <div className="course-ledger-more-filter-content">
-          <div className="course-ledger-filter-row">
+        <div className="dku-check-more-filter-content">
+          <div className="dku-check-filter-row">
             <span>학년</span>
-            <div className="course-ledger-filter-options" aria-label="학년 선택">
+            <div className="dku-check-filter-options" aria-label="학년 선택">
               {gradeOptions.map((option) => (
                 <button
                   type="button"
@@ -103,9 +103,9 @@ export function CourseLedgerFilters({
             </div>
           </div>
 
-          <div className="course-ledger-filter-row">
+          <div className="dku-check-filter-row">
             <span>학기</span>
-            <div className="course-ledger-filter-options" aria-label="학기 선택">
+            <div className="dku-check-filter-options" aria-label="학기 선택">
               {semesterOptions.map((option) => (
                 <button
                   type="button"

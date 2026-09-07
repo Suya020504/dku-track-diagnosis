@@ -58,28 +58,28 @@ export function CourseLedgerRow({
   const checked = status === "completed" || status === "in-progress";
   const statusLabel = selectionStatusLabel(selection);
   const rowClassName = [
-    "course-ledger-row",
-    status ? `course-ledger-row--${status}` : "course-ledger-row--unselected",
-    trackModule ? "course-ledger-row--track" : "",
+    "dku-check-row",
+    status ? `dku-check-row--${status}` : "dku-check-row--unselected",
+    trackModule ? "dku-check-row--track" : "",
   ].filter(Boolean).join(" ");
 
   return (
     <article className={rowClassName} data-course-status={status ?? "unselected"}>
-      <label className="course-ledger-row-primary">
-        <span className="course-ledger-check-target" data-touch-target="44">
+      <label className="dku-check-row-primary">
+        <span className="dku-check-check-target" data-touch-target="44">
           <input
-            className="course-ledger-check-input"
+            className="dku-check-check-input"
             type="checkbox"
             checked={checked}
             aria-label={`${course.name} ${statusLabel}`}
             onChange={() => onToggleCourse(course.id)}
           />
-          <span className="course-ledger-check-box" aria-hidden="true">
+          <span className="dku-check-check-box" aria-hidden="true">
             {checked ? <Check size={18} /> : null}
           </span>
         </span>
 
-        <span className="course-ledger-course">
+        <span className="dku-check-course">
           <span>
             <strong>{course.name}</strong>
             {requiredForEnrollment ? <em>필수</em> : null}
@@ -87,19 +87,19 @@ export function CourseLedgerRow({
           {showTerm ? <small>{formatSemester(course.recommendedSemester)}</small> : null}
         </span>
 
-        <span className="course-ledger-credit">{course.credits}학점</span>
+        <span className="dku-check-credit">{course.credits}학점</span>
         {status ? (
-          <span className={`course-ledger-status course-ledger-status--${status}`}>
+          <span className={`dku-check-status dku-check-status--${status}`}>
             <SelectionStatusIcon status={status} />
             {statusLabel}
           </span>
         ) : <span className="sr-only">미선택</span>}
       </label>
 
-      <details className="course-ledger-row-details">
+      <details className="dku-check-row-details">
         <summary>
           <Info aria-hidden="true" size={15} />
-          <span className="course-ledger-info-label" aria-hidden="true">과목 정보</span>
+          <span className="dku-check-info-label" aria-hidden="true">과목 정보</span>
           <span className="sr-only">{course.name} 과목 정보</span>
           <ChevronDown aria-hidden="true" size={15} />
         </summary>

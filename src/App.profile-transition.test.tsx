@@ -116,7 +116,7 @@ describe("profile integration transitions", () => {
     expect(document.body.textContent).toContain("5개 트랙 비교");
     const resultAction = document.querySelector<HTMLButtonElement>("#diagnosis-result-action");
     expect(resultAction).not.toBeNull();
-    expect(resultAction?.closest(".course-selection-action-bar")).not.toBeNull();
+    expect(resultAction?.closest(".dku-courses-actions")).not.toBeNull();
     expect(document.querySelector(".planner-diagnosis-panel")).toBeNull();
 
     await act(async () => resultAction?.click());

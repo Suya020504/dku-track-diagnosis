@@ -42,6 +42,12 @@ afterEach(async () => {
 });
 
 describe("ProfileFlow", () => {
+  it("keeps optional purposes out of the initial path decision", async () => {
+    await mountProfileFlow({ profileStage: "path", initialDraft: { affiliation: "department-student" } });
+    const purpose = document.querySelector('input[name="goal"]');
+    expect(purpose?.closest("details")?.open).toBe(false);
+    expect(document.querySelector('input[name="studyPath"]')?.closest("details")).toBeNull();
+  });
   it("restores an in-progress draft over the last completed profile", async () => {
     await mountProfileFlow({
       profile: {
@@ -69,7 +75,7 @@ describe("ProfileFlow", () => {
 
     expect(document.querySelector('fieldset[aria-labelledby="affiliation-question"]')).not.toBeNull();
     expect(document.querySelector('input[name="studyPath"]')).toBeNull();
-    expect(document.querySelectorAll('.profile-entry-actions .primary-button')).toHaveLength(1);
+    expect(document.querySelectorAll('.dku-profile-actions .primary-button')).toHaveLength(1);
 
     await act(async () => click('input[name="affiliation"][value="external-student"]'));
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({
@@ -138,7 +144,7 @@ describe("ProfileFlow", () => {
       },
     });
 
-    const year = document.querySelector<HTMLInputElement>('.profile-entry-year input[type="number"]');
+    const year = document.querySelector<HTMLInputElement>('.dku-profile-year input[type="number"]');
     const complete = document.querySelector<HTMLButtonElement>(".study-path-complete");
     if (!year || !complete) throw new Error("Missing admission year controls");
 
@@ -180,6 +186,7 @@ describe("ProfileFlow", () => {
       "2·3학년도 현재 이수 과목으로 참고 진단할 수 있습니다. 실제 트랙 신청 가능 시기, 적용 학번과 최종 인정 범위는 학과 확인이 필요합니다.",
     );
     expect(document.body.textContent).toContain("아직 정하지 않았어요 · 5개 트랙 비교");
+    expect(document.querySelector('[data-target-track-choice="compare-all"]')?.closest("details")?.open).toBe(false);
 
     await act(async () => click('[data-target-track-choice="compare-all"]'));
     expect(onTargetTrackChange).toHaveBeenLastCalledWith(undefined);
