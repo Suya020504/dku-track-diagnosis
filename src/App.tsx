@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import {
   ArrowRight,
-  Instagram,
-  Mail,
   RotateCcw,
   X,
 } from "lucide-react";
@@ -10,6 +8,7 @@ import { courses, tracks } from "./data/curriculumData";
 import { getAllowedStudyPaths } from "./data/requirementRules2026";
 import { OFFICIAL_TRACK_VIDEOS, type OfficialTrackVideoId } from "./data/officialResources";
 import { ProfileFlow } from "./features/profile/ProfileFlow";
+import { ContactPage } from "./features/contact/ContactPage";
 import { GraduationPlanResult } from "./features/planning/GraduationPlanResult";
 import { GraduationPlanSetup } from "./features/planning/GraduationPlanSetup";
 import { GraduationPlanPrerequisite } from "./features/planning/GraduationPlanPrerequisite";
@@ -1545,7 +1544,7 @@ function App({ storage }: { storage?: Storage } = {}) {
   if (activeView === "contact") {
     return renderGuidebook(
       <main className="planner-contact-main">
-        <ContactView headingRef={stepHeadingRef} />
+        <ContactPage headingRef={stepHeadingRef} updates={updateHistory} />
       </main>,
       [],
     );
@@ -1564,14 +1563,14 @@ function App({ storage }: { storage?: Storage } = {}) {
   }
 
   return renderGuidebook(
-    <div className="app-shell service-shell">
+    <div className={pdfInputRoute === "pdf-review" ? "app-shell service-shell" : "dku-service-frame"}>
       {storageError && (
         <p className="storage-error service-storage-error" role="alert">
           이 브라우저에 변경 내용을 저장하지 못했습니다. 탭을 닫기 전에 입력 내용을 확인해 주세요.
         </p>
       )}
 
-      <main className="workspace service-workspace">
+      <main className={pdfInputRoute === "pdf-review" ? "workspace service-workspace" : "dku-service-workspace"}>
         {activeView === "diagnosis" && pdfInputRoute === "pdf-review" && pdfImportDraft && (
           <section className="primary-panel full-panel pdf-review-panel-shell">
             <PdfMatchReview
@@ -1641,7 +1640,7 @@ function App({ storage }: { storage?: Storage } = {}) {
         )}
 
         {activeView === "result" && savedState.profile && pathProgress && (
-          <section className="primary-panel full-panel">
+          <section className="dku-result-surface">
             <ResultDetailView
               result={result}
               profile={savedState.profile}
@@ -1914,60 +1913,6 @@ function TrackSetupSummary({
 }
 
 
-function ContactView({ headingRef }: { headingRef?: RefObject<HTMLHeadingElement | null> }) {
-  return (
-    <div className="view-stack">
-      <header className="section-header planner-contact-heading">
-        <span>문의사항</span>
-        <h1 id="contact-page-title" ref={headingRef} tabIndex={-1}>개인 프로젝트 운영자에게 문의하기</h1>
-        <p>오류 제보, 데이터 검수 의견, 기능 제안은 아래 연락처로 보내주세요. 학과 공식 행정 문의는 반드시 학과 사무실 또는 공식 안내를 이용해야 합니다.</p>
-      </header>
-      <div className="contact-card">
-        <div className="contact-avatar logo-avatar">
-          <Mail aria-hidden="true" size={36} />
-        </div>
-        <div className="contact-details">
-          <h3>단국대학교 수학과 이연수</h3>
-          <a href="mailto:shuai020504@naver.com">
-            <Mail aria-hidden="true" size={18} />
-            shuai020504@naver.com
-          </a>
-          <a href="https://www.instagram.com/yourdiary_02" target="_blank" rel="noreferrer">
-            <Instagram aria-hidden="true" size={18} />
-            @yourdiary_02
-          </a>
-        </div>
-      </div>
-      <p className="contact-disclaimer">
-        이 도구는 자가진단 보조용으로 제작했습니다.
-        <br />
-        자세한 최종 졸업·트랙 인정 여부는 학과 공식 안내로 확인하세요.
-      </p>
-      <section className="update-history-panel" aria-label="날짜별 업데이트 내역">
-        <div className="update-history-head">
-          <span>업데이트 기록</span>
-          <h3>날짜별 개선 내역</h3>
-          <p>사이트가 어떤 방향으로 보강됐는지 한눈에 확인할 수 있도록 주요 변경 사항만 정리했습니다.</p>
-        </div>
-        <div className="update-history-list">
-          {updateHistory.map((entry) => (
-            <article className="update-history-item" key={entry.date}>
-              <time>{entry.date}</time>
-              <div>
-                <h4>{entry.title}</h4>
-                <ul>
-                  {entry.items.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-    </div>
-  );
-}
 
 function formatSaveTime(date: Date): string {
   const month = date.getMonth() + 1;

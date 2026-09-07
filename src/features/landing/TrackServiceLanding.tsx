@@ -89,7 +89,7 @@ export function TrackServiceLanding({
   const ResumeIcon = resume.Icon;
 
   return (
-    <main className="track-home" aria-labelledby="track-home-title">
+    <main className="track-home dku-home-page" aria-labelledby="track-home-title">
       <section className="track-home__hero">
         <div className="track-home__hero-copy">
           <p className="track-home__service-label">단국대 학생을 위한 트랙제 안내·자가진단</p>
@@ -97,7 +97,7 @@ export function TrackServiceLanding({
             어떤 트랙이 나한테<br /> <em>잘 맞을까?</em>
           </h1>
           <p className="track-home__hero-description">
-            관심 있는 분야와 지금까지 들은 과목을 입력하면, 가까운 트랙과 앞으로 더 들어야 할 과목을 확인할 수 있어요.
+            지금까지 들은 과목으로 다섯 트랙의 이수 현황과 앞으로 더 들어야 할 과목을 확인해 보세요.
           </p>
           <div className="track-home__hero-actions">
             <button
@@ -134,54 +134,7 @@ export function TrackServiceLanding({
         </figure>
       </section>
 
-      <section className="track-home__start" aria-labelledby="track-home-start-title">
-        <header>
-          <span>지금 필요한 방식으로 시작하세요</span>
-          <h2 id="track-home-start-title">핵심은 현재 과목 기준 시뮬레이션이에요</h2>
-        </header>
-        <div className="track-home__start-layout">
-          <article className="track-home__simulation-summary">
-            <div className="track-home__feature-icon"><ClipboardCheck aria-hidden="true" /></div>
-            <div>
-              <strong>내 상황별 트랙 현황 확인</strong>
-              <p>소속과 이수 경로, 들은 과목을 기준으로 현재 진행도·부족 조건·다음 과목을 확인합니다.</p>
-            </div>
-            <span>핵심 기능</span>
-          </article>
-          <aside className="track-home__recommendation-option">
-            <Sparkles aria-hidden="true" size={24} />
-            <div>
-              <strong>아직 방향을 정하지 못했다면</strong>
-              <p>소속에 맞는 관심 질문으로 가까운 트랙을 먼저 찾아볼 수 있어요.</p>
-            </div>
-            <button className="planner-focusable" type="button" onClick={onOpenRecommendation}>
-              관심으로 트랙 추천받기
-              <ArrowRight aria-hidden="true" size={17} />
-            </button>
-          </aside>
-        </div>
-      </section>
-
-      <section className="track-home__flow" aria-labelledby="track-home-flow-title">
-        <div className="track-home__section-heading">
-          <span>이용 흐름</span>
-          <h2 id="track-home-flow-title">입력부터 다음 학기까지 한 흐름으로 이어져요</h2>
-        </div>
-        <SimulationSteps
-          resultReady={resultReady}
-          planReady={plannerStatus === "ready" || plannerStatus === "saved-plan"}
-        />
-      </section>
-
-      <section className="track-home__tracks" aria-labelledby="track-home-tracks-title">
-        <div className="track-home__section-heading">
-          <span>2026 교육과정 기준</span>
-          <h2 id="track-home-tracks-title">다섯 트랙을 한눈에 비교해 보세요</h2>
-          <p>트랙 이름을 열면 학습 주제와 연결 분야를 간단히 확인할 수 있습니다.</p>
-        </div>
-        <TrackPreviewAccordion tracks={tracks} onOpenGuide={onOpenGuide} />
-      </section>
-
+      {plannerStatus !== "empty" ? (
       <section className="track-home__resume" data-resume-state={plannerStatus}>
         <div className="track-home__resume-icon"><ResumeIcon aria-hidden="true" /></div>
         <div>
@@ -195,6 +148,40 @@ export function TrackServiceLanding({
           </button>
         ) : null}
       </section>
+      ) : <p className="track-home__save-note">학생 유형 → 이수 과목 → 진단 결과 · 입력은 이 브라우저에 자동 저장돼요.</p>}
+
+      <section className="track-home__flow" aria-labelledby="track-home-flow-title">
+        <div className="track-home__section-heading">
+          <span>진단은 세 단계면 충분해요</span>
+          <h2 id="track-home-flow-title">들은 과목에서 다음 과목까지</h2>
+        </div>
+        <SimulationSteps resultReady={resultReady} planReady={plannerStatus === "ready" || plannerStatus === "saved-plan"} />
+      </section>
+
+      <section className="track-home__optional" aria-label="선택해서 이용하는 서비스">
+        <div>
+          <Sparkles aria-hidden="true" size={24} />
+          <h2>관심부터 살펴보고 싶다면</h2>
+          <p>진단과 별개로, 소속에 맞는 관심 질문으로 다섯 트랙을 비교해 보세요.</p>
+          <button className="planner-focusable" type="button" onClick={onOpenRecommendation}>관심으로 트랙 추천받기 <ArrowRight aria-hidden="true" size={17} /></button>
+        </div>
+        <div>
+          <BookOpenCheck aria-hidden="true" size={24} />
+          <h2>다음 학기 계획은 선택이에요</h2>
+          <p>진단 결과를 확인한 뒤 필요한 경우에만 목표 학기와 수강량을 정해 계획할 수 있어요.</p>
+          <span>결과 확인 후 이용 · 필수 진단에 포함되지 않아요</span>
+        </div>
+      </section>
+
+      <section className="track-home__tracks" aria-labelledby="track-home-tracks-title">
+        <div className="track-home__section-heading">
+          <span>2026 교육과정 기준</span>
+          <h2 id="track-home-tracks-title">다섯 트랙을 한눈에 비교해 보세요</h2>
+          <p>트랙 이름을 열면 학습 주제와 연결 분야를 간단히 확인할 수 있습니다.</p>
+        </div>
+        <TrackPreviewAccordion tracks={tracks} onOpenGuide={onOpenGuide} />
+      </section>
+
     </main>
   );
 }

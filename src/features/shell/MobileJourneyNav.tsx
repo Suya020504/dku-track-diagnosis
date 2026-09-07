@@ -1,5 +1,5 @@
 import { LockKeyhole, MoreHorizontal } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type MobileJourneyItem = {
   id: string;
@@ -68,6 +68,11 @@ export function MobileJourneyNav({
   moreItems: readonly MobileJourneyItem[];
 }) {
   const [lockedReason, setLockedReason] = useState<string>();
+  const menuRef = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    setLockedReason(undefined);
+    menuRef.current?.removeAttribute("open");
+  }, [activeId]);
 
   return (
     <nav className="planner-mobile-nav" aria-label="주요 화면">
@@ -87,7 +92,14 @@ export function MobileJourneyNav({
             onLocked={setLockedReason}
           />
         ))}
-        <details className="planner-mobile-nav__more">
+        <details className="planner-mobile-nav__more" ref={menuRef} onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            menuRef.current?.removeAttribute("open");
+            menuRef.current?.querySelector("summary")?.focus();
+            setLockedReason(undefined);
+          }
+        }}>
           <summary className="planner-focusable">
             <MoreHorizontal aria-hidden="true" size={18} />
             <span>더보기</span>

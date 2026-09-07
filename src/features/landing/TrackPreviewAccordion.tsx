@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import type { Track, TrackId } from "../../types";
-import { TrackGlyph } from "../../components/TrackGlyph";
 
 export function TrackPreviewAccordion({
   tracks,
@@ -15,7 +14,7 @@ export function TrackPreviewAccordion({
   return (
     <div className="track-home__track-browser">
       <div className="track-home__track-list">
-        {tracks.map((track, index) => {
+        {tracks.map((track) => {
           const expanded = track.id === openTrackId;
           const panelId = `track-preview-${track.id}`;
           return (
@@ -32,8 +31,6 @@ export function TrackPreviewAccordion({
                 aria-controls={panelId}
                 onClick={() => setOpenTrackId(expanded ? undefined : track.id)}
               >
-                <span className="track-home__track-number">0{index + 1}</span>
-                <TrackGlyph trackId={track.id} decorative />
                 <span className="track-home__track-title">
                   <strong>{track.name}</strong>
                   <small>{track.kind}</small>

@@ -171,7 +171,7 @@
 
 .planner-shell-layout.is-immersive {
   grid-template-columns: minmax(0, 1fr);
-  width: min(100%, 1728px);
+  width: min(100%, 1440px);
 }
 
 .planner-shell-layout.is-immersive .planner-shell-page {
@@ -222,6 +222,25 @@
   font-size: 0.75rem;
   font-weight: 760;
   white-space: nowrap;
+  cursor: pointer;
+}
+
+.planner-shell-unavailable { display:block; font-size:10px; color:#6d5860; }
+.planner-shell-availability { width:fit-content; max-width:calc(100% - 40px); margin:12px auto 0; padding:12px 16px; background:#fff; border:1px solid var(--service-line); color:#405267; font-size:14px; }
+.planner-shell-primary-nav button[aria-disabled="true"] { cursor:not-allowed; color:#647184; }
+.planner-shell-header { border-color:var(--service-line); background:#fff; }
+.planner-shell-primary-nav button[aria-current="page"] { color:var(--service-accent); }
+.planner-shell-primary-nav button[aria-current="page"]::after { background:var(--service-accent); }
+.dku-service-frame,.dku-service-workspace,.dku-result-surface { min-width:0; width:100%; margin:0; padding:0; background:transparent; }
+.planner-shell-content .planner-compass-path { border-color:var(--service-line); }
+
+@media(min-width:761px) and (max-width:1539px) {
+ .planner-shell-header:has(.planner-shell-primary-nav) { grid-template-columns:auto minmax(0,1fr); gap:4px 20px; padding-block:12px 6px; }
+ .planner-shell-header:has(.planner-shell-primary-nav) .planner-shell-actions { grid-column:2; grid-row:1; }
+ .planner-shell-primary-nav { order:4; grid-column:1 / -1; justify-content:flex-start; overflow-x:auto; width:100%; }
+}
+@media(min-width:1540px) {
+ .planner-shell-header { grid-template-columns:auto minmax(0,1fr) auto; min-height:88px; }
 }
 
 .planner-shell-primary-nav button[aria-current="page"] {
@@ -269,13 +288,17 @@
     background: color-mix(in srgb, var(--planner-paper) 96%, transparent);
   }
 
-  .planner-shell-wordmark span,
-  .planner-shell-actions .planner-local-save,
   .planner-shell-help span,
   .planner-shell-external-links,
   .planner-shell-utility {
     display: none;
   }
+  .planner-shell-wordmark { gap:8px; }
+  .planner-shell-wordmark__divider { display:none; }
+  .planner-shell-wordmark__copy small { font-size:10px; }
+  .planner-shell-wordmark > img { width:60px; height:30px; }
+  .planner-shell-actions .planner-local-save { display:none; }
+  .planner-shell-actions .planner-local-save--error { display:inline-flex; min-height:24px; padding:3px 6px; font-size:10px; }
 
   .planner-shell-primary-nav {
     display: none;
@@ -377,6 +400,8 @@
     border: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 24%, transparent);
     border-radius: var(--planner-control-radius);
     background: var(--planner-paper);
+    max-height:calc(100dvh - 160px);
+    overflow-y:auto;
   }
 
   .planner-mobile-nav__menu .planner-mobile-nav__item button {

@@ -36,6 +36,17 @@ afterEach(async () => {
 });
 
 describe("MobileJourneyNav", () => {
+  it("closes more with Escape and restores keyboard focus", async () => {
+    root = createRoot(document.querySelector("#root")!);
+    await act(async () => root?.render(<MobileJourneyNav activeId="start" primaryItems={primaryItems} moreItems={moreItems} />));
+    const menu = document.querySelector("details")!;
+    menu.open = true;
+    const item = menu.querySelector("button")!;
+    item.focus();
+    await act(async () => item.dispatchEvent(new KeyboardEvent("keydown", {key:"Escape",bubbles:true})));
+    expect(menu.open).toBe(false);
+    expect(document.activeElement).toBe(menu.querySelector("summary"));
+  });
   it("keeps four primary destinations fixed and exposes a real more menu", () => {
     const markup = renderToStaticMarkup(
       <MobileJourneyNav activeId="diagnosis" primaryItems={primaryItems} moreItems={moreItems} />,

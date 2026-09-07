@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { AppRoute } from "../../lib/appRouting";
 import { ExternalLink, HelpCircle } from "lucide-react";
 import { DEPARTMENT_HOME_URL, DEPARTMENT_YOUTUBE_URL } from "../../data/officialResources";
@@ -69,6 +69,8 @@ export function GuidebookShell({
   modal?: ReactNode;
   children: ReactNode;
 }) {
+  const [unavailableMessage, setUnavailableMessage] = useState<string>();
+  useEffect(() => { setUnavailableMessage(undefined); }, [activeId]);
   return (
     <div className="planner-app planner-guidebook-shell" data-service-zone={serviceView}>
       <div
@@ -96,10 +98,15 @@ export function GuidebookShell({
                 type="button"
                 key={item.id}
                 aria-current={activeId === item.id ? "page" : undefined}
-                disabled={!item.available}
-                onClick={item.onSelect}
+                aria-disabled={!item.available || undefined}
+                title={!item.available ? item.unavailableReason ?? "앞 단계를 완료하면 이용할 수 있어요." : undefined}
+                onClick={() => {
+                  if (item.available) { setUnavailableMessage(undefined); item.onSelect(); }
+                  else setUnavailableMessage(item.unavailableReason ?? "앞 단계를 완료하면 이용할 수 있어요.");
+                }}
               >
                 {item.label}
+                {!item.available ? <small className="planner-shell-unavailable">이용 조건 확인</small> : null}
               </button>
             ))}
           </nav>
@@ -148,6 +155,7 @@ export function GuidebookShell({
             <LocalSaveStatus state={saveState} />
           </div>
         </header>
+        {unavailableMessage ? <p className="planner-shell-availability" role="status">{unavailableMessage}</p> : null}
         <div className="planner-shell-layout is-immersive">
           <div className="planner-shell-page">
             <CompassPathRibbon items={journeyItems} />

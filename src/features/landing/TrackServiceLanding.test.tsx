@@ -48,6 +48,22 @@ afterEach(async () => {
 });
 
 describe("TrackServiceLanding", () => {
+  it("numbers only the three required diagnosis steps and keeps an empty start quiet", async () => {
+    await renderLanding();
+    const steps = [...document.querySelectorAll(".track-home__steps strong")].map(node => node.textContent);
+    expect(steps).toEqual(["이수 유형", "이수 과목", "진단 결과"]);
+    expect(document.querySelector("[data-resume-state]")).toBeNull();
+    expect(document.body.textContent).toContain("필수 진단에 포함되지 않아요");
+  });
+
+  it.each(["needs-profile", "needs-courses", "needs-track", "ready", "saved-plan"] as const)("resumes the actual %s state", async (plannerStatus) => {
+    const onPlannerAction = vi.fn();
+    await renderLanding({ plannerStatus, onPlannerAction });
+    const resume = document.querySelector<HTMLElement>("[data-resume-state]");
+    expect(resume?.dataset.resumeState).toBe(plannerStatus);
+    await act(async () => resume?.querySelector("button")?.click());
+    expect(onPlannerAction).toHaveBeenCalledTimes(1);
+  });
   it("presents situation simulation first without the retired map metaphor", async () => {
     await renderLanding();
 
