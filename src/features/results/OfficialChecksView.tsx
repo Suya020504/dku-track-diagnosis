@@ -1,6 +1,6 @@
 import type { RefObject } from "react";
 import { ExternalLink } from "lucide-react";
-import { EvidenceBand } from "../../components/EvidenceBand";
+import { ResultDisclosure } from "./ResultDisclosure";
 import { COURSE_OFFERING_SNAPSHOT_META } from "../../data/courseOfferings2026";
 import { OFFICIAL_CURRICULUM_SOURCE } from "../../data/curriculumData";
 import { DEPARTMENT_HOME_URL, OFFICIAL_TRACK_VIDEOS } from "../../data/officialResources";
@@ -57,10 +57,10 @@ export function OfficialChecksView({
         </p>
       </header>
 
-      <EvidenceBand state="department-confirmation-required">
+      <p className="dku-results-note">
         {pathLabel}{trackNames.length > 0 ? ` · ${trackNames.join(", ")}` : ""}의 개인별 적용과
         최종 인정 범위는 학과 확인이 필요합니다.
-      </EvidenceBand>
+      </p>
 
       {pathProgress.requiredProgress === "not-applicable" ? (
         <p className="planner-directed-empty">
@@ -79,6 +79,7 @@ export function OfficialChecksView({
               <li key={`${item.code}-${index}`}>
                 <strong>{REVIEW_LABELS[item.code]}</strong>
                 <span>{item.message}</span>
+                <a href={OFFICIAL_CURRICULUM_SOURCE.url} target="_blank" rel="noreferrer">교육과정 원문 대조 ↗</a>
               </li>
             ))}
           </ul>
@@ -99,24 +100,28 @@ export function OfficialChecksView({
           <li>
             <strong>향후 개설</strong>
             <span>추천된 과목이 내가 실제 수강 학기에 개설되는가?</span>
+            <a href={COURSE_OFFERING_SNAPSHOT_META.timetableSearchUrl} target="_blank" rel="noreferrer">시간표에서 학기·분반 확인 ↗</a>
           </li>
           <li>
             <strong>추가 전공학점</strong>
             <span>타학과·편입·교류 학점 등 추가 전공학점이 내 전체 전공학점에 포함되는가?</span>
+            <a href={DEPARTMENT_HOME_URL} target="_blank" rel="noreferrer">성적표·인정 내역을 준비해 학과 문의 ↗</a>
           </li>
           <li>
             <strong>개인 적용</strong>
             <span>내 입학연도와 이수 경로({pathLabel})에 이 계산 기준이 적용되는가?</span>
+            <a href={OFFICIAL_CURRICULUM_SOURCE.url} target="_blank" rel="noreferrer">교육과정 적용 연도 대조 ↗</a>
           </li>
           <li>
             <strong>트랙·필수 인정</strong>
             <span>겹치는 모듈과 필수과목이 내 경로에서 각각 어떻게 인정되는가?</span>
+            <a href={TRACK_VIDEO_URL} target="_blank" rel="noreferrer">공식 트랙 안내 확인 후 학과 문의 ↗</a>
           </li>
         </ol>
       </section>
 
       {otherReviewItems.length > 0 ? (
-        <section className="planner-check-ledger" aria-labelledby="additional-review-title">
+        <ResultDisclosure id="result-extra-review" title={`추가 확인 근거 · ${otherReviewItems.length}개`}><section className="planner-check-ledger" aria-labelledby="additional-review-title">
           <header>
             <span>계산에서 남은 항목</span>
             <h2 id="additional-review-title">추가로 확인할 근거</h2>
@@ -126,10 +131,11 @@ export function OfficialChecksView({
               <li key={`${item.code}-${index}`}>
                 <strong>{REVIEW_LABELS[item.code]}</strong>
                 <span>{item.message}</span>
+                <a href={item.code === "future-offering" || item.code === "seasonal-term" ? COURSE_OFFERING_SNAPSHOT_META.timetableSearchUrl : DEPARTMENT_HOME_URL} target="_blank" rel="noreferrer">{item.code === "future-offering" || item.code === "seasonal-term" ? "시간표 확인" : "학과에 적용 여부 문의"} ↗</a>
               </li>
             ))}
           </ul>
-        </section>
+        </section></ResultDisclosure>
       ) : null}
 
       <section className="planner-official-links" aria-labelledby="official-links-title">

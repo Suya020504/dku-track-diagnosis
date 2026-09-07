@@ -1,7 +1,6 @@
 import type { RefObject } from "react";
 import { ArrowRight } from "lucide-react";
-import { CourseSticker } from "../../components/CourseSticker";
-import { EvidenceBand } from "../../components/EvidenceBand";
+import { ResultDisclosure } from "./ResultDisclosure";
 import { TrackGlyph } from "../../components/TrackGlyph";
 import { courseOfferings2026 } from "../../data/courseOfferings2026";
 import { modules } from "../../data/curriculumData";
@@ -122,7 +121,10 @@ export function NextCoursesView({
   onOpenRecommendations: () => void;
   onGoToPlan: () => void;
 }) {
-  const recommendations = uniqueRecommendations(result);
+  const recommendations = uniqueRecommendations(result).sort((a, b) => {
+    const required = new Set(result.trackResults.flatMap((track) => track.missingRequiredCourses.map((course) => course.id)));
+    return Number(required.has(b.id)) - Number(required.has(a.id));
+  });
   const pathLabel = getPathLabel(profile);
 
   return (
@@ -133,14 +135,13 @@ export function NextCoursesView({
           다음 수강 후보와 선택 이유를 확인하세요
         </h1>
         <p>
-          과목명은 실제 교육과정 데이터에서 가져왔습니다. 개설 학기는 2026년 확인 이력이며,
-          앞으로의 개설을 확정하지 않습니다.
+          {pathLabel} 기준 {recommendations.length}개 후보입니다. 필수 보완 후보를 먼저 표시하며, 자동으로 수강 선택하지 않습니다.
         </p>
       </header>
 
-      <EvidenceBand state="historical-2026-snapshot">
+      <p className="dku-results-note">
         2026 이력 스냅샷을 바탕으로 학기 정보를 표시합니다. 과거 개설 이력은 이후 개설을 보장하지 않습니다.
-      </EvidenceBand>
+      </p>
 
       <section className="planner-next-course-list" aria-labelledby="next-course-title">
         <header>
@@ -150,20 +151,11 @@ export function NextCoursesView({
         </header>
         {recommendations.length > 0 ? (
           <div className="planner-next-course-list__items">
-            {recommendations.map((course) => {
+            {recommendations.map((course, index) => {
               const context = courseContext(course, result);
-              const offering = courseOfferings2026[course.id];
               return (
                 <article className="planner-next-course" key={course.id}>
-                  <CourseSticker
-                    courseName={`${course.code} ${course.name}`}
-                    moduleLabel={moduleLabel(course)}
-                    creditsLabel={`${course.credits}학점`}
-                    termLabel={historicalTermLabel(course)}
-                    evidenceState={offering?.evidence === "historical-2026-snapshot"
-                      ? "historical-2026-snapshot"
-                      : "department-confirmation-required"}
-                  />
+                  <header className="dku-results-candidate-title"><span>{String(index + 1).padStart(2, "0")}</span><div><small>{course.code} · {moduleLabel(course)}</small><h3>{course.name}</h3></div><strong>{course.credits}학점</strong></header>
                   <dl>
                     <div>
                       <dt>추천 이유</dt>
@@ -174,6 +166,7 @@ export function NextCoursesView({
                       <dd>{context.contribution}</dd>
                     </div>
                   </dl>
+                  <small className="dku-results-note">{historicalTermLabel(course)} · 실제 수강 학기 확인 필요</small>
                 </article>
               );
             })}
@@ -187,7 +180,7 @@ export function NextCoursesView({
         )}
       </section>
 
-      <ModuleProgressLedger result={result} />
+      <ResultDisclosure id="result-next-modules" title="모듈별 충족 현황 자세히"><ModuleProgressLedger result={result} /></ResultDisclosure>
 
       <section className="planner-result-next-actions" aria-labelledby="result-next-actions-title">
         <span>다음 행동</span>

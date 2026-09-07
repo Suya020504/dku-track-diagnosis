@@ -43,7 +43,7 @@ export function ResultDetailView({
   onPrint: () => void;
 }) {
   return (
-    <div className="planner-result-view">
+    <div className="dku-results-page">
       <nav className="planner-result-page-band no-print" aria-label="결과 페이지">
         <div>
           {RESULT_PAGES.map((page) => (
@@ -65,6 +65,12 @@ export function ResultDetailView({
           ))}
         </div>
       </nav>
+      {section !== "confirm" ? <div className="dku-results-forward no-print">
+        <span>{section === "current" ? "입력한 완료 과목을 기준으로 계산했어요" : "후보를 정했다면 실제 수강 조건을 점검하세요"}</span>
+        <button type="button" className="primary-button" onClick={() => onSectionChange(section === "current" ? "next" : "confirm")}>
+          {section === "current" ? "다음 수강 후보 확인" : "공식 확인 사항 보기"} →
+        </button>
+      </div> : null}
 
       <section
         className="planner-result-active-page"
@@ -96,20 +102,6 @@ export function ResultDetailView({
           />
         )}
       </section>
-
-      {section === "current" ? (
-        <button
-          className="planner-result-continue planner-focusable no-print"
-          type="button"
-          onClick={() => onSectionChange("next")}
-        >
-          <span>
-            <small>다음 페이지</small>
-            <strong>현재 상태에서 이어지는 수강 후보를 살펴봐요</strong>
-          </span>
-          <span>다음 수강 후보 확인</span>
-        </button>
-      ) : null}
 
       <section className="planner-result-print no-print" aria-label="결과 저장과 인쇄">
         <div>

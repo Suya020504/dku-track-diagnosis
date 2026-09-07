@@ -177,6 +177,15 @@ function renderSection(section: "current" | "next" | "confirm") {
 }
 
 describe("result decision pages", () => {
+  it("keeps missing course detail available behind an accessible disclosure", () => {
+    const container = document.createElement("div");
+    container.innerHTML = renderSection("current");
+    const toggle = container.querySelector('button[aria-expanded="false"]');
+    expect(toggle).not.toBeNull();
+    const detail = container.querySelector(`#${toggle?.getAttribute("aria-controls")}`);
+    expect(detail?.textContent).toContain("통계학기초");
+    expect(detail?.hasAttribute("hidden")).toBe(false);
+  });
   it("renders only the current page with safe status, applied path evidence, and vertical progress", () => {
     const markup = renderSection("current");
 
@@ -202,7 +211,9 @@ describe("result decision pages", () => {
     expect(markup).not.toContain('role="tab"');
     expect(markup).not.toContain('role="tabpanel"');
     expect(markup).not.toContain("aria-selected=");
-    expect(markup).not.toContain("aria-controls=");
+    const navigation = document.createElement("div");
+    navigation.innerHTML = markup;
+    expect(navigation.querySelector('nav [aria-controls]')).toBeNull();
     expect(markup).toContain("다음 수강 후보 확인");
     expect(markup).not.toContain("세 기준별 트랙 비교 보기");
   });

@@ -1,4 +1,5 @@
 import type { RefObject } from "react";
+import { ResultDisclosure } from "./ResultDisclosure";
 import { TrackGlyph } from "../../components/TrackGlyph";
 import type {
   DiagnosisResult,
@@ -92,16 +93,16 @@ export function CurrentProgressView({
       <header className="planner-result-heading">
         <span>현재 · 계산된 진행 경로</span>
         <h1 id="result-current-title" ref={headingRef} tabIndex={-1}>
-          {statusLabel}. 현재 경로를 단계별로 확인하세요
+          {statusLabel}
         </h1>
         <p>
-          입력한 완료 과목만 현재 진행에 반영했습니다. 진행률은 판단을 돕는 보조 정보이며,
-          최종 적용 여부는 확인 사항에서 다시 점검해 주세요.
+          완료 과목 기준의 참고 계산입니다. 최종 인정은 학과 확인이 필요합니다.
         </p>
       </header>
 
       <PathProgressSummary profile={profile} result={pathProgress} />
 
+      <ResultDisclosure id="result-track-comparison-detail" title="트랙 비교 · 다른 조건과 수강 후보 자세히">
       <section className="planner-track-comparison" aria-labelledby="track-comparison-title">
         <header>
           <span>트랙 비교</span>
@@ -121,6 +122,7 @@ export function CurrentProgressView({
           </p>
         )}
       </section>
+      </ResultDisclosure>
     </div>
   );
 }

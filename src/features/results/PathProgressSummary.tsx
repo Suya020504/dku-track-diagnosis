@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ResultDisclosure } from "./ResultDisclosure";
 import { EvidenceBand } from "../../components/EvidenceBand";
 import { courses, tracks } from "../../data/curriculumData";
 import type { EvidenceState } from "../../data/evidenceSources";
@@ -133,21 +134,31 @@ export function PathProgressSummary({
         <strong className="planner-path-progress__status">{statusLabel}</strong>
       </header>
 
-      <EvidenceBand state={evidenceState}>
-        {pathLabel} 경로와 {profile.entryYear ? `${profile.entryYear}학번 입력` : "입력한 학적 정보"}에
-        따라 계산했습니다. 개인별 최종 적용 범위는 학과 안내와 함께 확인해 주세요.
-      </EvidenceBand>
-
       {!hasIntermediateSteps ? (
         <p className="planner-directed-empty">
           이 경로에는 별도 필수과목·트랙 모듈 단계가 없어 전체 전공학점 진행부터 확인합니다.
         </p>
       ) : null}
 
-      <ol className="planner-progress-path" aria-label={`${pathLabel} 수직 진행 경로`}>
+      <ol className="planner-progress-path" aria-label={`${pathLabel} 독립 학점 진행`}>
         {result.requiredProgress !== "not-applicable" ? (
           <ProgressStep label="필수과목 진행" progress={result.requiredProgress}>
-            {missingRequiredCourses.length > 0 ? (
+          </ProgressStep>
+        ) : <li className="dku-results-na"><strong>필수과목</strong><span>이 경로는 별도 필수 조건 적용 없음</span></li>}
+
+        {trackProgress && trackCreditProgress ? (
+          <ProgressStep label="트랙 관련 학점 진행" progress={trackCreditProgress} completionLabel="참고 계산상 학점 기준 도달">
+            {hasUnmetTrackCondition ? <small className="planner-progress-path__missing">보완할 트랙 조건이 있어요</small> : null}
+          </ProgressStep>
+        ) : <li className="dku-results-na"><strong>트랙 조건</strong><span>{result.trackProgress === "not-applicable" ? "이 경로는 트랙 조건 적용 없음" : "트랙 기준 확인 필요"}</span></li>}
+        <ProgressStep label={profile.studyPath === "minor" ? "부전공 전공학점" : "전체 전공학점 진행"} progress={result.totalMajorProgress} />
+      </ol>
+      <EvidenceBand state={evidenceState}>
+        {pathLabel} · {profile.entryYear ? `${profile.entryYear}학번 입력` : "입력한 학적 정보"} 기준.
+        개인별 최종 적용은 학과 확인이 필요합니다.
+      </EvidenceBand>
+      <p className="dku-results-note">각 기준은 독립적으로 확인합니다. 겹치는 조건의 부족 학점은 합산하지 않습니다.</p>
+      {missingRequiredCourses.length > 0 ? <ResultDisclosure id="result-required-detail" title={`보완할 필수과목 · ${missingRequiredCourses.length}개 확인`}>
               <ul className="planner-progress-path__modules" aria-label="보완할 필수과목">
                 {missingRequiredCourses.map((course) => (
                   <li key={course.id}>
@@ -156,19 +167,8 @@ export function PathProgressSummary({
                   </li>
                 ))}
               </ul>
-            ) : null}
-          </ProgressStep>
-        ) : null}
-
-        {trackProgress && trackCreditProgress ? (
-          <ProgressStep
-            label="트랙 관련 학점 진행"
-            progress={trackCreditProgress}
-            completionLabel="참고 계산상 학점 기준 도달"
-          >
-            {hasUnmetTrackCondition ? (
-              <small className="planner-progress-path__missing">보완할 트랙 조건이 있어요</small>
-            ) : null}
+      </ResultDisclosure> : null}
+      {trackProgress ? <ResultDisclosure id="result-module-detail" title="트랙 모듈별 조건 확인">
             <ul className="planner-progress-path__modules" aria-label="트랙 모듈별 진행">
               {trackProgress.moduleProgress.map((module) => (
                 <li key={`${trackProgress.trackId}-${module.moduleId}-${module.label}`}>
@@ -180,14 +180,7 @@ export function PathProgressSummary({
                 </li>
               ))}
             </ul>
-          </ProgressStep>
-        ) : null}
-
-        <ProgressStep
-          label={profile.studyPath === "minor" ? "부전공 전공학점" : "전체 전공학점 진행"}
-          progress={result.totalMajorProgress}
-        />
-      </ol>
+      </ResultDisclosure> : null}
     </section>
   );
 }
