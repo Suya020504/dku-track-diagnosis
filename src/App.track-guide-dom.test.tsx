@@ -4,6 +4,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
+import { tracks } from "./data/curriculumData";
 
 let root: Root | undefined;
 
@@ -61,13 +62,37 @@ afterEach(async () => {
 });
 
 describe("separate track guide journey", () => {
+  it("uses the new concept illustration with live captions and no retired guide classes", async () => {
+    await mountAt("/?view=track-guide&section=overview");
+    expect(document.querySelector(".dku-guide-page")).not.toBeNull();
+    expect(document.querySelector('.dku-guide-page [class*="planner-track-guide"]')).toBeNull();
+    const illustration = document.querySelector<HTMLImageElement>(".guide-concept img");
+    expect(illustration?.getAttribute("src")).toBe("/illustrations/course-module-track-structure-v2.webp");
+    expect(document.querySelector("figcaption")?.textContent).toContain("모듈 — 관련 과목의 묶음");
+    expect(document.querySelectorAll(".guide-next")).toHaveLength(1);
+  });
+
+  it("compares all five authoritative track names and keeps the single next action", async () => {
+    await mountAt("/?view=track-guide&section=structure");
+    const names = [...document.querySelectorAll("[data-track-guide-track] h3")].map((node) => node.textContent);
+    expect(names).toEqual(tracks.map((track) => track.name));
+    expect(document.querySelectorAll(".guide-next")).toHaveLength(1);
+  });
+
+  it("keeps supporting benefit explanations expandable with primary-source links", async () => {
+    await mountAt("/?view=track-guide&section=benefits");
+    expect(document.querySelectorAll(".guide-reason-list details")).toHaveLength(4);
+    expect(document.querySelectorAll(".guide-reason-list details[open]")).toHaveLength(0);
+    expect(document.querySelectorAll(".guide-reason-list details a")).toHaveLength(4);
+  });
+
   it.each(["overview", "benefits", "outcomes", "structure"])(
     "keeps the full source ledger in the dedicated materials tab, not %s",
     async (section) => {
       await mountAt(`/?view=track-guide&section=${section}`);
-      expect(document.querySelector(".planner-track-guide__sources")).toBeNull();
+      expect(document.querySelector("[data-guide-source-ledger]")).toBeNull();
       await click("공식 영상·자료");
-      expect(document.querySelectorAll(".planner-track-guide__sources")).toHaveLength(1);
+      expect(document.querySelectorAll("[data-guide-source-ledger]")).toHaveLength(1);
       expect(document.querySelector('a[href="https://cms.dankook.ac.kr/web/ere/-6"]')).not.toBeNull();
     },
   );
