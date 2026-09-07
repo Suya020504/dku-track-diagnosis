@@ -1,4 +1,40 @@
 /* New isolated question and comparison compositions. */
+.planner-app .dku-comparison-page .dc-track-row:has(.dc-row-choice){grid-template-columns:minmax(210px,.8fr) minmax(0,2fr) 150px}
+.planner-app .dku-comparison-page .dc-row-choice{align-self:center}
+@media(max-width:1000px){.planner-app .dku-comparison-page .dc-track-row:has(.dc-row-choice){grid-template-columns:210px minmax(0,1fr)}.planner-app .dku-comparison-page .dc-row-choice{grid-column:1/-1;justify-self:start}}
+@media(max-width:640px){.planner-app .dku-comparison-page .dc-track-row:has(.dc-row-choice){grid-template-columns:1fr}}
+.planner-app .dku-comparison-page .dc-choice-workspace{margin-top:16px;padding-top:12px}
+.planner-app .dku-comparison-page .dc-track-row{padding-block:16px}
+@media(max-width:640px){
+ .planner-app .dku-comparison-page .dc-ledger-caption{display:none}
+ .planner-app .dku-comparison-page .dc-hypothesis-band .planner-evidence-band{padding:8px 12px;font-size:12px}
+ .planner-app .dku-comparison-page .dc-hypothesis-band .planner-evidence-band p{margin:2px 0}
+ .planner-app .dku-comparison-page .dc-track-row h3{margin:2px 0}
+ .planner-app .dku-comparison-page .dc-track-row{gap:8px}
+}
+.planner-app .ds-question-workspace>.dc-storage-error{grid-column:1/-1;grid-row:1;margin:0}
+.planner-app .dc-row-choice{border:1px solid #8fb9ac;border-radius:6px;background:#fff;color:#17634d;padding:6px 12px;margin-top:8px}
+.planner-app .dc-row-choice[aria-pressed=true]{background:#d8eee2;border-color:#08745b;font-weight:750}
+.planner-app .dc-choice-workspace{display:flex;align-items:center;justify-content:space-between;gap:16px}
+@media(max-width:640px){
+ .planner-app .dku-comparison-page .dc-axes-hero{padding:0 0 12px;margin-bottom:12px}
+ .planner-app .dku-comparison-page .dc-axes-hero>span{display:none}
+ .planner-app .dku-comparison-page .dc-axes-hero h1{font-size:25px;margin:0 0 8px}
+ .planner-app .dku-comparison-page .dc-axes-hero p{font-size:14px;margin:0}
+ .planner-app .dku-comparison-page .dc-axis-destinations{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:6px 0 14px}
+ .planner-app .dku-comparison-page .dc-axis-destinations button{padding:10px 6px;justify-content:center;text-align:center}
+ .planner-app .dku-comparison-page .dc-axis-destinations button>span:first-child,.planner-app .dku-comparison-page .dc-axis-destinations small{display:none}
+ .planner-app .dku-comparison-page .dc-axis-destinations strong{font-size:14px}
+ .planner-app .dku-comparison-page .dc-result-page__heading{margin-bottom:10px}
+ .planner-app .dku-comparison-page .dc-result-page__heading>span{display:none}
+ .planner-app .dku-comparison-page .dc-result-page__heading h2{font-size:19px}
+ .planner-app .dku-comparison-page .dc-result-page__heading p{font-size:13px;margin:6px 0}
+ .planner-app .dku-comparison-page .dc-hypothesis-band{margin-bottom:8px}
+ .planner-app .dku-comparison-page .dc-ledger-caption{padding:6px 0}
+ .planner-app .dku-comparison-page .dc-ledger-caption>span{display:none}
+ .planner-app .dku-comparison-page .dc-choice-workspace{display:block;margin-top:16px;padding-top:12px}
+ .planner-app .dku-comparison-page .dc-choice-workspace p{font-size:13px}
+}
 .planner-app :is(.dku-survey-page,.dku-comparison-page){width:min(100%,1280px);margin:auto;padding:24px 0 48px;color:#163c40;line-height:1.65}
 .planner-app :is(.dku-survey-page,.dku-comparison-page) h1{font-size:clamp(25px,3vw,40px);line-height:1.3;letter-spacing:-.04em;margin:8px 0 12px;word-break:keep-all;overflow-wrap:break-word}
 .planner-app :is(.dku-survey-page,.dku-comparison-page) h2{font-size:24px;line-height:1.4;margin:8px 0}

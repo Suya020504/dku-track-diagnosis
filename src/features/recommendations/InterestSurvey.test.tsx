@@ -12,6 +12,14 @@ const emptyCallbacks = {
 };
 
 describe("InterestSurvey", () => {
+  it("keeps the answered audience question and its focus target when storage fails", () => {
+    const markup = renderToStaticMarkup(<InterestSurvey value={{audience:"department-student",answers:{},currentIndex:1}} storageError {...emptyCallbacks} />);
+    expect(markup).toContain('class="ds-question-workspace"');
+    expect(markup).toContain('class="dc-storage-error" role="alert"');
+    expect(markup).toContain('class="ds-question-panel"');
+    expect(markup).toContain('<legend tabindex="-1">');
+    expect(markup.match(/type="radio"/g)).toHaveLength(5);
+  });
   it("renders one restored question as one native 1–5 planner scale", () => {
     const value: InterestSurveyState = {
       audience: "department-student",

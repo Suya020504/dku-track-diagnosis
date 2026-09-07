@@ -103,15 +103,27 @@ function renderAxes(
 }
 
 describe("TrackRecommendationAxes", () => {
+  it("does not infer different leaders from zero or one populated axis", () => {
+    const empty = renderAxes("interest", { progress: [], alignedLeaderTrackIds: [] });
+    const single = renderAxes("interest", { interest: differingAxes.interest, progress: [], alignedLeaderTrackIds: [] });
+    expect(empty).toContain("아직 입력된 기준이 없습니다");
+    expect(single).toContain("현재 한 기준만");
+    expect(empty + single).not.toContain("기준마다 선두 후보가 다릅니다");
+  });
+  it("labels partial candidate sets without a fictional count", () => {
+    const markup = renderAxes("progress", { progress: differingAxes.progress.slice(0, 2), alignedLeaderTrackIds: [] });
+    expect(markup.match(/data-track-id=/g)).toHaveLength(2);
+    expect(markup).not.toContain("네 후보");
+  });
   it("lets a student select one of five tracks then explicitly open diagnosis confirmation", async () => {
     const onChooseTrack = vi.fn();
     const container = document.createElement("div");
     const root = createRoot(container);
     await act(async () => root.render(<TrackRecommendationAxes axes={differingAxes} courseInputReady activeAxis="progress" {...callbacks} onChooseTrack={onChooseTrack} />));
-    const options = [...container.querySelectorAll<HTMLButtonElement>(".dc-track-options button")];
+    const options = [...container.querySelectorAll<HTMLButtonElement>(".dc-row-choice")];
     expect(options).toHaveLength(5);
     expect(container.querySelector<HTMLButtonElement>(".dc-confirm-choice")?.disabled).toBe(true);
-    await act(async () => options.find((button) => button.textContent?.includes("경제학"))?.click());
+    await act(async () => options.find((button) => button.getAttribute("aria-label")?.startsWith("경제학"))?.click());
     expect(onChooseTrack).not.toHaveBeenCalled();
     await act(async () => container.querySelector<HTMLButtonElement>(".dc-confirm-choice")?.click());
     expect(onChooseTrack).toHaveBeenCalledWith("economics");
@@ -158,7 +170,7 @@ describe("TrackRecommendationAxes", () => {
     expect(markup).toContain("농식품유통");
     expect(markup).toContain("지역개발 및 컨설팅");
     expect(markup).toContain("푸드바이오경제");
-    expect(markup).toContain("함께 비교할 네 후보");
+    expect(markup).toContain("같은 기준으로 비교");
   });
 
   it("keeps the plan hypothesis in a wheat evidence band on the plan axis", () => {

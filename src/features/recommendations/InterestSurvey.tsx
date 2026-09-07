@@ -1,4 +1,4 @@
-import { useMemo, useState, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -52,6 +52,15 @@ export function InterestSurvey({
   headingRef,
 }: InterestSurveyProps) {
   const [showAllResults, setShowAllResults] = useState(false);
+  const questionRef = useRef<HTMLLegendElement>(null);
+  const previousIndex = useRef(value.currentIndex);
+  useEffect(() => {
+    if (previousIndex.current !== value.currentIndex) {
+      questionRef.current?.focus();
+      questionRef.current?.scrollIntoView?.({ block: "center", behavior: "instant" });
+    }
+    previousIndex.current = value.currentIndex;
+  }, [value.currentIndex]);
   const audience = value.audience;
   const interestSurveyQuestions = audience ? getInterestSurveyQuestions(audience) : [];
   const currentIndex = Math.min(
@@ -309,7 +318,7 @@ export function InterestSurvey({
         />
 
         <fieldset className="ds-question-card" aria-describedby="interest-scale-hint">
-          <legend>{currentQuestion.statement}</legend>
+          <legend ref={questionRef} tabIndex={-1}>{currentQuestion.statement}</legend>
           <div className="ds-planner-scale">
             {answerOptions.map((option) => {
               const selected = selectedAnswer === option.value;

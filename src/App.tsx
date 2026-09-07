@@ -675,7 +675,6 @@ function App({ storage }: { storage?: Storage } = {}) {
       generatedAt: savedState.graduationPlan?.generatedAt ?? new Date().toISOString(),
     });
   }, [savedState]);
-  const interestQuestionIndex = savedState.interestSurvey?.currentIndex ?? 0;
   const interestCompletedAt = savedState.interestSurvey?.completedAt;
   useEffect(() => {
     function syncFromLocation() {
@@ -715,7 +714,6 @@ function App({ storage }: { storage?: Storage } = {}) {
     recommendationStep,
     recommendationAxis,
     recommendationAudience,
-    interestQuestionIndex,
     interestCompletedAt,
     resultSection,
     trackGuideSection,
