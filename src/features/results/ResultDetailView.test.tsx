@@ -177,6 +177,21 @@ function renderSection(section: "current" | "next" | "confirm") {
 }
 
 describe("result decision pages", () => {
+  it("orders only applicable missing-required candidates first, ignoring generic required flags", () => {
+    const normal = trackProgress.recommendedCourses[0];
+    const excluded = { ...normal, id: "excluded-test", name: "적용 제외 필수", required: true };
+    const applicable = trackProgress.missingRequiredCourses[0];
+    const track = { ...trackProgress, recommendedCourses: [normal, excluded, applicable] };
+    const container = document.createElement("div");
+    container.innerHTML = renderToStaticMarkup(<ResultDetailView result={{ ...diagnosis, trackResults: [track] }} profile={profile} pathProgress={pathProgress} section="next" headingRef={createRef<HTMLHeadingElement>()} onSectionChange={vi.fn()} onOpenRecommendations={vi.fn()} onGoToPlan={vi.fn()} onPrint={vi.fn()} />);
+    expect([...container.querySelectorAll(".planner-next-course h3")].map(node => node.textContent)).toEqual(["통계학기초", "유통관리론", "적용 제외 필수"]);
+  });
+
+  it("keeps official checks as the next page's sole primary action", () => {
+    const container = document.createElement("div");
+    container.innerHTML = renderSection("next");
+    expect([...container.querySelectorAll(".primary-button")].map(node => node.textContent)).toEqual(["공식 확인 사항 보기 →"]);
+  });
   it("keeps missing course detail available behind an accessible disclosure", () => {
     const container = document.createElement("div");
     container.innerHTML = renderSection("current");

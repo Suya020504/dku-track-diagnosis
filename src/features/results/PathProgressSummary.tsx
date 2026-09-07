@@ -125,7 +125,7 @@ export function PathProgressSummary({
         .filter((course) => course !== undefined);
 
   return (
-    <section className="planner-path-progress" aria-labelledby="path-progress-title">
+    <section className="dku-results-summary" aria-labelledby="path-progress-title">
       <header className="planner-path-progress__header">
         <div>
           <span>적용 이수 경로</span>

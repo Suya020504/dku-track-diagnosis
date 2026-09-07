@@ -18,7 +18,7 @@
 .dku-results-page .planner-result-heading > span { color:#cce8ed; font-size:.85rem; }
 .dku-results-page .planner-result-heading h1 { color:white; margin:0; font-size:clamp(1.5rem,2.4vw,2rem); line-height:1.3; }
 .dku-results-page .planner-result-heading p { color:#e1eaf1; font-size:.9rem; max-width:850px; }
-.dku-results-page .planner-path-progress { display:grid; gap:14px; }
+.dku-results-page .dku-results-summary { display:grid; gap:14px; }
 .dku-results-page .planner-path-progress__header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
 .dku-results-page .planner-path-progress__header > div { display:flex; gap:12px; align-items:center; }
 .dku-results-page .planner-path-progress__header span { font-size:.8rem; color:var(--result-muted); }
@@ -79,11 +79,27 @@
 .dku-results-page .planner-result-print > div { display:grid; gap:4px; font-size:.8rem; color:var(--result-muted); }
 .dku-results-page .print-button { display:flex; align-items:center; gap:8px; padding:10px 14px; border:1px solid var(--result-line); border-radius:6px; background:white; white-space:nowrap; }
 .planner-app .dku-results-page .print-button { color:#082f50; }
-.planner-app .dku-results-page .planner-path-progress { background:transparent; border:0; border-radius:0; padding:0; }
+.planner-app .dku-results-page .dku-results-summary { background:transparent; border:0; border-radius:0; padding:0; }
+.dku-results-page .dku-results-candidate-rows { border:1px solid var(--result-line); border-radius:8px; overflow:hidden; background:white; }
+.dku-results-page .planner-next-course.dku-results-candidate-row { display:grid; grid-template-columns:minmax(220px,1.15fr) minmax(0,1fr) auto; gap:16px; align-items:center; padding:12px 18px; border:0; border-radius:0; background:transparent; }
+.dku-results-page .dku-results-candidate-row + .dku-results-candidate-row { border-top:1px solid var(--result-line); }
+.dku-results-page .dku-results-candidate-row .dku-results-candidate-title > span { font-size:1rem; }
+.dku-results-page .dku-results-candidate-reason { font-size:.85rem; color:#354d60; }
+.dku-results-page .dku-results-contributions { display:grid; gap:10px; margin-bottom:22px; }
+.dku-results-page .dku-results-contributions > div { display:grid; grid-template-columns:1fr 1.5fr; gap:15px; border-bottom:1px solid var(--result-line); padding:8px 0; font-size:.85rem; }
+@media(max-width:1000px) {
+ .dku-results-page .planner-next-course.dku-results-candidate-row { grid-template-columns:minmax(180px,1fr) 1fr; gap:4px 16px; }
+ .dku-results-page .dku-results-candidate-row .dku-results-note { grid-column:2; }
+ .dku-results-page .dku-results-candidate-row .dku-results-candidate-title { grid-row:span 2; }
+}
 .planner-app .dku-results-page .planner-result-heading { padding:20px 24px; border:0; border-radius:10px; background:#082f50; }
 .planner-app .dku-results-page .planner-next-course-list { padding:0; border:0; background:transparent; }
 @media screen { .dku-results-page .dku-results-disclosure-content[data-collapsed=true] { display:none; } }
 @media(max-width:600px) {
+ .dku-results-page .planner-next-course.dku-results-candidate-row { grid-template-columns:1fr; padding:12px 14px; gap:5px; }
+ .dku-results-page .dku-results-candidate-row .dku-results-note { grid-column:auto; }
+ .dku-results-page .dku-results-candidate-row .dku-results-candidate-title { grid-row:auto; }
+ .dku-results-page .dku-results-contributions > div { grid-template-columns:1fr; gap:3px; }
  .dku-results-page .planner-result-page-band small { display:none; }
  .dku-results-page .planner-result-heading { padding:20px; }
  .dku-results-page .dku-results-forward { align-items:stretch; flex-direction:column; }

@@ -48,9 +48,9 @@ function courseContext(course: Course, result: DiagnosisResult) {
 
   return {
     reason: requiredFor.length > 0
-      ? `${requiredFor.join(", ")}의 필수과목 보완 후보입니다.`
+      ? `${requiredFor.join(", ")} 필수과목 보완`
       : trackNames.length > 0
-        ? `${trackNames.join(", ")}의 부족 모듈에 포함된 미이수 과목입니다.`
+        ? `${trackNames.join(", ")} 부족 모듈 보완 후보`
         : "입력한 이수 현황에서 다음 확인 후보로 계산된 과목입니다.",
     contribution: contributionLabels.length > 0
       ? contributionLabels.join(", ")
@@ -150,23 +150,14 @@ export function NextCoursesView({
           <p>추천 이유와 모듈 기여를 읽은 뒤 실제 수강 가능 여부를 확인하세요.</p>
         </header>
         {recommendations.length > 0 ? (
-          <div className="planner-next-course-list__items">
+          <div className="dku-results-candidate-rows" aria-label="추천 이유와 개설 이력">
             {recommendations.map((course, index) => {
               const context = courseContext(course, result);
               return (
-                <article className="planner-next-course" key={course.id}>
-                  <header className="dku-results-candidate-title"><span>{String(index + 1).padStart(2, "0")}</span><div><small>{course.code} · {moduleLabel(course)}</small><h3>{course.name}</h3></div><strong>{course.credits}학점</strong></header>
-                  <dl>
-                    <div>
-                      <dt>추천 이유</dt>
-                      <dd>{context.reason}</dd>
-                    </div>
-                    <div>
-                      <dt>모듈 기여</dt>
-                      <dd>{context.contribution}</dd>
-                    </div>
-                  </dl>
-                  <small className="dku-results-note">{historicalTermLabel(course)} · 실제 수강 학기 확인 필요</small>
+                <article className="planner-next-course dku-results-candidate-row" key={course.id}>
+                  <header className="dku-results-candidate-title"><span>{String(index + 1).padStart(2, "0")}</span><div><small>{course.code}</small><h3>{course.name}</h3></div><strong>{course.credits}학점</strong></header>
+                  <p className="dku-results-candidate-reason">{context.reason}</p>
+                  <small className="dku-results-note">{historicalTermLabel(course)}</small>
                 </article>
               );
             })}
@@ -180,14 +171,19 @@ export function NextCoursesView({
         )}
       </section>
 
-      <ResultDisclosure id="result-next-modules" title="모듈별 충족 현황 자세히"><ModuleProgressLedger result={result} /></ResultDisclosure>
+      <ResultDisclosure id="result-next-modules" title="과목별 모듈 기여와 모듈별 충족 현황 자세히">
+        <dl className="dku-results-contributions">
+          {recommendations.map(course => <div key={course.id}><dt>{course.code} {course.name}</dt><dd>{courseContext(course, result).contribution}</dd></div>)}
+        </dl>
+        <ModuleProgressLedger result={result} />
+      </ResultDisclosure>
 
       <section className="planner-result-next-actions" aria-labelledby="result-next-actions-title">
         <span>다음 행동</span>
         <h2 id="result-next-actions-title">비교하거나 학기 계획에 담아 보세요</h2>
         <p>추천은 트랙을 자동 선택하지 않습니다. 관심·현재 이수·졸업 계획 기준을 나눠 직접 판단할 수 있습니다.</p>
         <div>
-          <button className="primary-button" type="button" onClick={onOpenRecommendations}>
+          <button className="icon-button" type="button" onClick={onOpenRecommendations}>
             세 기준별 트랙 비교 보기
             <ArrowRight aria-hidden="true" size={18} />
           </button>
