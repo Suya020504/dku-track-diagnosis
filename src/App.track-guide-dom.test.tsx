@@ -4,7 +4,8 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
-import { tracks } from "./data/curriculumData";
+import { tracks, OFFICIAL_CURRICULUM_SOURCE } from "./data/curriculumData";
+import { OFFICIAL_TRACK_VIDEOS, TRACK_REGULATION_URL, TRACK_DEGREE_VIDEO_URL } from "./data/officialResources";
 
 let root: Root | undefined;
 
@@ -84,6 +85,12 @@ describe("separate track guide journey", () => {
     expect(document.querySelectorAll(".guide-reason-list details")).toHaveLength(4);
     expect(document.querySelectorAll(".guide-reason-list details[open]")).toHaveLength(0);
     expect(document.querySelectorAll(".guide-reason-list details a")).toHaveLength(4);
+    const expectedHrefs = [OFFICIAL_CURRICULUM_SOURCE.url, TRACK_REGULATION_URL, OFFICIAL_CURRICULUM_SOURCE.url, TRACK_DEGREE_VIDEO_URL];
+    for (const [index, article] of [...document.querySelectorAll(".guide-reason-list article")].entries()) {
+      const link = article.querySelector("a");
+      expect(link?.getAttribute("aria-label")).toBe(`${article.querySelector("h3")?.textContent} — 근거 원문 확인`);
+      expect(link?.getAttribute("href")).toBe(expectedHrefs[index]);
+    }
   });
 
   it.each(["overview", "benefits", "outcomes", "structure"])(
@@ -170,6 +177,10 @@ describe("separate track guide journey", () => {
       '[data-official-track-video] a[target="_blank"]',
     );
     expect(externalVideos).toHaveLength(4);
+    externalVideos.forEach((link, index) => {
+      expect(link.getAttribute("aria-label")).toBe(`${OFFICIAL_TRACK_VIDEOS[index].title} — 유튜브에서 보기`);
+      expect(link.href).toBe(OFFICIAL_TRACK_VIDEOS[index].watchUrl);
+    });
     externalVideos.forEach((link) => expect(link.rel).toContain("noopener"));
   });
 

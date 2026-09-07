@@ -392,7 +392,8 @@ describe("recommendation route integration", () => {
     };
     const chosen = chooseInterestTrackTransition(current, "economics");
 
-    expect(chosen.state.targetTrackId).toBe("economics");
+    expect(chosen.state.targetTrackId).toBeUndefined();
+    expect(chosen.state.pendingTargetTrackId).toBe("economics");
     expect(chosen.state.interestSurvey?.selectedTrackId).toBe("economics");
     expect(chosen.state.profileDraft?.goal).toBe("find-track");
     expect(chosen.route).toEqual({ view: "diagnosis", step: "profile", profileStage: "path" });

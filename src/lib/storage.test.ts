@@ -24,6 +24,23 @@ import {
 
 const values = new Map<string, string>();
 
+describe("pending target persistence", () => {
+  it.each([undefined, null, "food-marketing"])("roundtrips optional v2 pending target %s", (pendingTargetTrackId) => {
+    const state = { ...createEmptyAppState(), pendingTargetTrackId } as SavedAppStateV2;
+    const storage = makeStorage({});
+    expect(saveAppState(state, storage)).toBe(true);
+    expect(loadAppState(storage)).toEqual(state);
+  });
+  it("recovers the last valid state when the pending target is invalid", () => {
+    const valid = { ...createEmptyAppState(), targetTrackId: "economics" as const };
+    const storage = makeStorage({
+      [STORAGE_KEY_V2]: JSON.stringify({ ...valid, pendingTargetTrackId: "invalid-track" }),
+      [STORAGE_LAST_VALID_KEY_V2]: JSON.stringify(valid),
+    });
+    expect(loadAppState(storage)).toEqual(valid);
+  });
+});
+
 Object.defineProperty(globalThis, "localStorage", {
   configurable: true,
   value: {

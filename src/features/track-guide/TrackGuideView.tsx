@@ -19,8 +19,8 @@ export const TRACK_GUIDE_SECTION_TITLES: Record<TrackGuideSection, string> = {
   overview: "트랙제란?", benefits: "트랙제의 장점", outcomes: "학위·이수 결과", structure: "5개 트랙 구성", videos: "공식 영상·자료",
 };
 
-function SourceLink({ href, children }: { href: string; children: ReactNode }) {
-  return <a className="guide-source-link" href={href} target="_blank" rel="noopener noreferrer">{children}<ExternalLink aria-hidden="true" /></a>;
+function SourceLink({ href, children, label }: { href: string; children: ReactNode; label?: string }) {
+  return <a className="guide-source-link" href={href} aria-label={label} target="_blank" rel="noopener noreferrer">{children}<ExternalLink aria-hidden="true" /></a>;
 }
 
 function NextAction({ children, onClick }: { children: ReactNode; onClick: () => void }) {
@@ -98,7 +98,7 @@ function BenefitsSection({ onContinue }: { onContinue: () => void }) {
   ];
   return <section className="guide-reasons" data-track-guide-section="benefits" aria-labelledby="track-guide-benefits-heading">
     <div className="guide-reasons-intro"><span className="guide-eyebrow">트랙을 활용하는 네 가지 이유</span><h2 id="track-guide-benefits-heading">수업 선택에<br />나만의 기준이 생겨요.</h2><p>트랙의 장점은 자동 인정이 아니라,<br />배울 방향을 구체적으로 정하는 데 있어요.</p></div>
-    <div className="guide-reason-list">{reasons.map(({ Icon, title, body, official, service, href }) => <article key={title}><Icon aria-hidden="true" /><div><h3>{title}</h3><p>{body}</p><details><summary>공식 근거와 서비스 역할</summary><p><strong>공식 확인</strong> {official}</p><p><strong>서비스 역할</strong> {service}</p><SourceLink href={href}>근거 원문 확인</SourceLink></details></div></article>)}</div>
+    <div className="guide-reason-list">{reasons.map(({ Icon, title, body, official, service, href }) => <article key={title}><Icon aria-hidden="true" /><div><h3>{title}</h3><p>{body}</p><details><summary>공식 근거와 서비스 역할</summary><p><strong>공식 확인</strong> {official}</p><p><strong>서비스 역할</strong> {service}</p><SourceLink href={href} label={`${title} — 근거 원문 확인`}>근거 원문 확인</SourceLink></details></div></article>)}</div>
     <footer className="guide-section-footer"><p className="guide-caution">졸업 단축·취업·자동 인정을 보장하는 제도는 아닙니다. 실제 인정과 2026년 트랙명 표기 매체·적용 학번은 학과 확인이 필요합니다.</p><NextAction onClick={onContinue}>학위·이수 결과 확인하기</NextAction></footer>
   </section>;
 }
@@ -134,7 +134,7 @@ function VideosSection({ videoId, onVideoChange }: { videoId: OfficialTrackVideo
   const video = OFFICIAL_TRACK_VIDEOS.find((item) => item.id === videoId) ?? OFFICIAL_TRACK_VIDEOS[0];
   return <section className="guide-media" data-track-guide-section="videos" aria-labelledby="track-guide-videos-heading">
     <div className="guide-media-layout"><div className="guide-viewer"><div className="guide-screen">{youtubeLoaded ? <iframe src={privacyEnhancedEmbedUrl(video.id)} title={`${video.title} 공식 YouTube 영상`} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen loading="lazy" referrerPolicy="strict-origin-when-cross-origin" /> : <div className="guide-consent"><PlayCircle aria-hidden="true" /><span>학과 공식 YouTube · 2024년 공식 설명</span><h2 id="track-guide-videos-heading">{video.title}</h2><p>재생을 누르면 개인정보 보호 강화 YouTube 플레이어에 연결됩니다.</p><button type="button" className="guide-next" onClick={() => setYoutubeLoaded(true)}>공식 영상 재생 <ArrowRight aria-hidden="true" /></button></div>}</div><div className="guide-viewer-caption">{youtubeLoaded ? <h2 id="track-guide-videos-heading">{video.shortTitle}</h2> : <h3>{video.shortTitle}</h3>}<span>{video.duration} · 게시 {video.publishedAt}</span><p><strong>서비스 요약</strong> {video.focus}</p></div></div>
-      <aside className="guide-playlist"><h3>공식 설명 영상 4편</h3><ol>{OFFICIAL_TRACK_VIDEOS.map((item) => <li key={item.id} data-official-track-video={item.id}><button type="button" aria-current={video.id === item.id ? "true" : undefined} onClick={() => { if (video.id !== item.id) onVideoChange(item.id as OfficialTrackVideoId); }}><PlayCircle aria-hidden="true" /><span><strong>{item.shortTitle}</strong><small>{item.title}</small></span></button><SourceLink href={item.watchUrl}>유튜브에서 보기</SourceLink></li>)}</ol></aside></div>
+      <aside className="guide-playlist"><h3>공식 설명 영상 4편</h3><ol>{OFFICIAL_TRACK_VIDEOS.map((item) => <li key={item.id} data-official-track-video={item.id}><button type="button" aria-current={video.id === item.id ? "true" : undefined} onClick={() => { if (video.id !== item.id) onVideoChange(item.id as OfficialTrackVideoId); }}><PlayCircle aria-hidden="true" /><span><strong>{item.shortTitle}</strong><small>{item.title}</small></span></button><SourceLink href={item.watchUrl} label={`${item.title} — 유튜브에서 보기`}>유튜브에서 보기</SourceLink></li>)}</ol></aside></div>
     <div className="guide-media-footnote"><p>영상은 제도 취지에 관한 2024년 설명입니다. 2026 현재 신청·인정 기준은 공개본과 학과 확인이 우선합니다.</p><SourceLink href={TRACK_DEGREE_VIDEO_URL}>트랙명 표기 설명 14:20</SourceLink><SourceLink href={TRACK_QA_VIDEO_URL}>2024 교육과정 개편 Q&A</SourceLink><SourceLink href={DEPARTMENT_YOUTUBE_URL}>학과 공식 YouTube 채널</SourceLink></div>
   </section>;
 }

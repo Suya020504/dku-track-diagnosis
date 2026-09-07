@@ -274,7 +274,8 @@ export function chooseRecommendedTrackTransition(
   const context = { ...current.profile, ...current.profileDraft };
   return {
     state: {
-      ...applyPlanningSourceChange(current, { targetTrackId: trackId }),
+      ...current,
+      pendingTargetTrackId: trackId,
       profileDraft: {
         ...context,
         curriculumRuleVersion: "2026-provided-final-plan",
@@ -294,17 +295,16 @@ export function chooseInterestTrackTransition(
   trackId: TrackId,
 ): { state: SavedAppStateV2; route: AppRoute } {
   const interestSurvey = current.interestSurvey ?? emptyInterestSurveyState();
-  const nextProfile = current.profile ? { ...current.profile, goal: "find-track" as const } : undefined;
   return {
     state: {
-      ...applyPlanningSourceChange(current, { profile: nextProfile, targetTrackId: trackId }),
+      ...current,
+      pendingTargetTrackId: trackId,
       profileDraft: {
         ...(current.profileDraft ?? current.profile ?? {}),
         goal: "find-track",
         curriculumRuleVersion: "2026-provided-final-plan",
         ruleApplicability: "reference-only",
       },
-      comparisonTrackIds: current.comparisonTrackIds.filter((id) => id !== trackId),
       interestSurvey: { ...interestSurvey, selectedTrackId: trackId },
     },
     route: current.profileDraft?.affiliation || current.profile?.affiliation
@@ -422,16 +422,19 @@ export function completeProfileTransition(
   current: SavedAppStateV2,
   profile: StudentProfile,
 ): { state: SavedAppStateV2; step: DiagnosisStep; route: AppRoute } {
+  const hasPendingTarget = current.pendingTargetTrackId !== undefined;
+  if (hasPendingTarget) profile = { ...profile, ruleApplicability: "reference-only" };
   const trackMajor = profile.studyPath === "track-major";
   const targetTrackId = trackMajor
-    ? current.targetTrackId ?? (
+    ? hasPendingTarget ? current.pendingTargetTrackId ?? undefined : current.targetTrackId ?? (
         profile.goal === "find-track" ? current.interestSurvey?.selectedTrackId : undefined
       )
     : undefined;
   const state: SavedAppStateV2 = {
     ...applyPlanningSourceChange(current, { profile, targetTrackId }),
     profileDraft: undefined,
-    comparisonTrackIds: trackMajor ? current.comparisonTrackIds : [],
+    pendingTargetTrackId: undefined,
+    comparisonTrackIds: trackMajor ? current.comparisonTrackIds.filter((id) => id !== targetTrackId) : [],
   };
   const step = resolveDiagnosisStep("?view=diagnosis&step=courses", state);
   const hasChosenDirection = trackMajor
@@ -1053,6 +1056,7 @@ function App({ storage }: { storage?: Storage } = {}) {
         profile: { ...savedState.profile, goal: "check-progress" },
       }),
       profileDraft: undefined,
+      pendingTargetTrackId: undefined,
     };
     setStorageError(!saveAppState(nextState, appStorage));
     setSavedState(nextState);
@@ -1064,10 +1068,12 @@ function App({ storage }: { storage?: Storage } = {}) {
 
   function openPlanningTargetSelection() {
     const profileDraft: Partial<StudentProfile> = {
-      ...(savedState.profile ?? savedState.profileDraft ?? {}),
+      ...((savedState.pendingTargetTrackId !== undefined ? savedState.profileDraft : savedState.profile)
+        ?? savedState.profileDraft ?? {}),
       goal: "plan-graduation",
       curriculumRuleVersion: "2026-provided-final-plan",
-      ruleApplicability: savedState.profile?.ruleApplicability ?? "reference-only",
+      ruleApplicability: savedState.pendingTargetTrackId !== undefined
+        ? "reference-only" : savedState.profile?.ruleApplicability ?? "reference-only",
     };
     const nextState = { ...savedState, profileDraft };
     setStorageError(!saveAppState(nextState, appStorage));
@@ -1528,10 +1534,14 @@ function App({ storage }: { storage?: Storage } = {}) {
         <ProfileFlow
           profile={savedState.profile}
           initialDraft={savedState.profileDraft}
-          targetTrackId={savedState.targetTrackId}
+          targetTrackId={savedState.pendingTargetTrackId !== undefined
+            ? savedState.pendingTargetTrackId ?? undefined : savedState.targetTrackId}
           profileStage={profileStage}
           headingRef={stepHeadingRef}
-          onTargetTrackChange={changeTargetTrack}
+          onTargetTrackChange={(targetTrackId) => persist((current) => ({
+            ...current,
+            pendingTargetTrackId: targetTrackId ?? null,
+          }))}
           onChange={updateProfileDraft}
           onComplete={completeProfile}
           onProfileStageChange={navigateProfileStage}

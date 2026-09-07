@@ -359,11 +359,13 @@ describe("graduation plan pure transitions", () => {
     },
   );
 
-  it("invalidates only the plan when an interest transition changes the target track", () => {
+  it("preserves the committed plan while an interest target awaits confirmation", () => {
     const current = stateWithPlan();
     const interest = chooseInterestTrackTransition(current, "economics");
 
-    expect(interest.state.graduationPlan).toBeUndefined();
+    expect(interest.state.graduationPlan).toEqual(current.graduationPlan);
+    expect(interest.state.targetTrackId).toBe(current.targetTrackId);
+    expect(interest.state.pendingTargetTrackId).toBe("economics");
     expect(interest.state.courseInputReviewedAt).toBe(current.courseInputReviewedAt);
     expect(interest.state.graduationPlanPreferences).toEqual(preferences);
   });

@@ -548,6 +548,7 @@ function isSavedAppStateV2(value: unknown): value is SavedAppStateV2 {
   return isCourseSelections(state.courseSelections) &&
     isAdditionalMajorCredits(state.additionalMajorCredits) &&
     (state.targetTrackId === undefined || isTrackId(state.targetTrackId)) &&
+    (state.pendingTargetTrackId === undefined || state.pendingTargetTrackId === null || isTrackId(state.pendingTargetTrackId)) &&
     Array.isArray(state.comparisonTrackIds) && state.comparisonTrackIds.every(isTrackId) &&
     (state.profile === undefined || isStudentProfile(state.profile)) &&
     (state.profileDraft === undefined || isProfileDraft(state.profileDraft)) &&

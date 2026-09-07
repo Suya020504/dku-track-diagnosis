@@ -223,6 +223,8 @@ export type SavedAppStateV2 = {
   version: 2;
   profile?: StudentProfile;
   profileDraft?: Partial<StudentProfile>;
+  /** Undefined: no pending edit; null: explicitly targetless profile draft. */
+  pendingTargetTrackId?: TrackId | null;
   courseSelections: CourseSelectionRecord[];
   additionalMajorCredits: AdditionalMajorCredit[];
   courseInputReviewedAt?: string;

@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveDiagnosisStep } from "./lib/viewRouting";
 import {
   EnrollmentProfileSummary,
+  chooseRecommendedTrackTransition,
   completeProfileTransition,
   reviewCourseInputTransition,
   saveCompletedCoursesManually,
@@ -14,6 +15,7 @@ import {
 import App from "./App";
 import { STORAGE_KEY_V2, createEmptyAppState } from "./lib/storage";
 import type { SavedAppStateV2, StudentProfile } from "./types";
+import { calculateGraduationPlan } from "./lib/graduationPlanner";
 
 const minorProfile: StudentProfile = {
   goal: "check-progress",
@@ -80,6 +82,40 @@ afterEach(async () => {
 });
 
 describe("profile integration transitions", () => {
+  it.each(["officially-verified", "reference-only"] as const)("keeps committed results across skipped confirmation, deep links and remount (%s)", async (ruleApplicability) => {
+    const profile = { ...trackProfile, ruleApplicability };
+    const preferences = { currentTerm: "2026-2" as const, targetGraduationTerm: "2028-1" as const, maxMajorCoursesPerTerm: 6, considerSeasonalTerm: false };
+    const current: SavedAppStateV2 = {
+      ...state(profile), targetTrackId: "economics", courseInputReviewedAt: "2026-09-08",
+      graduationPlanPreferences: preferences,
+      graduationPlan: calculateGraduationPlan({ profile, targetTrackId: "economics", courseSelections: [], additionalMajorCredits: [], preferences, generatedAt: "2026-09-08" }),
+    };
+    saveState(chooseRecommendedTrackTransition(current, "food-marketing").state);
+    history.replaceState({}, "", "/?view=diagnosis&step=profile&profile=path");
+    await mountApp();
+    expect(document.querySelector<HTMLInputElement>('input[name="targetTrackId"][value="food-marketing"]')?.checked).toBe(true);
+    const resultNav = [...document.querySelectorAll<HTMLButtonElement>(".planner-shell-primary-nav button")].find((button) => button.textContent?.includes("결과"));
+    expect(resultNav).toBeDefined();
+    await act(async () => resultNav?.click());
+    for (const href of ["/?view=result&section=current", "/?view=plan&step=schedule"]) {
+      await setRouteAndPop(href);
+      await act(async () => root?.unmount());
+      root = undefined;
+      await mountApp();
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_V2)!) as SavedAppStateV2;
+      expect(saved.targetTrackId).toBe("economics");
+      expect(saved.profile).toEqual(profile);
+      expect(saved.graduationPlan).toEqual(current.graduationPlan);
+      expect(saved.courseInputReviewedAt).toBe(current.courseInputReviewedAt);
+    }
+    await setRouteAndPop("/?view=diagnosis&step=profile&profile=path");
+    expect(document.querySelector<HTMLInputElement>('input[name="targetTrackId"][value="food-marketing"]')?.checked).toBe(true);
+    await act(async () => document.querySelector<HTMLInputElement>('[data-target-track-choice="compare-all"]')?.click());
+    const pending = JSON.parse(localStorage.getItem(STORAGE_KEY_V2)!) as SavedAppStateV2;
+    expect(pending.pendingTargetTrackId).toBeNull();
+    expect(pending.targetTrackId).toBe("economics");
+    expect(pending.graduationPlan).toEqual(current.graduationPlan);
+  });
   it("lets a minor with no track review direct course input and reach result", () => {
     const current = {
       ...state(minorProfile),

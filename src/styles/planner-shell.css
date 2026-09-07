@@ -229,8 +229,6 @@
 .planner-shell-availability { width:fit-content; max-width:calc(100% - 40px); margin:12px auto 0; padding:12px 16px; background:#fff; border:1px solid var(--service-line); color:#405267; font-size:14px; }
 .planner-shell-primary-nav button[aria-disabled="true"] { cursor:not-allowed; color:#647184; }
 .planner-shell-header { border-color:var(--service-line); background:#fff; }
-.planner-shell-primary-nav button[aria-current="page"] { color:var(--service-accent); }
-.planner-shell-primary-nav button[aria-current="page"]::after { background:var(--service-accent); }
 .dku-service-frame,.dku-service-workspace,.dku-result-surface { min-width:0; width:100%; margin:0; padding:0; background:transparent; }
 .planner-shell-content .planner-compass-path { border-color:var(--service-line); }
 

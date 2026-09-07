@@ -532,7 +532,9 @@ describe("App recommendation browser interactions", () => {
 
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_V2) ?? "null") as SavedAppStateV2;
     expect(saved.interestSurvey?.selectedTrackId).toBe("food-marketing");
-    expect(saved.targetTrackId).toBe("food-marketing");
+    expect(saved.targetTrackId).toBeUndefined();
+    expect(saved.pendingTargetTrackId).toBe("food-marketing");
+    expect(saved.profile).toBeUndefined();
     expect(saved.profileDraft?.goal).toBe("find-track");
     expect(new URLSearchParams(location.search).get("view")).toBe("diagnosis");
     expect(pushState).toHaveBeenCalledTimes(1);

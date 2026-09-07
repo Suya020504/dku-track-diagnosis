@@ -1,9 +1,44 @@
 import { describe, expect, it } from "vitest";
-import { chooseRecommendedTrackTransition } from "./App";
+import { chooseRecommendedTrackTransition, chooseInterestTrackTransition, completeProfileTransition } from "./App";
 import { createEmptyAppState } from "./lib/storage";
 import type { SavedAppStateV2 } from "./types";
 
 describe("recommended target confirmation", () => {
+  it.each([null, "economics"] as const)("commits explicit pending %s without resurrecting a survey target", (pendingTargetTrackId) => {
+    const current: SavedAppStateV2 = {
+      ...createEmptyAppState(),
+      profile: { affiliation: "department-student", goal: "find-track", studyPath: "track-major", curriculumRuleVersion: "2026-provided-final-plan", ruleApplicability: "reference-only" },
+      targetTrackId: "economics",
+      pendingTargetTrackId,
+      interestSurvey: { answers: {}, currentIndex: 0, selectedTrackId: "food-marketing" },
+      graduationPlan: { marker: "saved" } as unknown as SavedAppStateV2["graduationPlan"],
+    };
+    const next = completeProfileTransition(current, current.profile!).state;
+    expect(next.targetTrackId).toBe(pendingTargetTrackId ?? undefined);
+    expect(next.pendingTargetTrackId).toBeUndefined();
+    expect(next.graduationPlan).toEqual(pendingTargetTrackId === "economics" ? current.graduationPlan : undefined);
+    expect(next.interestSurvey).toEqual(current.interestSurvey);
+  });
+  it.each([chooseRecommendedTrackTransition, chooseInterestTrackTransition])("defers a verified target and plan change until confirmation (%s)", (choose) => {
+    const current: SavedAppStateV2 = {
+      ...createEmptyAppState(),
+      profile: { affiliation: "department-student", goal: "check-progress", studyPath: "track-major", curriculumRuleVersion: "2026-provided-final-plan", ruleApplicability: "officially-verified" },
+      targetTrackId: "economics",
+      courseInputReviewedAt: "2026-09-08",
+      graduationPlan: { marker: "saved" } as unknown as SavedAppStateV2["graduationPlan"],
+    };
+    const staged = choose(current, "food-marketing").state;
+    expect(staged.targetTrackId).toBe("economics");
+    expect(staged.profile).toEqual(current.profile);
+    expect(staged.graduationPlan).toEqual(current.graduationPlan);
+    expect(staged.courseInputReviewedAt).toBe(current.courseInputReviewedAt);
+    const confirmed = completeProfileTransition(staged, { ...current.profile!, ...staged.profileDraft }).state;
+    expect(confirmed.targetTrackId).toBe("food-marketing");
+    expect(confirmed.profile?.ruleApplicability).toBe("reference-only");
+    expect(confirmed.graduationPlan).toBeUndefined();
+    expect(confirmed).toHaveProperty("pendingTargetTrackId", undefined);
+    expect(confirmed.profileDraft).toBeUndefined();
+  });
   it.each(["economics", "food-marketing"] as const)("stages %s without changing committed inputs", (trackId) => {
     const current: SavedAppStateV2 = {
       ...createEmptyAppState(),
@@ -20,8 +55,9 @@ describe("recommended target confirmation", () => {
     expect(next.state.interestSurvey).toEqual(current.interestSurvey);
     expect(next.state.courseInputReviewedAt).toBe(current.courseInputReviewedAt);
     expect(next.state.profileDraft).toEqual({ ...current.profile, goal: "check-progress", studyPath: "track-major" });
-    expect(next.state.targetTrackId).toBe(trackId);
-    expect(next.state.graduationPlan).toEqual(trackId === current.targetTrackId ? current.graduationPlan : undefined);
+    expect(next.state.targetTrackId).toBe(current.targetTrackId);
+    expect(next.state).toHaveProperty("pendingTargetTrackId", trackId);
+    expect(next.state.graduationPlan).toEqual(current.graduationPlan);
     expect(next.route).toEqual({ view: "diagnosis", step: "profile", profileStage: "path" });
   });
   it("asks for affiliation when none has been entered", () => {
