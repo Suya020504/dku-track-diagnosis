@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DKU 트랙제 서비스 · Figma Source</title>
+  <style>
+    :root { --paper:#f8fbfc; --sky:#ddf2fc; --mint:#ddf3e8; --blue:#174b82; --green:#087a58; --ink:#14243a; --muted:#5c6c7e; --wheat:#f2c66d; --coral:#e67c62; }
+    * { box-sizing:border-box; }
+    body { margin:0; padding:64px; background:#dce4ea; color:var(--ink); font-family:"Pretendard Variable",Pretendard,"Noto Sans KR","Malgun Gothic",sans-serif; }
+    header.cover, section.page-pair { width:1760px; margin:0 auto 72px; background:var(--paper); border:1px solid #9aa8b5; box-shadow:0 18px 48px rgba(20,36,58,.12); }
+    header.cover { padding:56px; }
+    h1 { margin:0 0 16px; font-family:"Gmarket Sans","Noto Sans KR",sans-serif; font-size:52px; letter-spacing:-.04em; }
+    p { color:var(--muted); font-size:20px; line-height:1.65; }
+    .tokens { display:grid; grid-template-columns:repeat(8,1fr); gap:12px; margin-top:36px; }
+    .token { min-height:110px; padding:16px; border:1px solid rgba(20,36,58,.15); display:flex; align-items:flex-end; font-weight:800; }
+    .components { display:flex; flex-wrap:wrap; gap:10px; margin-top:28px; }
+    .components span { padding:10px 14px; border:1px solid #aebac5; border-radius:10px; background:#fff; font-weight:750; }
+    .pair-title { display:flex; align-items:center; justify-content:space-between; padding:24px 30px; border-bottom:2px solid var(--ink); }
+    .pair-title h2 { margin:0; font-size:30px; }
+    .pair-title span { color:var(--muted); font-weight:800; }
+    .boards { display:grid; grid-template-columns:1fr 1fr; gap:24px; padding:28px; }
+    figure { margin:0; }
+    figure figcaption { margin-bottom:12px; color:var(--blue); font-size:16px; font-weight:850; letter-spacing:.04em; }
+    figure img { display:block; width:100%; height:auto; border:1px solid #acb8c2; background:#fff; }
+    .note { padding:0 30px 28px; color:var(--muted); font-size:15px; }
+  </style>
+</head>
+<body>
+  <header class="cover">
+    <h1>단국대학교 식품자원경제학과 트랙제 서비스</h1>
+    <p>Figma 변환 기준 · 9개 핵심 페이지 · 고해상도 도안과 반응형 와이어프레임</p>
+    <div class="tokens">
+      <div class="token" style="background:#f8fbfc">Paper<br>#F8FBFC</div>
+      <div class="token" style="background:#ddf2fc">Sky<br>#DDF2FC</div>
+      <div class="token" style="background:#ddf3e8">Mint<br>#DDF3E8</div>
+      <div class="token" style="background:#174b82;color:#fff">DKU Blue<br>#174B82</div>
+      <div class="token" style="background:#087a58;color:#fff">Dept Green<br>#087A58</div>
+      <div class="token" style="background:#14243a;color:#fff">Ink<br>#14243A</div>
+      <div class="token" style="background:#f2c66d">Wheat<br>#F2C66D</div>
+      <div class="token" style="background:#e67c62;color:#fff">Review Coral<br>#E67C62</div>
+    </div>
+    <div class="components">
+      <span>Button / Primary</span><span>Button / Secondary</span><span>Tabs</span><span>Guide Index</span><span>Radio Row</span><span>Course Row</span><span>Track Row</span><span>Evidence Band</span><span>Save Status</span><span>Mobile Bottom Nav</span>
+    </div>
+  </header>
+
+  <main id="pairs"></main>
+
+  <script>
+    const pages = [
+      ["01", "홈", "home", "핵심 시뮬레이션 진입"],
+      ["02", "트랙제 알아보기", "guide", "선택형 3분 가이드"],
+      ["03", "관심 트랙 추천 설문", "survey", "소속별 질문은행"],
+      ["04", "학생 유형·이수 경로", "profile", "두 단계 프로필"],
+      ["05", "이수 과목 입력", "courses", "직접 선택 기본"],
+      ["06", "상황별 시뮬레이션 결과", "result", "현재 상태·부족 조건·다음 과목"],
+      ["07", "트랙 추천 비교", "recommendation", "관심과 현재 진행도 분리"],
+      ["08", "목표 학기 이수 가능성·플래너", "plan", "참고 계획·공식 확인"],
+      ["09", "공식 자료", "resources", "자료 탭만 사용"],
+    ];
+    const root = document.querySelector("#pairs");
+    for (const [index, title, slug, note] of pages) {
+      const section = document.createElement("section");
+      section.className = "page-pair";
+      section.id = `figma-${slug}`;
+      section.innerHTML = `
+        <div class="pair-title"><h2>${index}. ${title}</h2><span>${note}</span></div>
+        <div class="boards">
+          <figure><figcaption>HIGH-FIDELITY DIRECTION</figcaption><img src="mockups/mockup-${slug}.png" alt="${title} 고해상도 도안"></figure>
+          <figure><figcaption>RESPONSIVE WIREFRAME</figcaption><img src="wireframes/wireframe-${slug}.png" alt="${title} 반응형 와이어프레임"></figure>
+        </div>
+        <p class="note">구현 시 도안의 색·위계·밀도와 와이어프레임의 정보 구조를 결합합니다. 데이터와 문구는 저장소 명세가 우선합니다.</p>`;
+      root.appendChild(section);
+    }
+  </script>
+</body>
+</html>

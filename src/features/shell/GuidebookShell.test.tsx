@@ -3,13 +3,38 @@ import { describe, expect, it, vi } from "vitest";
 import { GuidebookShell } from "./GuidebookShell";
 
 describe("GuidebookShell", () => {
-  it("uses top journey navigation and omits the side index in immersive map mode", () => {
+  it("uses the same top navigation shell when no display mode is supplied", () => {
+    const markup = renderToStaticMarkup(
+      <GuidebookShell
+        activeId="resources"
+        currentLabel="도구 & 정보"
+        guideItems={[
+          { id: "start", index: "01", label: "홈", available: true, onSelect: vi.fn() },
+          { id: "resources", index: "06", label: "도구 & 정보", available: true, onSelect: vi.fn() },
+        ]}
+        mobilePrimaryItems={[]}
+        mobileMoreItems={[]}
+        externalLinks={[]}
+        journeyItems={[]}
+        saveState="saved"
+        onOpenHelp={vi.fn()}
+      >
+        <main><h1>도구 & 정보</h1></main>
+      </GuidebookShell>,
+    );
+
+    expect(markup).toContain('class="planner-shell-primary-nav"');
+    expect(markup).toContain('class="planner-shell-layout is-immersive"');
+    expect(markup).not.toContain('class="planner-guide-index"');
+  });
+
+  it("uses top journey navigation and omits the retired side index", () => {
     const markup = renderToStaticMarkup(
       <GuidebookShell
         activeId="start"
-        currentLabel="지도 안내"
+        currentLabel="서비스 홈"
         guideItems={[
-          { id: "start", index: "01", label: "지도 안내", available: true, onSelect: vi.fn() },
+          { id: "start", index: "01", label: "서비스 홈", available: true, onSelect: vi.fn() },
           { id: "diagnosis", index: "02", label: "나의 진단", available: true, onSelect: vi.fn() },
         ]}
         mobilePrimaryItems={[]}
@@ -18,13 +43,12 @@ describe("GuidebookShell", () => {
         journeyItems={[]}
         saveState="saved"
         onOpenHelp={vi.fn()}
-        immersive
       >
-        <main><h1>지도 안내</h1></main>
+        <main><h1>서비스 홈</h1></main>
       </GuidebookShell>,
     );
 
-    expect(markup).toContain('class="planner-shell-map-nav"');
+    expect(markup).toContain('class="planner-shell-primary-nav"');
     expect(markup).toContain('class="planner-shell-layout is-immersive"');
     expect(markup).not.toContain('class="planner-guide-index"');
     expect(markup).toContain('aria-current="page"');
@@ -104,7 +128,9 @@ describe("GuidebookShell", () => {
     );
 
     expect(markup).toContain('class="planner-app');
-    expect(markup).toContain("단국대학교 식품자원경제학과");
+    expect(markup).toContain("식품자원경제학과");
+    expect(markup).toContain('src="/dku-logo.png"');
+    expect(markup).toContain('alt="단국대학교"');
     expect(markup).toContain("이 브라우저에 저장됨");
     expect(markup).toContain("트랙제 안내");
     expect(markup).toContain("문의사항");

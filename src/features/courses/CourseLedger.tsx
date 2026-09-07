@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { ChevronDown } from "lucide-react";
+import { useMemo, useState } from "react";
 import { modules } from "../../data/curriculumData";
 import {
   getModuleLabel,
@@ -120,12 +121,14 @@ export function CourseLedger({
   query,
   onToggleCourse,
 }: CourseLedgerProps) {
+  const [selectedOnly, setSelectedOnly] = useState(false);
+  const [groupOpenState, setGroupOpenState] = useState<Record<string, boolean>>({});
   const selectionByCourseId = useMemo(
     () => new Map(courseSelections.map((selection) => [selection.courseId, selection])),
     [courseSelections],
   );
   const normalizedQuery = query.trim().toLocaleLowerCase("ko");
-  const visibleCourses = useMemo(() => ledgerCourses
+  const matchingCourses = useMemo(() => ledgerCourses
     .filter((course) => matchesSemesterFilters(course, gradeFilter, semesterFilter))
     .filter((course) => !normalizedQuery || [
       course.code,
@@ -140,61 +143,77 @@ export function CourseLedger({
         normalizedQuery,
         semesterFilter,
       ]);
+  const visibleCourses = selectedOnly
+    ? matchingCourses.filter((course) => selectionByCourseId.has(course.id))
+    : matchingCourses;
   const groups = mode === "semester"
     ? buildSemesterGroups(visibleCourses)
     : buildModuleGroups(visibleCourses, selectedTrackIds);
-  const selectedVisibleCount = visibleCourses.filter((course) => {
-    const status = selectionByCourseId.get(course.id)?.status;
-    return status === "completed" || status === "in-progress";
-  }).length;
-
-  function focusGroup(event: React.MouseEvent<HTMLAnchorElement>, groupId: string) {
-    event.preventDefault();
-    const heading = document.getElementById(groupId)?.querySelector<HTMLHeadingElement>("h3");
-    heading?.focus();
-    heading?.scrollIntoView?.({ behavior: "auto", block: "center" });
-  }
+  const selectedMatchingCount = matchingCourses.filter((course) => selectionByCourseId.has(course.id)).length;
+  const forceGroupsOpen = selectedOnly || Boolean(normalizedQuery)
+    || gradeFilter !== "all" || semesterFilter !== "all";
+  const expansionKey = `${selectedOnly}-${normalizedQuery}-${gradeFilter}-${semesterFilter}`;
 
   return (
-    <section className="course-ledger" aria-labelledby="course-ledger-title">
+    <section
+      className="course-ledger"
+      data-course-ledger-mode={mode}
+      aria-labelledby="course-ledger-title"
+    >
       <header className="course-ledger-summary">
         <div>
-          <span>전공 과목 선택 원장</span>
-          <h2 id="course-ledger-title">직접 선택</h2>
+          <span>빠른 과목 체크</span>
+          <h2 id="course-ledger-title" tabIndex={-1}>
+            {mode === "semester" ? "학기별 과목" : "모듈별 과목"}
+          </h2>
         </div>
-        <p><strong>{selectedVisibleCount}</strong> / {visibleCourses.length}개 완료·수강 중</p>
+        <div className="course-ledger-summary-actions">
+          <p><strong>{selectedMatchingCount}</strong> / {matchingCourses.length}개 선택</p>
+          <button
+            type="button"
+            aria-pressed={selectedOnly}
+            onClick={() => setSelectedOnly((current) => !current)}
+          >
+            선택한 과목만
+          </button>
+        </div>
       </header>
-
-      {groups.length > 0 ? (
-        <nav
-          className="course-ledger-index"
-          aria-label={mode === "semester" ? "학기 그룹 빠른 이동" : "모듈 그룹 빠른 이동"}
-        >
-          {groups.map((group) => (
-            <a
-              href={`#${group.id}`}
-              key={group.id}
-              onClick={(event) => focusGroup(event, group.id)}
-            >
-              {group.label}
-            </a>
-          ))}
-        </nav>
-      ) : null}
 
       {groups.length === 0 ? (
         <div className="course-ledger-empty" role="status">
-          <strong>조건에 맞는 과목이 없습니다.</strong>
-          <span>검색어나 학년·학기 필터를 바꿔보세요.</span>
+          <strong>{selectedOnly ? "선택한 과목이 없습니다." : "조건에 맞는 과목이 없습니다."}</strong>
+          <span>{selectedOnly ? "전체 과목으로 돌아가 처음부터 체크해 보세요." : "검색어나 학년·학기 필터를 바꿔보세요."}</span>
+          {selectedOnly ? (
+            <button type="button" onClick={() => setSelectedOnly(false)}>전체 과목 보기</button>
+          ) : null}
         </div>
       ) : (
         <div className="course-ledger-groups">
-          {groups.map((group) => (
-            <section className="course-ledger-group" id={group.id} key={group.id}>
-              <header>
-                <h3 tabIndex={-1}>{group.label}</h3>
-                <span>{group.note}</span>
-              </header>
+          {groups.map((group, index) => {
+            const groupSelectedCount = group.courses.filter((course) => selectionByCourseId.has(course.id)).length;
+            const groupOpen = forceGroupsOpen || (groupOpenState[group.id] ?? index === 0);
+            return (
+            <details
+              className="course-ledger-group"
+              id={group.id}
+              key={`${group.id}-${expansionKey}`}
+              open={groupOpen}
+              onToggle={(event) => {
+                if (forceGroupsOpen) return;
+                const open = event.currentTarget.open;
+                setGroupOpenState((current) => current[group.id] === open
+                  ? current
+                  : { ...current, [group.id]: open });
+              }}
+            >
+              <summary>
+                <span className="course-ledger-group-title">
+                  <h3>{group.label}</h3>
+                  {mode === "module" && group.note === "선택 트랙 관련 모듈" ? <small>{group.note}</small> : null}
+                </span>
+                <span>선택 {groupSelectedCount} / {group.courses.length}</span>
+                <ChevronDown aria-hidden="true" size={18} />
+              </summary>
               <div>
                 {group.courses.map((course) => (
                   <CourseLedgerRow
@@ -205,12 +224,14 @@ export function CourseLedger({
                     evidenceText={evidenceText(course)}
                     trackModule={isModuleInAnyTrack(selectedTrackIds, course.moduleId)}
                     requiredForEnrollment={isRequiredCourseApplicable(course, enrollmentType)}
+                    showTerm={mode === "module"}
                     onToggleCourse={onToggleCourse}
                   />
                 ))}
               </div>
-            </section>
-          ))}
+            </details>
+            );
+          })}
         </div>
       )}
     </section>

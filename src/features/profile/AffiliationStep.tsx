@@ -4,7 +4,7 @@ import type { StudentAffiliation } from "../../types";
 
 const AFFILIATION_LABELS: Record<StudentAffiliation, { title: string; detail: string }> = {
   "department-student": {
-    title: "식품자원경제학과 입학생",
+    title: "식품자원경제학과 학생",
     detail: "심화전공·트랙형전공·다전공 이수 기준을 확인합니다.",
   },
   "external-student": {

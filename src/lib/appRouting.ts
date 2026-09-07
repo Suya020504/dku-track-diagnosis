@@ -1,10 +1,10 @@
-import type { SavedAppStateV2 } from "../types";
+import type { InterestSurveyAudience, SavedAppStateV2 } from "../types";
 import { isOfficialTrackVideoId, type OfficialTrackVideoId } from "../data/officialResources";
 import { resolveDiagnosisStep, type DiagnosisStep } from "./viewRouting";
 
 export type ResultSection = "current" | "next" | "confirm";
 export type ResourceSection = "tracks" | "modules" | "curriculum" | "official";
-export type TrackGuideSection = "overview" | "benefits" | "structure" | "videos";
+export type TrackGuideSection = "overview" | "benefits" | "outcomes" | "structure" | "videos";
 export type ProfileStage = "affiliation" | "path";
 
 export type AppRoute =
@@ -19,6 +19,7 @@ export type AppRoute =
       view: "recommendation";
       step: "survey" | "axes";
       axis?: "interest" | "progress" | "plan";
+      audience?: InterestSurveyAudience;
     }
   | { view: "plan"; step: "setup" | "schedule" | "checks" }
   | { view: "result"; section?: ResultSection }
@@ -27,10 +28,11 @@ export type AppRoute =
   | { view: "contact" };
 
 const recommendationAxes = new Set(["interest", "progress", "plan"] as const);
+const surveyAudiences = new Set<InterestSurveyAudience>(["department-student", "external-student"]);
 const planSteps = new Set(["setup", "schedule", "checks"] as const);
 const resultSections = new Set<ResultSection>(["current", "next", "confirm"]);
 const resourceSections = new Set<ResourceSection>(["tracks", "modules", "curriculum", "official"]);
-const trackGuideSections = new Set<TrackGuideSection>(["overview", "benefits", "structure", "videos"]);
+const trackGuideSections = new Set<TrackGuideSection>(["overview", "benefits", "outcomes", "structure", "videos"]);
 const profileStages = new Set<ProfileStage>(["affiliation", "path"]);
 
 export function resolveAppRoute(
@@ -64,7 +66,12 @@ export function resolveAppRoute(
 
   if (view === "recommendation") {
     const step = params.get("step") === "axes" ? "axes" : "survey";
-    if (step === "survey") return { view: "recommendation", step };
+    if (step === "survey") {
+      const audience = params.get("audience");
+      return audience && surveyAudiences.has(audience as InterestSurveyAudience)
+        ? { view: "recommendation", step, audience: audience as InterestSurveyAudience }
+        : { view: "recommendation", step };
+    }
 
     const axis = params.get("axis");
     return axis && recommendationAxes.has(axis as "interest" | "progress" | "plan")
@@ -110,6 +117,7 @@ export function buildAppHref(currentHref: string, route: AppRoute): string {
   const url = new URL(currentHref, "https://local.invalid");
   url.searchParams.delete("input");
   url.searchParams.delete("video");
+  url.searchParams.delete("audience");
 
   if (route.view === "landing") {
     clearRouteParams(url);
@@ -148,6 +156,9 @@ export function buildAppHref(currentHref: string, route: AppRoute): string {
       url.searchParams.set("axis", route.axis);
     } else {
       url.searchParams.delete("axis");
+    }
+    if (route.step === "survey" && route.audience) {
+      url.searchParams.set("audience", route.audience);
     }
     url.searchParams.delete("section");
     url.searchParams.delete("profile");
@@ -201,6 +212,7 @@ export function writeAppRouteToHistory(
     view: _view,
     step: _step,
     axis: _axis,
+    audience: _audience,
     section: _section,
     profile: _profile,
     input: _input,
@@ -219,6 +231,7 @@ function clearRouteParams(url: URL): void {
   url.searchParams.delete("profile");
   url.searchParams.delete("input");
   url.searchParams.delete("video");
+  url.searchParams.delete("audience");
 }
 
 function routeHistoryState(route: AppRoute): Record<string, string> {
@@ -238,9 +251,13 @@ function routeHistoryState(route: AppRoute): Record<string, string> {
     return { view: "result", step: "result", section: route.section ?? "current" };
   }
   if (route.view === "recommendation") {
-    return route.step === "axes" && route.axis
-      ? { view: route.view, step: route.step, axis: route.axis }
-      : { view: route.view, step: route.step };
+    if (route.step === "axes" && route.axis) {
+      return { view: route.view, step: route.step, axis: route.axis };
+    }
+    if (route.step === "survey" && route.audience) {
+      return { view: route.view, step: route.step, audience: route.audience };
+    }
+    return { view: route.view, step: route.step };
   }
   if (route.view === "plan") return { view: route.view, step: route.step };
   if (route.view === "resources") return { view: route.view, section: route.section ?? "tracks" };

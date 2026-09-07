@@ -171,13 +171,14 @@ describe("TrackRecommendationAxes", () => {
   it("describes different directions without selecting a track for the user", () => {
     const markup = renderAxes("interest");
 
-    expect(markup).toContain("기준의 방향은 서로 다릅니다");
+    expect(markup).toContain("기준마다 선두 후보가 다릅니다");
     expect(markup).toContain("직접 비교해 선택해 주세요");
-    expect(markup).not.toContain("recommendation-compass-path--aligned");
+    expect(markup).not.toContain("recommendation-axis-summary--aligned");
+    expect(markup).not.toContain("Compass Path");
     expect(markup).not.toContain("가장 좋은 트랙");
   });
 
-  it("renders an aligned Compass Path only when two available axes share a real leader", () => {
+  it("renders a neutral comparison summary only when two available axes share a real leader", () => {
     const alignedAxes: RecommendationAxes = {
       ...differingAxes,
       progress: [
@@ -191,8 +192,9 @@ describe("TrackRecommendationAxes", () => {
 
     const markup = renderAxes("interest", alignedAxes);
 
-    expect(markup).toContain("recommendation-compass-path--aligned");
-    expect(markup).toContain("Compass Path");
+    expect(markup).toContain("recommendation-axis-summary--aligned");
+    expect(markup).toContain("기준 비교 요약");
+    expect(markup).not.toContain("Compass Path");
     expect(markup).toContain("두 개 이상의 기준에서 선두로 나타났습니다");
     expect(markup).not.toContain("종합 추천");
   });
@@ -211,8 +213,8 @@ describe("TrackRecommendationAxes", () => {
 
     const markup = renderAxes("interest", contaminatedAxes, false);
 
-    expect(markup).toContain("기준의 방향은 서로 다릅니다");
-    expect(markup).not.toContain("recommendation-compass-path--aligned");
+    expect(markup).toContain("기준마다 선두 후보가 다릅니다");
+    expect(markup).not.toContain("recommendation-axis-summary--aligned");
   });
 
   it("labels tied interest leaders without using the stable array order as a rank", () => {

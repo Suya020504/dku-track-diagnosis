@@ -138,7 +138,9 @@ describe("resource reading routes", () => {
     expect(document.body.textContent).toContain("N+O 7학점");
     expect(document.querySelector('[data-evidence-state="official-public-confirmed"]')).not.toBeNull();
     expect(document.querySelector('[data-concept-image="course-module-track"]')?.getAttribute("alt"))
-      .toBe("여러 과목이 모듈로 묶이고 다섯 갈래 트랙으로 이어지는 개념 설명 이미지");
+      .toBe("과목 카드가 모듈 폴더로 분류되고 다섯 트랙 카드로 정리되는 개념 설명 이미지");
+    expect(document.querySelector<HTMLImageElement>('[data-concept-image="course-module-track"]')?.src)
+      .toContain("course-module-track-structure-v2.webp");
 
     await goTo("?view=resources&section=modules");
     for (const module of modules) expect(document.body.textContent).toContain(`${module.id}. ${module.name}`);
@@ -158,7 +160,9 @@ describe("resource reading routes", () => {
     expect(document.querySelector(".planner-course-track-figure")?.textContent)
       .toContain("2026학년도 학사종합안내의 현재 공개본 72쪽");
     expect(document.querySelector('[data-concept-image="progress-next-semester"]')?.getAttribute("alt"))
-      .toBe("확인한 진행도에서 다음 과목을 고르고 학기 계획으로 이어지는 개념 설명 이미지");
+      .toBe("체크한 과목 카드와 선택 과목을 학기 플래너에 정리하는 개념 설명 이미지");
+    expect(document.querySelector<HTMLImageElement>('[data-concept-image="progress-next-semester"]')?.src)
+      .toContain("progress-next-semester-planner-v2.webp");
 
     const image = document.querySelector<HTMLImageElement>('[data-concept-image="progress-next-semester"]');
     if (!image) throw new Error("Missing planner concept image");

@@ -23,8 +23,8 @@ export function CurriculumReferenceView() {
     <div className="planner-resource-stack">
       <ResourceConceptImage
         id="progress-next-semester"
-        src="/illustrations/progress-next-semester-planner-v1.webp"
-        alt="확인한 진행도에서 다음 과목을 고르고 학기 계획으로 이어지는 개념 설명 이미지"
+        src="/illustrations/progress-next-semester-planner-v2.webp"
+        alt="체크한 과목 카드와 선택 과목을 학기 플래너에 정리하는 개념 설명 이미지"
         fallback="이미지 없이도 아래 교육과정표에서 추천 시점과 과목을 확인하고 다음 학기 계획으로 이어갈 수 있습니다."
       />
 

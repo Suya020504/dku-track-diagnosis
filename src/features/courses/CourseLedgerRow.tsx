@@ -1,4 +1,4 @@
-import { Check, CircleDot, Clock3, Layers3 } from "lucide-react";
+import { Check, ChevronDown, CircleDot, Clock3, Info } from "lucide-react";
 import type {
   Course,
   CourseSelectionRecord,
@@ -40,6 +40,7 @@ export type CourseLedgerRowProps = {
   evidenceText: string;
   trackModule: boolean;
   requiredForEnrollment: boolean;
+  showTerm: boolean;
   onToggleCourse: (courseId: string) => void;
 };
 
@@ -50,6 +51,7 @@ export function CourseLedgerRow({
   evidenceText,
   trackModule,
   requiredForEnrollment,
+  showTerm,
   onToggleCourse,
 }: CourseLedgerRowProps) {
   const status = selection?.status;
@@ -62,47 +64,53 @@ export function CourseLedgerRow({
   ].filter(Boolean).join(" ");
 
   return (
-    <label className={rowClassName} data-course-status={status ?? "unselected"}>
-      <span className="course-ledger-check-target" data-touch-target="44">
-        <input
-          className="course-ledger-check-input"
-          type="checkbox"
-          checked={checked}
-          aria-label={`${course.name} ${statusLabel}`}
-          onChange={() => onToggleCourse(course.id)}
-        />
-        <span className="course-ledger-check-box" aria-hidden="true">
-          {checked ? <Check size={18} /> : null}
+    <article className={rowClassName} data-course-status={status ?? "unselected"}>
+      <label className="course-ledger-row-primary">
+        <span className="course-ledger-check-target" data-touch-target="44">
+          <input
+            className="course-ledger-check-input"
+            type="checkbox"
+            checked={checked}
+            aria-label={`${course.name} ${statusLabel}`}
+            onChange={() => onToggleCourse(course.id)}
+          />
+          <span className="course-ledger-check-box" aria-hidden="true">
+            {checked ? <Check size={18} /> : null}
+          </span>
         </span>
-      </span>
 
-      <span
-        className="course-ledger-module"
-        data-module-marker={course.moduleId}
-        aria-label={`${course.moduleId} 모듈`}
-        title={moduleLabel}
-      >
-        <Layers3 aria-hidden="true" size={15} />
-        <b>{course.moduleId}</b>
-      </span>
+        <span className="course-ledger-course">
+          <span>
+            <strong>{course.name}</strong>
+            {requiredForEnrollment ? <em>필수</em> : null}
+          </span>
+          {showTerm ? <small>{formatSemester(course.recommendedSemester)}</small> : null}
+        </span>
 
-      <span className="course-ledger-course">
-        <strong>{course.name}</strong>
-        <small>{course.code} · {moduleLabel}</small>
-        <small className="course-ledger-evidence">근거: {evidenceText}</small>
-      </span>
+        <span className="course-ledger-credit">{course.credits}학점</span>
+        {status ? (
+          <span className={`course-ledger-status course-ledger-status--${status}`}>
+            <SelectionStatusIcon status={status} />
+            {statusLabel}
+          </span>
+        ) : <span className="sr-only">미선택</span>}
+      </label>
 
-      <span className="course-ledger-term">{formatSemester(course.recommendedSemester)}</span>
-      <span className="course-ledger-credit">{course.credits}학점</span>
-      <span className={`course-ledger-status course-ledger-status--${status ?? "unselected"}`}>
-        <SelectionStatusIcon status={status} />
-        {statusLabel}
-      </span>
-
-      <span className="course-ledger-flags">
-        {requiredForEnrollment ? <em>필수</em> : null}
-        {trackModule ? <em>선택 트랙 모듈</em> : null}
-      </span>
-    </label>
+      <details className="course-ledger-row-details">
+        <summary>
+          <Info aria-hidden="true" size={15} />
+          <span className="course-ledger-info-label" aria-hidden="true">과목 정보</span>
+          <span className="sr-only">{course.name} 과목 정보</span>
+          <ChevronDown aria-hidden="true" size={15} />
+        </summary>
+        <div>
+          <span><small>과목 코드</small><strong>{course.code}</strong></span>
+          <span data-module-marker={course.moduleId}><small>모듈</small><strong>{moduleLabel}</strong></span>
+          <span><small>권장 학기</small><strong>{formatSemester(course.recommendedSemester)}</strong></span>
+        </div>
+        <p>근거: {evidenceText}</p>
+        {trackModule ? <em>선택 트랙 관련 모듈</em> : null}
+      </details>
+    </article>
   );
 }

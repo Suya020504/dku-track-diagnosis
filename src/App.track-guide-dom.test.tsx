@@ -61,10 +61,10 @@ afterEach(async () => {
 });
 
 describe("separate track guide journey", () => {
-  it("opens from the map and restores one guide section through native history", async () => {
+  it("opens from the optional landing guide action and restores one guide section through native history", async () => {
     await mountAt("/");
 
-    await click("트랙 상세 가이드");
+    await click("트랙제 먼저 알아보기");
     expect(new URLSearchParams(location.search).get("view")).toBe("track-guide");
     expect(new URLSearchParams(location.search).get("section")).toBe("overview");
     expect(document.querySelector('[data-track-guide-section="overview"]')).not.toBeNull();
@@ -73,9 +73,13 @@ describe("separate track guide journey", () => {
     expect(document.activeElement).toBe(document.querySelector("h1"));
     expect(document.title).toBe("트랙제란? | 단국대 식품자원경제학과 트랙제 자가진단");
     expect(document.querySelector('nav[aria-label="학업 여정"]')).toBeNull();
-    const guideLabel = [...document.querySelectorAll<HTMLElement>(".planner-guide-index strong")]
+    expect(button("내 트랙 현황 확인하기")).not.toBeNull();
+    expect(button("관심으로 트랙 추천받기")).not.toBeNull();
+    expect(document.body.textContent).not.toContain("연결해 보는 지도");
+    const guideLabel = [...document.querySelectorAll<HTMLElement>(".planner-shell-primary-nav button")]
       .find((candidate) => candidate.textContent?.includes("트랙 가이드"));
     expect(guideLabel?.textContent).toBe("트랙 가이드");
+    expect(guideLabel?.getAttribute("aria-current")).toBe("page");
 
     await click("트랙제의 장점");
     expect(new URLSearchParams(location.search).get("section")).toBe("benefits");
@@ -144,5 +148,33 @@ describe("separate track guide journey", () => {
     expect(document.querySelector('a[href^="https://www.dankook.ac.kr/documents/"]')).not.toBeNull();
     expect(document.querySelector('a[href="https://cms.dankook.ac.kr/web/ere/-6"]')).not.toBeNull();
     expect(document.querySelector('a[href="https://www.youtube.com/@FoodandResourcesEconomics_dku/videos"]')).not.toBeNull();
+  });
+
+  it("separates the formal degree name from the track notation described by official videos", async () => {
+    await mountAt("/?view=track-guide&section=outcomes");
+
+    expect(document.querySelector('[data-track-guide-section="outcomes"]')).not.toBeNull();
+    expect(document.body.textContent).toContain("경제학사");
+    expect(document.body.textContent).toContain("식품자원경제학");
+    expect(document.body.textContent).toContain("별도의 학위명이 아니라");
+    expect(document.body.textContent).toContain("학위증·성적증명서");
+    expect(document.body.textContent).toContain("2026 운영 여부는 학과 확인 필요");
+    expect(document.querySelector('a[href*="seq=9926"]')).not.toBeNull();
+    expect(document.querySelector('a[href*="osc9yOuq0IU"][href*="t=860s"]')).not.toBeNull();
+  });
+
+  it("moves through benefits, degree outcomes, and track structure as one optional guide journey", async () => {
+    await mountAt("/?view=track-guide&section=benefits");
+
+    await click("학위·이수 결과 확인하기");
+    expect(new URLSearchParams(location.search).get("section")).toBe("outcomes");
+    expect(document.activeElement).toBe(document.querySelector("h1"));
+
+    await click("5개 트랙 구성 비교하기");
+    expect(new URLSearchParams(location.search).get("section")).toBe("structure");
+
+    await moveNativeHistory("back");
+    expect(new URLSearchParams(location.search).get("section")).toBe("outcomes");
+    expect(document.querySelector('[data-track-guide-section="outcomes"]')).not.toBeNull();
   });
 });

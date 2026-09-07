@@ -24,10 +24,29 @@
 }
 
 .planner-shell-wordmark {
-  display: grid;
-  gap: 2px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
   justify-self: start;
   letter-spacing: -0.02em;
+}
+
+.planner-shell-wordmark > img {
+  display: block;
+  width: 76px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.planner-shell-wordmark__divider {
+  width: 1px;
+  height: 28px;
+  background: color-mix(in srgb, var(--planner-dankook-blue) 36%, transparent);
+}
+
+.planner-shell-wordmark__copy {
+  display: grid;
+  gap: 2px;
 }
 
 .planner-shell-wordmark strong {
@@ -35,7 +54,7 @@
   font-size: 0.95rem;
 }
 
-.planner-shell-wordmark span,
+.planner-shell-wordmark small,
 .planner-shell-current-step {
   color: var(--planner-ink-muted);
   font-size: 0.78rem;
@@ -152,14 +171,19 @@
 
 .planner-shell-layout.is-immersive {
   grid-template-columns: minmax(0, 1fr);
-  width: min(100%, 1600px);
+  width: min(100%, 1728px);
 }
 
 .planner-shell-layout.is-immersive .planner-shell-page {
   min-width: 0;
 }
 
-.planner-shell-map-nav {
+.planner-shell-layout.is-immersive .planner-shell-content {
+  width: 100%;
+  max-width: none;
+}
+
+.planner-shell-primary-nav {
   grid-column: 2;
   display: flex;
   min-width: 0;
@@ -169,15 +193,15 @@
 }
 
 @media (min-width: 761px) and (max-width: 1180px) {
-  .planner-shell-header:has(.planner-shell-map-nav) {
+  .planner-shell-header:has(.planner-shell-primary-nav) {
     grid-template-columns: minmax(220px, 1fr) minmax(260px, auto);
   }
 
-  .planner-shell-header:has(.planner-shell-map-nav) .planner-shell-actions {
+  .planner-shell-header:has(.planner-shell-primary-nav) .planner-shell-actions {
     grid-column: 2;
   }
 
-  .planner-shell-map-nav {
+  .planner-shell-primary-nav {
     order: 4;
     grid-column: 1 / -1;
     width: 100%;
@@ -187,7 +211,7 @@
   }
 }
 
-.planner-shell-map-nav button {
+.planner-shell-primary-nav button {
   position: relative;
   min-height: 44px;
   padding: 0 11px;
@@ -200,102 +224,17 @@
   white-space: nowrap;
 }
 
-.planner-shell-map-nav button[aria-current="page"] {
+.planner-shell-primary-nav button[aria-current="page"] {
   color: var(--planner-department-green);
 }
 
-.planner-shell-map-nav button[aria-current="page"]::after {
+.planner-shell-primary-nav button[aria-current="page"]::after {
   position: absolute;
   inset-inline: 10px;
   inset-block-end: 3px;
   height: 2px;
   background: var(--planner-department-green);
   content: "";
-}
-
-.planner-guide-index {
-  position: sticky;
-  top: 0;
-  align-self: start;
-  min-height: calc(100vh - 76px);
-  padding: 32px 16px 48px 20px;
-  border-inline-end: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 20%, transparent);
-  background: var(--planner-sky-sheet);
-}
-
-.planner-guide-index__title {
-  display: block;
-  margin: 0 8px 18px;
-  color: var(--planner-dankook-blue);
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-}
-
-.planner-guide-index ol {
-  display: grid;
-  gap: 4px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.planner-guide-index li {
-  position: relative;
-}
-
-.planner-guide-index li[data-active="true"]::after {
-  position: absolute;
-  inset-block: 7px;
-  inset-inline-end: -17px;
-  width: 5px;
-  background: var(--planner-department-green);
-  content: "";
-}
-
-.planner-guide-index button {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  gap: 8px;
-  align-items: baseline;
-  width: 100%;
-  min-height: 46px;
-  padding: 10px 8px;
-  border: 0;
-  border-radius: var(--planner-row-radius);
-  background: transparent;
-  color: var(--planner-ink);
-  text-align: start;
-  cursor: pointer;
-}
-
-.planner-guide-index button[aria-current="page"] {
-  background: var(--planner-paper);
-  color: var(--planner-department-green);
-}
-
-.planner-guide-index button:disabled {
-  color: var(--planner-ink-muted);
-  cursor: not-allowed;
-  opacity: 0.62;
-}
-
-.planner-guide-index button span {
-  color: var(--planner-dankook-blue);
-  font-size: 0.7rem;
-  letter-spacing: 0.06em;
-}
-
-.planner-guide-index button strong {
-  font-size: 0.88rem;
-}
-
-.planner-guide-index small {
-  display: block;
-  margin: -3px 8px 8px 36px;
-  color: var(--planner-ink-muted);
-  font-size: 0.68rem;
-  line-height: 1.45;
 }
 
 .planner-shell-page {
@@ -338,7 +277,7 @@
     display: none;
   }
 
-  .planner-shell-map-nav {
+  .planner-shell-primary-nav {
     display: none;
   }
 
@@ -362,10 +301,6 @@
 
   .planner-shell-layout {
     display: block;
-  }
-
-  .planner-guide-index {
-    display: none;
   }
 
   .planner-shell-page {
@@ -471,7 +406,6 @@
   }
 
   .planner-shell-header,
-  .planner-guide-index,
   .planner-mobile-nav,
   .planner-compass-path {
     display: none !important;

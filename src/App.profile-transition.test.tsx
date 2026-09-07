@@ -4,10 +4,8 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { calculateDiagnosis } from "./lib/diagnosis";
 import { resolveDiagnosisStep } from "./lib/viewRouting";
 import {
-  DiagnosisPanel,
   EnrollmentProfileSummary,
   completeProfileTransition,
   reviewCourseInputTransition,
@@ -87,25 +85,10 @@ describe("profile integration transitions", () => {
       ...state(minorProfile),
       courseSelections: [{ courseId: "B-1", status: "completed" as const }],
     };
-    const result = calculateDiagnosis({
-      trackIds: [],
-      completedCourseIds: ["B-1"],
-      enrollmentType: "minor",
-    });
-    const markup = renderToStaticMarkup(
-      <DiagnosisPanel
-        result={result}
-        selectedTrackNames={[]}
-        enrollmentType="minor"
-        completedCount={1}
-        allowResult
-        onShowResult={vi.fn()}
-      />,
-    );
     const reviewed = reviewCourseInputTransition(current, "2026-08-30T12:00:00.000Z");
 
-    expect(markup).toContain("진단 결과 자세히 보기");
     expect(reviewed.courseInputReviewedAt).toBe("2026-08-30T12:00:00.000Z");
+    expect(reviewed.courseSelections).toEqual(current.courseSelections);
   });
 
   it("lets a progress-checking track-major continue to courses without an explicit target", () => {
@@ -133,6 +116,8 @@ describe("profile integration transitions", () => {
     expect(document.body.textContent).toContain("5개 트랙 비교");
     const resultAction = document.querySelector<HTMLButtonElement>("#diagnosis-result-action");
     expect(resultAction).not.toBeNull();
+    expect(resultAction?.closest(".course-selection-action-bar")).not.toBeNull();
+    expect(document.querySelector(".planner-diagnosis-panel")).toBeNull();
 
     await act(async () => resultAction?.click());
 

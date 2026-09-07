@@ -1,4 +1,4 @@
-import { Save, ShieldCheck } from "lucide-react";
+import { ArrowRight, ChevronDown, Save, ShieldCheck } from "lucide-react";
 import type { RefObject } from "react";
 import type {
   Course,
@@ -55,6 +55,7 @@ export type CourseSelectionViewProps = {
   onQueryChange: (query: string) => void;
   onToggleCourse: (courseId: string) => void;
   onSaveCourses: () => void;
+  onShowResult: () => void;
   onPdfAnalyzed: (draft: PdfImportDraft) => void;
 };
 
@@ -77,10 +78,15 @@ export function CourseSelectionView({
   onQueryChange,
   onToggleCourse,
   onSaveCourses,
+  onShowResult,
   onPdfAnalyzed,
 }: CourseSelectionViewProps) {
   const policy = policyByEnrollment[enrollmentType];
-  const completedCount = courseSelections.filter((selection) => selection.status === "completed").length;
+  const ledgerCourseIds = new Set(ledgerCourses.map((course) => course.id));
+  const relevantSelections = courseSelections.filter((selection) => ledgerCourseIds.has(selection.courseId));
+  const completedCount = relevantSelections.filter((selection) => selection.status === "completed").length;
+  const inProgressCount = relevantSelections.filter((selection) => selection.status === "in-progress").length;
+  const plannedCount = relevantSelections.filter((selection) => selection.status === "planned").length;
 
   function moveFocusToResult(event: React.MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
@@ -94,36 +100,32 @@ export function CourseSelectionView({
       <header className="planner-course-selection-heading">
         <span>자가진단 · 과목 입력</span>
         <h1 ref={headingRef} tabIndex={-1}>지금까지 이수한 과목을 선택하세요.</h1>
-        <p>
-          직접 선택이 기본 입력입니다. 완료한 과목과 수강 중·계획 상태를 확인하고,
-          앞으로 들을 과목은 학기 계획에서 계속 관리할 수 있습니다.
-        </p>
-        <a
-          className="course-ledger-skip"
-          href="#diagnosis-result-action"
-          onClick={moveFocusToResult}
-        >
-          결과로 건너뛰기
-        </a>
+        <p className="course-selection-help">들었던 과목만 체크하세요. 코드와 근거는 필요할 때 펼쳐볼 수 있습니다.</p>
       </header>
 
-      <section className="course-ledger-save-band" aria-label="과목 선택 저장 상태">
-        <div>
-          <strong>{completedCount}개 과목 이수 완료</strong>
-          <span>입력 즉시 이 브라우저에 자동 저장됩니다.</span>
-          <small>{lastManualSaveAt ? `직접 저장: ${lastManualSaveAt}` : "직접 저장 기록 없음"}</small>
+      <a
+        className="course-result-skip-link"
+        href="#diagnosis-result-action"
+        onClick={moveFocusToResult}
+      >
+        결과로 건너뛰기
+      </a>
+
+      <section className="course-selection-action-bar" aria-label="과목 입력 현황과 다음 행동">
+        <div className="course-selection-status-summary">
+          <span>이수 완료 <strong>{completedCount}</strong></span>
+          <span>수강 중 <strong>{inProgressCount}</strong></span>
+          <span>계획 <strong>{plannedCount}</strong></span>
         </div>
-        <button type="button" onClick={onSaveCourses}>
-          <Save aria-hidden="true" size={18} />
-          지금 저장
+        <button
+          id="diagnosis-result-action"
+          ref={resultActionRef}
+          type="button"
+          onClick={onShowResult}
+        >
+          진단 결과 확인 <ArrowRight aria-hidden="true" size={17} />
         </button>
       </section>
-
-      <aside className="course-ledger-policy" aria-label="이수 경로 계산 기준">
-        <ShieldCheck aria-hidden="true" size={20} />
-        <div><strong>{policy.title}</strong><span>{policy.description}</span></div>
-        <em>{policy.marker}</em>
-      </aside>
 
       <CourseLedgerFilters
         mode={mode}
@@ -148,6 +150,29 @@ export function CourseSelectionView({
         query={query}
         onToggleCourse={onToggleCourse}
       />
+
+      <details className="course-ledger-policy">
+        <summary>
+          <ShieldCheck aria-hidden="true" size={18} />
+          <span>현재 계산 기준</span>
+          <strong>{policy.title}</strong>
+          <em>{policy.marker}</em>
+          <ChevronDown aria-hidden="true" size={17} />
+        </summary>
+        <p>{policy.description}</p>
+      </details>
+
+      <section className="course-ledger-save-band" aria-label="과목 선택 저장 상태">
+        <div>
+          <strong>{completedCount}개 과목 이수 완료</strong>
+          <span>입력 즉시 이 브라우저에 자동 저장됩니다.</span>
+          <small>{lastManualSaveAt ? `직접 저장: ${lastManualSaveAt}` : "직접 저장 기록 없음"}</small>
+        </div>
+        <button type="button" onClick={onSaveCourses}>
+          <Save aria-hidden="true" size={18} />
+          지금 저장
+        </button>
+      </section>
 
       <PdfCourseImportPanel onAnalyzed={onPdfAnalyzed} />
     </div>

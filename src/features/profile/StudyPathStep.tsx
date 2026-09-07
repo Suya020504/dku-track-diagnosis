@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Compass } from "lucide-react";
+import { ArrowLeft, ArrowRight, ListChecks } from "lucide-react";
 import type { RefObject } from "react";
 import { TrackGlyph } from "../../components/TrackGlyph";
 import { tracks } from "../../data/curriculumData";
@@ -10,7 +10,7 @@ import type {
 } from "../../types";
 
 const AFFILIATION_LABELS: Record<StudentAffiliation, string> = {
-  "department-student": "식품자원경제학과 입학생",
+  "department-student": "식품자원경제학과 학생",
   "external-student": "타 학과 학생",
 };
 
@@ -22,11 +22,19 @@ const STUDY_PATH_LABELS: Record<StudyPath, string> = {
   minor: "부전공",
 };
 
-const GOAL_LABELS: Record<ServiceGoal, string> = {
-  "learn-track-system": "트랙제 이해하기",
-  "find-track": "관심 트랙 찾기",
-  "check-progress": "현재 진행도 확인하기",
-  "plan-graduation": "졸업 전 계획 확인하기",
+const GOAL_LABELS: Record<StudentAffiliation, Record<ServiceGoal, string>> = {
+  "department-student": {
+    "learn-track-system": "트랙제 구조 이해하기",
+    "find-track": "전공 안에서 관심 트랙 찾기",
+    "check-progress": "전공 이수 진행도 확인하기",
+    "plan-graduation": "졸업 전 전공 계획 확인하기",
+  },
+  "external-student": {
+    "learn-track-system": "식자경 이수 방식 이해하기",
+    "find-track": "내 전공과 연결할 트랙 찾기",
+    "check-progress": "인정 가능 과목과 진행도 확인하기",
+    "plan-graduation": "다전공·부전공 이수 계획 확인하기",
+  },
 };
 
 export function StudyPathStep({
@@ -105,7 +113,7 @@ export function StudyPathStep({
       <fieldset className="profile-entry-fieldset">
         <legend>지금 확인하고 싶은 것</legend>
         <div className="profile-entry-rows profile-entry-rows--compact">
-          {(Object.keys(GOAL_LABELS) as ServiceGoal[]).map((candidateGoal) => (
+          {(Object.keys(GOAL_LABELS[affiliation]) as ServiceGoal[]).map((candidateGoal) => (
             <label className="profile-entry-row" key={candidateGoal}>
               <input
                 type="radio"
@@ -114,7 +122,7 @@ export function StudyPathStep({
                 checked={goal === candidateGoal}
                 onChange={() => onGoalChange(candidateGoal)}
               />
-              <span><strong>{GOAL_LABELS[candidateGoal]}</strong></span>
+              <span><strong>{GOAL_LABELS[affiliation][candidateGoal]}</strong></span>
             </label>
           ))}
         </div>
@@ -155,7 +163,7 @@ export function StudyPathStep({
                   data-target-track-choice="compare-all"
                   onChange={() => onTargetTrackChange(undefined)}
                 />
-                <Compass aria-hidden="true" size={24} />
+                <ListChecks aria-hidden="true" size={24} />
                 <span>
                   <strong>아직 정하지 않았어요 · 5개 트랙 비교</strong>
                   <small>현재 이수 과목만으로 가까운 트랙을 나란히 봅니다.</small>

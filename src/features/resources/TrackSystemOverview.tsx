@@ -42,8 +42,8 @@ export function TrackSystemOverview() {
     <div className="planner-resource-stack">
       <ResourceConceptImage
         id="course-module-track"
-        src="/illustrations/course-module-track-compass-v1.webp"
-        alt="여러 과목이 모듈로 묶이고 다섯 갈래 트랙으로 이어지는 개념 설명 이미지"
+        src="/illustrations/course-module-track-structure-v2.webp"
+        alt="과목 카드가 모듈 폴더로 분류되고 다섯 트랙 카드로 정리되는 개념 설명 이미지"
         fallback="이미지 없이도 아래 트랙 목록에서 과목이 모듈로 묶이고 트랙으로 연결되는 구조를 확인할 수 있습니다."
       />
 

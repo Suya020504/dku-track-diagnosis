@@ -1,13 +1,11 @@
 import { tracks } from "../data/curriculumData";
-import type { InterestSurveyAnswer, TrackId } from "../types";
+import {
+  getInterestSurveyQuestions,
+  type InterestSurveyQuestion,
+} from "../data/interestSurveyQuestions";
+import type { InterestSurveyAnswer, InterestSurveyAudience, TrackId } from "../types";
 
 export type { InterestSurveyAnswer } from "../types";
-
-export type InterestSurveyQuestion = {
-  id: string;
-  statement: string;
-  weights: Partial<Record<TrackId, number>>;
-};
 
 export type InterestSurveyResult = {
   trackId: TrackId;
@@ -29,58 +27,10 @@ export type InterestSurveyResultComparison = {
   closeMatchCount: number;
 };
 
-export const interestSurveyQuestions: InterestSurveyQuestion[] = [
-  {
-    id: "consumer-choice",
-    statement: "새로운 상품이 왜 선택받는지 분석하는 일이 흥미롭다.",
-    weights: { "food-marketing": 1, "agri-food-distribution": 0.25 },
-  },
-  {
-    id: "brand-strategy",
-    statement: "소비자 조사 결과를 상품 기획이나 브랜드 전략으로 연결해 보고 싶다.",
-    weights: { "food-marketing": 1, economics: 0.2 },
-  },
-  {
-    id: "regional-problem",
-    statement: "지역이 겪는 문제를 조사하고 현실적인 해결책을 제안하는 일에 관심이 있다.",
-    weights: { "regional-development-consulting": 1, economics: 0.25 },
-  },
-  {
-    id: "sustainable-community",
-    statement: "환경과 지역사회를 함께 고려하는 지속가능한 발전 방안을 고민해 보고 싶다.",
-    weights: { "regional-development-consulting": 1, "food-bio-economy": 0.2 },
-  },
-  {
-    id: "distribution-flow",
-    statement: "식품이 생산지에서 소비자에게 전달되는 유통 과정을 개선하는 일이 흥미롭다.",
-    weights: { "agri-food-distribution": 1, "food-marketing": 0.25 },
-  },
-  {
-    id: "supply-chain",
-    statement: "가격, 물류, 재고처럼 공급망의 흐름을 숫자로 비교하고 판단하는 편이 좋다.",
-    weights: { "agri-food-distribution": 1, economics: 0.25 },
-  },
-  {
-    id: "economic-data",
-    statement: "데이터와 경제이론을 이용해 시장이나 사회 현상을 설명하는 일이 재미있다.",
-    weights: { economics: 1, "food-marketing": 0.15 },
-  },
-  {
-    id: "policy-evidence",
-    statement: "정책의 효과를 자료와 근거로 평가하고 더 나은 대안을 찾고 싶다.",
-    weights: { economics: 1, "regional-development-consulting": 0.25 },
-  },
-  {
-    id: "food-science",
-    statement: "식품, 영양, 바이오 기술을 경제·산업 관점과 함께 배우고 싶다.",
-    weights: { "food-bio-economy": 1, "food-marketing": 0.2 },
-  },
-  {
-    id: "future-food",
-    statement: "푸드테크나 미래식품처럼 새로운 융합 산업의 가능성을 탐색하고 싶다.",
-    weights: { "food-bio-economy": 1, "agri-food-distribution": 0.2 },
-  },
-];
+export type { InterestSurveyQuestion } from "../data/interestSurveyQuestions";
+
+export const interestSurveyQuestions: readonly InterestSurveyQuestion[] =
+  getInterestSurveyQuestions("department-student");
 
 export const interestTrackProfiles: Record<
   TrackId,
@@ -125,7 +75,9 @@ export const interestTrackProfiles: Record<
 
 export function scoreInterestSurvey(
   answers: Readonly<Record<string, unknown>>,
+  audience: InterestSurveyAudience = "department-student",
 ): InterestSurveyResult[] {
+  const questions = getInterestSurveyQuestions(audience);
   const trackOrder = new Map(tracks.map((track, index) => [track.id, index]));
 
   return tracks
@@ -133,7 +85,7 @@ export function scoreInterestSurvey(
       let weightedScore = 0;
       let totalWeight = 0;
 
-      interestSurveyQuestions.forEach((question) => {
+      questions.forEach((question) => {
         const answer = answers[question.id];
         const weight = question.weights[track.id] ?? 0;
 
@@ -188,8 +140,9 @@ export function compareInterestSurveyResults(
 
 export function isInterestSurveyComplete(
   answers: Readonly<Record<string, unknown>>,
+  audience: InterestSurveyAudience = "department-student",
 ) {
-  return interestSurveyQuestions.every((question) =>
+  return getInterestSurveyQuestions(audience).every((question) =>
     isInterestSurveyAnswer(answers[question.id]),
   );
 }

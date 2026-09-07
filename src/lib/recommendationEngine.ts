@@ -137,8 +137,8 @@ export function rankTracksByGraduationPlanability(
 export function buildRecommendationAxes(
   input: RecommendationAxesInput,
 ): RecommendationAxes {
-  const interest = input.interestSurvey
-    && isInterestSurveyComplete(input.interestSurvey.answers)
+  const interest = input.interestSurvey?.audience
+    && isInterestSurveyComplete(input.interestSurvey.answers, input.interestSurvey.audience)
     ? buildInterestAxis(input.interestSurvey)
     : undefined;
   const progress = input.profile ? rankTracksByProgressAccessibility({
@@ -165,7 +165,7 @@ export function buildRecommendationAxes(
 }
 
 function buildInterestAxis(state: InterestSurveyState): InterestAxisCandidate[] {
-  const results = scoreInterestSurvey(state.answers);
+  const results = scoreInterestSurvey(state.answers, state.audience!);
   const topScore = results[0]?.score;
 
   return results.map((result) => ({

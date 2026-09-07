@@ -90,7 +90,7 @@
 
 .planner-app .planner-track-guide__tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   overflow: hidden;
   border: 1px solid rgba(23, 75, 130, 0.16);
   border-radius: 12px;
@@ -343,6 +343,184 @@
   margin-right: 8px;
   color: var(--planner-department-green);
   font-size: 11px;
+}
+
+.planner-app .planner-track-guide__degree-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.planner-app .planner-track-guide__degree-card {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 26px;
+  border: 1px solid rgba(23, 75, 130, 0.18);
+  border-radius: 14px;
+  background: var(--planner-paper);
+}
+
+.planner-app .planner-track-guide__degree-card.is-current {
+  border-top: 5px solid var(--planner-dankook-blue);
+}
+
+.planner-app .planner-track-guide__degree-card.is-guidance {
+  border-top: 5px solid var(--planner-department-green);
+  background: color-mix(in srgb, var(--planner-mint-sheet) 42%, var(--planner-paper));
+}
+
+.planner-app .planner-track-guide__degree-card > span {
+  color: var(--planner-department-green);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+}
+
+.planner-app .planner-track-guide__degree-card > svg {
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  border-radius: 50%;
+  background: var(--planner-sky-sheet);
+  color: var(--planner-dankook-blue);
+}
+
+.planner-app .planner-track-guide__degree-card h3,
+.planner-app .planner-track-guide__degree-card p,
+.planner-app .planner-track-guide__degree-card dl {
+  margin: 0;
+}
+
+.planner-app .planner-track-guide__degree-card h3 {
+  color: var(--planner-ink);
+  font-size: 21px;
+  line-height: 1.4;
+  word-break: keep-all;
+}
+
+.planner-app .planner-track-guide__degree-card p {
+  color: var(--planner-ink-muted);
+  line-height: 1.7;
+}
+
+.planner-app .planner-track-guide__degree-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(23, 75, 130, 0.14);
+  border-radius: 10px;
+}
+
+.planner-app .planner-track-guide__degree-card dl > div {
+  padding: 12px;
+  border-inline-end: 1px solid rgba(23, 75, 130, 0.14);
+}
+
+.planner-app .planner-track-guide__degree-card dl > div:last-child {
+  border-inline-end: 0;
+}
+
+.planner-app .planner-track-guide__degree-card dt {
+  color: var(--planner-ink-muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.planner-app .planner-track-guide__degree-card dd {
+  margin: 4px 0 0;
+  color: var(--planner-dankook-blue);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.planner-app .planner-track-guide__degree-card a,
+.planner-app .planner-track-guide__entry-note a,
+.planner-app .planner-track-guide__degree-links a {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  width: fit-content;
+  min-height: 44px;
+  color: var(--planner-dankook-blue);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.planner-app .planner-track-guide__degree-card a svg,
+.planner-app .planner-track-guide__entry-note a svg,
+.planner-app .planner-track-guide__degree-links a svg {
+  flex: 0 0 auto;
+  width: 15px;
+}
+
+.planner-app .planner-track-guide__degree-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+
+.planner-app .planner-track-guide__degree-terms {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  overflow: hidden;
+  border-block: 1px solid rgba(23, 75, 130, 0.18);
+}
+
+.planner-app .planner-track-guide__degree-terms > div {
+  padding: 18px;
+  border-inline-end: 1px solid rgba(23, 75, 130, 0.14);
+}
+
+.planner-app .planner-track-guide__degree-terms > div:last-child {
+  border-inline-end: 0;
+}
+
+.planner-app .planner-track-guide__degree-terms dt {
+  color: var(--planner-department-green);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.planner-app .planner-track-guide__degree-terms dd {
+  margin: 6px 0 0;
+  color: var(--planner-ink-muted);
+  line-height: 1.6;
+}
+
+.planner-app .planner-track-guide__degree-terms strong {
+  color: var(--planner-ink);
+}
+
+.planner-app .planner-track-guide__entry-note {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid rgba(196, 147, 42, 0.28);
+  border-radius: 12px;
+  background: #fff7df;
+}
+
+.planner-app .planner-track-guide__entry-note > svg {
+  width: 42px;
+  height: 42px;
+  padding: 9px;
+  border-radius: 50%;
+  background: var(--planner-paper);
+  color: #765a1b;
+}
+
+.planner-app .planner-track-guide__entry-note strong {
+  color: var(--planner-ink);
+}
+
+.planner-app .planner-track-guide__entry-note p {
+  margin: 5px 0 0;
+  color: var(--planner-ink-muted);
+  line-height: 1.65;
 }
 
 .planner-app .planner-track-guide__structure-intro {
@@ -745,6 +923,7 @@
 @media (max-width: 900px) {
   .planner-app .planner-track-guide__header,
   .planner-app .planner-track-guide__split,
+  .planner-app .planner-track-guide__degree-grid,
   .planner-app .planner-track-guide__structure-intro,
   .planner-app .planner-track-guide__video-layout {
     grid-template-columns: 1fr;
@@ -799,12 +978,17 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  .planner-app .planner-track-guide__tabs button:nth-child(2) {
+  .planner-app .planner-track-guide__tabs button:nth-child(even) {
     border-right: 0;
   }
 
-  .planner-app .planner-track-guide__tabs button:nth-child(-n + 2) {
+  .planner-app .planner-track-guide__tabs button:nth-child(-n + 4) {
     border-bottom: 1px solid rgba(23, 75, 130, 0.12);
+  }
+
+  .planner-app .planner-track-guide__tabs button:last-child {
+    grid-column: 1 / -1;
+    border-right: 0;
   }
 
   .planner-app .planner-track-guide__flow {
@@ -856,7 +1040,34 @@
   }
 
   .planner-app .planner-track-guide__structure-summary,
+  .planner-app .planner-track-guide__degree-terms,
   .planner-app .planner-track-guide__sources ul {
+    grid-template-columns: 1fr;
+  }
+
+  .planner-app .planner-track-guide__degree-terms > div {
+    border-inline-end: 0;
+    border-block-end: 1px solid rgba(23, 75, 130, 0.14);
+  }
+
+  .planner-app .planner-track-guide__degree-terms > div:last-child {
+    border-block-end: 0;
+  }
+
+  .planner-app .planner-track-guide__degree-card dl {
+    grid-template-columns: 1fr;
+  }
+
+  .planner-app .planner-track-guide__degree-card dl > div {
+    border-inline-end: 0;
+    border-block-end: 1px solid rgba(23, 75, 130, 0.14);
+  }
+
+  .planner-app .planner-track-guide__degree-card dl > div:last-child {
+    border-block-end: 0;
+  }
+
+  .planner-app .planner-track-guide__entry-note {
     grid-template-columns: 1fr;
   }
 

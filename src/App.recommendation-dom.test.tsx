@@ -84,6 +84,7 @@ let root: Root | undefined;
 
 function completeSurvey(answer: InterestSurveyAnswer = 3): InterestSurveyState {
   return {
+    audience: "department-student",
     answers: Object.fromEntries(
       interestSurveyQuestions.map((question) => [question.id, answer]),
     ) as Record<string, InterestSurveyAnswer>,
@@ -160,44 +161,27 @@ afterEach(async () => {
 });
 
 describe("App recommendation browser interactions", () => {
-  it("keeps fresh track exploration locked while interest questions open the survey", async () => {
+  it("opens the optional interest route at an affiliation choice before any questions", async () => {
     await mountApp();
 
-    const trackJourney = document.querySelector<HTMLButtonElement>('[data-map-stop="tracks"]');
-
-    expect(trackJourney?.getAttribute("aria-disabled")).toBe("true");
-    const reasonId = trackJourney?.getAttribute("aria-describedby");
-    expect(reasonId).not.toBeNull();
-    expect(reasonId ? document.getElementById(reasonId)?.textContent : undefined)
-      .toBe("관심 질문을 마치면 트랙 비교가 열려요.");
-
-    const initialHref = window.location.href;
-    await act(async () => trackJourney?.click());
-    expect(window.location.href).toBe(initialHref);
-
-    await click("내 관심 트랙 찾기");
+    expect(document.querySelector("[data-map-stop]")).toBeNull();
+    await click("관심으로 트랙 추천받기");
 
     const params = new URLSearchParams(location.search);
     expect(params.get("view")).toBe("recommendation");
     expect(params.get("step")).toBe("survey");
+    expect(document.querySelector("[data-survey-audience-step]")).not.toBeNull();
+    expect(document.querySelector(".interest-question-card")).toBeNull();
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_V2) ?? "null") as SavedAppStateV2;
     expect(saved.profileDraft?.goal).toBe("find-track");
   });
 
-  it("keeps profile-only track exploration locked while allowing direct course diagnosis", async () => {
+  it("resumes profile-only diagnosis directly at course selection", async () => {
     saveState(profileOnlyLandingState());
     await mountApp();
 
-    const trackJourney = document.querySelector<HTMLButtonElement>('[data-map-stop="tracks"]');
-    const initialHref = window.location.href;
-
-    expect(document.body.textContent).toContain("과목 확인 필요");
-    expect(document.body.textContent).toContain("학기 플래너를 만들지 않아도 현재 진행도");
-    expect(document.body.textContent).not.toContain("관심 방향");
-    expect(trackJourney?.getAttribute("aria-disabled")).toBe("true");
-    expect(trackJourney?.getAttribute("aria-describedby")).not.toBeNull();
-    await act(async () => trackJourney?.click());
-    expect(window.location.href).toBe(initialHref);
+    expect(document.querySelector('[data-resume-state="needs-courses"]')).not.toBeNull();
+    expect(document.body.textContent).toContain("과목 선택부터 이어가세요");
 
     await click("이수 과목 확인하기");
     const params = new URLSearchParams(location.search);
@@ -211,7 +195,7 @@ describe("App recommendation browser interactions", () => {
     await mountApp();
 
     expect(document.querySelector('[role="dialog"]')).toBeNull();
-    expect(button("내 관심 트랙 찾기").disabled).toBe(false);
+    expect(button("내 트랙 확인하기").disabled).toBe(false);
 
     await click("도움말");
     expect(document.querySelector('[role="dialog"]')).not.toBeNull();
@@ -230,41 +214,36 @@ describe("App recommendation browser interactions", () => {
     expect(new URLSearchParams(location.search).get("view")).toBe("diagnosis");
   });
 
-  it("routes landing track exploration to axes after an interest direction is saved", async () => {
-    saveState(interestTargetLandingState());
+  it("keeps saved interest data while letting the student reopen the optional survey", async () => {
+    const previous = interestTargetLandingState();
+    saveState(previous);
     await mountApp();
 
-    const trackJourney = document.querySelector<HTMLButtonElement>('[data-map-stop="tracks"]');
-    expect(trackJourney?.getAttribute("aria-disabled")).toBeNull();
-    expect(trackJourney?.getAttribute("aria-describedby")).toBeNull();
-    await act(async () => trackJourney?.click());
+    await click("관심으로 트랙 추천받기");
 
     const params = new URLSearchParams(location.search);
     expect(params.get("view")).toBe("recommendation");
-    expect(params.get("step")).toBe("axes");
-    expect(params.get("axis")).toBe("interest");
+    expect(params.get("step")).toBe("survey");
+    expect(params.get("audience")).toBe("department-student");
+    expect(document.querySelector("[data-survey-audience-step]")).toBeNull();
+    expect(document.querySelector(".interest-result")).not.toBeNull();
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_V2) ?? "null") as SavedAppStateV2;
+    expect(saved.interestSurvey).toEqual(previous.interestSurvey);
+
+    await click("기준별 비교");
+    await click("관심 설문");
+    expect(new URLSearchParams(location.search).get("audience")).toBe("department-student");
+    expect(document.querySelector(".interest-result")).not.toBeNull();
   });
 
-  it("keeps targetless track exploration locked, opens progress results, and recovers planner setup through target choice", async () => {
+  it("opens progress comparison and recovers planner setup through target choice", async () => {
     saveState(reviewedCoursesWithoutTargetState());
     await mountApp();
 
-    const trackJourney = document.querySelector<HTMLButtonElement>('[data-map-stop="tracks"]');
-    const initialHref = window.location.href;
-    const plannerPreview = document.querySelector('[data-planner-status="needs-track"]');
+    const plannerPreview = document.querySelector('[data-resume-state="needs-track"]');
+    expect(plannerPreview?.textContent).toContain("현재 결과를 비교할 수 있어요");
 
-    expect(plannerPreview?.textContent).toContain("목표가 없어도 5개 트랙 자가진단");
-    expect(plannerPreview?.textContent).toContain("목표 트랙 선택 필요");
-    expect(trackJourney?.getAttribute("aria-disabled")).toBe("true");
-    expect(trackJourney?.getAttribute("aria-describedby")).not.toBeNull();
-    const nextCourse = document.querySelector<HTMLButtonElement>('[data-map-stop="next"]');
-    expect(nextCourse?.getAttribute("aria-disabled")).toBe("true");
-    expect(nextCourse?.getAttribute("aria-describedby")).not.toBeNull();
-    expect(document.body.textContent).toContain("목표 트랙을 선택하면 다음 과목 추천이 열려요.");
-    await act(async () => trackJourney?.click());
-    expect(window.location.href).toBe(initialHref);
-
-    await act(async () => document.querySelector<HTMLButtonElement>('[data-map-stop="current"]')?.click());
+    await click("진단 결과");
     const params = new URLSearchParams(location.search);
     expect(params.get("view")).toBe("recommendation");
     expect(params.get("step")).toBe("axes");
@@ -272,7 +251,7 @@ describe("App recommendation browser interactions", () => {
 
     history.replaceState({}, "", "/");
     await act(async () => window.dispatchEvent(new PopStateEvent("popstate")));
-    await click("목표 트랙 선택하기");
+    await click("트랙 비교 보기");
     const plannerParams = new URLSearchParams(location.search);
     expect(plannerParams.get("view")).toBe("diagnosis");
     expect(plannerParams.get("step")).toBe("profile");
@@ -290,17 +269,12 @@ describe("App recommendation browser interactions", () => {
     expect(params.get("step")).toBe("schedule");
   });
 
-  it("opens an existing saved plan from the landing semester journey", async () => {
+  it("marks the optional plan step ready when a saved plan exists", async () => {
     saveState(savedLandingPlanState());
     await mountApp();
 
-    const semesterJourney = document.querySelector<HTMLButtonElement>('[data-map-stop="plan"]');
-    expect(semesterJourney?.getAttribute("aria-disabled")).toBeNull();
-    await act(async () => semesterJourney?.click());
-
-    const params = new URLSearchParams(location.search);
-    expect(params.get("view")).toBe("plan");
-    expect(params.get("step")).toBe("schedule");
+    expect(document.querySelector('[data-step-state="ready"]')).not.toBeNull();
+    expect(document.querySelector('[data-resume-state="saved-plan"]')).not.toBeNull();
   });
 
   it("keeps contact reachable and names it as the current utility screen", async () => {
@@ -345,7 +319,7 @@ describe("App recommendation browser interactions", () => {
     expect(document.querySelectorAll("h1")).toHaveLength(1);
   });
 
-  it("keeps recommendation content under one guidebook shell and one main landmark", async () => {
+  it("uses a wide service workspace for recommendation content without a duplicate side index", async () => {
     saveState(createEmptyAppState());
     history.replaceState({}, "", "/?view=recommendation&step=survey");
 
@@ -353,12 +327,17 @@ describe("App recommendation browser interactions", () => {
 
     expect(document.querySelector(".planner-guidebook-shell")).not.toBeNull();
     expect(document.querySelectorAll("main")).toHaveLength(1);
-    const trackIndex = [...document.querySelectorAll<HTMLButtonElement>(".planner-guide-index button")]
-      .find((candidate) => candidate.textContent?.includes("트랙 가이드"));
-    expect(trackIndex?.getAttribute("aria-current")).toBe("page");
+    expect(document.querySelector(".planner-shell-layout.is-immersive")).not.toBeNull();
+    expect(document.querySelector(".planner-guide-index")).toBeNull();
+    expect(document.querySelector('nav[aria-label="주요 서비스"]')).not.toBeNull();
+    expect(document.querySelector(".planner-shell-current-step")?.textContent)
+      .toContain("관심 트랙 추천");
+    const diagnosisNav = [...document.querySelectorAll<HTMLButtonElement>(".planner-shell-primary-nav button")]
+      .find((candidate) => candidate.textContent?.trim() === "나의 진단");
+    expect(diagnosisNav?.getAttribute("aria-current")).toBe("page");
   });
 
-  it("keeps reachable canonical screens free of legacy headers and official identity images", async () => {
+  it("keeps one official DKU logo across canonical service screens", async () => {
     saveState({
       ...createEmptyAppState(),
       profile: {
@@ -372,27 +351,24 @@ describe("App recommendation browser interactions", () => {
     history.replaceState({}, "", "/?view=recommendation&step=axes&axis=interest");
     await mountApp();
 
-    const officialIdentitySelector = [
-      'img[src="/dku-seal.svg"]',
-      'img[src="/dku-logo.png"]',
-      'img[src="/department-mark.jpg"]',
-    ].join(",");
     expect(document.querySelector(".recommendation-page-header")).toBeNull();
-    expect(document.querySelector(officialIdentitySelector)).toBeNull();
+    expect(document.querySelectorAll('img[src="/dku-logo.png"]')).toHaveLength(1);
+    expect(document.querySelector('img[src="/dku-seal.svg"]')).toBeNull();
+    expect(document.querySelector('img[src="/department-mark.jpg"]')).toBeNull();
 
     await setRouteAndPop("/?view=diagnosis&step=courses");
     expect(document.querySelector(".service-header")).toBeNull();
-    expect(document.querySelector(officialIdentitySelector)).toBeNull();
+    expect(document.querySelectorAll('img[src="/dku-logo.png"]')).toHaveLength(1);
     expect(document.querySelectorAll("main")).toHaveLength(1);
     expect(document.querySelectorAll("h1")).toHaveLength(1);
 
     await setRouteAndPop("/?view=overview");
-    expect(document.querySelector(officialIdentitySelector)).toBeNull();
+    expect(document.querySelectorAll('img[src="/dku-logo.png"]')).toHaveLength(1);
     await setRouteAndPop("/?view=contact");
-    expect(document.querySelector(officialIdentitySelector)).toBeNull();
+    expect(document.querySelectorAll('img[src="/dku-logo.png"]')).toHaveLength(1);
   });
 
-  it("uses the Compass Path Ribbon as real guarded route navigation", async () => {
+  it("uses the academic progress strip as real guarded route navigation", async () => {
     saveState(createEmptyAppState());
     history.replaceState({}, "", "/?view=recommendation&step=survey");
     await mountApp();
@@ -417,7 +393,7 @@ describe("App recommendation browser interactions", () => {
     expect(replaceState).toHaveBeenCalled();
     pushState.mockClear();
 
-    await click("이수 과목 바로 진단");
+    await click("내 트랙 확인하기");
 
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_V2) ?? "null") as SavedAppStateV2;
     expect(saved.profileDraft?.goal).toBe("check-progress");
@@ -427,8 +403,8 @@ describe("App recommendation browser interactions", () => {
 
     await moveNativeHistory("back");
     expect(location.search).toBe("");
-    expect(document.querySelector('[data-map-stop-wrap="diagnosis"]')?.getAttribute("data-state")).toBe("current");
-    expect(document.querySelector('[data-map-stop-wrap="interest"]')?.getAttribute("data-state")).toBe("next");
+    expect(document.querySelector('[data-resume-state="needs-profile"]')).not.toBeNull();
+    expect(document.querySelector("[data-map-stop]")).toBeNull();
   });
 
   it("canonicalizes the legacy experiment alias with replace and renders the non-aggregate plan entry", async () => {
@@ -451,13 +427,14 @@ describe("App recommendation browser interactions", () => {
 
   it("restores survey and axes screens from native popstate events", async () => {
     const interestSurvey: InterestSurveyState = {
+      audience: "department-student",
       answers: Object.fromEntries(
         interestSurveyQuestions.slice(0, 4).map((question) => [question.id, 4]),
       ) as Record<string, InterestSurveyAnswer>,
       currentIndex: 4,
     };
     saveState({ ...createEmptyAppState(), interestSurvey });
-    history.replaceState({}, "", "/?view=recommendation&step=survey");
+    history.replaceState({}, "", "/?view=recommendation&step=survey&audience=department-student");
     const replaceState = vi.spyOn(history, "replaceState");
 
     await mountApp();
@@ -468,7 +445,7 @@ describe("App recommendation browser interactions", () => {
     expect(document.querySelector('[data-recommendation-panel="interest"]')).not.toBeNull();
     expect(replaceState).toHaveBeenCalled();
 
-    await setRouteAndPop("/?view=recommendation&step=survey");
+    await setRouteAndPop("/?view=recommendation&step=survey&audience=department-student");
     expect(document.body.textContent).toContain("5 / 10");
   });
 
@@ -541,7 +518,7 @@ describe("App recommendation browser interactions", () => {
 
   it("persists an explicit survey track choice and pushes the profile transition", async () => {
     saveState({ ...createEmptyAppState(), interestSurvey: completeSurvey() });
-    history.replaceState({}, "", "/?view=recommendation&step=survey");
+    history.replaceState({}, "", "/?view=recommendation&step=survey&audience=department-student");
     const pushState = vi.spyOn(history, "pushState");
 
     await mountApp();
@@ -558,8 +535,11 @@ describe("App recommendation browser interactions", () => {
   });
 
   it("keeps a storage failure alert visible after navigating from survey to axes", async () => {
-    saveState(createEmptyAppState());
-    history.replaceState({}, "", "/?view=recommendation&step=survey");
+    saveState({
+      ...createEmptyAppState(),
+      interestSurvey: { audience: "department-student", answers: {}, currentIndex: 0 },
+    });
+    history.replaceState({}, "", "/?view=recommendation&step=survey&audience=department-student");
     await mountApp();
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("quota exceeded");

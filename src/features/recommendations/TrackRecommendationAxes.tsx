@@ -1,5 +1,5 @@
 import type { ReactNode, RefObject } from "react";
-import { Compass, Heart, Route } from "lucide-react";
+import { CheckCircle2, Heart, SlidersHorizontal } from "lucide-react";
 import { TrackGlyph } from "../../components/TrackGlyph";
 import { tracks } from "../../data/curriculumData";
 import { findAlignedLeaderTrackIds } from "../../lib/recommendationEngine";
@@ -310,7 +310,7 @@ export function TrackRecommendationAxes({
 
       <div className="recommendation-index-layout">
         <nav className="recommendation-axis-index" aria-label="독립 추천 기준">
-          <span className="recommendation-axis-index__title">PAGE EDGE</span>
+          <span className="recommendation-axis-index__title">비교 기준</span>
           <ol className="recommendation-axis-destinations">
             {AXIS_PAGES.map((page) => {
               const selected = activeAxis === page.id;
@@ -341,16 +341,16 @@ export function TrackRecommendationAxes({
           {renderActiveAxis()}
 
           {aligned ? (
-            <aside className="recommendation-compass-path recommendation-compass-path--aligned" aria-label="정렬된 Compass Path">
-              <Compass aria-hidden="true" size={22} />
+            <aside className="recommendation-axis-summary recommendation-axis-summary--aligned" aria-label="두 기준 이상에서 같은 선두 후보">
+              <CheckCircle2 aria-hidden="true" size={22} />
               <div>
-                <span>Compass Path</span>
+                <span>기준 비교 요약</span>
                 <strong>
                   {alignedLeaderTrackIds.map((trackId) => trackName(trackId)).join(" · ")} 후보가 두 개 이상의 기준에서 선두로 나타났습니다.
                 </strong>
                 <p>기준이 겹친다는 뜻일 뿐 세 축을 합친 결론이 아닙니다. 각 축의 근거를 다시 확인해 주세요.</p>
               </div>
-              <div className="recommendation-compass-path__tracks">
+              <div className="recommendation-axis-summary__tracks">
                 {alignedLeaderTrackIds.map((trackId) => (
                   <span key={trackId}>
                     <TrackGlyph trackId={trackId} decorative />
@@ -360,11 +360,11 @@ export function TrackRecommendationAxes({
               </div>
             </aside>
           ) : (
-            <aside className="recommendation-compass-path recommendation-compass-path--diverged" aria-label="서로 다른 기준 방향">
-              <Route aria-hidden="true" size={22} />
+            <aside className="recommendation-axis-summary recommendation-axis-summary--diverged" aria-label="기준마다 다른 선두 후보">
+              <SlidersHorizontal aria-hidden="true" size={22} />
               <div>
-                <span>Compass Path</span>
-                <strong>기준의 방향은 서로 다릅니다.</strong>
+                <span>기준 비교 요약</span>
+                <strong>기준마다 선두 후보가 다릅니다.</strong>
                 <p>축을 바꿔 근거를 직접 비교해 선택해 주세요. 이 화면이 한 트랙을 대신 고르지 않습니다.</p>
               </div>
             </aside>

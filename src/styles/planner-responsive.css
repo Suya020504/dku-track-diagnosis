@@ -253,3 +253,9 @@
     transition-delay: 0ms !important;
   }
 }
+/* Route changes move focus to the new page heading for screen readers; keep the visual canvas calm. */
+.planner-app h1[tabindex="-1"]:focus,
+.planner-app h1[tabindex="-1"]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}

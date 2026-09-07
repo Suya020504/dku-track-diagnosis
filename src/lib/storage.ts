@@ -1,11 +1,12 @@
 import { courses, CURRICULUM_YEAR, STORAGE_KEY, tracks } from "../data/curriculumData";
+import { getInterestSurveyQuestions } from "../data/interestSurveyQuestions";
 import { getAllowedStudyPaths } from "../data/requirementRules2026";
-import { interestSurveyQuestions } from "./interestSurvey";
 import type {
   AcademicTermId,
   DiagnosisSnapshot,
   EnrollmentType,
   GraduationPlanPreferences,
+  InterestSurveyAudience,
   PlanTerm,
   PlannedCoursePlacement,
   SavedAppStateV2,
@@ -16,7 +17,18 @@ import type {
 
 const trackIds = new Set(tracks.map((track) => track.id));
 const courseIds = new Set(courses.map((course) => course.id));
-const interestQuestionIds = new Set(interestSurveyQuestions.map((question) => question.id));
+const legacyInterestQuestionIds = new Set([
+  "consumer-choice",
+  "brand-strategy",
+  "regional-problem",
+  "sustainable-community",
+  "distribution-flow",
+  "supply-chain",
+  "economic-data",
+  "policy-evidence",
+  "food-science",
+  "future-food",
+]);
 const enrollmentTypes = new Set<EnrollmentType>(["primary", "double-major", "minor"]);
 const planTerms = new Set<PlanTerm>(["next", "following", "later"]);
 const planningSemesters = new Set(["1-1", "1-2", "2-1", "2-2", "3-1", "3-2", "4-1", "4-2"]);
@@ -202,10 +214,15 @@ function academicTermIndex(value: AcademicTermId): number {
 
 function isInterestSurvey(value: unknown): boolean {
   if (!isRecord(value) || !isRecord(value.answers)) return false;
+  const audience = value.audience;
+  if (audience !== undefined && !studentAffiliations.has(String(audience))) return false;
+  const questionIds = audience === undefined
+    ? legacyInterestQuestionIds
+    : new Set(getInterestSurveyQuestions(audience as InterestSurveyAudience).map((question) => question.id));
   if (
     !Number.isInteger(value.currentIndex) ||
     Number(value.currentIndex) < 0 ||
-    Number(value.currentIndex) > interestSurveyQuestions.length
+    Number(value.currentIndex) > questionIds.size
   ) {
     return false;
   }
@@ -216,7 +233,7 @@ function isInterestSurvey(value: unknown): boolean {
     return false;
   }
   return Object.entries(value.answers).every(([questionId, answer]) =>
-    interestQuestionIds.has(questionId) &&
+    questionIds.has(questionId) &&
     Number.isInteger(answer) &&
     Number(answer) >= 1 &&
     Number(answer) <= 5,

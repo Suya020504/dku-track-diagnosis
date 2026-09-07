@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { STORAGE_KEY } from "../data/curriculumData";
+import { getInterestSurveyQuestions } from "../data/interestSurveyQuestions";
 import type {
   DiagnosisSnapshot,
   GraduationPlanPreferences,
@@ -288,6 +289,42 @@ describe("diagnosis storage", () => {
     }))).toEqual(legacyV2);
   });
 
+  it("loads a valid audience-specific survey", () => {
+    const state: SavedAppStateV2 = {
+      ...createEmptyAppState(),
+      interestSurvey: {
+        audience: "external-student",
+        answers: Object.fromEntries(
+          getInterestSurveyQuestions("external-student").map((question) => [question.id, 3 as const]),
+        ),
+        currentIndex: 9,
+      },
+    };
+
+    expect(loadAppState(makeStorage({
+      [STORAGE_KEY_V2]: JSON.stringify(state),
+    }))).toEqual(state);
+  });
+
+  it("keeps legacy survey state without treating it as a completed audience survey", () => {
+    const legacySurveyState: SavedAppStateV2 = {
+      ...createEmptyAppState(),
+      courseSelections: [{ courseId: "b-1", status: "completed" }],
+      interestSurvey: {
+        answers: { "consumer-choice": 3 },
+        currentIndex: 0,
+      },
+    };
+
+    const loaded = loadAppState(makeStorage({
+      [STORAGE_KEY_V2]: JSON.stringify(legacySurveyState),
+    }));
+
+    expect(loaded.courseSelections).toEqual(legacySurveyState.courseSelections);
+    expect(loaded.interestSurvey?.audience).toBeUndefined();
+    expect(loaded.interestSurvey?.answers).toEqual({ "consumer-choice": 3 });
+  });
+
   it("persists valid survey, recommendation, plan, and enriched snapshot data", () => {
     const graduationPlan = makeGraduationPlan();
     const snapshot = {
@@ -298,7 +335,8 @@ describe("diagnosis storage", () => {
     const state: SavedAppStateV2 = {
       ...createEmptyAppState(),
       interestSurvey: {
-        answers: { "consumer-choice": 5, "future-food": 1 },
+        audience: "department-student",
+        answers: { "dept-consumer-choice": 5, "dept-future-food": 1 },
         currentIndex: 2,
         completedAt: "2026-08-30T00:00:00.000Z",
         selectedTrackId: "food-marketing",

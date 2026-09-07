@@ -33,6 +33,7 @@ const landingPlanPreferences: GraduationPlanPreferences = {
 };
 
 const completedInterestSurvey: InterestSurveyState = {
+  audience: "department-student",
   answers: Object.fromEntries(
     interestSurveyQuestions.map((question) => [question.id, 3]),
   ),
@@ -81,15 +82,6 @@ function landingState(
       generatedAt: "2026-08-30T01:00:00.000Z",
     }),
   };
-}
-
-function renderedMapState(markup: string, stage: "interest" | "tracks" | "diagnosis" | "current" | "plan") {
-  return markup.match(new RegExp(`data-map-stop-wrap="${stage}" data-state="([^"]+)"`))?.[1];
-}
-
-function renderedMapAvailable(markup: string, stage: "interest" | "tracks" | "diagnosis" | "current" | "plan") {
-  const item = markup.match(new RegExp(`<div(?=[^>]*data-map-stop-wrap="${stage}")[^>]*>[\\s\\S]*?</div>`))?.[0];
-  return item ? !item.includes('aria-disabled="true"') : undefined;
 }
 
 function createStorage(state?: SavedAppStateV2): Storage {
@@ -158,18 +150,19 @@ describe("recommendation route integration", () => {
   it("shows the two landing entry actions before asking an empty visitor for a profile", () => {
     const markup = renderApp("");
 
-    const primaryActionIndex = markup.indexOf("내 관심 트랙 찾기");
-    const secondaryActionIndex = markup.indexOf("이수 과목 바로 진단");
+    const primaryActionIndex = markup.indexOf("내 트랙 확인하기");
+    const secondaryActionIndex = markup.indexOf("트랙제 먼저 알아보기");
 
-    expect(markup.replace(/<[^>]+>/g, "")).toContain("내 전공 여정을 지도처럼 펼쳐보세요");
-    expect(markup).toContain("내 관심 트랙 찾기");
-    expect(markup).toContain("이수 과목 바로 진단");
+    expect(markup.replace(/<[^>]+>/g, "")).toContain("어떤 트랙이 나한테 잘 맞을까?");
+    expect(markup).toContain("내 트랙 확인하기");
+    expect(markup).toContain("트랙제 먼저 알아보기");
+    expect(markup).toContain("관심으로 트랙 추천받기");
     expect(primaryActionIndex).toBeGreaterThan(-1);
     expect(primaryActionIndex).toBeLessThan(secondaryActionIndex);
-    expect(markup.match(/data-map-stop=/g)).toHaveLength(7);
-    expect(markup).not.toContain("지도 확대");
-    expect(markup).toContain("관심 찾기 또는 바로 진단");
-    expect(markup).toContain("자가진단 지름길");
+    expect(markup.match(/data-action-priority="primary"/g)).toHaveLength(1);
+    expect(markup.match(/data-track-preview=/g)).toHaveLength(5);
+    expect(markup).not.toContain("data-map-stop");
+    expect(markup).not.toContain("지도 범례");
     expect(markup).not.toContain("현재 예시 60%");
     expect(markup).not.toContain("부족 모듈 2개");
     expect(markup).not.toContain("로그인");
@@ -180,101 +173,71 @@ describe("recommendation route integration", () => {
     {
       name: "empty input",
       state: landingState("empty"),
-      journey: ["current", "locked", "next", "locked", "optional"],
-      title: "학기 플래너는 진단 뒤 선택하세요",
-      status: "선택 서비스",
+      resumeState: "empty",
+      title: "처음이어도 괜찮아요",
       action: undefined,
-      trackAvailable: false,
-      copy: ["자가진단만 마쳐도 결과와 5개 트랙 비교", "자가진단 후 선택 가능"],
-      forbidden: ["학생 유형 입력됨", "이수 과목 검토 완료", "저장한 계획 사용 가능"],
+      copy: ["학생 유형과 들은 과목부터 차례로 확인합니다", "자동 저장"],
+      forbidden: ["저장한 학기 계획이 있어요"],
     },
     {
       name: "profile only",
       state: landingState("profile-only"),
-      journey: ["next", "locked", "current", "locked", "optional"],
-      title: "이수 과목을 확인하면 결과가 열려요",
-      status: "과목 확인 필요",
+      resumeState: "needs-courses",
+      title: "과목 선택부터 이어가세요",
       action: "이수 과목 확인하기",
-      trackAvailable: false,
-      copy: ["학기 플래너를 만들지 않아도 현재 진행도", "이수 과목 확인하기"],
-      forbidden: ["관심 방향", "이수 과목 검토 완료", "저장한 계획 사용 가능"],
+      copy: ["저장된 학생 유형은 그대로 두고", "이수 과목 확인하기"],
+      forbidden: ["저장한 학기 계획이 있어요"],
     },
     {
       name: "completed interest and selected target",
       state: landingState("interest"),
-      journey: ["complete", "current", "next", "locked", "optional"],
-      title: "먼저 학생 유형을 확인해 주세요",
-      status: "진단 정보 필요",
-      action: "진단 정보 이어가기",
-      trackAvailable: true,
-      copy: ["진단 정보 이어가기", "다섯 방향 비교"],
-      forbidden: ["학생 유형 입력됨", "이수 과목 검토 완료", "저장한 계획 사용 가능"],
+      resumeState: "needs-profile",
+      title: "입력하던 진단이 있어요",
+      action: "진단 이어가기",
+      copy: ["소속과 이수 경로를 확인한 뒤", "진단 이어가기"],
+      forbidden: ["저장한 학기 계획이 있어요"],
     },
     {
       name: "reviewed courses without target",
       state: landingState("courses-no-target"),
-      journey: ["next", "locked", "complete", "current", "optional"],
-      title: "플래너를 만들 때만 목표 트랙이 필요해요",
-      status: "목표 트랙 선택 필요",
-      action: "목표 트랙 선택하기",
-      trackAvailable: false,
-      copy: ["목표가 없어도 5개 트랙 자가진단", "학기 플래너"],
-      forbidden: ["관심 방향", "저장한 계획 사용 가능"],
+      resumeState: "needs-track",
+      title: "현재 결과를 비교할 수 있어요",
+      action: "트랙 비교 보기",
+      copy: ["목표 트랙이 없어도 다섯 트랙", "트랙 비교 보기"],
+      forbidden: ["저장한 학기 계획이 있어요"],
     },
     {
       name: "reviewed courses",
       state: landingState("courses"),
-      journey: ["complete", "complete", "complete", "current", "optional"],
-      title: "학기 계획까지 이어볼까요?",
-      status: "플래너 사용 가능",
+      resumeState: "ready",
+      title: "진단 결과가 준비됐어요",
       action: "학기 플래너 열기",
-      trackAvailable: true,
-      copy: ["자가진단 결과를 바탕으로", "학기별 참고 계획"],
-      forbidden: ["입력 전 잠김", "저장한 계획 사용 가능"],
+      copy: ["목표 학기까지의 참고 계획", "학기 플래너 열기"],
+      forbidden: ["저장한 학기 계획이 있어요"],
     },
     {
       name: "saved graduation plan",
       state: landingState("saved-plan"),
-      journey: ["complete", "complete", "complete", "complete", "current"],
+      resumeState: "saved-plan",
       title: "저장한 학기 계획이 있어요",
-      status: "저장한 계획 있음",
       action: "저장한 계획 보기",
-      trackAvailable: true,
-      copy: ["이전에 만든 계획", "저장한 계획 보기"],
-      forbidden: ["입력 전 잠김", "이수 과목 확인 필요"],
+      copy: ["이전에 만든 계획과 공식 확인 항목", "저장한 계획 보기"],
+      forbidden: ["처음이어도 괜찮아요"],
     },
-  ])("renders the real landing progress for $name", ({
-    name,
-    state,
-    journey,
-    title,
-    status,
-    action,
-    trackAvailable,
-    copy,
-    forbidden,
-  }) => {
+  ])("renders the real resume state for $name", ({ state, resumeState, title, action, copy, forbidden }) => {
     const markup = renderApp("", state);
 
-    expect([
-      renderedMapState(markup, "interest"),
-      renderedMapState(markup, "tracks"),
-      renderedMapState(markup, "diagnosis"),
-      renderedMapState(markup, "current"),
-      renderedMapState(markup, "plan"),
-    ]).toEqual(journey);
+    expect(markup).toContain(`data-resume-state="${resumeState}"`);
     expect(markup).toContain(title);
-    expect(markup).toContain(status);
-    expect(renderedMapAvailable(markup, "tracks")).toBe(trackAvailable);
     if (action) expect(markup).toContain(action);
-    else expect(markup).not.toContain("campus-map-landing__planner-action planner-focusable");
     copy.forEach((value) => expect(markup).toContain(value));
     forbidden.forEach((value) => expect(markup).not.toContain(value));
-    if (!trackAvailable) expect(markup).toContain("관심 질문을 마치면 트랙 비교가 열려요.");
+    expect(markup).not.toContain("data-map-stop");
   });
 
   it("allows the interest survey route without a profile and restores its current question", () => {
     const interestSurvey: InterestSurveyState = {
+      audience: "department-student",
       answers: Object.fromEntries(
         interestSurveyQuestions.slice(0, 4).map((question) => [question.id, 4]),
       ),
@@ -282,7 +245,7 @@ describe("recommendation route integration", () => {
     };
 
     const markup = renderApp(
-      "?view=recommendation&step=survey",
+      "?view=recommendation&step=survey&audience=department-student",
       { ...createEmptyAppState(), interestSurvey },
     );
 
@@ -327,12 +290,12 @@ describe("recommendation route integration", () => {
     expect(markup).toContain('data-recommendation-panel="progress"');
     expect(markup).toContain("현재 완료 과목에서 가까운 트랙");
     expect(markup).toContain("함께 비교할 네 후보");
-    expect(markup).toMatch(/data-active="true"[\s\S]*?aria-current="page"[\s\S]*?<strong>진단 결과<\/strong>/);
-    expect(markup).toContain("현재 · 결과");
+    expect(markup).toMatch(/planner-shell-primary-nav[\s\S]*?aria-current="page"[^>]*>진단 결과<\/button>/);
+    expect(markup).toContain("현재 · 트랙 비교");
     expect(markup).not.toContain('data-result-panel="current"');
   });
 
-  it("does not mark the interest survey complete when a target was chosen through direct diagnosis", () => {
+  it("does not invent a completed interest result when a target came from direct diagnosis", () => {
     const markup = renderApp("", {
       ...createEmptyAppState(),
       profile: { ...landingProfile, goal: "check-progress" },
@@ -340,13 +303,14 @@ describe("recommendation route integration", () => {
       courseInputReviewedAt: "2026-08-30T00:30:00.000Z",
     });
 
-    expect(renderedMapState(markup, "interest")).toBe("next");
-    expect(renderedMapState(markup, "tracks")).toBe("complete");
-    expect(renderedMapAvailable(markup, "tracks")).toBe(true);
+    expect(markup).toContain('data-resume-state="ready"');
+    expect(markup).not.toContain("관심 적합도 결과");
+    expect(markup).not.toContain("data-map-stop");
   });
 
   it("shows a completed interest axis without requiring a profile", () => {
     const interestSurvey: InterestSurveyState = {
+      audience: "department-student",
       answers: Object.fromEntries(
         interestSurveyQuestions.map((question) => [question.id, 3]),
       ),
@@ -386,6 +350,7 @@ describe("recommendation route integration", () => {
     expect((transition as { route?: unknown }).route).toEqual({
       view: "recommendation",
       step: "survey",
+      audience: "department-student",
     });
     expect(transition.state.profile).toEqual(findTrackProfile);
   });
@@ -405,7 +370,14 @@ describe("recommendation route integration", () => {
 
     const current: SavedAppStateV2 = {
       ...createEmptyAppState(),
+      profileDraft: {
+        affiliation: "department-student",
+        goal: "find-track",
+        curriculumRuleVersion: "2026-provided-final-plan",
+        ruleApplicability: "reference-only",
+      },
       interestSurvey: {
+        audience: "department-student",
         answers: Object.fromEntries(interestSurveyQuestions.map((question) => [question.id, 4])),
         currentIndex: 9,
         completedAt: "2026-08-30T00:00:00.000Z",
@@ -416,7 +388,7 @@ describe("recommendation route integration", () => {
     expect(chosen.state.targetTrackId).toBe("economics");
     expect(chosen.state.interestSurvey?.selectedTrackId).toBe("economics");
     expect(chosen.state.profileDraft?.goal).toBe("find-track");
-    expect(chosen.route).toEqual({ view: "diagnosis", step: "profile" });
+    expect(chosen.route).toEqual({ view: "diagnosis", step: "profile", profileStage: "path" });
 
     const completed = completeProfileTransition(chosen.state, findTrackProfile);
     expect(completed.state.targetTrackId).toBe("economics");
@@ -431,6 +403,7 @@ describe("recommendation route integration", () => {
     const current: SavedAppStateV2 = {
       ...createEmptyAppState(),
       interestSurvey: {
+        audience: "department-student",
         answers: Object.fromEntries(interestSurveyQuestions.map((question) => [question.id, 4])),
         currentIndex: 9,
         completedAt: "2026-08-30T00:00:00.000Z",

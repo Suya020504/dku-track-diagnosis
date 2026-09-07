@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DKU 식품자원경제학과 트랙제 서비스 와이어프레임</title>
+  <style>
+    :root { --ink:#14243a; --muted:#68788b; --line:#afbbc7; --soft:#edf2f5; --paper:#fff; --blue:#174b82; --green:#087a58; }
+    * { box-sizing:border-box; }
+    body { margin:0; padding:52px; background:#dfe6eb; color:var(--ink); font-family:Arial,"Noto Sans KR",sans-serif; }
+    .gallery { display:grid; gap:64px; }
+    .frame { width:1600px; min-height:900px; margin:0 auto; padding:32px; background:#f8fbfc; border:2px solid #8fa0b2; box-shadow:0 18px 44px rgba(20,36,58,.12); }
+    .frame-title { display:flex; justify-content:space-between; align-items:center; margin:0 0 22px; padding-bottom:14px; border-bottom:2px solid var(--ink); }
+    .frame-title h1 { margin:0; font-size:26px; }
+    .frame-title span { color:var(--muted); font-weight:700; }
+    .devices { display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:28px; align-items:start; }
+    .desktop { min-height:770px; border:2px solid var(--ink); border-radius:12px; overflow:hidden; background:var(--paper); }
+    .phone { min-height:700px; border:6px solid var(--ink); border-radius:28px; overflow:hidden; background:var(--paper); }
+    .wf-header { height:72px; display:flex; align-items:center; gap:26px; padding:0 28px; border-bottom:1px solid var(--line); }
+    .phone .wf-header { height:58px; padding:0 14px; }
+    .brand { width:190px; height:28px; border:2px solid var(--blue); background:#e7eef7; }
+    .phone .brand { width:140px; height:22px; }
+    .nav { display:flex; gap:22px; margin-left:auto; }
+    .nav i { width:72px; height:10px; background:#c6d0da; border-radius:99px; }
+    .phone .nav { display:none; }
+    .content { padding:30px; }
+    .phone .content { padding:18px 14px 84px; }
+    .eyebrow { width:150px; height:14px; margin-bottom:16px; background:#a7d8c5; }
+    .headline { width:66%; height:48px; margin-bottom:14px; background:var(--ink); }
+    .headline.short { width:45%; }
+    .phone .headline { width:94%; height:30px; }
+    .copy { display:grid; gap:8px; max-width:680px; margin-bottom:20px; }
+    .copy i { display:block; height:10px; background:#bdc7d0; }
+    .copy i:nth-child(2) { width:82%; }
+    .copy i:nth-child(3) { width:60%; }
+    .button { display:inline-block; width:210px; height:48px; border-radius:8px; background:var(--green); }
+    .button.secondary { width:190px; margin-left:10px; border:2px solid var(--blue); background:#fff; }
+    .phone .button { width:100%; }
+    .phone .button.secondary { margin:10px 0 0; }
+    .hero-grid { display:grid; grid-template-columns:1.05fr .95fr; gap:26px; align-items:center; }
+    .phone .hero-grid { grid-template-columns:1fr; }
+    .visual { min-height:310px; border:2px dashed #91a1b2; background:repeating-linear-gradient(135deg,#eef3f6,#eef3f6 20px,#e3eaee 20px,#e3eaee 40px); }
+    .phone .visual { min-height:180px; }
+    .section-line { margin:24px 0 14px; border-top:2px solid var(--ink); }
+    .grid-2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+    .grid-3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+    .phone .grid-2,.phone .grid-3 { grid-template-columns:1fr; }
+    .card { min-height:120px; padding:16px; border:1px solid var(--line); background:#f5f8fa; }
+    .card.primary { border-left:7px solid var(--green); background:#e7f3ed; }
+    .card strong { display:block; height:16px; width:62%; margin-bottom:14px; background:#30455d; }
+    .card i { display:block; height:9px; margin-top:8px; background:#bdc7d0; }
+    .steps { display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin-top:24px; }
+    .steps .step { min-height:78px; padding:14px; border:1px solid var(--line); background:#f3f7f8; }
+    .steps .step.current { background:#dff1e8; border-color:var(--green); }
+    .phone .steps { grid-template-columns:1fr; }
+    .split { display:grid; grid-template-columns:220px minmax(0,1fr); min-height:698px; }
+    .phone .split { grid-template-columns:1fr; min-height:auto; }
+    .side { padding:22px 16px; border-right:1px solid var(--line); background:#e8f0f5; }
+    .phone .side { display:none; }
+    .side i { display:block; height:42px; margin-bottom:8px; border:1px solid #a9b5c0; background:#fff; }
+    .side i.active { border-left:6px solid var(--green); background:#e5f3ec; }
+    .tabs { display:grid; grid-template-columns:repeat(4,1fr); margin-bottom:22px; border-bottom:1px solid var(--line); }
+    .tabs i { height:48px; border-right:1px solid #cad3db; background:#f6f8fa; }
+    .tabs i.active { border-bottom:5px solid var(--green); background:#eaf5f0; }
+    .phone .tabs { overflow:hidden; }
+    .phone .tabs i { height:42px; }
+    .choice { min-height:64px; margin:10px 0; border:1px solid var(--line); background:#f7f9fb; }
+    .choice.selected { border-left:6px solid var(--green); background:#e6f4ed; }
+    .scale { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin:24px 0; }
+    .scale i { height:84px; border:1px solid var(--line); background:#f4f6f8; }
+    .phone .scale { grid-template-columns:repeat(5,1fr); gap:5px; }
+    .phone .scale i { height:62px; }
+    .filters { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; }
+    .filters i { width:92px; height:36px; border:1px solid var(--line); background:#fff; }
+    .table { border-top:2px solid var(--ink); }
+    .row { display:grid; grid-template-columns:44px 54px 1fr 100px 70px 100px; gap:10px; align-items:center; min-height:68px; padding:8px; border-bottom:1px solid #c7d0d8; }
+    .row i { height:18px; background:#b8c3cc; }
+    .phone .row { grid-template-columns:42px 42px 1fr 76px; min-height:96px; }
+    .phone .row i:nth-child(5),.phone .row i:nth-child(6) { display:none; }
+    .result-grid { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:18px; }
+    .phone .result-grid { grid-template-columns:1fr; }
+    .metric-line { display:grid; grid-template-columns:150px 1fr 70px; gap:12px; align-items:center; min-height:64px; border-bottom:1px solid var(--line); }
+    .metric-line i { height:12px; background:#afbac4; }
+    .metric-line i:nth-child(2) { background:#9fd4bd; }
+    .accordion { display:grid; grid-template-columns:repeat(5,1fr); min-height:330px; border:1px solid var(--line); }
+    .accordion article { padding:18px; border-right:1px solid var(--line); background:#f7f9fa; }
+    .accordion article.open { grid-column:span 2; background:#e7f3ed; }
+    .phone .accordion { display:grid; grid-template-columns:1fr; min-height:auto; }
+    .phone .accordion article.open { grid-column:auto; }
+    .semester-board { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:#aebac5; border:1px solid #aebac5; }
+    .semester { min-height:330px; padding:14px; background:#fff; }
+    .semester i { display:block; height:46px; margin:10px 0; background:#dfeee7; border:1px solid #a9c4b7; }
+    .phone .semester-board { grid-template-columns:1fr; }
+    .phone .semester { min-height:150px; }
+    .source { min-height:82px; margin:10px 0; padding:14px; border-left:5px solid var(--blue); background:#edf4f8; }
+    .bottom-nav { display:none; }
+    .phone .bottom-nav { position:absolute; inset:auto 0 0; display:grid; grid-template-columns:repeat(5,1fr); height:62px; border-top:1px solid var(--line); background:#fff; }
+    .phone-wrap { position:relative; }
+  </style>
+</head>
+<body>
+<main class="gallery">
+
+  <section class="frame" id="wireframe-home" data-page="home">
+    <header class="frame-title"><h1>01. 홈</h1><span>핵심 시뮬레이션 진입</span></header>
+    <div class="devices"><div class="desktop"><div class="wf-header"><div class="brand"></div><div class="nav"><i></i><i></i><i></i><i></i></div></div><div class="content"><div class="hero-grid"><div><div class="eyebrow"></div><div class="headline"></div><div class="copy"><i></i><i></i><i></i></div><span class="button"></span><span class="button secondary"></span></div><div class="visual"></div></div><div class="section-line"></div><div class="grid-2"><div class="card primary"><strong></strong><i></i><i></i></div><div class="card"><strong></strong><i></i><i></i></div></div><div class="steps"><div class="step current"></div><div class="step"></div><div class="step"></div><div class="step"></div></div></div></div><div class="phone phone-wrap"><div class="wf-header"><div class="brand"></div></div><div class="content"><div class="eyebrow"></div><div class="headline"></div><div class="copy"><i></i><i></i></div><span class="button"></span><span class="button secondary"></span><div class="visual"></div><div class="steps"><div class="step current"></div><div class="step"></div><div class="step"></div><div class="step"></div></div></div><div class="bottom-nav"></div></div></div>
+  </section>
+
+  <section class="frame" id="wireframe-guide" data-page="guide">
+    <header class="frame-title"><h1>02. 트랙제 알아보기</h1><span>선택형 3분 가이드</span></header>
+    <div class="devices"><div class="desktop"><div class="wf-header"><div class="brand"></div><div class="nav"><i></i><i></i><i></i><i></i></div></div><div class="split"><aside class="side"><i class="active"></i><i></i><i></i><i></i><i></i></aside><div class="content"><div class="eyebrow"></div><div class="headline"></div><div class="copy"><i></i><i></i><i></i></div><div class="visual"></div><div class="grid-3" style="margin-top:18px"><div class="card primary"></div><div class="card"></div><div class="card"></div></div><span class="button" style="margin-top:22px"></span></div></div></div><div class="phone phone-wrap"><div class="wf-header"><div class="brand"></div></div><div class="content"><div class="tabs"><i class="active"></i><i></i><i></i><i></i></div><div class="eyebrow"></div><div class="headline"></div><div class="copy"><i></i><i></i><i></i></div><div class="visual"></div><span class="button" style="margin-top:16px"></span></div><div class="bottom-nav"></div></div></div>
+  </section>
+
+  <section class="frame" id="wireframe-survey" data-page="survey">
+    <header class="frame-title"><h1>03. 관심 트랙 추천 설문</h1><span>소속별 질문은행</span></header>
+    <div class="devices"><div class="desktop"><div class="wf-header"><div class="brand"></div><div class="nav"><i></i><i></i><i></i><i></i></div></div><div class="content"><div class="steps"><div class="step current"></div><div class="step"></div><div class="step"></div><div class="step"></div></div><div class="eyebrow" style="margin-top:30px"></div><div class="headline short"></div><div class="grid-2"><div class="choice selected"></div><div class="choice"></div></div><div class="section-line"></div><div class="copy"><i></i><i></i></div><div class="scale"><i></i><i></i><i></i><i></i><i></i></div><span class="button" style="float:right"></span></div></div><div class="phone phone-wrap"><div class="wf-header"><div class="brand"></div></div><div class="content"><div class="eyebrow"></div><div class="headline"></div><div class="choice selected"></div><div class="choice"></div><div class="section-line"></div><div class="scale"><i></i><i></i><i></i><i></i><i></i></div><span class="button"></span></div><div class="bottom-nav"></div></div></div>
+  </section>
+
+  <section class="frame" id="wireframe-profile" data-page="profile">
+    <header class="frame-title"><h1>04. 학생 유형·이수 경로</h1><span>두 단계 프로필</span></header>
+    <div class="devices"><div class="desktop"><div class="wf-header"><div class="brand"></div><div class="nav"><i></i><i></i><i></i></div></div><div class="content"><div class="steps"><div class="step current"></div><div class="step"></div><div class="step"></div><div class="step"></div></div><div class="grid-2" style="margin-top:28px"><div><div class="eyebrow"></div><div class="headline"></div><div class="copy"><i></i><i></i></div></div><div><div class="choice selected"></div><div class="choice"></div><span class="button" style="float:right;margin-top:24px"></span></div></div></div></div><div class="phone phone-wrap"><div class="wf-header"><div class="brand"></div></div><div class="content"><div class="eyebrow"></div><div class="headline"></div><div class="copy"><i></i><i></i></div><div class="choice selected"></div><div class="choice"></div><span class="button"></span></div><div class="bottom-nav"></div></div></div>
+  </section>
+
+  <section class="frame" id="wireframe-courses" data-page="courses">
+    <header class="frame-title"><h1>05. 이수 과목 입력</h1><span>직접 선택 기본</span></header>
+    <div class="devices"><div class="desktop"><div class="wf-header"><div class="brand"></div><div class="nav"><i></i><i></i><i></i></div></div><div class="content"><div class="result-grid"><div><div class="eyebrow"></div><div class="headline short"></div><div class="filters"><i></i><i></i><i></i><i></i><i></i></div><div class="table"><div class="row"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="row"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="row"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="row"><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div><aside class="card primary" style="min-height:350px"><strong></strong><i></i><i></i><i></i><span class="button" style="margin-top:120px;width:100%"></span></aside></div></div></div><div class="phone phone-wrap"><div class="wf-header"><div class="brand"></div></div><div class="content"><div class="eyebrow"></div><div class="headline"></div><div class="filters"><i></i><i></i><i></i></div><div class="table"><div class="row"><i></i><i></i><i></i><i></i></div><div class="row"><i></i><i></i><i></i><i></i></div><div class="row"><i></i><i></i><i></i><i></i></div></div><span class="button" style="margin-top:18px"></span></div><div class="bottom-nav"></div></div></div>
+  </section>
+
+  <section class="frame" id="wireframe-result" data-page="result">
+    <header class="frame-title"><h1>06. 상황별 시뮬레이션 결과</h1><span>현재 상태·부족 조건·다음 과목</span></header>
+    <div class="devices"><div class="desktop"><div class="wf-header"><div class="brand"></div><div class="nav"><i></i><i></i><i></i></div></div><div class="content"><div class="tabs"><i class="active"></i><i></i><i></i><i></i></div><div class="eyebrow"></div><div class="headline"></div><div class="result-grid"><div><div class="metric-line"><i></i><i></i><i></i></div><div class="metric-line"><i></i><i></i><i></i></div><div class="metric-line"><i></i><i></i><i></i></div><div class="section-line"></div><div class="grid-3"><div class="card"></div><div class="card"></div><div class="card"></div></div></div><aside><div class="card primary"><strong></strong><i></i><i></i></div><div class="card" style="margin-top:14px"></div></aside></div></div></div><div class="phone phone-wrap"><div class="wf-header"><div class="brand"></div></div><div class="content"><div class="tabs"><i class="active"></i><i></i><i></i><i></i></div><div class="eyebrow"></div><div class="headline"></div><div class="metric-line"><i></i><i></i><i></i></div><div class="metric-line"><i></i><i></i><i></i></div><div class="metric-line"><i></i><i></i><i></i></div><div class="card primary"></div><span class="button"></span></div><div class="bottom-nav"></div></div></div>
+  </section>
+
+  <section class="frame" id="wireframe-recommendation" data-page="recommendation">
+    <header class="frame-title"><h1>07. 트랙 추천 비교</h1><span>관심과 현재 진행도 분리</span></header>
+    <div class="devices"><div class="desktop"><div class="wf-header"><div class="brand"></div><div class="nav"><i></i><i></i><i></i></div></div><div class="content"><div class="eyebrow"></div><div class="headline short"></div><div class="grid-2"><div class="card primary" style="min-height:180px"><strong></strong><i></i><i></i><i></i></div><div class="card" style="min-height:180px"><strong></strong><i></i><i></i><i></i></div></div><div class="section-line"></div><div class="accordion"><article></article><article class="open"></article><article></article><article></article></div></div></div><div class="phone phone-wrap"><div class="wf-header"><div class="brand"></div></div><div class="content"><div class="eyebrow"></div><div class="headline"></div><div class="card primary"></div><div class="card"></div><div class="accordion"><article class="open"></article><article></article><article></article><article></article><article></article></div></div><div class="bottom-nav"></div></div></div>
+  </section>
+
+  <section class="frame" id="wireframe-plan" data-page="plan">
+    <header class="frame-title"><h1>08. 목표 학기 이수 가능성·플래너</h1><span>참고 계획·공식 확인</span></header>
+    <div class="devices"><div class="desktop"><div class="wf-header"><div class="brand"></div><div class="nav"><i></i><i></i><i></i></div></div><div class="content"><div class="tabs"><i class="active"></i><i></i><i></i><i></i></div><div class="eyebrow"></div><div class="headline"></div><div class="copy"><i></i><i></i></div><div class="semester-board"><div class="semester"><i></i><i></i></div><div class="semester"><i></i><i></i></div><div class="semester"><i></i><i></i></div><div class="semester"><i></i><i></i></div></div><div class="source"></div></div></div><div class="phone phone-wrap"><div class="wf-header"><div class="brand"></div></div><div class="content"><div class="eyebrow"></div><div class="headline"></div><div class="semester-board"><div class="semester"><i></i><i></i></div><div class="semester"><i></i></div><div class="semester"><i></i></div></div><div class="source"></div></div><div class="bottom-nav"></div></div></div>
+  </section>
+
+  <section class="frame" id="wireframe-resources" data-page="resources">
+    <header class="frame-title"><h1>09. 공식 자료</h1><span>자료 탭만 사용</span></header>
+    <div class="devices"><div class="desktop"><div class="wf-header"><div class="brand"></div><div class="nav"><i></i><i></i><i></i></div></div><div class="split"><aside class="side"><i></i><i></i><i></i><i></i><i class="active"></i></aside><div class="content"><div class="tabs"><i></i><i class="active"></i><i></i><i></i></div><div class="eyebrow"></div><div class="headline"></div><div class="copy"><i></i><i></i></div><div class="source"></div><div class="source"></div><div class="source"></div><div class="source"></div></div></div></div><div class="phone phone-wrap"><div class="wf-header"><div class="brand"></div></div><div class="content"><div class="tabs"><i></i><i class="active"></i><i></i><i></i></div><div class="eyebrow"></div><div class="headline"></div><div class="source"></div><div class="source"></div><div class="source"></div></div><div class="bottom-nav"></div></div></div>
+  </section>
+
+</main>
+</body>
+</html>

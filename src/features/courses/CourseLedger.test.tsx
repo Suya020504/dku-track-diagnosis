@@ -34,6 +34,14 @@ const ledgerCourses: Course[] = [
     recommendedSemester: "2-1",
     sourceNote: "공개 학기표와 제공 최종안에서 교과목명을 확인했습니다.",
   },
+  {
+    id: "d-1",
+    code: "D-1",
+    name: "환경경제학",
+    credits: 3,
+    moduleId: "D",
+    recommendedSemester: "3-1",
+  },
 ];
 
 const selections: CourseSelectionRecord[] = [
@@ -99,7 +107,7 @@ describe("CourseLedger", () => {
 
     const rows = [...document.querySelectorAll<HTMLElement>(".course-ledger-row")];
     const rowFor = (courseName: string) => rows.find((row) => row.textContent?.includes(courseName));
-    expect(rows).toHaveLength(3);
+    expect(rows).toHaveLength(4);
     expect(rowFor("경제원론")?.textContent).toContain("이수 완료");
     expect(rowFor("미시경제학")?.textContent).toContain("수강 중");
     expect(rowFor("소비자경제학")?.textContent).toContain("수강 계획 · 다음 학기");
@@ -112,6 +120,20 @@ describe("CourseLedger", () => {
     expect(rowFor("미시경제학")?.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked).toBe(true);
     expect(rowFor("소비자경제학")?.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked).toBe(false);
     expect(rows.every((row) => row.querySelector('[data-touch-target="44"]'))).toBe(true);
+    expect(rows.every((row) => row.querySelector("details.course-ledger-row-details:not([open])"))).toBe(true);
+    expect(rowFor("경제원론")?.querySelector(".course-ledger-row-details summary .sr-only")?.textContent)
+      .toBe("경제원론 과목 정보");
+  });
+
+  it("starts as a compact accordion with only the first semester expanded", () => {
+    document.body.innerHTML = renderLedger();
+
+    const groups = [...document.querySelectorAll<HTMLDetailsElement>("details.course-ledger-group")];
+    expect(groups).toHaveLength(4);
+    expect(groups[0]?.open).toBe(true);
+    expect(groups.slice(1).every((group) => !group.open)).toBe(true);
+    expect(document.querySelector(".course-ledger-index")).toBeNull();
+    expect(groups[0]?.querySelector("summary")?.textContent).toContain("선택 1 / 1");
   });
 
   it("filters by semester and query without replacing the ledger row structure", () => {
@@ -126,26 +148,20 @@ describe("CourseLedger", () => {
     const moduleMarkup = renderLedger({ mode: "module", query: "미시" });
     expect(moduleMarkup).toContain("미시경제학");
     expect(moduleMarkup).not.toContain("소비자경제학");
-    expect(moduleMarkup).toContain('aria-label="모듈 그룹 빠른 이동"');
-    expect(moduleMarkup).toContain('href="#course-ledger-group-module-c"');
+    expect(moduleMarkup).toContain('data-course-ledger-mode="module"');
+    expect(moduleMarkup).toContain('id="course-ledger-group-module-c"');
   });
 
-  it.each([
-    ["semester", "#course-ledger-group-semester-1-1", "1학년 1학기"],
-    ["module", "#course-ledger-group-module-c", "C. 경제학 전문지식"],
-  ] as const)("moves %s quick navigation focus to its group heading", async (mode, href, label) => {
-    await renderInteractiveLedger(mode);
-    const link = document.querySelector<HTMLAnchorElement>(`.course-ledger-index a[href="${href}"]`);
-    const target = document.querySelector<HTMLHeadingElement>(`${href} h3`);
-    if (!link || !target) throw new Error(`Missing ${mode} quick navigation target`);
-    const scrollIntoView = vi.fn();
-    target.scrollIntoView = scrollIntoView;
+  it("can reduce the ledger to courses that already have a saved status", async () => {
+    await renderInteractiveLedger("semester");
+    const toggle = [...document.querySelectorAll<HTMLButtonElement>("button")]
+      .find((candidate) => candidate.textContent?.includes("선택한 과목만"));
+    if (!toggle) throw new Error("Missing selected-only control");
 
-    await act(async () => link.click());
+    await act(async () => toggle.click());
 
-    expect(target.textContent).toBe(label);
-    expect(target.tabIndex).toBe(-1);
-    expect(document.activeElement).toBe(target);
-    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "auto", block: "center" });
+    expect(toggle.getAttribute("aria-pressed")).toBe("true");
+    expect(document.querySelectorAll(".course-ledger-row")).toHaveLength(3);
+    expect(document.body.textContent).not.toContain("환경경제학");
   });
 });

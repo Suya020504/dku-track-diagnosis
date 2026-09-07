@@ -32,17 +32,17 @@ describe("CompassPathRibbon", () => {
     expect(completed.every((item) => item.textContent?.includes("완료"))).toBe(true);
   });
 
-  it("keeps one continuous paper-route structure with folded joins and a current compass node", () => {
+  it("keeps one flat progress structure with a single current step and no decorative folds", () => {
     const markup = renderToStaticMarkup(<CompassPathRibbon items={items} />);
     document.body.innerHTML = markup;
 
-    const route = document.querySelector<HTMLElement>('[data-path-layout="continuous-paper-route"]');
+    const route = document.querySelector<HTMLElement>('[data-path-layout="linear-progress"]');
     const segments = [...document.querySelectorAll<HTMLElement>("[data-path-segment]")];
 
     expect(route).not.toBeNull();
     expect(route?.querySelector("ol")?.classList.contains("planner-compass-path__route")).toBe(true);
     expect(segments).toHaveLength(items.length);
-    expect(document.querySelectorAll("[data-path-fold]")).toHaveLength(items.length - 1);
+    expect(document.querySelectorAll("[data-path-fold]")).toHaveLength(0);
     expect(document.querySelectorAll("[data-path-state-icon]")).toHaveLength(items.length);
     expect(document.querySelectorAll('[data-visual-state="complete"]')).toHaveLength(2);
     expect(document.querySelectorAll('[data-visual-state="current"]')).toHaveLength(1);

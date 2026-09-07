@@ -104,7 +104,10 @@ export type TrackId =
 
 export type InterestSurveyAnswer = 1 | 2 | 3 | 4 | 5;
 
+export type InterestSurveyAudience = StudentAffiliation;
+
 export type InterestSurveyState = {
+  audience?: InterestSurveyAudience;
   answers: Record<string, InterestSurveyAnswer>;
   currentIndex: number;
   completedAt?: string;

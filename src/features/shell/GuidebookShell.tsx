@@ -1,10 +1,19 @@
 import type { ReactNode } from "react";
+import type { AppRoute } from "../../lib/appRouting";
 import { ExternalLink, HelpCircle } from "lucide-react";
 import { DEPARTMENT_HOME_URL, DEPARTMENT_YOUTUBE_URL } from "../../data/officialResources";
 import { CompassPathRibbon, type CompassPathItem } from "../journey/CompassPathRibbon";
-import { GuideIndex, type GuideIndexItem } from "./GuideIndex";
 import { LocalSaveStatus, type LocalSaveState } from "./LocalSaveStatus";
 import { MobileJourneyNav, type MobileJourneyItem } from "./MobileJourneyNav";
+
+export type GuidebookNavItem = {
+  id: string;
+  index: string;
+  label: string;
+  available: boolean;
+  unavailableReason?: string;
+  onSelect: () => void;
+};
 
 export type GuidebookExternalLink = {
   id: string;
@@ -26,6 +35,7 @@ export const DEPARTMENT_EXTERNAL_LINKS = [
 ] as const satisfies readonly GuidebookExternalLink[];
 
 export function GuidebookShell({
+  serviceView = "landing",
   activeId,
   mobileActiveId = activeId,
   currentLabel,
@@ -40,13 +50,13 @@ export function GuidebookShell({
   onOpenHelp,
   modalOpen = false,
   modal,
-  immersive = false,
   children,
 }: {
+  serviceView?: AppRoute["view"];
   activeId: string;
   mobileActiveId?: string;
   currentLabel: string;
-  guideItems: readonly GuideIndexItem[];
+  guideItems: readonly GuidebookNavItem[];
   mobilePrimaryItems: readonly MobileJourneyItem[];
   mobileMoreItems: readonly MobileJourneyItem[];
   utilityItems?: readonly MobileJourneyItem[];
@@ -57,11 +67,10 @@ export function GuidebookShell({
   onOpenHelp: (invoker: HTMLButtonElement) => void;
   modalOpen?: boolean;
   modal?: ReactNode;
-  immersive?: boolean;
   children: ReactNode;
 }) {
   return (
-    <div className="planner-app planner-guidebook-shell">
+    <div className="planner-app planner-guidebook-shell" data-service-zone={serviceView}>
       <div
         className="planner-shell-background"
         aria-hidden={modalOpen ? true : undefined}
@@ -72,43 +81,45 @@ export function GuidebookShell({
         </a>
         <header className="planner-shell-header">
           <div className="planner-shell-wordmark">
-            <strong>단국대학교 식품자원경제학과</strong>
-            <span>전공 여정 지도 · 트랙 자가진단</span>
+            <img src="/dku-logo.png" width="76" height="36" alt="단국대학교" />
+            <span className="planner-shell-wordmark__divider" aria-hidden="true" />
+            <span className="planner-shell-wordmark__copy">
+              <strong>식품자원경제학과</strong>
+              <small>트랙 안내 · 자가진단</small>
+            </span>
           </div>
           <span className="planner-shell-current-step">현재 · {currentLabel}</span>
-          {immersive ? (
-            <nav className="planner-shell-map-nav" aria-label="주요 서비스">
-              {guideItems.map((item) => (
-                <button
-                  className="planner-focusable"
-                  type="button"
-                  key={item.id}
-                  aria-current={activeId === item.id ? "page" : undefined}
-                  disabled={!item.available}
-                  onClick={item.onSelect}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-          ) : null}
-          {!immersive && utilityItems.length > 0 ? (
-            <nav className="planner-shell-utility" aria-label="보조 화면">
-              {utilityItems.map((item) => (
-                <button
-                  className="planner-focusable"
-                  type="button"
-                  key={item.id}
-                  aria-current={utilityActiveId === item.id ? "page" : undefined}
-                  disabled={!item.available}
-                  onClick={item.onSelect}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-          ) : null}
+          <nav className="planner-shell-primary-nav" aria-label="주요 서비스">
+            {guideItems.map((item) => (
+              <button
+                className="planner-focusable"
+                type="button"
+                key={item.id}
+                aria-current={activeId === item.id ? "page" : undefined}
+                disabled={!item.available}
+                onClick={item.onSelect}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
           <div className="planner-shell-actions">
+            {utilityItems.length > 0 ? (
+              <nav className="planner-shell-utility" aria-label="보조 화면">
+                {utilityItems.map((item) => (
+                  <button
+                    className="planner-focusable"
+                    type="button"
+                    key={item.id}
+                    aria-current={utilityActiveId === item.id ? "page" : undefined}
+                    disabled={!item.available}
+                    onClick={item.onSelect}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </nav>
+            ) : null}
             {externalLinks.length > 0 ? (
               <nav className="planner-shell-external-links" aria-label="학과 공식 링크">
                 {externalLinks.map((link) => (
@@ -137,8 +148,7 @@ export function GuidebookShell({
             <LocalSaveStatus state={saveState} />
           </div>
         </header>
-        <div className={immersive ? "planner-shell-layout is-immersive" : "planner-shell-layout"}>
-          {!immersive ? <GuideIndex items={guideItems} activeId={activeId} /> : null}
+        <div className="planner-shell-layout is-immersive">
           <div className="planner-shell-page">
             <CompassPathRibbon items={journeyItems} />
             <div className="planner-shell-content" id="planner-main-content" tabIndex={-1}>{children}</div>

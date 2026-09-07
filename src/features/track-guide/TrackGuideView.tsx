@@ -3,6 +3,7 @@ import {
   ArrowRight,
   BookOpenCheck,
   CheckCircle2,
+  Clock3,
   ExternalLink,
   FileCheck2,
   GraduationCap,
@@ -10,7 +11,6 @@ import {
   Network,
   Phone,
   PlayCircle,
-  Route,
   Sparkles,
   Target,
   Youtube,
@@ -23,7 +23,11 @@ import {
   DEPARTMENT_CURRICULUM_URL,
   DEPARTMENT_GREETING_URL,
   DEPARTMENT_YOUTUBE_URL,
+  DEGREE_MAJOR_NAMES_URL,
   OFFICIAL_TRACK_VIDEOS,
+  TRACK_CERTIFICATE_VIDEO_URL,
+  TRACK_DEGREE_VIDEO_URL,
+  TRACK_LATE_ENTRY_VIDEO_URL,
   TRACK_QA_VIDEO_URL,
   TRACK_REGULATION_URL,
   privacyEnhancedEmbedUrl,
@@ -52,6 +56,12 @@ const GUIDE_SECTIONS: readonly {
     description: "공식 구조에서 확인되는 의미와 이 서비스가 돕는 판단을 분리해서 보여드립니다.",
   },
   {
+    id: "outcomes",
+    label: "학위·이수 결과",
+    title: "학위명과 트랙 표기는 같은 말이 아니에요",
+    description: "공식 학위·전공 명칭과 트랙 이수 뒤 남는 기록을 근거별로 나누어 설명합니다.",
+  },
+  {
     id: "structure",
     label: "5개 트랙 구성",
     title: "5개 트랙은 서로 다른 모듈 조합으로 구성됩니다",
@@ -68,6 +78,7 @@ const GUIDE_SECTIONS: readonly {
 export const TRACK_GUIDE_SECTION_TITLES: Record<TrackGuideSection, string> = {
   overview: "트랙제란?",
   benefits: "트랙제의 장점",
+  outcomes: "학위·이수 결과",
   structure: "5개 트랙 구성",
   videos: "공식 영상·자료",
 };
@@ -129,8 +140,19 @@ export function TrackGuideView({
           onStartDiagnosis={onStartDiagnosis}
         />
       ) : null}
-      {section === "benefits" ? <BenefitsSection onStartInterestSurvey={onStartInterestSurvey} /> : null}
-      {section === "structure" ? <StructureSection /> : null}
+      {section === "benefits" ? (
+        <BenefitsSection
+          onContinue={() => onSectionChange("outcomes")}
+          onStartInterestSurvey={onStartInterestSurvey}
+        />
+      ) : null}
+      {section === "outcomes" ? (
+        <DegreeOutcomesSection
+          onContinue={() => onSectionChange("structure")}
+          onStartDiagnosis={onStartDiagnosis}
+        />
+      ) : null}
+      {section === "structure" ? <StructureSection onStartDiagnosis={onStartDiagnosis} /> : null}
       {section === "videos" ? <VideosSection videoId={videoId} onVideoChange={onVideoChange} /> : null}
 
       <OfficialSourceLedger />
@@ -152,7 +174,7 @@ function OverviewSection({
         <ArrowRight aria-hidden="true" />
         <div><Layers3 aria-hidden="true" /><span>모듈</span><strong>비슷한 과목 묶음</strong></div>
         <ArrowRight aria-hidden="true" />
-        <div><Route aria-hidden="true" /><span>트랙</span><strong>모듈의 조합</strong></div>
+        <div><Network aria-hidden="true" /><span>트랙</span><strong>모듈의 조합</strong></div>
         <ArrowRight aria-hidden="true" />
         <div><Target aria-hidden="true" /><span>진로 방향</span><strong>나의 전공 이야기</strong></div>
       </div>
@@ -173,7 +195,7 @@ function OverviewSection({
         </section>
         <section className="planner-track-guide__interpretation" aria-labelledby="track-guide-service-meaning">
           <span>서비스에서 이렇게 이해해요</span>
-          <h2 id="track-guide-service-meaning">전공 과목을 ‘왜 듣는지’ 연결해 보는 지도</h2>
+          <h2 id="track-guide-service-meaning">전공 과목을 ‘왜 듣는지’ 연결해 보는 구조</h2>
           <p>
             이 서비스는 트랙을 대신 결정하지 않습니다. 관심 방향과 완료 과목을 따로 확인한 뒤,
             어떤 모듈을 더 살펴볼지 학생이 판단하도록 돕습니다.
@@ -182,18 +204,24 @@ function OverviewSection({
       </div>
 
       <div className="planner-track-guide__actions">
-        <button className="planner-track-guide__primary planner-focusable" type="button" onClick={onStartInterestSurvey}>
-          내 관심 트랙 찾기 <ArrowRight aria-hidden="true" />
+        <button className="planner-track-guide__primary planner-focusable" type="button" onClick={onStartDiagnosis}>
+          내 트랙 현황 확인하기 <ArrowRight aria-hidden="true" />
         </button>
-        <button className="planner-track-guide__secondary planner-focusable" type="button" onClick={onStartDiagnosis}>
-          이수 과목 바로 진단
+        <button className="planner-track-guide__secondary planner-focusable" type="button" onClick={onStartInterestSurvey}>
+          관심으로 트랙 추천받기
         </button>
       </div>
     </section>
   );
 }
 
-function BenefitsSection({ onStartInterestSurvey }: { onStartInterestSurvey: () => void }) {
+function BenefitsSection({
+  onContinue,
+  onStartInterestSurvey,
+}: {
+  onContinue: () => void;
+  onStartInterestSurvey: () => void;
+}) {
   const benefits = [
     {
       Icon: Target,
@@ -212,6 +240,12 @@ function BenefitsSection({ onStartInterestSurvey }: { onStartInterestSurvey: () 
       title: "학과와 자연과학을 함께 탐색하기",
       official: "5개 중 푸드바이오경제는 자연과학과의 융합을 고려한 트랙으로 제시됩니다.",
       service: "학과 모듈과 바이오헬스·식품영양·식품공학 모듈을 한 화면에서 구분합니다.",
+    },
+    {
+      Icon: GraduationCap,
+      title: "배운 방향을 학위·증명 기록으로 설명하기",
+      official: "2024 학과 공식 영상은 이수 트랙명을 학위증·성적증명서 등에 기재하는 방식으로 설명했습니다.",
+      service: "공식 학위명과 트랙명을 섞지 않고, 실제로 확인된 기록과 학과 확인이 필요한 부분을 나눠 보여줍니다.",
     },
   ] as const;
 
@@ -236,16 +270,104 @@ function BenefitsSection({ onStartInterestSurvey }: { onStartInterestSurvey: () 
       </ol>
       <EvidenceBand state="department-confirmation-required">
         트랙 선택이 졸업 단축·취업·자동 인정을 보장한다는 공식 근거는 확인되지 않았습니다.
-        신청 시기, 변경 가능 여부, 증명서 표기는 학과에 확인해 주세요.
+        2026년 실제 트랙명 표기 매체와 적용 학번은 학과에 확인해 주세요.
       </EvidenceBand>
-      <button className="planner-track-guide__primary planner-focusable" type="button" onClick={onStartInterestSurvey}>
-        내 관심 방향부터 확인하기 <ArrowRight aria-hidden="true" />
-      </button>
+      <div className="planner-track-guide__actions">
+        <button className="planner-track-guide__primary planner-focusable" type="button" onClick={onContinue}>
+          학위·이수 결과 확인하기 <ArrowRight aria-hidden="true" />
+        </button>
+        <button className="planner-track-guide__secondary planner-focusable" type="button" onClick={onStartInterestSurvey}>
+          내 관심 방향부터 확인하기
+        </button>
+      </div>
     </section>
   );
 }
 
-function StructureSection() {
+function DegreeOutcomesSection({
+  onContinue,
+  onStartDiagnosis,
+}: {
+  onContinue: () => void;
+  onStartDiagnosis: () => void;
+}) {
+  return (
+    <section className="planner-track-guide__section" data-track-guide-section="outcomes" aria-labelledby="track-guide-outcomes-heading">
+      <header className="planner-track-guide__section-heading">
+        <span>2026 학칙과 2024 학과 공식 영상을 함께 확인</span>
+        <h2 id="track-guide-outcomes-heading">경제학사 안에서, 내가 이수한 트랙 방향을 더 구체적으로 남깁니다</h2>
+        <p>‘세부학위’라는 한 단어로 묶지 않고 학위, 전공, 트랙 기록을 각각 구분했습니다.</p>
+      </header>
+
+      <div className="planner-track-guide__degree-grid">
+        <article className="planner-track-guide__degree-card is-current">
+          <span>현재 공식 명칭 · 2026 학칙 별표 2</span>
+          <GraduationCap aria-hidden="true" />
+          <h3>학위는 경제학사, 전공은 식품자원경제학</h3>
+          <dl>
+            <div><dt>학위</dt><dd>경제학사</dd></div>
+            <div><dt>전공</dt><dd>식품자원경제학</dd></div>
+          </dl>
+          <p>트랙은 별도의 학위명이 아니라, 경제학사 안에서 이수한 세부 학습 방향을 설명하는 기록입니다.</p>
+          <a href={DEGREE_MAJOR_NAMES_URL} target="_blank" rel="noopener noreferrer">
+            학위·전공 명칭 원문 <ExternalLink aria-hidden="true" />
+          </a>
+        </article>
+
+        <article className="planner-track-guide__degree-card is-guidance">
+          <span>운영 설명 · 2024 학과 공식 영상</span>
+          <FileCheck2 aria-hidden="true" />
+          <h3>트랙명은 세부 학습 방향을 보여주는 기록으로 안내됐습니다</h3>
+          <p>
+            공식 영상에서는 트랙을 ‘세부 전공’의 성격으로 설명하고,
+            이수 트랙명을 학위증·성적증명서 등에 기재하는 방식으로 안내합니다.
+          </p>
+          <div className="planner-track-guide__degree-links">
+            <a href={TRACK_CERTIFICATE_VIDEO_URL} target="_blank" rel="noopener noreferrer">
+              2편 · 증명서 설명 06:50 <ExternalLink aria-hidden="true" />
+            </a>
+            <a href={TRACK_DEGREE_VIDEO_URL} target="_blank" rel="noopener noreferrer">
+              3편 · 학위와 트랙 설명 14:20 <ExternalLink aria-hidden="true" />
+            </a>
+          </div>
+        </article>
+      </div>
+
+      <dl className="planner-track-guide__degree-terms" aria-label="학위와 트랙 용어 구분">
+        <div><dt>학위</dt><dd>졸업요건을 충족한 뒤 수여되는 <strong>경제학사</strong></dd></div>
+        <div><dt>전공</dt><dd>학칙에 기재된 <strong>식품자원경제학</strong></dd></div>
+        <div><dt>트랙</dt><dd>푸드마케팅 등 선택한 <strong>세부 학습 방향</strong></dd></div>
+      </dl>
+
+      <div className="planner-track-guide__entry-note">
+        <Clock3 aria-hidden="true" />
+        <div>
+          <strong>2·3학년도 중간 진입을 검토할 수 있어요</strong>
+          <p>2024 공식 영상은 졸업 전 이수가 가능하면 2~4학년 학생도 신청할 수 있다고 설명합니다. 실제 신청 기간과 대상은 해당 연도 학과 공지를 확인해야 합니다.</p>
+          <a href={TRACK_LATE_ENTRY_VIDEO_URL} target="_blank" rel="noopener noreferrer">
+            2편 · 중간 신청 설명 04:19 <ExternalLink aria-hidden="true" />
+          </a>
+        </div>
+      </div>
+
+      <EvidenceBand state="department-confirmation-required">
+        2026 학칙 별표에서 학위·전공 명칭은 확인했지만, 트랙명의 실제 학위증·성적증명서 표기 매체와
+        2026 적용 학번·신청 절차를 확정하는 최신 공개 공지는 찾지 못했습니다. 2026 운영 여부는 학과 확인 필요 항목입니다.
+      </EvidenceBand>
+
+      <div className="planner-track-guide__actions">
+        <button className="planner-track-guide__primary planner-focusable" type="button" onClick={onContinue}>
+          5개 트랙 구성 비교하기 <ArrowRight aria-hidden="true" />
+        </button>
+        <button className="planner-track-guide__secondary planner-focusable" type="button" onClick={onStartDiagnosis}>
+          내 현황 바로 확인하기
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function StructureSection({ onStartDiagnosis }: { onStartDiagnosis: () => void }) {
   return (
     <section className="planner-track-guide__section" data-track-guide-section="structure" aria-labelledby="track-guide-structure-heading">
       <div className="planner-track-guide__structure-intro">
@@ -289,6 +411,9 @@ function StructureSection() {
         앱의 세부 학점 계산은 사용자가 제공한 2026 최종안 기준 참고 계산입니다.
         개인별 적용과 최종 인정은 학과 공식 확인이 필요합니다.
       </EvidenceBand>
+      <button className="planner-track-guide__primary planner-focusable" type="button" onClick={onStartDiagnosis}>
+        내 상황별 트랙 시뮬레이션 시작 <ArrowRight aria-hidden="true" />
+      </button>
     </section>
   );
 }
@@ -366,6 +491,9 @@ function VideosSection({
       </div>
 
       <div className="planner-track-guide__video-links">
+        <a href={TRACK_DEGREE_VIDEO_URL} target="_blank" rel="noopener noreferrer">
+          <GraduationCap aria-hidden="true" /> 트랙명 표기 설명 14:20 <ExternalLink aria-hidden="true" />
+        </a>
         <a href={DEPARTMENT_YOUTUBE_URL} target="_blank" rel="noopener noreferrer">
           <Youtube aria-hidden="true" /> 학과 공식 YouTube 채널 <ExternalLink aria-hidden="true" />
         </a>
@@ -384,6 +512,12 @@ function OfficialSourceLedger() {
       title: "2026학년도 학사종합안내",
       body: "5개 트랙·15개 모듈과 트랙별 모듈 구성을 확인한 현재 공개본",
       href: OFFICIAL_CURRICULUM_SOURCE.url,
+    },
+    {
+      Icon: GraduationCap,
+      title: "학칙 별표 2 · 학위와 전공 명칭",
+      body: "식품자원경제학과의 공식 명칭: 경제학사 · 식품자원경제학",
+      href: DEGREE_MAJOR_NAMES_URL,
     },
     {
       Icon: GraduationCap,

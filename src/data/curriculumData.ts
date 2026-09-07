@@ -7,7 +7,7 @@ export const OFFICIAL_CURRICULUM_SOURCE = {
   title: "2026학년도 학사종합안내",
   organization: "단국대학교",
   referenceYear: 2026,
-  currentVerifiedAt: "2026-08-30",
+  currentVerifiedAt: "2026-09-03",
   currentServerModifiedAt: "2026-08-27T11:19:56+09:00",
   currentPage: 72,
   stableSnapshotPage: 70,

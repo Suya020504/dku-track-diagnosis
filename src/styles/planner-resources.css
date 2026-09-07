@@ -1,7 +1,58 @@
+.planner-app .planner-resources-main,
+.planner-app .planner-contact-main {
+  width: 100%;
+}
+
 .planner-app .planner-resources {
   display: grid;
   gap: 32px;
+  width: min(100%, 1180px);
+  margin-inline: auto;
   color: var(--planner-ink);
+}
+
+.planner-app .planner-contact-main {
+  width: min(100%, 1180px);
+  margin-inline: auto;
+}
+
+.planner-app .planner-contact-main .view-stack {
+  display: grid;
+  gap: 24px;
+}
+
+.planner-app .planner-contact-heading {
+  max-width: none;
+  padding: 30px 32px;
+  border: 1px solid rgba(23, 75, 130, 0.16);
+  border-inline-start: 7px solid var(--planner-department-green);
+  border-radius: 5px 14px 14px 5px;
+  background: linear-gradient(120deg, var(--planner-mint-sheet), var(--planner-sky-sheet));
+}
+
+.planner-app .planner-contact-main .contact-card,
+.planner-app .planner-contact-main .update-history-panel {
+  border: 1px solid rgba(23, 75, 130, 0.16);
+  border-radius: 14px;
+  background: var(--planner-paper);
+  box-shadow: 0 10px 24px rgba(20, 36, 58, 0.06);
+}
+
+.planner-app .planner-contact-main .contact-card {
+  padding: 24px;
+}
+
+.planner-app .planner-contact-main .contact-disclaimer {
+  margin: 0;
+  padding: 18px 20px;
+  border-inline-start: 4px solid var(--planner-department-green);
+  background: var(--planner-mint-sheet);
+  color: var(--planner-ink-muted);
+  line-height: 1.65;
+}
+
+.planner-app .planner-contact-main .update-history-panel {
+  padding: 24px;
 }
 
 .planner-app .planner-resource-index {
@@ -219,33 +270,89 @@
 }
 
 .planner-app .planner-module-group > ol > li {
-  padding: var(--planner-space-5) 0;
-  border-block-end: 1px solid var(--planner-sky-sheet);
+  margin-block-end: 10px;
+  padding: 0;
+  border: 0;
 }
 
-.planner-app .planner-module-group header {
-  display: flex;
-  gap: var(--planner-space-3);
-  align-items: baseline;
-  justify-content: space-between;
+.planner-app .planner-module-group details {
+  overflow: clip;
+  border: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 20%, transparent);
+  border-radius: 10px;
+  background: #fff;
 }
 
-.planner-app .planner-module-group header h4,
-.planner-app .planner-module-group header span {
+.planner-app .planner-module-group summary {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 66px;
+  padding: 10px 16px;
+  color: var(--planner-ink);
+  cursor: pointer;
+  list-style: none;
+}
+
+.planner-app .planner-module-group summary::-webkit-details-marker {
+  display: none;
+}
+
+.planner-app .planner-module-group details[open] {
+  border-color: var(--planner-department-green);
+}
+
+.planner-app .planner-module-group details[open] summary {
+  border-block-end: 1px solid color-mix(in srgb, var(--planner-department-green) 24%, transparent);
+  background: var(--planner-mint-sheet);
+  color: var(--planner-department-green);
+}
+
+.planner-app .planner-module-letter {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--planner-mint-sheet);
+  color: var(--planner-department-green);
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.planner-app .planner-module-group summary h4,
+.planner-app .planner-module-group summary span {
   margin: 0;
 }
 
-.planner-app .planner-module-group header span {
+.planner-app .planner-module-group summary h4 {
+  font-size: 1rem;
+}
+
+.planner-app .planner-module-group summary > span:nth-of-type(2) {
   color: var(--planner-ink-muted);
   font-size: 0.8rem;
   white-space: nowrap;
+}
+
+.planner-app .planner-module-group summary > svg {
+  color: var(--planner-dankook-blue);
+  transition: transform 180ms ease;
+}
+
+.planner-app .planner-module-group details[open] summary > svg {
+  transform: rotate(180deg);
+}
+
+.planner-app .planner-module-detail {
+  padding: 4px 18px 18px;
 }
 
 .planner-app .planner-module-course-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0 var(--planner-space-5);
-  margin-top: var(--planner-space-3);
+  margin-top: var(--planner-space-2);
 }
 
 .planner-app .planner-module-course-list > li {
@@ -745,6 +852,12 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .planner-app .planner-contact-heading,
+  .planner-app .planner-contact-main .contact-card,
+  .planner-app .planner-contact-main .update-history-panel {
+    padding: 20px;
+  }
+
   .planner-app .planner-resource-index button:nth-child(2) {
     border-inline-end: 0;
   }
@@ -762,6 +875,20 @@
   .planner-app .planner-module-course-list,
   .planner-app .planner-curriculum-table ul {
     grid-template-columns: 1fr;
+  }
+
+  .planner-app .planner-module-group summary {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    gap: 9px;
+    padding-inline: 12px;
+  }
+
+  .planner-app .planner-module-group summary > span:nth-of-type(2) {
+    display: none;
+  }
+
+  .planner-app .planner-module-detail {
+    padding-inline: 12px;
   }
 
   .planner-app .planner-curriculum-table th,

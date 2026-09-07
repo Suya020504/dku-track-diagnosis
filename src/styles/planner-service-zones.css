@@ -1,0 +1,581 @@
+/* Page identity belongs to the route. Status and action colours stay semantic. */
+.planner-app[data-service-zone] {
+  --planner-ink-muted: #4d6072;
+  --service-bg: #eaf1f8;
+  --service-tint: #dbe7f3;
+  --service-accent: #244d73;
+  --service-line: #c4d3e2;
+  background: var(--service-bg);
+}
+
+.planner-app[data-service-zone="landing"] {
+  --service-bg: #f7f4ed;
+  --service-tint: #eee8da;
+  --service-accent: #46694f;
+  --service-line: #dcded2;
+}
+
+.planner-app[data-service-zone="track-guide"] {
+  --service-bg: #eaf5ee;
+  --service-tint: #d5ebdd;
+  --service-accent: #246449;
+  --service-line: #b9d6c6;
+}
+
+.planner-app[data-service-zone="diagnosis"] {
+  --service-bg: #edf5fd;
+  --service-tint: #dcecfb;
+  --service-accent: #22578a;
+  --service-line: #c5d8ea;
+}
+
+.planner-app[data-service-zone="result"] {
+  --service-bg: #edf2f6;
+  --service-tint: #dcece7;
+  --service-accent: #193c57;
+  --service-line: #c5d4dc;
+}
+
+.planner-app[data-service-zone="recommendation"] {
+  --service-bg: #e8f6f3;
+  --service-tint: #c9eae3;
+  --service-accent: #14675e;
+  --service-line: #acd6cf;
+}
+
+.planner-app[data-service-zone="plan"] {
+  --service-bg: #f8f3e8;
+  --service-tint: #eee0bf;
+  --service-accent: #795d22;
+  --service-line: #d7c9a9;
+}
+
+/* One stable header and content frame, including the legacy diagnosis shell. */
+.planner-app[data-service-zone] .planner-shell-header {
+  border-color: var(--service-line);
+  background: #fff;
+}
+
+.planner-app[data-service-zone] .planner-shell-primary-nav button {
+  padding-inline: 12px;
+  font-size: 0.84rem;
+}
+
+.planner-app[data-service-zone] .planner-shell-primary-nav button[aria-current="page"] {
+  color: var(--service-accent);
+}
+
+.planner-app[data-service-zone] .planner-shell-primary-nav button[aria-current="page"]::after {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--service-accent);
+}
+
+.planner-app[data-service-zone] .planner-shell-primary-nav button:hover:not(:disabled) {
+  background: var(--service-bg);
+}
+
+.planner-app[data-service-zone] .planner-shell-page {
+  padding-block-start: 32px;
+}
+
+.planner-app[data-service-zone] :is(
+  .service-shell, .service-workspace, .planner-resources,
+  .graduation-plan-shell, .plan-entry-shell
+) {
+  background: transparent;
+}
+
+.planner-app[data-service-zone] .service-workspace {
+  padding-block-start: 0;
+}
+
+.planner-app[data-service-zone] .service-shell .primary-panel {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.planner-app[data-service-zone] .planner-compass-path {
+  border-color: var(--service-line);
+  background: #fff;
+  box-shadow: none;
+}
+
+/* Home: a warm desk scene followed by open, alternating reading sections. */
+.planner-app[data-service-zone="landing"] .track-home {
+  --home-green: #087a58;
+  --home-line: #d5dccf;
+  background: var(--service-bg);
+}
+
+.planner-app[data-service-zone="landing"] .track-home__hero {
+  min-height: 590px;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  border: 1px solid var(--service-line);
+  border-radius: 24px;
+  background: #f8f5ef;
+  overflow: hidden;
+}
+
+.planner-app[data-service-zone="landing"] .track-home__hero-copy {
+  padding: clamp(32px, 4.5vw, 72px);
+}
+
+.planner-app[data-service-zone="landing"] .track-home__hero h1 {
+  font-size: clamp(2.3rem, 4.2vw, 4.5rem);
+  line-height: 1.2;
+}
+
+.planner-app[data-service-zone="landing"] .track-home__hero-visual {
+  align-self: stretch;
+  margin: 24px 24px 24px 0;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.planner-app[data-service-zone="landing"] .track-home__hero-visual::before {
+  display: none;
+}
+
+.planner-app[data-service-zone="landing"] .track-home__hero-visual img {
+  object-position: 62% center;
+}
+
+.planner-app[data-service-zone="landing"] .track-home__trust-copy {
+  color: #52657a;
+}
+
+.planner-app[data-service-zone="landing"] .track-home__start {
+  background: transparent;
+}
+
+.planner-app[data-service-zone="landing"] .track-home__flow {
+  border-block: 1px solid var(--service-line);
+  background: #e8f1e9;
+}
+
+.planner-app[data-service-zone="landing"] .track-home__tracks {
+  background: #fffdf8;
+}
+
+.planner-app[data-service-zone="landing"] .track-home__track-trigger {
+  background: transparent;
+}
+
+.planner-app[data-service-zone="landing"] .track-home__resume {
+  margin-block-start: 32px;
+  border-radius: 16px;
+}
+
+/* Guide: a mint chapter opener, compact index, and a white reading sheet. */
+.planner-app[data-service-zone="track-guide"] .planner-track-guide__header {
+  min-height: 228px;
+  padding: clamp(24px, 3vw, 40px);
+  border: 1px solid var(--service-line);
+  border-inline-start: 6px solid var(--service-accent);
+  border-radius: 6px 22px 22px 6px;
+  background: var(--service-tint);
+  box-shadow: none;
+}
+
+.planner-app[data-service-zone="track-guide"] .planner-track-guide__header h1 {
+  max-width: 750px;
+  font-size: clamp(1.8rem, 3.2vw, 2.85rem);
+  line-height: 1.3;
+}
+
+.planner-app[data-service-zone="track-guide"] .planner-track-guide__header > div > span {
+  color: var(--service-accent);
+}
+
+.planner-app[data-service-zone="track-guide"] .planner-track-guide__header dl > div {
+  border: 0;
+  background: #f4fbf5;
+}
+
+.planner-app[data-service-zone="track-guide"] .planner-track-guide__tabs {
+  gap: 4px;
+  padding: 5px;
+  border-color: var(--service-line);
+  background: #f7fcf8;
+}
+
+.planner-app[data-service-zone="track-guide"] .planner-track-guide__tabs button {
+  min-height: 52px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  font-size: 0.86rem;
+}
+
+.planner-app[data-service-zone="track-guide"] .planner-track-guide__tabs button[aria-current="page"] {
+  background: var(--service-tint);
+  color: #164f38;
+  box-shadow: inset 0 -3px 0 var(--service-accent);
+}
+
+.planner-app[data-service-zone="track-guide"] .planner-track-guide__tabs button[aria-current="page"] > span {
+  color: #164f38;
+}
+
+.planner-app[data-service-zone="track-guide"] .planner-track-guide__section {
+  padding: clamp(20px, 3vw, 36px);
+  border: 1px solid var(--service-line);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.planner-app[data-service-zone="track-guide"] .planner-track-guide__flow {
+  background: #f1f7f2;
+}
+
+/* Diagnosis: blue orientation rail, white choices, compact course checklist. */
+.planner-app[data-service-zone="diagnosis"] .profile-flow {
+  border: 1px solid var(--service-line);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 14px 40px #22578a0a;
+}
+
+.planner-app[data-service-zone="diagnosis"] .profile-stage-markers {
+  border-color: var(--service-line);
+  border-radius: 20px 0 0 20px;
+  background: #dcecfb;
+}
+
+.planner-app[data-service-zone="diagnosis"] .profile-stage-markers li[aria-current="step"] {
+  color: #076447;
+}
+
+.planner-app[data-service-zone="diagnosis"] .planner-course-selection-heading > span {
+  color: var(--service-accent);
+}
+
+.planner-app[data-service-zone="diagnosis"] .profile-entry-band {
+  border-color: var(--service-accent);
+  border-start-end-radius: 20px;
+  background: #e8f2fc;
+}
+
+.planner-app[data-service-zone="diagnosis"] .planner-course-selection-heading {
+  padding: 24px 28px;
+  border-inline-start: 5px solid var(--service-accent);
+  border-radius: 4px 16px 16px 4px;
+  background: var(--service-tint);
+}
+
+.planner-app[data-service-zone="diagnosis"] .course-selection-action-bar {
+  border-color: var(--service-line);
+  background: #fff;
+}
+
+.planner-app[data-service-zone="diagnosis"] .course-ledger {
+  border-color: var(--service-line);
+  border-radius: 14px;
+  background: #fff;
+}
+
+/* Results: dark summary provides the analytical anchor; evidence stays light. */
+.planner-app[data-service-zone="result"] .planner-result-heading {
+  padding: clamp(24px, 3vw, 36px);
+  border: 0;
+  border-radius: 18px;
+  background: #193c57;
+}
+
+.planner-app[data-service-zone="result"] .planner-result-heading h1 {
+  color: #fff;
+}
+
+.planner-app[data-service-zone="result"] .planner-result-heading > span {
+  color: #a4e3cd;
+}
+
+.planner-app[data-service-zone="result"] .planner-result-heading p {
+  color: #d8e7f0;
+}
+
+.planner-app[data-service-zone="result"] .planner-result-page-band {
+  overflow: hidden;
+  border: 1px solid var(--service-line);
+  border-radius: 12px;
+}
+
+.planner-app[data-service-zone="result"] .planner-path-progress {
+  border: 1px solid #b8d9ca;
+  border-radius: 16px;
+  background: #e0f1e8;
+}
+
+.planner-app[data-service-zone="result"] :is(
+  .planner-track-comparison, .planner-next-course-list,
+  .planner-module-ledger, .planner-check-ledger,
+  .planner-official-questions, .planner-official-links
+) {
+  padding: clamp(18px, 2.5vw, 28px);
+  border: 1px solid var(--service-line);
+  border-radius: 14px;
+  background: #fff;
+}
+
+/* Recommendation: teal question and comparison spaces. */
+.planner-app[data-service-zone="recommendation"] .survey-audience-step {
+  padding: 0 0 32px;
+}
+
+.planner-app[data-service-zone="recommendation"] .survey-audience-step__heading {
+  padding: clamp(20px, 3vw, 32px);
+}
+
+.planner-app[data-service-zone="recommendation"] :is(
+  .recommendation-axes-hero, .interest-survey-head,
+  .interest-result-hero, .survey-audience-step__heading
+) {
+  border: 0;
+  border-block-start: 5px solid var(--service-accent);
+  border-radius: 4px 4px 20px 20px;
+  background: var(--service-tint);
+}
+
+.planner-app[data-service-zone="recommendation"] .interest-question-panel {
+  border: 1px solid var(--service-line);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.planner-app[data-service-zone="recommendation"] .recommendation-active-axis {
+  min-width: 0;
+  padding: clamp(18px, 2.5vw, 30px);
+  border: 1px solid var(--service-line);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.planner-app[data-service-zone="recommendation"] .recommendation-axis-index button.active {
+  background: var(--service-tint);
+}
+
+.planner-app[data-service-zone="recommendation"] .recommendation-axis-index button.active strong {
+  color: var(--service-accent);
+}
+
+/* Planner: a warm notebook, with a visible rhythm for the semester entries. */
+.planner-app[data-service-zone="plan"] :is(
+  .graduation-plan-setup-heading, .plan-status-summary,
+  .plan-check-heading, .plan-entry-card
+) {
+  padding: clamp(22px, 3vw, 34px);
+  border: 1px solid var(--service-line);
+  border-block-start: 5px solid #bc913b;
+  border-radius: 4px 4px 18px 18px;
+  background: #fffaf0;
+}
+
+.planner-app[data-service-zone="plan"] :is(
+  .graduation-plan-setup-heading, .plan-status-summary, .plan-check-heading, .plan-entry-card
+) > span {
+  color: var(--service-accent);
+}
+
+.planner-app[data-service-zone="plan"] .plan-decision-flow > li {
+  padding: 22px;
+  border-color: var(--service-line);
+  background: #fffdf8;
+}
+
+.planner-app[data-service-zone="plan"] .plan-decision-number {
+  background: var(--service-tint);
+  color: #644a15;
+}
+
+.planner-app[data-service-zone="plan"] .term-plan-column > header {
+  border-color: var(--service-line);
+  background: var(--service-tint);
+}
+
+.planner-app[data-service-zone="plan"] .term-plan-column > header > div > span {
+  color: #644a15;
+}
+
+/* Reference library: an ice-blue shelf and a clearly separate source sheet. */
+.planner-app[data-service-zone="resources"] .planner-resource-index {
+  gap: 4px;
+  padding: 5px;
+  border: 1px solid var(--service-line);
+  border-radius: 12px;
+  background: #f5f8fc;
+}
+
+.planner-app[data-service-zone="resources"] .planner-resource-index button {
+  min-height: 46px;
+  border: 0;
+  border-radius: 7px;
+  font-size: 0.88rem;
+}
+
+.planner-app[data-service-zone="resources"] .planner-resource-index button[aria-current="page"] {
+  background: var(--service-tint);
+  color: #193c57;
+  box-shadow: inset 0 -3px 0 #244d73;
+}
+
+.planner-app[data-service-zone="resources"] .planner-resource-page {
+  padding: clamp(20px, 3vw, 36px);
+  border: 1px solid var(--service-line);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.planner-app[data-service-zone="resources"] .planner-resource-page__header {
+  max-width: none;
+  padding-bottom: 24px;
+  border-block-end: 3px solid var(--service-tint);
+}
+
+.planner-app[data-service-zone="resources"] .planner-resource-page__header h1 {
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+}
+
+.planner-app[data-service-zone="contact"] .contact-heading {
+  border-color: var(--service-line);
+  border-inline-start-color: var(--service-accent);
+  background: var(--service-tint);
+}
+
+@media (min-width: 761px) and (max-width: 1539px) {
+  .planner-app[data-service-zone] .planner-shell-header {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 4px 20px;
+    padding-block: 12px 6px;
+  }
+
+  .planner-app[data-service-zone] .planner-shell-actions { grid-column: 2; }
+
+  .planner-app[data-service-zone] .planner-shell-primary-nav {
+    order: 4;
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+}
+
+@media (min-width: 1540px) {
+  .planner-app[data-service-zone] .planner-shell-header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    min-height: 88px;
+  }
+}
+
+@media (max-width: 899px) {
+  .planner-app[data-service-zone="landing"] .track-home__hero {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .planner-app[data-service-zone="landing"] .track-home__hero-visual {
+    height: 280px;
+    margin: 0 24px 24px;
+  }
+}
+
+@media (max-width: 760px) {
+  .planner-app[data-service-zone] .planner-shell-page { padding-block-start: 20px; }
+  /* The page heading and local question progress already orient small screens. */
+  .planner-app:is([data-service-zone="diagnosis"], [data-service-zone="recommendation"]) .planner-compass-path {
+    display: none;
+  }
+
+  .planner-app[data-service-zone="diagnosis"] .track-setup-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 12px 14px;
+    align-items: center;
+  }
+
+  .planner-app[data-service-zone="diagnosis"] .track-setup-summary > div > span { display: none; }
+  .planner-app[data-service-zone="diagnosis"] .track-setup-summary button { width: auto; padding-inline: 12px; }
+  .planner-app[data-service-zone="diagnosis"] .track-setup-summary strong { font-size: 0.9rem; }
+  .planner-app[data-service-zone="diagnosis"] .track-setup-summary p { margin-top: 3px; }
+  .planner-app[data-service-zone="diagnosis"] .profile-stage-markers { border-radius: 20px 20px 0 0; }
+  .planner-app[data-service-zone="diagnosis"] .profile-entry-band { border-radius: 0; }
+  .planner-app[data-service-zone="diagnosis"] .planner-course-selection-heading { padding: 18px; }
+
+  .planner-app[data-service-zone="recommendation"] .interest-survey-head { padding: 18px 20px; gap: 10px; }
+  .planner-app[data-service-zone="recommendation"] .interest-survey-head h1 { font-size: 1.5rem; }
+  .planner-app[data-service-zone="recommendation"] .interest-survey-head p { display: none; }
+  .planner-app[data-service-zone="recommendation"] .interest-save-state {
+    min-height: 0;
+    padding: 0;
+    background: transparent;
+    color: #075d47;
+    font-size: 0.72rem;
+  }
+  .planner-app[data-service-zone="recommendation"] .interest-save-state.error { color: #983e2d; }
+  .planner-app[data-service-zone="recommendation"] .interest-audience-context { padding: 8px 12px; }
+  .planner-app[data-service-zone="recommendation"] .interest-audience-context::before { display: none; }
+  .planner-app[data-service-zone="recommendation"] .interest-question-panel { padding: 18px 16px; }
+  .planner-app[data-service-zone="recommendation"] .interest-question-card legend { margin-bottom: 18px; font-size: 1.2rem; }
+  .planner-app[data-service-zone="recommendation"] .interest-planner-scale {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .planner-app[data-service-zone="recommendation"] .interest-planner-scale label {
+    grid-template-columns: 1fr;
+    grid-template-rows: 32px minmax(0, 1fr);
+    gap: 8px;
+    min-height: 112px;
+    padding: 10px 2px;
+    text-align: center;
+  }
+  .planner-app[data-service-zone="recommendation"] .interest-planner-scale label > span {
+    grid-column: 1;
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+  .planner-app[data-service-zone="recommendation"] .interest-planner-scale small {
+    grid-column: 1;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+
+  .planner-app[data-service-zone="track-guide"] .planner-track-guide__header {
+    min-height: 0;
+    padding: 24px 20px;
+  }
+
+  .planner-app[data-service-zone="track-guide"] .planner-track-guide__tabs {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+  }
+
+  .planner-app[data-service-zone="track-guide"] .planner-track-guide__tabs button {
+    flex: 0 0 auto;
+    min-height: 46px;
+    white-space: nowrap;
+    scroll-snap-align: start;
+  }
+
+  .planner-app[data-service-zone="track-guide"] .planner-track-guide__section { padding: 20px 16px; }
+
+  .planner-app[data-service-zone="resources"] .planner-resource-page { padding: 20px 16px; }
+  .planner-app[data-service-zone="resources"] .planner-resource-index button { padding-inline: 8px; }
+}
+
+@media (max-width: 599px) {
+  .planner-app[data-service-zone="landing"] .track-home__hero { border-radius: 16px; }
+  .planner-app[data-service-zone="landing"] .track-home__hero-copy { padding: 30px 20px; }
+  .planner-app[data-service-zone="landing"] .track-home__hero h1 { font-size: clamp(1.9rem, 8vw, 2.4rem); }
+  .planner-app[data-service-zone="landing"] .track-home__hero-visual { height: 220px; margin: 0 16px 16px; }
+}
+
+@media print {
+  .planner-app[data-service-zone] { background: #fff; }
+  .planner-app[data-service-zone="result"] .planner-result-heading { background: #fff; border: 1px solid #b5c4cf; }
+  .planner-app[data-service-zone="result"] .planner-result-heading :is(h1, p, span) { color: #14243a; }
+}

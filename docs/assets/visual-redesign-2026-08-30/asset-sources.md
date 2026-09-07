@@ -1,5 +1,12 @@
 # Visual Redesign Asset Sources
 
+## Current runtime status (2026-09-03)
+
+- The map and compass visual concept is retired from the running service.
+- Current runtime assets are `track-service-hero-desk-v2.webp`, `course-module-track-structure-v2.webp`, and `progress-next-semester-planner-v2.webp`.
+- The v2 images use course checklist cards, module folders, track cards, and a semester planner. They contain no compass, route, location pin, geographic map, readable text, logo, or watermark.
+- Previous campus-map and compass runtime files were removed from `public`. The sections below are retained only as historical provenance for earlier iterations.
+
 ## Campus compass illustration
 
 - Runtime file: `public/campus-compass-illustration.webp`

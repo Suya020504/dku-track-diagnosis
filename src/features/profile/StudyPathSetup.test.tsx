@@ -8,7 +8,8 @@ describe("StudyPathSetup", () => {
       <StudyPathSetup profile={undefined} onChange={vi.fn()} onComplete={vi.fn()} />,
     );
 
-    expect(markup).toContain("식품자원경제학과 입학생");
+    expect(markup).toContain("식품자원경제학과 학생");
+    expect(markup).not.toContain("식품자원경제학과 입학생");
     expect(markup).toContain("타 학과 학생");
     expect(markup).not.toContain("이수 경로를 선택해 주세요");
     expect(markup).not.toContain('name="studyPath"');

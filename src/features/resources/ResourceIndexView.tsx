@@ -42,6 +42,13 @@ const resourcePages = [
   body: string;
 }>;
 
+export const RESOURCE_SECTION_TITLES: Record<ResourceSection, string> = {
+  tracks: "5개 트랙 자료",
+  modules: "모듈·과목 자료",
+  curriculum: "2026 교육과정 자료",
+  official: "공식 근거·문의",
+};
+
 export type ResourceIndexViewProps = {
   section: ResourceSection;
   onSectionChange: (section: ResourceSection) => void;

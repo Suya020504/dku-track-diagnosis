@@ -6,8 +6,7 @@ import "./styles/planner-tokens.css";
 import "./styles/planner-components.css";
 import "./styles/planner-shell.css";
 import "./styles/planner-journey.css";
-import "./styles/planner-landing.css";
-import "./styles/planner-map.css";
+import "./styles/planner-home.css";
 import "./styles/planner-track-guide.css";
 import "./styles/planner-entry.css";
 import "./styles/planner-courses.css";
@@ -16,6 +15,7 @@ import "./styles/planner-recommendations.css";
 import "./styles/planner-planning.css";
 import "./styles/planner-resources.css";
 import "./styles/planner-responsive.css";
+import "./styles/planner-service-zones.css";
 import "./styles/planner-print.css";
 
 createRoot(document.getElementById("root")!).render(

@@ -11,21 +11,24 @@ import {
 import {
   CLOSE_INTEREST_SCORE_GAP,
   compareInterestSurveyResults,
-  interestSurveyQuestions,
   isInterestSurveyComplete,
   scoreInterestSurvey,
 } from "../../lib/interestSurvey";
+import { getInterestSurveyQuestions } from "../../data/interestSurveyQuestions";
 import { TrackGlyph } from "../../components/TrackGlyph";
 import type {
   InterestSurveyAnswer,
+  InterestSurveyAudience,
   InterestSurveyState,
   TrackId,
 } from "../../types";
+import { SurveyAudienceStep } from "./SurveyAudienceStep";
 
 export type InterestSurveyProps = {
   value: InterestSurveyState;
   storageError: boolean;
   onChange: (value: InterestSurveyState) => void;
+  onAudienceChange: (audience: InterestSurveyAudience) => void;
   onChooseTrack: (trackId: TrackId) => void;
   onSkipToDiagnosis: () => void;
   headingRef?: RefObject<HTMLHeadingElement | null>;
@@ -43,22 +46,36 @@ export function InterestSurvey({
   value,
   storageError,
   onChange,
+  onAudienceChange,
   onChooseTrack,
   onSkipToDiagnosis,
   headingRef,
 }: InterestSurveyProps) {
   const [showAllResults, setShowAllResults] = useState(false);
+  const audience = value.audience;
+  const interestSurveyQuestions = audience ? getInterestSurveyQuestions(audience) : [];
   const currentIndex = Math.min(
     Math.max(value.currentIndex, 0),
-    interestSurveyQuestions.length - 1,
+    Math.max(interestSurveyQuestions.length - 1, 0),
   );
   const currentQuestion = interestSurveyQuestions[currentIndex];
-  const completed = isInterestSurveyComplete(value.answers);
+  const completed = audience ? isInterestSurveyComplete(value.answers, audience) : false;
   const showResult = completed && Boolean(value.completedAt);
   const results = useMemo(
-    () => showResult ? scoreInterestSurvey(value.answers) : [],
-    [showResult, value.answers],
+    () => audience && showResult ? scoreInterestSurvey(value.answers, audience) : [],
+    [audience, showResult, value.answers],
   );
+
+  if (!audience) {
+    return (
+      <SurveyAudienceStep
+        headingRef={headingRef}
+        storageError={storageError}
+        onSelect={onAudienceChange}
+        onSkip={onSkipToDiagnosis}
+      />
+    );
+  }
 
   function updateAnswer(answer: InterestSurveyAnswer) {
     onChange({
@@ -86,7 +103,7 @@ export function InterestSurvey({
   }
 
   function restartSurvey() {
-    onChange({ answers: {}, currentIndex: 0 });
+    onChange({ audience, answers: {}, currentIndex: 0 });
     setShowAllResults(false);
   }
 
@@ -97,7 +114,11 @@ export function InterestSurvey({
     const selectedResult = results.find((result) => result.trackId === value.selectedTrackId);
 
     return (
-      <main className="interest-survey interest-result" aria-labelledby="interest-result-title">
+      <main
+        className="interest-survey interest-result"
+        data-survey-audience={audience}
+        aria-labelledby="interest-result-title"
+      >
         <header className="interest-result-hero">
           <div>
             <span>관심 적합도 결과</span>
@@ -233,12 +254,18 @@ export function InterestSurvey({
   const answeredCount = Object.keys(value.answers).length;
 
   return (
-    <main className="interest-survey" aria-labelledby="interest-survey-title">
+    <main
+      className="interest-survey"
+      data-survey-audience={audience}
+      aria-labelledby="interest-survey-title"
+    >
       <header className="interest-survey-head">
         <div>
-          <span>내 관심 트랙 찾기</span>
+          <span>{audience === "department-student" ? "전공 안에서 관심 트랙 찾기" : "내 전공과 연결할 트랙 찾기"}</span>
           <h1 id="interest-survey-title" ref={headingRef} tabIndex={-1}>
-            내가 중요하게 생각하는 전공 방향을 골라 주세요
+            {audience === "department-student"
+              ? "어떤 주제와 활동을 더 깊게 배우고 싶은가요?"
+              : "현재 전공을 어떤 방향으로 연결하고 싶은가요?"}
           </h1>
           <p>한 화면에 한 문항씩, 지금의 생각과 가장 가까운 답을 선택하면 됩니다.</p>
         </div>
@@ -249,6 +276,15 @@ export function InterestSurvey({
           <span>{storageError ? "저장하지 못했어요" : "이 브라우저에 저장됨"}</span>
         </div>
       </header>
+
+      <div className="interest-audience-context">
+        <span>{audience === "department-student" ? "식품자원경제학과 학생" : "타 학과 학생"}</span>
+        <button type="button" onClick={() => onAudienceChange(
+          audience === "department-student" ? "external-student" : "department-student",
+        )}>
+          소속 바꾸기
+        </button>
+      </div>
 
       {storageError && (
         <p className="recommendation-storage-error" role="alert">

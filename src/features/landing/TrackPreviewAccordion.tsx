@@ -1,0 +1,65 @@
+import { useState } from "react";
+import { ArrowRight, ChevronDown } from "lucide-react";
+import type { Track, TrackId } from "../../types";
+import { TrackGlyph } from "../../components/TrackGlyph";
+
+export function TrackPreviewAccordion({
+  tracks,
+  onOpenGuide,
+}: {
+  tracks: readonly Track[];
+  onOpenGuide: () => void;
+}) {
+  const [openTrackId, setOpenTrackId] = useState<TrackId | undefined>(tracks[0]?.id);
+
+  return (
+    <div className="track-home__track-browser">
+      <div className="track-home__track-list">
+        {tracks.map((track, index) => {
+          const expanded = track.id === openTrackId;
+          const panelId = `track-preview-${track.id}`;
+          return (
+            <article
+              className="track-home__track-item"
+              data-track-preview={track.id}
+              data-expanded={expanded || undefined}
+              key={track.id}
+            >
+              <button
+                className="track-home__track-trigger planner-focusable"
+                type="button"
+                aria-expanded={expanded}
+                aria-controls={panelId}
+                onClick={() => setOpenTrackId(expanded ? undefined : track.id)}
+              >
+                <span className="track-home__track-number">0{index + 1}</span>
+                <TrackGlyph trackId={track.id} decorative />
+                <span className="track-home__track-title">
+                  <strong>{track.name}</strong>
+                  <small>{track.kind}</small>
+                </span>
+                <ChevronDown aria-hidden="true" size={20} />
+              </button>
+              {expanded ? (
+                <div className="track-home__track-detail" id={panelId}>
+                  <p>{track.description}</p>
+                  <ul aria-label={`${track.name} 관련 분야`}>
+                    {track.careerKeywords.map((keyword) => <li key={keyword}>{keyword}</li>)}
+                  </ul>
+                </div>
+              ) : null}
+            </article>
+          );
+        })}
+      </div>
+      <button
+        className="track-home__guide-link planner-focusable"
+        type="button"
+        onClick={onOpenGuide}
+      >
+        5개 트랙 자세히 보기
+        <ArrowRight aria-hidden="true" size={18} />
+      </button>
+    </div>
+  );
+}

@@ -6,6 +6,7 @@ import { InterestSurvey } from "./InterestSurvey";
 
 const emptyCallbacks = {
   onChange: vi.fn(),
+  onAudienceChange: vi.fn(),
   onChooseTrack: vi.fn(),
   onSkipToDiagnosis: vi.fn(),
 };
@@ -13,6 +14,7 @@ const emptyCallbacks = {
 describe("InterestSurvey", () => {
   it("renders one restored question as one native 1–5 planner scale", () => {
     const value: InterestSurveyState = {
+      audience: "department-student",
       answers: { [interestSurveyQuestions[2].id]: 4 },
       currentIndex: 2,
     };
@@ -56,11 +58,25 @@ describe("InterestSurvey", () => {
     expect(markup).toContain("설문을 건너뛰고 자가진단 바로가기");
   });
 
+  it("shows affiliation choice before rendering any common question", () => {
+    const markup = renderToStaticMarkup(
+      <InterestSurvey
+        value={{ answers: {}, currentIndex: 0 }}
+        storageError={false}
+        {...emptyCallbacks}
+      />,
+    );
+
+    expect(markup).toContain("data-survey-audience-step");
+    expect(markup).not.toContain("interest-question-card");
+  });
+
   it("explains close scores, focuses the result heading, and keeps track choice explicit", () => {
     const answers = Object.fromEntries(
       interestSurveyQuestions.map((question) => [question.id, 3]),
     ) as Record<string, InterestSurveyAnswer>;
     const value: InterestSurveyState = {
+      audience: "department-student",
       answers,
       currentIndex: 9,
       completedAt: "2026-08-30T00:00:00.000Z",

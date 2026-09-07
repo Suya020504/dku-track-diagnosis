@@ -65,10 +65,10 @@ function foodMarketingAnswers(): Record<string, InterestSurveyAnswer> {
   const answers = Object.fromEntries(
     interestSurveyQuestions.map((question) => [question.id, 3]),
   ) as Record<string, InterestSurveyAnswer>;
-  answers["consumer-choice"] = 5;
-  answers["brand-strategy"] = 5;
-  answers["economic-data"] = 1;
-  answers["policy-evidence"] = 1;
+  answers["dept-consumer-choice"] = 5;
+  answers["dept-brand-strategy"] = 5;
+  answers["dept-economic-data"] = 1;
+  answers["dept-policy-evidence"] = 1;
   return answers;
 }
 
@@ -76,10 +76,10 @@ function economicsAnswers(): Record<string, InterestSurveyAnswer> {
   const answers = Object.fromEntries(
     interestSurveyQuestions.map((question) => [question.id, 3]),
   ) as Record<string, InterestSurveyAnswer>;
-  answers["economic-data"] = 5;
-  answers["policy-evidence"] = 5;
-  answers["consumer-choice"] = 1;
-  answers["brand-strategy"] = 1;
+  answers["dept-economic-data"] = 5;
+  answers["dept-policy-evidence"] = 5;
+  answers["dept-consumer-choice"] = 1;
+  answers["dept-brand-strategy"] = 1;
   return answers;
 }
 
@@ -87,8 +87,8 @@ function closeButNotTiedAnswers(): Record<string, InterestSurveyAnswer> {
   const answers = Object.fromEntries(
     interestSurveyQuestions.map((question) => [question.id, 3]),
   ) as Record<string, InterestSurveyAnswer>;
-  answers["consumer-choice"] = 4;
-  answers["economic-data"] = 4;
+  answers["dept-consumer-choice"] = 4;
+  answers["dept-economic-data"] = 4;
   return answers;
 }
 
@@ -108,7 +108,7 @@ describe("independent recommendation axes", () => {
       profile: undefined as unknown as StudentProfile,
       courseSelections: [],
       additionalMajorCredits: noAdditionalCredits,
-      interestSurvey: { answers: foodMarketingAnswers(), currentIndex: 9 },
+      interestSurvey: { audience: "department-student", answers: foodMarketingAnswers(), currentIndex: 9 },
     });
 
     expect(result.interest?.[0].trackId).toBe("food-marketing");
@@ -122,7 +122,7 @@ describe("independent recommendation axes", () => {
       profile: externalMinorProfile,
       courseSelections: [],
       additionalMajorCredits: noAdditionalCredits,
-      interestSurvey: { answers: foodMarketingAnswers(), currentIndex: 9 },
+      interestSurvey: { audience: "department-student", answers: foodMarketingAnswers(), currentIndex: 9 },
       generatedAt,
     });
 
@@ -165,7 +165,7 @@ describe("independent recommendation axes", () => {
         ...selections(["h-3", "i-1", "i-2", "k-1", "k-2", "d-3"], "planned"),
       ],
       additionalMajorCredits: noAdditionalCredits,
-      interestSurvey: { answers: foodMarketingAnswers(), currentIndex: 9 },
+      interestSurvey: { audience: "department-student", answers: foodMarketingAnswers(), currentIndex: 9 },
       graduationPlanPreferences: regionalPlanningWindow,
       generatedAt,
     });
@@ -210,7 +210,7 @@ describe("independent recommendation axes", () => {
       profile: departmentAdvancedProfile,
       courseSelections: economicsCompleted,
       additionalMajorCredits: noAdditionalCredits,
-      interestSurvey: { answers: economicsAnswers(), currentIndex: 9 },
+      interestSurvey: { audience: "department-student", answers: economicsAnswers(), currentIndex: 9 },
       generatedAt,
     });
 
@@ -222,7 +222,7 @@ describe("independent recommendation axes", () => {
       profile: departmentAdvancedProfile,
       courseSelections: [],
       additionalMajorCredits: noAdditionalCredits,
-      interestSurvey: { answers: economicsAnswers(), currentIndex: 9 },
+      interestSurvey: { audience: "department-student", answers: economicsAnswers(), currentIndex: 9 },
       generatedAt,
     });
 
@@ -235,7 +235,7 @@ describe("independent recommendation axes", () => {
       profile: departmentAdvancedProfile,
       courseSelections: [],
       additionalMajorCredits: noAdditionalCredits,
-      interestSurvey: { answers: closeButNotTiedAnswers(), currentIndex: 9 },
+      interestSurvey: { audience: "department-student", answers: closeButNotTiedAnswers(), currentIndex: 9 },
     });
     const foodMarketing = result.interest?.find(
       (candidate) => candidate.trackId === "food-marketing",

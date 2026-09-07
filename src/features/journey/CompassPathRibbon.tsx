@@ -1,4 +1,4 @@
-import { ArrowRight, CheckCircle2, Clock3, Compass, LockKeyhole } from "lucide-react";
+import { ArrowRight, CheckCircle2, CircleDot, Clock3, LockKeyhole } from "lucide-react";
 
 export type CompassPathState = "complete" | "current" | "next" | "pending";
 
@@ -25,18 +25,18 @@ export function CompassPathRibbon({ items }: { items: readonly CompassPathItem[]
   return (
     <nav
       className="planner-compass-path"
-      data-path-layout="continuous-paper-route"
+      data-path-layout="linear-progress"
       aria-label="학업 여정"
     >
       <ol className="planner-compass-path__route">
-        {items.map((item, index) => {
+        {items.map((item) => {
           const reasonId = `compass-path-${item.id}-reason`;
           const visualState = item.available ? item.state : "locked";
           const stateLabel = item.available ? stateLabels[item.state] : "잠김";
           const StateIcon = visualState === "complete"
             ? CheckCircle2
             : visualState === "current"
-              ? Compass
+              ? CircleDot
               : visualState === "next"
                 ? ArrowRight
                 : visualState === "locked"
@@ -72,9 +72,6 @@ export function CompassPathRibbon({ items }: { items: readonly CompassPathItem[]
                 </span>
                 <strong>{item.label}</strong>
               </button>
-              {index < items.length - 1 ? (
-                <span className="planner-compass-path__fold" data-path-fold aria-hidden="true" />
-              ) : null}
               {!item.available && item.unavailableReason ? (
                 <small id={reasonId}>{item.unavailableReason}</small>
               ) : null}

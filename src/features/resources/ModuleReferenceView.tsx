@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { EvidenceBand } from "../../components/EvidenceBand";
 import { COURSE_OFFERING_SNAPSHOT_META, courseOfferings2026 } from "../../data/courseOfferings2026";
 import { courses, modules } from "../../data/curriculumData";
@@ -9,6 +11,8 @@ const moduleGroups = [
 ] as const;
 
 export function ModuleReferenceView() {
+  const [openModuleId, setOpenModuleId] = useState<string | undefined>("A");
+
   return (
     <div className="planner-resource-stack">
       <section className="planner-resource-reading" aria-labelledby="module-reference-title">
@@ -26,29 +30,47 @@ export function ModuleReferenceView() {
                 .filter((curriculumModule) => group.categories.includes(curriculumModule.category as never))
                 .map((curriculumModule) => {
                   const moduleCourses = courses.filter((course) => course.moduleId === curriculumModule.id);
+                  const expanded = openModuleId === curriculumModule.id;
                   return (
                     <li key={curriculumModule.id} data-module-id={curriculumModule.id}>
-                      <header>
-                        <h4>{curriculumModule.id}. {curriculumModule.name}</h4>
-                        <span>{moduleCourses.length}과목</span>
-                      </header>
-                      <ul className="planner-module-course-list">
-                        {moduleCourses.map((course) => {
-                          const offering = courseOfferings2026[course.id];
-                          return (
-                            <li key={course.id}>
-                              <strong>{course.code} · {course.name}</strong>
-                              <span>{course.credits}학점</span>
-                              <small>
-                                {offering
-                                  ? `2026 확인 학기 ${offering.observedProgramSemesters.join(", ")}`
-                                  : "2026 개설 이력 없음"}
-                              </small>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                      {curriculumModule.sourceNote && <p className="planner-resource-source-note">{curriculumModule.sourceNote}</p>}
+                      <details
+                        data-module-disclosure={curriculumModule.id}
+                        open={expanded}
+                      >
+                        <summary
+                          className="planner-focusable"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            setOpenModuleId(expanded ? undefined : curriculumModule.id);
+                          }}
+                        >
+                          <span className="planner-module-letter">{curriculumModule.id}</span>
+                          <h4>{curriculumModule.id}. {curriculumModule.name}</h4>
+                          <span>{moduleCourses.length}과목</span>
+                          <ChevronDown aria-hidden="true" size={21} />
+                        </summary>
+                        <div className="planner-module-detail">
+                          <ul className="planner-module-course-list">
+                            {moduleCourses.map((course) => {
+                              const offering = courseOfferings2026[course.id];
+                              return (
+                                <li key={course.id}>
+                                  <strong>{course.code} · {course.name}</strong>
+                                  <span>{course.credits}학점</span>
+                                  <small>
+                                    {offering
+                                      ? `2026 확인 학기 ${offering.observedProgramSemesters.join(", ")}`
+                                      : "2026 개설 이력 없음"}
+                                  </small>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                          {curriculumModule.sourceNote ? (
+                            <p className="planner-resource-source-note">{curriculumModule.sourceNote}</p>
+                          ) : null}
+                        </div>
+                      </details>
                     </li>
                   );
                 })}

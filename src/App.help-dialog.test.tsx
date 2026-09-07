@@ -29,7 +29,7 @@ function button(label: string): HTMLButtonElement {
 }
 
 function guideButton(label: string): HTMLButtonElement {
-  const control = [...document.querySelectorAll<HTMLButtonElement>(".planner-guide-index button, .planner-shell-map-nav button")]
+  const control = [...document.querySelectorAll<HTMLButtonElement>(".planner-shell-primary-nav button")]
     .find((candidate) => candidate.textContent?.includes(label));
   if (!control) throw new Error(`Missing guide button: ${label}`);
   return control;
@@ -130,22 +130,22 @@ describe("App help dialog", () => {
   it("focuses the landing H1 on initial load and after shell or history returns", async () => {
     await mountAt("/");
 
-    const initialHeading = document.querySelector<HTMLHeadingElement>("#campus-journey-title");
+    const initialHeading = document.querySelector<HTMLHeadingElement>("#track-home-title");
     expect(initialHeading?.tabIndex).toBe(-1);
     expect(document.activeElement).toBe(initialHeading);
 
     await act(async () => guideButton("트랙 가이드").click());
     expect(new URLSearchParams(location.search).get("view")).toBe("track-guide");
 
-    await act(async () => guideButton("지도 안내").click());
+    await act(async () => guideButton("홈").click());
     expect(location.search).toBe("");
-    expect(document.activeElement).toBe(document.querySelector("#campus-journey-title"));
+    expect(document.activeElement).toBe(document.querySelector("#track-home-title"));
 
     history.pushState({}, "", "/?view=overview");
     await act(async () => window.dispatchEvent(new PopStateEvent("popstate")));
     history.pushState({}, "", "/");
     await act(async () => window.dispatchEvent(new PopStateEvent("popstate")));
-    expect(document.activeElement).toBe(document.querySelector("#campus-journey-title"));
+    expect(document.activeElement).toBe(document.querySelector("#track-home-title"));
   });
 
   it("closes the overlay before a help action navigates and focuses the destination", async () => {

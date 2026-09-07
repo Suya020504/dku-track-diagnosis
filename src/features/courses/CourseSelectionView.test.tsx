@@ -60,11 +60,9 @@ function Harness({ onSave = vi.fn() }: { onSave?: () => void }) {
         onQueryChange={setQuery}
         onToggleCourse={vi.fn()}
         onSaveCourses={onSave}
+        onShowResult={vi.fn()}
         onPdfAnalyzed={vi.fn()}
       />
-      <button id="diagnosis-result-action" ref={resultActionRef} type="button">
-        진단 결과 자세히 보기
-      </button>
     </>
   );
 }
@@ -90,6 +88,47 @@ afterEach(async () => {
 });
 
 describe("CourseSelectionView", () => {
+  it("puts direct-selection controls and the ledger before secondary save metadata", async () => {
+    await renderHarness();
+
+    const filters = document.querySelector(".course-ledger-filters");
+    const ledger = document.querySelector(".course-ledger");
+    const saveBand = document.querySelector(".course-ledger-save-band");
+    const policy = document.querySelector(".course-ledger-policy");
+    if (!filters || !ledger || !saveBand || !policy) throw new Error("Missing course selection regions");
+
+    expect(Boolean(filters.compareDocumentPosition(ledger) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+    expect(Boolean(ledger.compareDocumentPosition(policy) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+    expect(Boolean(policy.compareDocumentPosition(saveBand) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+  });
+
+  it("places one compact result action and saved-status summary before the course controls", async () => {
+    await renderHarness();
+
+    const view = document.querySelector(".planner-course-selection-view");
+    const actionBar = view?.querySelector(".course-selection-action-bar");
+    const filters = view?.querySelector(".course-ledger-filters");
+    if (!actionBar || !filters) throw new Error("Missing compact course hierarchy");
+
+    expect(actionBar.textContent).toContain("이수 완료 1");
+    expect(actionBar.textContent).toContain("수강 중 1");
+    expect(actionBar.textContent).toContain("계획 1");
+    expect(actionBar.querySelector("#diagnosis-result-action")?.textContent).toContain("진단 결과 확인");
+    expect(Boolean(actionBar.compareDocumentPosition(filters) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+    expect(view?.querySelector(".course-ledger-start")).toBeNull();
+  });
+
+  it("keeps secondary grade and semester filters in a named collapsed disclosure", async () => {
+    await renderHarness();
+
+    const disclosure = document.querySelector<HTMLDetailsElement>(".course-ledger-more-filters");
+    expect(disclosure).not.toBeNull();
+    expect(disclosure?.open).toBe(false);
+    expect(disclosure?.querySelector("summary")?.textContent).toContain("추가 필터");
+    expect(disclosure?.querySelector('[aria-label="학년 선택"]')).not.toBeNull();
+    expect(disclosure?.querySelector('[aria-label="학기 선택"]')).not.toBeNull();
+  });
+
   it("keeps the complete 45-course direct ledger ahead of the optional PDF beta", async () => {
     await renderHarness();
 
@@ -123,7 +162,7 @@ describe("CourseSelectionView", () => {
     await act(async () => button("모듈별").click());
     expect(semesterMode.getAttribute("aria-pressed")).toBe("false");
     expect(moduleMode.getAttribute("aria-pressed")).toBe("true");
-    expect(document.querySelector('[aria-label="모듈 그룹 빠른 이동"]')).toBeTruthy();
+    expect(document.querySelector('[data-course-ledger-mode="module"]')).toBeTruthy();
     expect(document.body.textContent).toContain("경제학 전문지식");
   });
 
@@ -140,6 +179,15 @@ describe("CourseSelectionView", () => {
 
     expect(document.activeElement).toBe(resultAction);
     expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "auto", block: "center" });
+  });
+
+  it("keeps every course detail behind a collapsed disclosure", async () => {
+    await renderHarness();
+
+    const details = [...document.querySelectorAll<HTMLDetailsElement>(".course-ledger-row-details")];
+    expect(details).toHaveLength(45);
+    expect(details.every((detail) => !detail.open)).toBe(true);
+    expect(details[0]?.querySelector("summary")?.textContent).toContain("과목 정보");
   });
 
   it("keeps manual save as a working action", async () => {

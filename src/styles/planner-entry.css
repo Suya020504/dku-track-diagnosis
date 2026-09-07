@@ -247,6 +247,261 @@
   font-weight: 700;
 }
 
+/* Affiliation-aware recommendation flow: context stays visible while one question owns the page. */
+.planner-app .interest-survey:not(.interest-result):not(.survey-audience-step) {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.28fr) minmax(0, 1fr);
+  gap: 18px 28px;
+  width: min(100%, 1180px);
+}
+
+.planner-app .interest-survey:not(.interest-result):not(.survey-audience-step) > .interest-survey-head {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+
+.planner-app .interest-audience-context {
+  display: flex;
+  grid-column: 1;
+  grid-row: 2 / span 3;
+  min-height: 360px;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 26px 22px;
+  border: 1px solid color-mix(in srgb, var(--planner-department-green) 22%, transparent);
+  background:
+    radial-gradient(circle at 30% 88%, rgba(8, 122, 88, 0.12), transparent 36%),
+    var(--planner-mint-sheet);
+}
+
+.planner-app .interest-audience-context::before {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 22px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--planner-department-green);
+  color: #fff;
+  content: "✓";
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.planner-app .interest-audience-context > span {
+  color: var(--planner-department-green);
+  font-size: 1.1rem;
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.planner-app .interest-audience-context > button {
+  min-height: 44px;
+  margin-top: auto;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  background: transparent;
+  color: var(--planner-dankook-blue);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.planner-app .interest-survey:not(.interest-result):not(.survey-audience-step) > :is(
+  .recommendation-storage-error,
+  .interest-question-panel,
+  .interest-skip-button
+) {
+  grid-column: 2;
+}
+
+.planner-app .interest-question-panel {
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 14px 34px rgba(20, 36, 58, 0.06);
+}
+
+.planner-app .interest-planner-scale {
+  gap: 14px;
+}
+
+.planner-app .interest-planner-scale::before {
+  display: none;
+}
+
+.planner-app .interest-planner-scale label {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 16px;
+  min-height: 144px;
+  align-content: center;
+  justify-items: center;
+  padding: 18px 10px;
+  border: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 25%, transparent);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.planner-app .interest-planner-scale label:hover {
+  border-color: var(--planner-dankook-blue);
+  background: var(--planner-sky-sheet);
+}
+
+.planner-app .interest-planner-scale label.selected {
+  border: 2px solid var(--planner-department-green);
+  background: var(--planner-mint-sheet);
+  box-shadow: 0 0 0 3px rgba(8, 122, 88, 0.08);
+}
+
+.planner-app .interest-planner-scale label:has(input:focus-visible) {
+  outline: 3px solid var(--planner-dankook-blue);
+  outline-offset: 3px;
+}
+
+.planner-app .interest-planner-scale input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.planner-app .interest-planner-scale label > span {
+  display: grid;
+  grid-row: 1;
+  width: 50px;
+  height: 50px;
+  place-items: center;
+  align-self: center;
+  transform: none;
+  border: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 55%, transparent);
+  border-radius: 50%;
+  color: var(--planner-dankook-blue);
+  font-size: 1.15rem;
+}
+
+.planner-app .interest-planner-scale label.selected > span {
+  border-color: var(--planner-department-green);
+  background: var(--planner-department-green);
+  color: #fff;
+}
+
+.planner-app .interest-planner-scale small {
+  align-self: center;
+  color: var(--planner-ink);
+  font-size: 0.78rem;
+}
+
+.planner-app .survey-audience-step {
+  width: min(100%, 980px);
+  padding: clamp(34px, 5vw, 72px) clamp(20px, 4vw, 44px) 48px;
+}
+
+.planner-app .survey-audience-step__heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  padding-bottom: 28px;
+  border-bottom: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 22%, transparent);
+}
+
+.planner-app .survey-audience-step__icon,
+.planner-app .survey-audience-step__option-icon {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.planner-app .survey-audience-step__icon {
+  width: 58px;
+  height: 58px;
+  background: var(--planner-sky-sheet);
+  color: var(--planner-dankook-blue);
+}
+
+.planner-app .survey-audience-step__heading span {
+  color: var(--planner-dankook-blue);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.planner-app .survey-audience-step__heading h1 {
+  margin: 8px 0 10px;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+}
+
+.planner-app .survey-audience-step__heading p {
+  margin: 0;
+  color: var(--planner-ink-muted);
+  line-height: 1.65;
+}
+
+.planner-app .survey-audience-step__options {
+  display: grid;
+  gap: 14px;
+  margin-top: 30px;
+}
+
+.planner-app .survey-audience-step__option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  width: 100%;
+  min-height: 132px;
+  padding: 22px 26px;
+  border: 1px solid color-mix(in srgb, var(--planner-dankook-blue) 24%, transparent);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--planner-ink);
+  text-align: left;
+}
+
+.planner-app .survey-audience-step__option:hover {
+  border-color: var(--planner-department-green);
+  background: var(--planner-mint-sheet);
+  transform: translateY(-1px);
+}
+
+.planner-app .survey-audience-step__option-icon {
+  width: 54px;
+  height: 54px;
+  background: var(--planner-mint-sheet);
+  color: var(--planner-department-green);
+}
+
+.planner-app .survey-audience-step__option > span:nth-child(2) {
+  display: grid;
+  gap: 6px;
+}
+
+.planner-app .survey-audience-step__option strong {
+  font-size: 1.15rem;
+}
+
+.planner-app .survey-audience-step__option b {
+  color: var(--planner-department-green);
+  font-size: 0.9rem;
+}
+
+.planner-app .survey-audience-step__option small,
+.planner-app .survey-audience-step__note {
+  color: var(--planner-ink-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.planner-app .survey-audience-step__note {
+  margin: 18px 0 0;
+  padding: 13px 16px;
+  background: var(--planner-sky-sheet);
+}
+
 .planner-app .interest-result-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(250px, 0.65fr);
@@ -684,6 +939,70 @@
 
   .planner-app .interest-result-grid {
     grid-template-columns: 1fr;
+  }
+
+  .planner-app .interest-survey:not(.interest-result):not(.survey-audience-step) {
+    display: block;
+  }
+
+  .planner-app .interest-audience-context {
+    min-height: 0;
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 14px 16px;
+  }
+
+  .planner-app .interest-audience-context::before {
+    width: 34px;
+    height: 34px;
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  .planner-app .interest-audience-context > span {
+    flex: 1;
+    font-size: 0.9rem;
+  }
+
+  .planner-app .interest-audience-context > button {
+    margin: 0;
+  }
+
+  .planner-app .interest-planner-scale {
+    grid-template-columns: 1fr;
+  }
+
+  .planner-app .interest-planner-scale label {
+    grid-template-columns: 50px minmax(0, 1fr);
+    grid-template-rows: 1fr;
+    min-height: 70px;
+    justify-items: start;
+    text-align: left;
+  }
+
+  .planner-app .interest-planner-scale small {
+    align-self: center;
+    font-size: 0.82rem;
+  }
+
+  .planner-app .survey-audience-step {
+    padding: 30px 16px 24px;
+  }
+
+  .planner-app .survey-audience-step__heading {
+    grid-template-columns: 1fr;
+  }
+
+  .planner-app .survey-audience-step__option {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 14px;
+    padding: 18px 16px;
+  }
+
+  .planner-app .survey-audience-step__option > svg {
+    display: none;
   }
 
   .planner-app .profile-flow {

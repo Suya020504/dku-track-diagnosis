@@ -108,7 +108,7 @@ describe("canonical app route resolution", () => {
     });
   });
 
-  it.each(["overview", "benefits", "structure", "videos"] as const)(
+  it.each(["overview", "benefits", "outcomes", "structure", "videos"] as const)(
     "restores the %s track-guide section without diagnosis prerequisites",
     (section) => {
       expect(resolveAppRoute(
@@ -188,6 +188,25 @@ describe("canonical app route resolution", () => {
   it("drops an axes-only parameter from the survey route", () => {
     expect(resolveAppRoute(
       "?view=recommendation&step=survey&axis=interest",
+      createEmptyAppState(),
+    )).toEqual({ view: "recommendation", step: "survey" });
+  });
+
+  it("round-trips a valid survey audience", () => {
+    const route = {
+      view: "recommendation",
+      step: "survey",
+      audience: "department-student",
+    } as const;
+    const href = buildAppHref("https://local.invalid/", route);
+
+    expect(href).toBe("/?view=recommendation&step=survey&audience=department-student");
+    expect(resolveAppRoute(href.slice(1), createEmptyAppState())).toEqual(route);
+  });
+
+  it("drops an invalid survey audience", () => {
+    expect(resolveAppRoute(
+      "?view=recommendation&step=survey&audience=unknown",
       createEmptyAppState(),
     )).toEqual({ view: "recommendation", step: "survey" });
   });

@@ -3,7 +3,11 @@ export const DEPARTMENT_GREETING_URL = "https://cms.dankook.ac.kr/web/ere/-6";
 export const DEPARTMENT_CURRICULUM_URL = "https://cms.dankook.ac.kr/ko/web/ere/%EA%B5%90%EC%9C%A1%EA%B3%BC%EC%A0%95";
 export const DEPARTMENT_CONTACT_URL = "https://cms.dankook.ac.kr/web/ere/%EC%B0%BE%EC%95%84%EC%98%A4%EC%8B%9C%EB%8A%94-%EA%B8%B8";
 export const DEPARTMENT_YOUTUBE_URL = "https://www.youtube.com/@FoodandResourcesEconomics_dku/videos";
-export const TRACK_REGULATION_URL = "https://rule.dankook.ac.kr/service/law/lawFullScreenContent.do?historySeq=2599&seq=7";
+export const TRACK_REGULATION_URL = "https://rule.dankook.ac.kr/service/law/lawFullScreenContent.do?historySeq=3506&seq=7";
+export const DEGREE_MAJOR_NAMES_URL = "https://rule.dankook.ac.kr/download.do?gubun=102&seq=9926";
+export const TRACK_CERTIFICATE_VIDEO_URL = "https://www.youtube.com/watch?v=iuXHSSuc0UQ&t=410s";
+export const TRACK_DEGREE_VIDEO_URL = "https://www.youtube.com/watch?v=osc9yOuq0IU&t=860s";
+export const TRACK_LATE_ENTRY_VIDEO_URL = "https://www.youtube.com/watch?v=iuXHSSuc0UQ&t=259s";
 export const TRACK_QA_VIDEO_URL = "https://www.youtube.com/watch?v=rp4ZW6QAOZY";
 
 export type OfficialTrackVideo = {

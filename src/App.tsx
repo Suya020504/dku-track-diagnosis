@@ -1,16 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import {
-  AlertTriangle,
   ArrowRight,
-  CheckCircle2,
-  Compass,
   Instagram,
   Mail,
   RotateCcw,
-  Save,
   X,
 } from "lucide-react";
 import { courses, tracks } from "./data/curriculumData";
+import { getAllowedStudyPaths } from "./data/requirementRules2026";
 import { OFFICIAL_TRACK_VIDEOS, type OfficialTrackVideoId } from "./data/officialResources";
 import { ProfileFlow } from "./features/profile/ProfileFlow";
 import { GraduationPlanResult } from "./features/planning/GraduationPlanResult";
@@ -25,13 +22,13 @@ import {
   CourseSelectionView,
   type CourseGroupMode,
 } from "./features/courses/CourseSelectionView";
-import { GuidebookShell } from "./features/shell/GuidebookShell";
-import type { LandingPlannerStatus } from "./features/landing/PlannerLanding";
-import { CampusMapLanding } from "./features/map/CampusMapLanding";
-import type { CampusJourneyStop, CampusJourneyStopId } from "./features/map/CampusJourneyMap";
-import { ResourceIndexView } from "./features/resources/ResourceIndexView";
+import { GuidebookShell, type GuidebookNavItem } from "./features/shell/GuidebookShell";
+import {
+  TrackServiceLanding,
+  type LandingPlannerStatus,
+} from "./features/landing/TrackServiceLanding";
+import { RESOURCE_SECTION_TITLES, ResourceIndexView } from "./features/resources/ResourceIndexView";
 import { TRACK_GUIDE_SECTION_TITLES, TrackGuideView } from "./features/track-guide/TrackGuideView";
-import type { GuideIndexItem } from "./features/shell/GuideIndex";
 import type { MobileJourneyItem } from "./features/shell/MobileJourneyNav";
 import type { CompassPathItem } from "./features/journey/CompassPathRibbon";
 import { PLANNER_JOURNEY, resolveJourneyView } from "./app/journeyView";
@@ -63,10 +60,10 @@ import {
   type DiagnosisStep,
 } from "./lib/viewRouting";
 import type {
-  DiagnosisResult,
   GraduationPlanPreferences,
   GraduationPlanResult as GraduationPlanResultValue,
   EnrollmentType,
+  InterestSurveyAudience,
   InterestSurveyState,
   PlanTerm,
   PathProgressResult,
@@ -243,8 +240,8 @@ function requestsPdfReview(search: string): boolean {
     params.get("input") === "pdf-review";
 }
 
-function emptyInterestSurveyState(): InterestSurveyState {
-  return { answers: {}, currentIndex: 0 };
+function emptyInterestSurveyState(audience?: InterestSurveyAudience): InterestSurveyState {
+  return { audience, answers: {}, currentIndex: 0 };
 }
 
 export function startEntryFlowTransition(
@@ -263,7 +260,11 @@ export function startEntryFlowTransition(
   return {
     state,
     route: goal === "find-track"
-      ? { view: "recommendation", step: "survey" }
+      ? {
+        view: "recommendation",
+        step: "survey",
+        ...(current.interestSurvey?.audience ? { audience: current.interestSurvey.audience } : {}),
+      }
       : { view: "diagnosis", step: "profile" },
   };
 }
@@ -286,7 +287,37 @@ export function chooseInterestTrackTransition(
       comparisonTrackIds: current.comparisonTrackIds.filter((id) => id !== trackId),
       interestSurvey: { ...interestSurvey, selectedTrackId: trackId },
     },
-    route: { view: "diagnosis", step: "profile" },
+    route: current.profileDraft?.affiliation || current.profile?.affiliation
+      ? { view: "diagnosis", step: "profile", profileStage: "path" }
+      : { view: "diagnosis", step: "profile", profileStage: "affiliation" },
+  };
+}
+
+export function chooseSurveyAudienceTransition(
+  current: SavedAppStateV2,
+  audience: InterestSurveyAudience,
+): { state: SavedAppStateV2; route: AppRoute } {
+  const previousDraft = current.profileDraft ?? current.profile;
+  const compatibleStudyPath = previousDraft?.studyPath
+    && getAllowedStudyPaths(audience).includes(previousDraft.studyPath)
+      ? previousDraft.studyPath
+      : undefined;
+  return {
+    state: {
+      ...current,
+      profileDraft: {
+        affiliation: audience,
+        goal: "find-track",
+        ...(compatibleStudyPath ? { studyPath: compatibleStudyPath } : {}),
+        ...(previousDraft?.entryYear ? { entryYear: previousDraft.entryYear } : {}),
+        curriculumRuleVersion: "2026-provided-final-plan",
+        ruleApplicability: "reference-only",
+      },
+      interestSurvey: current.interestSurvey?.audience === audience
+        ? current.interestSurvey
+        : emptyInterestSurveyState(audience),
+    },
+    route: { view: "recommendation", step: "survey", audience },
   };
 }
 
@@ -387,7 +418,7 @@ export function completeProfileTransition(
     ? Boolean(state.targetTrackId)
     : Boolean(state.interestSurvey?.selectedTrackId);
   const route: AppRoute = profile.goal === "find-track" && !hasChosenDirection
-    ? { view: "recommendation", step: "survey" }
+    ? { view: "recommendation", step: "survey", audience: profile.affiliation }
     : profile.goal === "plan-graduation"
       && Boolean(state.courseInputReviewedAt)
       && (!trackMajor || Boolean(state.targetTrackId))
@@ -542,6 +573,12 @@ function App({ storage }: { storage?: Storage } = {}) {
     const route = resolveExperienceRoute(window.location.search, savedState);
     return route.view === "recommendation" ? route.axis : undefined;
   });
+  const [recommendationAudience, setRecommendationAudience] = useState<InterestSurveyAudience | undefined>(() => {
+    const route = resolveExperienceRoute(window.location.search, savedState);
+    return route.view === "recommendation" && route.step === "survey"
+      ? route.audience
+      : undefined;
+  });
   const [planStep, setPlanStep] = useState<"setup" | "schedule" | "checks">(() => {
     const route = resolveExperienceRoute(window.location.search, savedState);
     return route.view === "plan" ? route.step : "setup";
@@ -656,6 +693,7 @@ function App({ storage }: { storage?: Storage } = {}) {
     profileStage,
     recommendationStep,
     recommendationAxis,
+    recommendationAudience,
     interestQuestionIndex,
     interestCompletedAt,
     resultSection,
@@ -742,6 +780,7 @@ function App({ storage }: { storage?: Storage } = {}) {
     if (route.view === "recommendation") {
       setRecommendationStep(route.step);
       setRecommendationAxis(route.axis);
+      setRecommendationAudience(route.step === "survey" ? route.audience : undefined);
     }
     if (route.view === "plan") setPlanStep(route.step);
   }
@@ -965,6 +1004,13 @@ function App({ storage }: { storage?: Storage } = {}) {
     persist((current) => ({ ...current, interestSurvey: value }));
   }
 
+  function chooseSurveyAudience(audience: InterestSurveyAudience) {
+    const transition = chooseSurveyAudienceTransition(savedState, audience);
+    setStorageError(!saveAppState(transition.state, appStorage));
+    setSavedState(transition.state);
+    navigateAppRoute(transition.route);
+  }
+
   function chooseInterestTrack(trackId: TrackId) {
     const transition = chooseInterestTrackTransition(savedState, trackId);
     setStorageError(!saveAppState(transition.state, appStorage));
@@ -1058,7 +1104,9 @@ function App({ storage }: { storage?: Storage } = {}) {
   const shellRoute: AppRoute = activeView === "landing"
     ? { view: "landing" }
     : activeView === "recommendation"
-      ? { view: "recommendation", step: recommendationStep, axis: recommendationAxis }
+      ? recommendationStep === "survey"
+        ? { view: "recommendation", step: recommendationStep, audience: recommendationAudience }
+        : { view: "recommendation", step: recommendationStep, axis: recommendationAxis }
       : activeView === "plan"
         ? { view: "plan", step: planStep }
         : activeView === "diagnosis"
@@ -1084,16 +1132,10 @@ function App({ storage }: { storage?: Storage } = {}) {
   const targetTrackReady = savedState.profile?.studyPath !== "track-major" || Boolean(savedState.targetTrackId);
   const planReady = exactPathReady && targetTrackReady;
   const planNavAvailable = courseResultReady || activeView === "plan";
-  const comparisonResultActive = activeView === "recommendation"
-    && recommendationStep === "axes"
-    && recommendationAxis === "progress"
-    && courseResultReady
-    && savedState.profile?.studyPath === "track-major"
-    && !savedState.targetTrackId;
   const guideActiveId = activeView === "landing"
     ? "start"
     : activeView === "recommendation"
-      ? comparisonResultActive ? "result" : "tracks"
+      ? recommendationStep === "survey" ? "diagnosis" : "result"
       : activeView === "diagnosis"
         ? "diagnosis"
         : activeView === "result"
@@ -1102,15 +1144,19 @@ function App({ storage }: { storage?: Storage } = {}) {
             ? "plan"
             : activeView === "track-guide"
               ? "tracks"
-              : "resources";
+              : activeView === "contact"
+                ? ""
+                : "resources";
   const utilityActiveId = activeView === "contact" ? activeView : undefined;
   const mobileActiveId = utilityActiveId ?? guideActiveId;
-  const currentLabel = activeView === "track-guide"
-    ? "트랙 가이드"
+  const currentLabel = activeView === "recommendation"
+    ? recommendationStep === "survey" ? "관심 트랙 추천" : "트랙 비교"
+    : activeView === "track-guide"
+      ? "트랙 가이드"
     : activeView === "contact"
       ? "문의사항"
       : guideActiveId === "start"
-        ? "지도 안내"
+        ? "홈"
         : guideActiveId === "tracks"
           ? "트랙 탐색"
           : guideActiveId === "diagnosis"
@@ -1124,11 +1170,13 @@ function App({ storage }: { storage?: Storage } = {}) {
     const baseTitle = "단국대 식품자원경제학과 트랙제 자가진단";
     const pageTitle = activeView === "track-guide"
       ? TRACK_GUIDE_SECTION_TITLES[trackGuideSection]
+      : activeView === "resources"
+        ? RESOURCE_SECTION_TITLES[resourceSection]
       : activeView === "landing"
         ? undefined
         : currentLabel;
     document.title = pageTitle ? `${pageTitle} | ${baseTitle}` : baseTitle;
-  }, [activeView, currentLabel, trackGuideSection]);
+  }, [activeView, currentLabel, resourceSection, trackGuideSection]);
   const goToDiagnosis = () => navigateDiagnosisStep(
     resolveDiagnosisStep("?view=diagnosis&step=courses", savedState),
   );
@@ -1137,8 +1185,8 @@ function App({ storage }: { storage?: Storage } = {}) {
       ? routeAfterCourseReview(savedState)
       : { view: "diagnosis", step: resolveDiagnosisStep("?view=result&step=result", savedState) },
   );
-  const guideItems: GuideIndexItem[] = [
-    { id: "start", index: "01", label: "지도 안내", available: true, onSelect: () => navigateAppRoute({ view: "landing" }) },
+  const guideItems: GuidebookNavItem[] = [
+    { id: "start", index: "01", label: "홈", available: true, onSelect: () => navigateAppRoute({ view: "landing" }) },
     { id: "tracks", index: "02", label: "트랙 가이드", available: true, onSelect: () => navigateAppRoute({ view: "track-guide", section: "overview" }) },
     { id: "diagnosis", index: "03", label: "나의 진단", available: true, onSelect: goToDiagnosis },
     {
@@ -1160,7 +1208,7 @@ function App({ storage }: { storage?: Storage } = {}) {
     { id: "resources", index: "06", label: "도구 & 정보", available: true, onSelect: () => navigateAppRoute({ view: "resources", section: "official" }) },
   ];
   const mobilePrimaryItems: MobileJourneyItem[] = [
-    { id: "start", label: "시작", available: true, onSelect: () => navigateAppRoute({ view: "landing" }) },
+    { id: "start", label: "홈", available: true, onSelect: () => navigateAppRoute({ view: "landing" }) },
     { id: "diagnosis", label: "진단", available: true, onSelect: goToDiagnosis },
     { id: "result", label: "결과", available: courseResultReady, unavailableReason: "진단 후 열려요.", onSelect: goToResult },
     { id: "plan", label: "계획", available: planNavAvailable, unavailableReason: "결과 확인 후 열려요.", onSelect: () => navigateAppRoute({ view: "plan", step: "setup" }) },
@@ -1202,7 +1250,7 @@ function App({ storage }: { storage?: Storage } = {}) {
       available,
       unavailableReason: available ? undefined : "결과 확인과 목표 트랙 선택 후 열려요.",
       onSelect: () => {
-        if (item.stage === "interest") navigateAppRoute({ view: "recommendation", step: "survey" });
+        if (item.stage === "interest") startEntryFlow("find-track");
         if (item.stage === "courses") goToDiagnosis();
         if (item.stage === "modules") navigateAppRoute({ view: "resources", section: "modules" });
         if (item.stage === "track") {
@@ -1215,11 +1263,6 @@ function App({ storage }: { storage?: Storage } = {}) {
   });
 
   const hasSavedPlan = Boolean(savedState.graduationPlan);
-  const interestCompleted = Boolean(
-    savedState.interestSurvey?.completedAt
-    || savedState.interestSurvey?.selectedTrackId,
-  );
-  const trackExplorationAvailable = interestCompleted || Boolean(savedState.targetTrackId);
   const hasStartedLanding = Boolean(
     savedState.profile
     || savedState.profileDraft?.goal
@@ -1245,86 +1288,13 @@ function App({ storage }: { storage?: Storage } = {}) {
         : landingPlannerStatus === "needs-profile" || landingPlannerStatus === "needs-courses"
           ? goToDiagnosis
           : undefined;
-  const hasDiagnosisDraft = savedState.profileDraft?.goal === "check-progress"
-    || savedState.profileDraft?.goal === "plan-graduation";
-  const landingCurrentStop: CampusJourneyStopId = hasSavedPlan
-    ? "plan"
-    : courseResultReady
-      ? "current"
-      : savedState.profile
-        ? "diagnosis"
-        : hasDiagnosisDraft
-          ? "diagnosis"
-          : interestCompleted
-            ? "tracks"
-            : "interest";
-  const mapStopState = (
-    id: CampusJourneyStopId,
-    complete: boolean,
-    fallback: CampusJourneyStop["state"],
-  ): CampusJourneyStop["state"] => id === landingCurrentStop ? "current" : complete ? "complete" : fallback;
-  const landingMapStops: CampusJourneyStop[] = [
-    {
-      id: "interest",
-      state: mapStopState("interest", interestCompleted, "next"),
-      available: true,
-      onSelect: () => startEntryFlow("find-track"),
-    },
-    {
-      id: "tracks",
-      state: mapStopState("tracks", Boolean(savedState.targetTrackId), trackExplorationAvailable ? "next" : "locked"),
-      available: trackExplorationAvailable,
-      unavailableReason: "관심 질문을 마치면 트랙 비교가 열려요.",
-      onSelect: () => navigateAppRoute({ view: "recommendation", step: "axes", axis: "interest" }),
-    },
-    {
-      id: "diagnosis",
-      state: mapStopState("diagnosis", courseResultReady, savedState.profile ? "current" : "next"),
-      available: true,
-      onSelect: () => startEntryFlow("check-progress"),
-    },
-    {
-      id: "current",
-      state: mapStopState("current", courseResultReady, courseResultReady ? "next" : "locked"),
-      available: courseResultReady,
-      unavailableReason: "학생 유형과 이수 과목을 확인하면 현재 위치가 열려요.",
-      onSelect: goToResult,
-    },
-    {
-      id: "gaps",
-      state: courseResultReady ? "next" : "locked",
-      available: courseResultReady,
-      unavailableReason: "자가진단을 마치면 부족 영역을 확인할 수 있어요.",
-      onSelect: () => navigateAppRoute(
-        exactPathReady
-          ? { view: "result", section: "current" }
-          : { view: "recommendation", step: "axes", axis: "progress" },
-      ),
-    },
-    {
-      id: "next",
-      state: exactPathReady ? "next" : "locked",
-      available: exactPathReady,
-      unavailableReason: courseResultReady
-        ? "목표 트랙을 선택하면 다음 과목 추천이 열려요."
-        : "자가진단을 마치면 다음 과목을 확인할 수 있어요.",
-      onSelect: () => navigateAppRoute({ view: "result", section: "next" }),
-    },
-    {
-      id: "plan",
-      state: mapStopState("plan", false, hasSavedPlan ? "complete" : "optional"),
-      available: true,
-      onSelect: () => navigateAppRoute({ view: "plan", step: hasSavedPlan ? "schedule" : "setup" }),
-    },
-  ];
-
   function renderGuidebook(
     content: ReactNode,
     renderedJourneyItems: readonly CompassPathItem[] = journeyItems,
-    immersive = false,
   ) {
     return (
       <GuidebookShell
+        serviceView={shellRoute.view}
         activeId={guideActiveId}
         mobileActiveId={mobileActiveId}
         currentLabel={currentLabel}
@@ -1334,7 +1304,6 @@ function App({ storage }: { storage?: Storage } = {}) {
         utilityItems={utilityItems}
         utilityActiveId={utilityActiveId}
         journeyItems={renderedJourneyItems}
-        immersive={immersive}
         saveState={storageError ? "error" : "saved"}
         onOpenHelp={openGuide}
         modalOpen={guideOpen}
@@ -1354,15 +1323,17 @@ function App({ storage }: { storage?: Storage } = {}) {
 
   if (activeView === "landing") {
     return renderGuidebook(
-      <CampusMapLanding
+      <TrackServiceLanding
         headingRef={stepHeadingRef}
-        mapStops={landingMapStops}
+        tracks={tracks}
         plannerStatus={landingPlannerStatus}
+        resultReady={courseResultReady}
+        onStartSimulation={() => startEntryFlow("check-progress")}
+        onOpenGuide={() => navigateAppRoute({ view: "track-guide", section: "overview" })}
+        onOpenRecommendation={() => startEntryFlow("find-track")}
         onPlannerAction={landingPlannerAction}
-        onOpenTrackGuide={() => navigateAppRoute({ view: "track-guide", section: "overview" })}
       />,
       [],
-      true,
     );
   }
 
@@ -1391,7 +1362,7 @@ function App({ storage }: { storage?: Storage } = {}) {
             className="planner-focusable"
             type="button"
             aria-current={recommendationStep === "survey" ? "page" : undefined}
-            onClick={() => navigateAppRoute({ view: "recommendation", step: "survey" })}
+            onClick={() => startEntryFlow("find-track")}
           >
             관심 설문
           </button>
@@ -1406,10 +1377,13 @@ function App({ storage }: { storage?: Storage } = {}) {
         </nav>
         {recommendationStep === "survey" ? (
           <InterestSurvey
-            value={savedState.interestSurvey ?? emptyInterestSurveyState()}
+            value={recommendationAudience && savedState.interestSurvey?.audience === recommendationAudience
+              ? savedState.interestSurvey!
+              : emptyInterestSurveyState(recommendationAudience)}
             storageError={storageError}
             headingRef={stepHeadingRef}
             onChange={changeInterestSurvey}
+            onAudienceChange={chooseSurveyAudience}
             onChooseTrack={chooseInterestTrack}
             onSkipToDiagnosis={() => startEntryFlow("check-progress")}
           />
@@ -1421,12 +1395,13 @@ function App({ storage }: { storage?: Storage } = {}) {
             activeAxis={recommendationAxis ?? "interest"}
             headingRef={stepHeadingRef}
             onAxisChange={(axis) => navigateAppRoute({ view: "recommendation", step: "axes", axis })}
-            onOpenInterestSurvey={() => navigateAppRoute({ view: "recommendation", step: "survey" })}
+            onOpenInterestSurvey={() => startEntryFlow("find-track")}
             onOpenCourseInput={openCourseInputFromAxes}
             onOpenGraduationPlan={() => navigateAppRoute({ view: "plan", step: "setup" })}
           />
         )}
-      </div>
+      </div>,
+      journeyItems,
     );
   }
 
@@ -1456,7 +1431,8 @@ function App({ storage }: { storage?: Storage } = {}) {
           onRecover={prerequisiteReadiness.target === "pending" && courseInputReady
             ? openPlanningTargetSelection
             : openCourseInputFromAxes}
-        />
+        />,
+        journeyItems,
       );
     }
 
@@ -1522,7 +1498,8 @@ function App({ storage }: { storage?: Storage } = {}) {
             saveDisabled={planAlreadySaved}
           />
         )}
-      </div>
+      </div>,
+      journeyItems,
     );
   }
 
@@ -1545,7 +1522,29 @@ function App({ storage }: { storage?: Storage } = {}) {
           onComplete={completeProfile}
           onProfileStageChange={navigateProfileStage}
         />
-      </main>
+      </main>,
+      [],
+    );
+  }
+
+  if (activeView === "contact") {
+    return renderGuidebook(
+      <main className="planner-contact-main">
+        <ContactView headingRef={stepHeadingRef} />
+      </main>,
+      [],
+    );
+  }
+
+  if (activeView === "resources") {
+    return renderGuidebook(
+      <main className="planner-resources-main">
+        <ResourceIndexView
+          section={resourceSection}
+          onSectionChange={navigateResourceSection}
+        />
+      </main>,
+      [],
     );
   }
 
@@ -1558,15 +1557,6 @@ function App({ storage }: { storage?: Storage } = {}) {
       )}
 
       <main className="workspace service-workspace">
-        {activeView === "resources" && (
-          <section className="primary-panel full-panel">
-            <ResourceIndexView
-              section={resourceSection}
-              onSectionChange={navigateResourceSection}
-            />
-          </section>
-        )}
-
         {activeView === "diagnosis" && pdfInputRoute === "pdf-review" && pdfImportDraft && (
           <section className="primary-panel full-panel pdf-review-panel-shell">
             <PdfMatchReview
@@ -1601,8 +1591,8 @@ function App({ storage }: { storage?: Storage } = {}) {
                 onEdit={() => setTrackSetupOpen(true)}
               />
             ))}
-            <div className="content-grid">
-              <section className="primary-panel">
+            <div className="course-input-layout">
+              <section className="primary-panel course-input-panel">
                 {pdfImportRecoveryNotice && (
                   <p className="pdf-import-recovery-notice" role="status">
                     개인정보 보호를 위해 PDF 검수 내용은 새로고침 후 저장하지 않았어요. 직접 선택은 그대로 유지됩니다.
@@ -1626,20 +1616,11 @@ function App({ storage }: { storage?: Storage } = {}) {
                   onQueryChange={setCourseQuery}
                   onToggleCourse={toggleCourse}
                   onSaveCourses={saveCompletedCoursesNow}
+                  onShowResult={confirmCourseInput}
                   onPdfAnalyzed={openPdfMatchReview}
                   lastManualSaveAt={lastManualSaveAt}
                 />
               </section>
-
-              <DiagnosisPanel
-                result={result}
-                selectedTrackNames={selectedTracks.map((track) => track.name)}
-                enrollmentType={enrollmentType}
-                completedCount={completedCourseIds.length}
-                allowResult
-                actionRef={diagnosisResultActionRef}
-                onShowResult={confirmCourseInput}
-              />
             </div>
           </div>
         )}
@@ -1660,13 +1641,9 @@ function App({ storage }: { storage?: Storage } = {}) {
           </section>
         )}
 
-        {activeView === "contact" && (
-          <section className="primary-panel full-panel compact-panel">
-            <ContactView headingRef={stepHeadingRef} />
-          </section>
-        )}
       </main>
-    </div>
+    </div>,
+    journeyItems,
   );
 }
 
@@ -1932,7 +1909,7 @@ function ContactView({ headingRef }: { headingRef?: RefObject<HTMLHeadingElement
       </header>
       <div className="contact-card">
         <div className="contact-avatar logo-avatar">
-          <Compass aria-hidden="true" size={36} />
+          <Mail aria-hidden="true" size={36} />
         </div>
         <div className="contact-details">
           <h3>단국대학교 수학과 이연수</h3>
@@ -1975,139 +1952,6 @@ function ContactView({ headingRef }: { headingRef?: RefObject<HTMLHeadingElement
       </section>
     </div>
   );
-}
-
-export function DiagnosisPanel({
-  result,
-  selectedTrackNames,
-  enrollmentType,
-  completedCount,
-  allowResult,
-  actionRef,
-  onShowResult,
-}: {
-  result: DiagnosisResult;
-  selectedTrackNames: string[];
-  enrollmentType: EnrollmentType;
-  completedCount: number;
-  allowResult: boolean;
-  actionRef?: RefObject<HTMLButtonElement | null>;
-  onShowResult: () => void;
-}) {
-  const enrollmentLabel = getEnrollmentLabel(enrollmentType);
-
-  if (result.trackResults.length === 0) {
-    return (
-      <aside className="diagnosis-panel planner-diagnosis-panel" aria-label="진단 결과 요약">
-        <div className="status-head">
-          <span>단국대학교 식품자원경제학과 · {enrollmentLabel}</span>
-          <h2>{allowResult ? "입력한 과목을 확인하세요" : "트랙을 선택하세요"}</h2>
-          <p>{allowResult
-            ? "현재 이수 경로는 목표 트랙 없이 과목 입력 결과를 저장할 수 있습니다."
-            : "관심 있는 트랙을 하나 이상 선택하면 부족 모듈과 추천 과목이 계산됩니다."}</p>
-        </div>
-        <div className="empty-state compact">
-          <strong>{completedCount}개 과목 체크됨</strong>
-          <span>{allowResult ? "트랙 선택은 선택 사항입니다." : "선택된 트랙이 없습니다."}</span>
-        </div>
-        {allowResult && (
-          <button
-            id="diagnosis-result-action"
-            ref={actionRef}
-            className="primary-button"
-            type="button"
-            onClick={onShowResult}
-          >
-            <Save aria-hidden="true" size={18} />
-            <span>진단 결과 자세히 보기</span>
-          </button>
-        )}
-      </aside>
-    );
-  }
-
-  return (
-    <aside className="diagnosis-panel planner-diagnosis-panel" aria-label="진단 결과 요약">
-      <div className="status-head">
-        <span>단국대학교 식품자원경제학과 · {enrollmentLabel}</span>
-        <h2>{selectedTrackNames.join(" + ")}</h2>
-        <p>선택한 {selectedTrackNames.length}개 트랙 기준으로 남은 과목과 부족 학점을 통합 계산합니다.</p>
-      </div>
-      <div className="progress-ring" aria-label={`전체 진행률 ${result.completionRate}%`}>
-        <strong>{result.completionRate}%</strong>
-        <span>전체 진행률</span>
-        <div className="progress-bar">
-          <i style={{ width: `${result.completionRate}%` }} />
-        </div>
-      </div>
-      <div className="panel-metrics">
-        <ResultMetric label="체크 과목" value={`${completedCount}개`} compact />
-        <ResultMetric label="총 체크 학점" value={`${result.totalCredits}학점`} compact />
-      </div>
-      <div className="mini-section">
-        <h3>트랙별 충족 현황</h3>
-        {result.trackResults.map((trackResult) => (
-          <div className="mini-row" key={trackResult.trackId}>
-            {trackResult.passed ? (
-              <CheckCircle2 className="ok" aria-hidden="true" size={16} />
-            ) : (
-              <AlertTriangle className="warn" aria-hidden="true" size={16} />
-            )}
-            <span>{trackResult.trackName}</span>
-            <strong>{trackResult.completionRate}%</strong>
-          </div>
-        ))}
-      </div>
-      <div className="mini-section">
-        <h3>추천 수강 과목</h3>
-        {result.recommendedCourses.slice(0, 3).map((course) => (
-          <div className="recommend-row" key={course.id}>
-            <span>{course.name}</span>
-            <small>
-              {course.code} · {formatSemester(course.recommendedSemester)} · {course.credits}학점
-            </small>
-          </div>
-        ))}
-        {result.recommendedCourses.length === 0 && <p className="empty-text">추천할 남은 과목 없음</p>}
-      </div>
-      {result.excludedRequiredCourses.length > 0 && (
-        <div className="mini-section">
-          <h3>필수 제외 적용</h3>
-          {result.excludedRequiredCourses.map((course) => (
-            <div className="recommend-row" key={course.id}>
-              <span>{course.name}</span>
-              <small>{formatSemester(course.recommendedSemester)} · 복수전공/부전공 모드</small>
-            </div>
-          ))}
-        </div>
-      )}
-      <button
-        id="diagnosis-result-action"
-        ref={actionRef}
-        className="primary-button"
-        type="button"
-        onClick={onShowResult}
-      >
-        <Save aria-hidden="true" size={18} />
-        <span>진단 결과 자세히 보기</span>
-      </button>
-    </aside>
-  );
-}
-
-function ResultMetric({ label, value, compact = false }: { label: string; value: string; compact?: boolean }) {
-  return (
-    <div className={compact ? "metric compact" : "metric"}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
-function formatSemester(semester?: string): string {
-  if (!semester) return "학기 미정";
-  const [grade, term] = semester.split("-");
-  return `${grade}학년 ${term}학기`;
 }
 
 function formatSaveTime(date: Date): string {
