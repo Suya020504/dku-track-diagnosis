@@ -17,6 +17,8 @@
 .dku-guide-page .guide-next { display: inline-flex; align-items: center; justify-content: center; gap: 20px; min-height: 56px; padding: 16px 24px; color: #fff; background: #086346; border: 1px solid #086346; border-radius: 9px; font-weight: 750; line-height: 1.5; }
 .dku-guide-page .guide-next:hover { background: #034d36; }
 .dku-guide-page .guide-text-action { display: inline-flex; align-items: center; gap: 8px; background: none; color: var(--guide-green); border: 0; min-height: 48px; font-weight: 700; padding: 10px 0; text-decoration: underline; text-underline-offset: 5px; }
+.dku-guide-page .guide-materials-entry { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:4px 16px; margin-top:18px; padding:8px 4px; color:#52656c; font-size:.82rem; }
+.dku-guide-page .guide-materials-entry .guide-text-action { font-size:.84rem; }
 .dku-guide-page .guide-concept-layout { display: grid; grid-template-columns: minmax(0,1fr) 250px; gap: 16px; padding-top: 16px; }
 .dku-guide-page .guide-concept { min-width: 0; background: #fff; border: 1px solid var(--guide-line); border-radius: 10px; padding: 18px 24px 26px; }
 .dku-guide-page .guide-concept img { display: block; width: 100%; max-height: 320px; object-fit: contain; }

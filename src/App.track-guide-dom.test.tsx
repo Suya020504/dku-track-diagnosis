@@ -5,7 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { tracks, OFFICIAL_CURRICULUM_SOURCE } from "./data/curriculumData";
-import { OFFICIAL_TRACK_VIDEOS, TRACK_REGULATION_URL, TRACK_DEGREE_VIDEO_URL, DEPARTMENT_CURRICULUM_URL } from "./data/officialResources";
+import { OFFICIAL_TRACK_VIDEOS, TRACK_REGULATION_URL, TRACK_DEGREE_VIDEO_URL, TRACK_CERTIFICATE_VIDEO_URL, TRACK_LATE_ENTRY_VIDEO_URL, DEPARTMENT_CURRICULUM_URL } from "./data/officialResources";
 
 let root: Root | undefined;
 
@@ -81,10 +81,10 @@ describe("separate track guide journey", () => {
   it("uses learner-facing benefit labels without dropping the recognition caveat", async () => {
     await mountAt("/?view=track-guide&section=benefits");
     expect(document.querySelector(".guide-reasons-intro")?.textContent).toContain("어떤 분야를 배울지");
-    expect(document.querySelector(".guide-reason-list")?.textContent).toContain("이렇게 활용하세요");
+    expect(document.querySelectorAll(".guide-reason-list article")).toHaveLength(4);
     expect(document.body.textContent).not.toContain("서비스 역할");
     expect(document.querySelector(".guide-caution")?.textContent).toContain("졸업 단축·취업·자동 인정을 보장하는 제도는 아닙니다");
-    expect(document.querySelectorAll(".guide-reason-list details a")).toHaveLength(4);
+    expect(document.querySelectorAll(".guide-reason-list details, .guide-reason-list a")).toHaveLength(0);
   });
 
   it("uses the new concept illustration with live captions and no retired guide classes", async () => {
@@ -104,17 +104,28 @@ describe("separate track guide journey", () => {
     expect(document.querySelectorAll(".guide-next")).toHaveLength(1);
   });
 
-  it("keeps supporting benefit explanations expandable with primary-source links", async () => {
+  it("keeps benefits readable and sends supporting evidence to one optional destination", async () => {
     await mountAt("/?view=track-guide&section=benefits");
-    expect(document.querySelectorAll(".guide-reason-list details")).toHaveLength(4);
-    expect(document.querySelectorAll(".guide-reason-list details[open]")).toHaveLength(0);
-    expect(document.querySelectorAll(".guide-reason-list details a")).toHaveLength(4);
-    const expectedHrefs = [OFFICIAL_CURRICULUM_SOURCE.url, TRACK_REGULATION_URL, OFFICIAL_CURRICULUM_SOURCE.url, TRACK_DEGREE_VIDEO_URL];
-    for (const [index, article] of [...document.querySelectorAll(".guide-reason-list article")].entries()) {
-      const link = article.querySelector("a");
-      expect(link?.getAttribute("aria-label")).toBe(`${article.querySelector("h3")?.textContent} — 근거 원문 확인`);
-      expect(link?.getAttribute("href")).toBe(expectedHrefs[index]);
+    expect(document.querySelectorAll(".guide-reason-list details, .guide-reason-list a")).toHaveLength(0);
+    expect(document.body.textContent).not.toContain("근거 원문 확인");
+    expect(document.body.textContent).not.toContain("공식 설명과 활용 방법");
+    expect(document.querySelectorAll("[data-guide-materials-entry]")).toHaveLength(1);
+    await click("공식 영상·자료 보기");
+    expect(new URLSearchParams(location.search).get("section")).toBe("videos");
+    expect(document.activeElement).toBe(document.querySelector("h1"));
+    for (const href of [OFFICIAL_CURRICULUM_SOURCE.url, TRACK_REGULATION_URL, TRACK_DEGREE_VIDEO_URL, TRACK_CERTIFICATE_VIDEO_URL, TRACK_LATE_ENTRY_VIDEO_URL]) {
+      expect(document.querySelector(`.dku-guide-page a[href="${href}"]`)).not.toBeNull();
     }
+    await moveNativeHistory("back");
+    expect(new URLSearchParams(location.search).get("section")).toBe("benefits");
+    expect(document.querySelector(".guide-reason-list details")).toBeNull();
+  });
+
+  it.each(["overview", "benefits", "outcomes", "structure", "application"])("shows one materials entry instead of scattered citations on %s", async section => {
+    await mountAt(`/?view=track-guide&section=${section}`);
+    expect(document.querySelectorAll("[data-guide-materials-entry]")).toHaveLength(1);
+    const links = [...document.querySelectorAll<HTMLAnchorElement>("[data-track-guide-section] a")];
+    expect(links.every(link => link.href.startsWith("tel:") || link.textContent?.includes("학과 사무실 위치·연락처"))).toBe(true);
   });
 
   it.each(["overview", "benefits", "outcomes", "structure", "application"])(
@@ -137,8 +148,8 @@ describe("separate track guide journey", () => {
     expect(document.body.textContent).toContain("2024년 안내 영상");
     expect(document.querySelector('a[href="tel:0415503610"]')).not.toBeNull();
     expect(document.querySelector('a[href="/documents/2026-ere-module-track-curriculum.pdf"]')).toBeNull();
-    expect(document.querySelector(`a[href="${DEPARTMENT_CURRICULUM_URL}"]`)).not.toBeNull();
-    expect(document.body.textContent).toContain("제공자료 · 원문 비공개");
+    expect(document.querySelector(`.guide-application a[href="${DEPARTMENT_CURRICULUM_URL}"]`)).toBeNull();
+    expect(document.querySelector("[data-guide-materials-entry]")).not.toBeNull();
     expect(document.querySelectorAll(".guide-next")).toHaveLength(1);
     expect(document.querySelectorAll("main")).toHaveLength(1);
     expect(document.querySelectorAll("h1")).toHaveLength(1);
@@ -265,6 +276,9 @@ describe("separate track guide journey", () => {
     expect(document.body.textContent).toContain("학위증·성적증명서");
     expect(document.body.textContent).toContain("2026년에 트랙명이 어떤 증명서에 표시되는지");
     expect(document.body.textContent).toContain("신청 절차는 학과에 확인해 주세요");
+    expect(document.querySelector('.guide-records a[href*="seq=9926"]')).toBeNull();
+    expect(document.querySelector('.guide-records a[href*="osc9yOuq0IU"]')).toBeNull();
+    await click("공식 영상·자료 보기");
     expect(document.querySelector('a[href*="seq=9926"]')).not.toBeNull();
     expect(document.querySelector('a[href*="osc9yOuq0IU"][href*="t=860s"]')).not.toBeNull();
   });
