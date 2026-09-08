@@ -1942,6 +1942,40 @@
 /* Fresh compact checklist surface. Old course selectors above remain for legacy/PDF consumers. */
 .dku-courses-layout { width:100%; max-width:1220px; margin:auto; display:grid; gap:16px; }
 .dku-courses-layout :is(.dku-courses-content,.dku-courses-surface) { min-width:0; }
+
+/* Every picker child has an explicit row; no legacy implicit grid columns. */
+.dku-courses-layout .track-picker {
+  min-width: 0;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "copy" "reset" "confirmation" "mode" "tracks" "continue";
+}
+.dku-courses-layout .track-picker > * { min-width: 0; }
+.dku-courses-layout .track-kind-groups,
+.dku-courses-layout .track-toggle-grid { grid-template-columns: minmax(0, 1fr); }
+.dku-courses-layout .track-picker .reset-track-button,
+.dku-courses-layout .track-picker-continue { justify-self: stretch; width: 100%; min-width: 0; }
+.current-input-reset-confirmation {
+  grid-area: confirmation;
+  padding: 14px;
+  border: 1px solid #b98965;
+  border-radius: 8px;
+  background: #fff4e8;
+  color: #693c26;
+  overflow-wrap: anywhere;
+}
+.current-input-reset-confirmation p { margin: 8px 0 12px; line-height: 1.6; }
+.current-input-reset-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.current-input-reset-actions button { min-height: 44px; }
+@media (min-width: 900px) {
+  .dku-courses-layout .track-picker {
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+    grid-template-areas: "copy reset" "confirmation confirmation" "mode tracks" "continue continue";
+  }
+  .dku-courses-layout .track-picker .reset-track-button,
+  .dku-courses-layout .track-picker-continue { justify-self: end; width: auto; }
+  .dku-courses-layout .track-toggle-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .dku-courses-profile-summary { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:12px 18px; background:#edf5ff; border-radius:8px; font-size:13px; color:#365673; }
 .dku-courses-profile-summary > div { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
 .dku-courses-profile-summary p { margin:0; }

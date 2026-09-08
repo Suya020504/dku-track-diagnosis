@@ -30,6 +30,9 @@ export type InterestSurveyProps = {
   onChange: (value: InterestSurveyState) => void;
   onAudienceChange: (audience: InterestSurveyAudience) => void;
   onChooseTrack: (trackId: TrackId) => void;
+  pendingSelectedTrackIds?: readonly TrackId[];
+  onPendingTrackIdsChange?: (trackIds: TrackId[]) => void;
+  onChooseTracks?: (trackIds: TrackId[]) => void;
   onSkipToDiagnosis: () => void;
   headingRef?: RefObject<HTMLHeadingElement | null>;
 };
@@ -48,6 +51,9 @@ export function InterestSurvey({
   onChange,
   onAudienceChange,
   onChooseTrack,
+  pendingSelectedTrackIds,
+  onPendingTrackIdsChange,
+  onChooseTracks,
   onSkipToDiagnosis,
   headingRef,
 }: InterestSurveyProps) {
@@ -62,6 +68,9 @@ export function InterestSurvey({
     previousIndex.current = value.currentIndex;
   }, [value.currentIndex]);
   const audience = value.audience;
+  const multiSelect = Boolean(onChooseTracks && onPendingTrackIdsChange);
+  const selectedTrackIds = multiSelect && pendingSelectedTrackIds !== undefined
+    ? pendingSelectedTrackIds : value.selectedTrackId ? [value.selectedTrackId] : [];
   const interestSurveyQuestions = audience ? getInterestSurveyQuestions(audience) : [];
   const currentIndex = Math.min(
     Math.max(value.currentIndex, 0),
@@ -87,6 +96,7 @@ export function InterestSurvey({
   }
 
   function updateAnswer(answer: InterestSurveyAnswer) {
+    onPendingTrackIdsChange?.([]);
     onChange({
       ...value,
       answers: { ...value.answers, [currentQuestion.id]: answer },
@@ -112,6 +122,7 @@ export function InterestSurvey({
   }
 
   function restartSurvey() {
+    onPendingTrackIdsChange?.([]);
     onChange({ audience, answers: {}, currentIndex: 0 });
     setShowAllResults(false);
   }
@@ -121,6 +132,14 @@ export function InterestSurvey({
     const topResult = results[0];
     const visibleResults = showAllResults ? results : results.slice(0, 3);
     const selectedResult = results.find((result) => result.trackId === value.selectedTrackId);
+    const selectedResults = results.filter(result => selectedTrackIds.includes(result.trackId));
+
+    function toggleResult(trackId: TrackId) {
+      if (!multiSelect) { onChange({ ...value, selectedTrackId: trackId }); return; }
+      const next = selectedTrackIds.includes(trackId) ? selectedTrackIds.filter(id => id !== trackId) : [...selectedTrackIds, trackId];
+      onPendingTrackIdsChange?.(next);
+      onChange({ ...value, selectedTrackId: next[0] });
+    }
 
     return (
       <main
@@ -165,10 +184,11 @@ export function InterestSurvey({
             <div className="ds-result-section-head">
               <span>관심 기준 안에서 비교</span>
               <h2>상위 관심 트랙을 직접 골라 주세요</h2>
+              {multiSelect && <p>한 개만 고르지 않아도 돼요. 관심 있는 트랙을 함께 선택하세요.</p>}
             </div>
             <ol>
               {visibleResults.map((result) => {
-                const selected = result.trackId === value.selectedTrackId;
+                const selected = multiSelect ? selectedTrackIds.includes(result.trackId) : result.trackId === value.selectedTrackId;
                 const topTie = result.score === topResult.score && comparison.scoreGap === 0;
                 const closeLeader = topResult.score - result.score <= CLOSE_INTEREST_SCORE_GAP;
                 return (
@@ -195,7 +215,9 @@ export function InterestSurvey({
                       <button
                         type="button"
                         aria-pressed={selected}
-                        onClick={() => onChange({ ...value, selectedTrackId: result.trackId })}
+                        data-interest-track={result.trackId}
+                        aria-label={multiSelect ? `${result.trackName} ${selected ? "선택 해제" : "선택"}` : undefined}
+                        onClick={() => toggleResult(result.trackId)}
                       >
                         {selected && <Check aria-hidden="true" size={17} />}
                         {selected ? "선택됨" : `${result.trackName} 선택`}
@@ -215,7 +237,14 @@ export function InterestSurvey({
           </div>
 
           <aside className="ds-choice-summary">
-            {selectedResult ? (
+            {multiSelect && selectedResults.length > 0 ? (
+              <>
+                <span>함께 고른 관심 방향</span>
+                <h2>{selectedResults.length}개 트랙을 선택했어요</h2>
+                <ul aria-label="선택한 관심 트랙">{selectedResults.map(result => <li key={result.trackId}><TrackGlyph trackId={result.trackId} decorative />{result.trackName}</li>)}</ul>
+                <p>다음 화면에서 선택을 확인해요. 아직 기존 트랙과 전공 정보는 바뀌지 않아요.</p>
+              </>
+            ) : !multiSelect && selectedResult ? (
               <>
                 <span>내가 고른 방향</span>
                 <h2>
@@ -244,10 +273,10 @@ export function InterestSurvey({
           <button
             className="primary-button"
             type="button"
-            disabled={!selectedResult}
-            onClick={() => selectedResult && onChooseTrack(selectedResult.trackId)}
+            disabled={multiSelect ? selectedResults.length === 0 : !selectedResult}
+            onClick={() => multiSelect ? selectedResults.length > 0 && onChooseTracks?.([...selectedTrackIds]) : selectedResult && onChooseTrack(selectedResult.trackId)}
           >
-            {selectedResult ? "선택한 트랙으로 자가진단 이어가기" : "트랙을 먼저 선택해 주세요"}
+            {multiSelect ? selectedResults.length ? `${selectedResults.length}개 트랙으로 이어가기` : "트랙을 먼저 선택해 주세요" : selectedResult ? "선택한 트랙으로 자가진단 이어가기" : "트랙을 먼저 선택해 주세요"}
             <ArrowRight aria-hidden="true" size={18} />
           </button>
           <button className="icon-button" type="button" onClick={restartSurvey}>

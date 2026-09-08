@@ -55,6 +55,14 @@ afterEach(async () => {
 });
 
 describe("App help dialog", () => {
+  it("opens the optional shared track plan from the third help step with its scope intact", async () => {
+    await mountAt("/"); await act(async () => helpButton().click());
+    await act(async () => document.querySelectorAll<HTMLButtonElement>('.guide-stepper button')[2].click());
+    await act(async () => document.querySelector<HTMLButtonElement>('.guide-action-button')?.click());
+    expect(new URLSearchParams(location.search).get('view')).toBe('plan');
+    expect(new URLSearchParams(location.search).get('scope')).toBe('tracks');
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+  });
   it.each([
     "/",
     "/?view=overview",
@@ -83,8 +91,8 @@ describe("App help dialog", () => {
     expect(background.getAttribute("aria-hidden")).toBe("true");
     expect(dialog.closest(".planner-shell-background")).toBeNull();
     expect(dialog.querySelector('nav[aria-label="사용 단계"]')).not.toBeNull();
-    expect(dialog.textContent).toContain("목표 트랙이 아직 없어도 5개 트랙을 비교할 수 있습니다");
-    expect(dialog.textContent).toContain("목표 트랙은 선택 사항");
+    expect(dialog.textContent).toContain("알고 있는 트랙 직접 선택");
+    expect(dialog.textContent).toContain("들은 과목으로 비교하기");
     expect(dialog.textContent).not.toContain("관심 트랙 복수 선택");
     expect(document.body.style.overflow).toBe("hidden");
 
@@ -152,7 +160,7 @@ describe("App help dialog", () => {
     await mountAt("/");
     await act(async () => helpButton().click());
 
-    await act(async () => button("자가진단 열기").click());
+    await act(async () => button("내 정보와 시작 방법 확인").click());
 
     const params = new URLSearchParams(location.search);
     expect(document.querySelector('[role="dialog"]')).toBeNull();

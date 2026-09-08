@@ -2,6 +2,7 @@ import { compareAcademicTerms } from "../../lib/graduationPlanner";
 import { EvidenceBand } from "../../components/EvidenceBand";
 import type {
   AcademicTermId,
+  GraduationPlanDraftValues,
   GraduationPlanPreferences,
 } from "../../types";
 
@@ -10,12 +11,12 @@ export function GraduationPlanSetup({
   onChange,
   onSubmit,
 }: {
-  value: Partial<GraduationPlanPreferences>;
-  onChange: (value: Partial<GraduationPlanPreferences>) => void;
+  value: GraduationPlanDraftValues;
+  onChange: (value: GraduationPlanDraftValues) => void;
   onSubmit: (value: GraduationPlanPreferences) => void;
 }) {
   const isNewEmptyForm = Object.keys(value).length === 0;
-  const currentValue: Partial<GraduationPlanPreferences> = isNewEmptyForm
+  const currentValue: GraduationPlanDraftValues = isNewEmptyForm
     ? { currentTerm: "2026-2", considerSeasonalTerm: false }
     : value;
   const academicTermPattern = /^\d{4}-(1|2)$/;
@@ -29,9 +30,9 @@ export function GraduationPlanSetup({
       currentValue.currentTerm as AcademicTermId,
     ) >= 0,
   );
-  const loadValid = Number.isInteger(currentValue.maxMajorCoursesPerTerm)
-    && Number(currentValue.maxMajorCoursesPerTerm) >= 1
-    && Number(currentValue.maxMajorCoursesPerTerm) <= 6;
+  const loadText = String(currentValue.maxMajorCoursesPerTerm ?? "").trim();
+  const load = Number(loadText);
+  const loadValid = /^[1-6]$/.test(loadText);
   const valid = targetValid
     && loadValid
     && currentValue.considerSeasonalTerm !== undefined;
@@ -42,7 +43,12 @@ export function GraduationPlanSetup({
       className="dku-plan-form"
       onSubmit={(event) => {
         event.preventDefault();
-        if (valid) onSubmit(currentValue as GraduationPlanPreferences);
+        if (valid) onSubmit({
+          currentTerm: currentValue.currentTerm as AcademicTermId,
+          targetGraduationTerm: currentValue.targetGraduationTerm as AcademicTermId,
+          maxMajorCoursesPerTerm: load,
+          considerSeasonalTerm: currentValue.considerSeasonalTerm!,
+        });
       }}
     >
       <fieldset className="dku-plan-date-fields">
@@ -58,7 +64,7 @@ export function GraduationPlanSetup({
               value={currentValue.currentTerm ?? ""}
               onChange={(event) => onChange({
                 ...currentValue,
-                currentTerm: event.target.value as AcademicTermId,
+                currentTerm: event.target.value,
               })}
             />
             <small id="current-term-help">연도-학기 형식으로 입력해 주세요. 예: 2026-2</small>
@@ -74,7 +80,7 @@ export function GraduationPlanSetup({
               value={currentValue.targetGraduationTerm ?? ""}
               onChange={(event) => onChange({
                 ...currentValue,
-                targetGraduationTerm: event.target.value as AcademicTermId,
+                targetGraduationTerm: event.target.value,
               })}
             />
             {reversedTarget && (
@@ -91,14 +97,12 @@ export function GraduationPlanSetup({
             <input
               aria-describedby="major-load-help"
               aria-invalid={!loadValid}
-              type="number"
-              min="1"
-              max="6"
-              step="1"
+              type="text"
+              inputMode="numeric"
               value={currentValue.maxMajorCoursesPerTerm ?? ""}
               onChange={(event) => onChange({
                 ...currentValue,
-                maxMajorCoursesPerTerm: Number(event.target.value),
+                maxMajorCoursesPerTerm: event.target.value,
               })}
             />
             <small id="major-load-help">한 학기에 1~6과목 사이의 정수로 입력해 주세요.</small>

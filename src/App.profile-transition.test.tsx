@@ -91,9 +91,9 @@ describe("profile integration transitions", () => {
       graduationPlan: calculateGraduationPlan({ profile, targetTrackId: "economics", courseSelections: [], additionalMajorCredits: [], preferences, generatedAt: "2026-09-08" }),
     };
     saveState(chooseRecommendedTrackTransition(current, "food-marketing").state);
-    history.replaceState({}, "", "/?view=diagnosis&step=profile&profile=path");
+    history.replaceState({}, "", "/?view=diagnosis&step=tracks");
     await mountApp();
-    expect(document.querySelector<HTMLInputElement>('input[name="targetTrackId"][value="food-marketing"]')?.checked).toBe(true);
+    expect(document.querySelector<HTMLInputElement>('input[name="selectedTrackIds"][value="food-marketing"]')?.checked).toBe(true);
     const resultNav = [...document.querySelectorAll<HTMLButtonElement>(".planner-shell-primary-nav button")].find((button) => button.textContent?.includes("결과"));
     expect(resultNav).toBeDefined();
     await act(async () => resultNav?.click());
@@ -108,11 +108,11 @@ describe("profile integration transitions", () => {
       expect(saved.graduationPlan).toEqual(current.graduationPlan);
       expect(saved.courseInputReviewedAt).toBe(current.courseInputReviewedAt);
     }
-    await setRouteAndPop("/?view=diagnosis&step=profile&profile=path");
-    expect(document.querySelector<HTMLInputElement>('input[name="targetTrackId"][value="food-marketing"]')?.checked).toBe(true);
-    await act(async () => document.querySelector<HTMLInputElement>('[data-target-track-choice="compare-all"]')?.click());
+    await setRouteAndPop("/?view=diagnosis&step=tracks");
+    expect(document.querySelector<HTMLInputElement>('input[name="selectedTrackIds"][value="food-marketing"]')?.checked).toBe(true);
+    await act(async () => document.querySelector<HTMLInputElement>('input[name="selectedTrackIds"][value="food-marketing"]')?.click());
     const pending = JSON.parse(localStorage.getItem(STORAGE_KEY_V2)!) as SavedAppStateV2;
-    expect(pending.pendingTargetTrackId).toBeNull();
+    expect(pending.pendingSelectedTrackIds).toEqual(["economics"]);
     expect(pending.targetTrackId).toBe("economics");
     expect(pending.graduationPlan).toEqual(current.graduationPlan);
   });
@@ -161,10 +161,10 @@ describe("profile integration transitions", () => {
     expect(reviewed.courseInputReviewedAt).toBeTruthy();
     expect(new URLSearchParams(location.search).get("view")).toBe("recommendation");
     expect(new URLSearchParams(location.search).get("axis")).toBe("progress");
-    expect(document.querySelector('[data-recommendation-panel="progress"]')).not.toBeNull();
+    expect(document.querySelector('#track-history-title')).not.toBeNull();
   });
 
-  it("clears target and comparison tracks when track-major changes to minor", () => {
+  it("preserves target and comparison tracks when the student's academic role changes to minor", () => {
     const current = {
       ...state(trackProfile),
       targetTrackId: "food-marketing" as const,
@@ -173,8 +173,8 @@ describe("profile integration transitions", () => {
 
     const transition = completeProfileTransition(current, minorProfile);
 
-    expect(transition.state.targetTrackId).toBeUndefined();
-    expect(transition.state.comparisonTrackIds).toEqual([]);
+    expect(transition.state.targetTrackId).toBe("food-marketing");
+    expect(transition.state.comparisonTrackIds).toEqual(["economics", "agri-food-distribution"]);
     expect(transition.step).toBe("courses");
   });
 

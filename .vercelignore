@@ -17,3 +17,6 @@ docs/service-completion/2026-09-08-goal.md
 docs/service-completion/task-*.md
 # Research and validation notes belong in GitHub, not deployment uploads.
 docs/research/
+# Concept boards and their source artwork are GitHub review artifacts, not runtime assets.
+design-proposals/2026-09-09-journey/
+public/illustrations/track-journey-notebook.png

@@ -110,6 +110,25 @@ async function click(label: string) {
   });
 }
 
+async function startHomeIntent(intent: "known-tracks" | "interest-survey" | "completed-courses") {
+  await act(async () => {
+    const choice = document.querySelector<HTMLInputElement>(`input[name="entry-intent"][value="${intent}"]`);
+    if (!choice) throw new Error(`Missing entry intent: ${intent}`);
+    choice.click();
+  });
+  await click("선택한 방법으로 시작하기");
+}
+
+async function completeDepartmentInformation() {
+  await act(async () => {
+    const affiliation = document.querySelector<HTMLInputElement>('input[name="affiliation"][value="department-student"]');
+    if (!affiliation) throw new Error("Missing department affiliation choice");
+    affiliation.click();
+  });
+  await act(async () => document.querySelector<HTMLButtonElement>("[data-profile-next]")?.click());
+  await click("내 정보 저장하고 계속");
+}
+
 async function mountApp() {
   const container = document.querySelector<HTMLDivElement>("#root");
   if (!container) throw new Error("Missing root container");
@@ -165,15 +184,16 @@ describe("App recommendation browser interactions", () => {
     await mountApp();
 
     expect(document.querySelector("[data-map-stop]")).toBeNull();
-    await click("관심으로 트랙 추천받기");
+    await startHomeIntent("interest-survey");
 
     const params = new URLSearchParams(location.search);
-    expect(params.get("view")).toBe("recommendation");
-    expect(params.get("step")).toBe("survey");
-    expect(document.querySelector("[data-survey-audience-step]")).not.toBeNull();
+    expect(params.get("view")).toBe("diagnosis");
+    expect(params.get("step")).toBe("profile");
+    expect(document.querySelector('fieldset[aria-labelledby="affiliation-question"]')).not.toBeNull();
     expect(document.querySelector(".interest-question-card")).toBeNull();
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_V2) ?? "null") as SavedAppStateV2;
-    expect(saved.profileDraft?.goal).toBe("find-track");
+    expect(saved.entryIntent).toBe("interest-survey");
+    expect(saved.profile).toBeUndefined();
   });
 
   it("resumes profile-only diagnosis directly at course selection", async () => {
@@ -181,9 +201,9 @@ describe("App recommendation browser interactions", () => {
     await mountApp();
 
     expect(document.querySelector('[data-resume-state="needs-courses"]')).not.toBeNull();
-    expect(document.body.textContent).toContain("과목 선택부터 이어가세요");
+    expect(document.body.textContent).toContain("입력하던 내용이 남아 있어요");
 
-    await click("이수 과목 확인하기");
+    await click("이전 입력 이어보기");
     const params = new URLSearchParams(location.search);
     expect(params.get("view")).toBe("diagnosis");
     expect(params.get("step")).toBe("courses");
@@ -195,7 +215,7 @@ describe("App recommendation browser interactions", () => {
     await mountApp();
 
     expect(document.querySelector('[role="dialog"]')).toBeNull();
-    expect(button("내 트랙 확인하기").disabled).toBe(false);
+    expect(button("선택한 방법으로 시작하기").disabled).toBe(false);
 
     await click("도움말");
     expect(document.querySelector('[role="dialog"]')).not.toBeNull();
@@ -208,7 +228,7 @@ describe("App recommendation browser interactions", () => {
   it("closes the help dialog when its action navigates to a service screen", async () => {
     await mountApp();
     await click("도움말");
-    await click("자가진단 열기");
+    await click("내 정보와 시작 방법 확인");
 
     expect(document.querySelector('[role="dialog"]')).toBeNull();
     expect(new URLSearchParams(location.search).get("view")).toBe("diagnosis");
@@ -219,7 +239,8 @@ describe("App recommendation browser interactions", () => {
     saveState(previous);
     await mountApp();
 
-    await click("관심으로 트랙 추천받기");
+    await startHomeIntent("interest-survey");
+    await completeDepartmentInformation();
 
     const params = new URLSearchParams(location.search);
     expect(params.get("view")).toBe("recommendation");
@@ -236,12 +257,12 @@ describe("App recommendation browser interactions", () => {
     expect(document.querySelector(".dku-survey-results")).not.toBeNull();
   });
 
-  it("opens progress comparison and recovers planner setup through target choice", async () => {
+  it("opens the current-course comparison from both results and the targetless home resume action", async () => {
     saveState(reviewedCoursesWithoutTargetState());
     await mountApp();
 
     const plannerPreview = document.querySelector('[data-resume-state="needs-track"]');
-    expect(plannerPreview?.textContent).toContain("현재 결과를 비교할 수 있어요");
+    expect(plannerPreview?.textContent).toContain("이전에 확인한 트랙이 있어요");
 
     await click("진단 결과");
     const params = new URLSearchParams(location.search);
@@ -251,11 +272,11 @@ describe("App recommendation browser interactions", () => {
 
     history.replaceState({}, "", "/");
     await act(async () => window.dispatchEvent(new PopStateEvent("popstate")));
-    await click("트랙 비교 보기");
+    await click("내 결과 다시 보기");
     const plannerParams = new URLSearchParams(location.search);
-    expect(plannerParams.get("view")).toBe("diagnosis");
-    expect(plannerParams.get("step")).toBe("profile");
-    expect(plannerParams.get("profile")).toBe("path");
+    expect(plannerParams.get("view")).toBe("recommendation");
+    expect(plannerParams.get("step")).toBe("axes");
+    expect(plannerParams.get("axis")).toBe("progress");
   });
 
   it("opens an existing saved plan from the landing preview", async () => {
@@ -273,10 +294,11 @@ describe("App recommendation browser interactions", () => {
     saveState(savedLandingPlanState());
     await mountApp();
 
-    expect([...document.querySelectorAll(".track-home__steps strong")].map(node => node.textContent))
-      .toEqual(["이수 유형", "이수 과목", "진단 결과"]);
-    expect(document.querySelectorAll(".track-home__steps [data-step-state='complete']")).toHaveLength(3);
-    expect(document.querySelector(".track-home__optional")?.textContent).toContain("필수 진단에 포함되지 않아요");
+    expect([...document.querySelectorAll(".journey-home-steps strong")].map(node => node.textContent))
+      .toEqual(["내 정보", "트랙 선택", "이수 현황", "학기 계획선택"]);
+    expect(document.querySelector(".journey-home-steps li:last-child small")?.textContent).toBe("선택");
+    expect(document.querySelector(".journey-home-footer")?.textContent).toContain("학기 계획은 필요할 때만");
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY_V2)!).graduationPlan.generatedAt).toBe("2026-08-30T01:00:00.000Z");
     expect(document.querySelector('[data-resume-state="saved-plan"]')).not.toBeNull();
     await click("저장한 계획 보기");
     expect(new URLSearchParams(location.search).get("view")).toBe("plan");
@@ -374,12 +396,13 @@ describe("App recommendation browser interactions", () => {
     expect(document.querySelectorAll('img[src="/dku-logo.png"]')).toHaveLength(1);
   });
 
-  it("keeps optional survey outside required progress and safely opens diagnosis", async () => {
+  it("shows survey as a track-selection method and safely requests missing information when skipped", async () => {
     saveState(createEmptyAppState());
     history.replaceState({}, "", "/?view=recommendation&step=survey");
     await mountApp();
 
-    expect(document.querySelector(".planner-compass-path")).toBeNull();
+    expect(document.querySelector('[data-journey-stage="tracks"] button')?.getAttribute('aria-current')).toBe('step');
+    expect(document.querySelector<HTMLButtonElement>('[data-journey-stage="courses"] button')?.disabled).toBe(true);
     await act(async () => button("설문을 건너뛰고 자가진단 바로가기").click());
 
     const params = new URLSearchParams(location.search);
@@ -389,7 +412,7 @@ describe("App recommendation browser interactions", () => {
     expect(document.activeElement?.tagName).toBe("H1");
   });
 
-  it("persists the landing diagnosis goal and uses push history for the user action", async () => {
+  it("persists the landing entry intent without inventing a profile and pushes user navigation", async () => {
     const replaceState = vi.spyOn(history, "replaceState");
     const pushState = vi.spyOn(history, "pushState");
 
@@ -397,17 +420,19 @@ describe("App recommendation browser interactions", () => {
     expect(replaceState).toHaveBeenCalled();
     pushState.mockClear();
 
-    await click("내 트랙 확인하기");
+    await click("선택한 방법으로 시작하기");
 
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_V2) ?? "null") as SavedAppStateV2;
-    expect(saved.profileDraft?.goal).toBe("check-progress");
+    expect(saved.entryIntent).toBe("known-tracks");
+    expect(saved.profile).toBeUndefined();
     expect(new URLSearchParams(location.search).get("view")).toBe("diagnosis");
     expect(new URLSearchParams(location.search).get("step")).toBe("profile");
     expect(pushState).toHaveBeenCalledTimes(1);
 
     await moveNativeHistory("back");
     expect(location.search).toBe("");
-    expect(document.querySelector('[data-resume-state="needs-profile"]')).not.toBeNull();
+    expect(document.querySelector<HTMLInputElement>('input[name="entry-intent"][value="known-tracks"]')?.checked).toBe(true);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY_V2)!).entryIntent).toBe("known-tracks");
     expect(document.querySelector("[data-map-stop]")).toBeNull();
   });
 
@@ -476,14 +501,14 @@ describe("App recommendation browser interactions", () => {
     });
 
     expect(new URLSearchParams(location.search).get("axis")).toBe("progress");
-    expect(document.querySelector('[data-recommendation-panel="progress"]')).not.toBeNull();
-    expect(document.querySelector("#recommendation-axis-destination-progress")?.getAttribute("aria-current")).toBe("page");
-    expect(document.activeElement).toBe(heading);
+    expect(document.querySelector("#track-history-title")).not.toBeNull();
+    expect(document.querySelectorAll("[data-history-track]")).toHaveLength(5);
+    expect(document.activeElement).toBe(document.querySelector("#track-history-title"));
 
     await setRouteAndPop("/?view=recommendation&step=axes&axis=plan");
     expect(document.querySelector('[data-recommendation-panel="plan"]')).not.toBeNull();
     expect(document.querySelector("#recommendation-axis-destination-plan")?.getAttribute("aria-current")).toBe("page");
-    expect(document.activeElement).toBe(heading);
+    expect(document.activeElement).toBe(document.querySelector("#recommendation-axes-title"));
   });
 
   it("restores all recommendation axes through native back, forward, and mounted reload", async () => {
@@ -498,17 +523,15 @@ describe("App recommendation browser interactions", () => {
     await act(async () => document.querySelector<HTMLButtonElement>(
       "#recommendation-axis-destination-progress",
     )?.click());
-    await act(async () => document.querySelector<HTMLButtonElement>(
-      "#recommendation-axis-destination-plan",
-    )?.click());
+    await setRouteAndPop("/?view=recommendation&step=axes&axis=plan");
     expect(new URLSearchParams(location.search).get("axis")).toBe("plan");
 
     await moveNativeHistory("back");
-    expect(document.querySelector('[data-recommendation-panel="progress"]')).not.toBeNull();
+    expect(document.querySelector("#track-history-title")).not.toBeNull();
     await moveNativeHistory("back");
     expect(document.querySelector('[data-recommendation-panel="interest"]')).not.toBeNull();
     await moveNativeHistory("forward");
-    expect(document.querySelector('[data-recommendation-panel="progress"]')).not.toBeNull();
+    expect(document.querySelector("#track-history-title")).not.toBeNull();
     await moveNativeHistory("forward");
     expect(document.querySelector('[data-recommendation-panel="plan"]')).not.toBeNull();
 
@@ -528,14 +551,15 @@ describe("App recommendation browser interactions", () => {
     await mountApp();
     pushState.mockClear();
     await click("푸드마케팅 선택");
-    await click("선택한 트랙으로 자가진단 이어가기");
+    await click("1개 트랙으로 이어가기");
 
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY_V2) ?? "null") as SavedAppStateV2;
     expect(saved.interestSurvey?.selectedTrackId).toBe("food-marketing");
     expect(saved.targetTrackId).toBeUndefined();
     expect(saved.pendingTargetTrackId).toBe("food-marketing");
     expect(saved.profile).toBeUndefined();
-    expect(saved.profileDraft?.goal).toBe("find-track");
+    expect(saved.profileDraft?.goal).toBe("check-progress");
+    expect(saved.pendingSelectedTrackIds).toEqual(["food-marketing"]);
     expect(new URLSearchParams(location.search).get("view")).toBe("diagnosis");
     expect(pushState).toHaveBeenCalledTimes(1);
   });

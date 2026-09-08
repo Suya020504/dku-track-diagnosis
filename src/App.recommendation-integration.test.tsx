@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import App, { completeProfileTransition } from "./App";
+import App, { completeProfileTransition, confirmSelectedTracksTransition, startIntentTransition } from "./App";
 import * as AppModule from "./App";
 import { calculateGraduationPlan } from "./lib/graduationPlanner";
 import { interestSurveyQuestions } from "./lib/interestSurvey";
@@ -125,7 +125,7 @@ function renderApp(search: string, state?: SavedAppStateV2): string {
 }
 
 describe("recommendation route integration", () => {
-  it("creates distinct landing transitions for diagnosis and interest discovery", () => {
+  it("keeps distinct entry goals while requiring profile information before branching", () => {
     const startEntryFlowTransition = (
       AppModule as unknown as {
         startEntryFlowTransition?: (
@@ -144,23 +144,27 @@ describe("recommendation route integration", () => {
     expect(diagnosis.state.profileDraft?.goal).toBe("check-progress");
     expect(diagnosis.route).toEqual({ view: "diagnosis", step: "profile" });
     expect(interest.state.profileDraft?.goal).toBe("find-track");
-    expect(interest.route).toEqual({ view: "recommendation", step: "survey" });
+    expect(interest.route).toEqual({ view: "diagnosis", step: "profile" });
   });
 
-  it("shows the two landing entry actions before asking an empty visitor for a profile", () => {
+  it("shows three real entry choices and an optional guide before profile input", () => {
     const markup = renderApp("");
 
-    const primaryActionIndex = markup.indexOf("내 트랙 확인하기");
-    const secondaryActionIndex = markup.indexOf("트랙제 먼저 알아보기");
+    const choicesIndex = markup.indexOf("시작 방법 선택");
+    const primaryActionIndex = markup.indexOf("선택한 방법으로 시작하기");
 
-    expect(markup.replace(/<[^>]+>/g, "")).toContain("식품자원경제학과 트랙 안내");
-    expect(markup).toContain("내 트랙 확인하기");
+    expect(markup.replace(/<[^>]+>/g, "")).toContain("내 수업으로 트랙을 완성해요");
+    expect(markup).toContain("선택한 방법으로 시작하기");
     expect(markup).toContain("트랙제 먼저 알아보기");
-    expect(markup).toContain("관심으로 트랙 추천받기");
+    expect(markup).toContain("관심으로 찾아볼래요");
     expect(primaryActionIndex).toBeGreaterThan(-1);
-    expect(primaryActionIndex).toBeLessThan(secondaryActionIndex);
-    expect(markup.match(/data-action-priority="primary"/g)).toHaveLength(1);
-    expect(markup.match(/data-track-preview=/g)).toHaveLength(5);
+    expect(primaryActionIndex).toBeGreaterThan(choicesIndex);
+    expect(markup.match(/class="journey-home-start"/g)).toHaveLength(1);
+    expect(markup.match(/name="entry-intent"/g)).toHaveLength(3);
+    expect(markup).toContain('value="known-tracks"');
+    expect(markup).toContain('value="interest-survey"');
+    expect(markup).toContain('value="completed-courses"');
+    expect(markup).toContain("5개 트랙 자세히 보기");
     expect(markup).not.toContain("data-map-stop");
     expect(markup).not.toContain("지도 범례");
     expect(markup).not.toContain("현재 예시 60%");
@@ -174,45 +178,45 @@ describe("recommendation route integration", () => {
       name: "empty input",
       state: landingState("empty"),
       resumeState: "empty",
-      title: "내 트랙 확인하기",
+      title: "내 수업으로 트랙을 완성해요",
       action: undefined,
-      copy: ["학생 유형 → 이수 과목 → 진단 결과", "자동 저장"],
+      copy: ["내 정보", "트랙 선택", "이수 현황", "학기 계획"],
       forbidden: ["저장한 학기 계획이 있어요"],
     },
     {
       name: "profile only",
       state: landingState("profile-only"),
       resumeState: "needs-courses",
-      title: "과목 선택부터 이어가세요",
-      action: "이수 과목 확인하기",
-      copy: ["저장된 학생 유형은 그대로 두고", "이수 과목 확인하기"],
+      title: "입력하던 내용이 남아 있어요",
+      action: "이전 입력 이어보기",
+      copy: ["저장된 정보는 그대로 두고", "이전 입력 이어보기"],
       forbidden: ["저장한 학기 계획이 있어요"],
     },
     {
       name: "completed interest and selected target",
       state: landingState("interest"),
       resumeState: "needs-profile",
-      title: "입력하던 진단이 있어요",
-      action: "진단 이어가기",
-      copy: ["소속과 이수 경로를 확인한 뒤", "진단 이어가기"],
+      title: "입력하던 내용이 남아 있어요",
+      action: "이전 입력 이어보기",
+      copy: ["저장된 정보는 그대로 두고", "이전 입력 이어보기"],
       forbidden: ["저장한 학기 계획이 있어요"],
     },
     {
       name: "reviewed courses without target",
       state: landingState("courses-no-target"),
       resumeState: "needs-track",
-      title: "현재 결과를 비교할 수 있어요",
-      action: "트랙 비교 보기",
-      copy: ["목표 트랙이 없어도 다섯 트랙", "트랙 비교 보기"],
+      title: "이전에 확인한 트랙이 있어요",
+      action: "내 결과 다시 보기",
+      copy: ["내 결과를 다시 확인하거나", "이번 학기 과목을 반영하세요"],
       forbidden: ["저장한 학기 계획이 있어요"],
     },
     {
       name: "reviewed courses",
       state: landingState("courses"),
       resumeState: "ready",
-      title: "진단 결과가 준비됐어요",
-      action: "학기 플래너 열기",
-      copy: ["목표 학기까지의 참고 계획", "학기 플래너 열기"],
+      title: "이전에 확인한 트랙이 있어요",
+      action: "내 결과 다시 보기",
+      copy: ["내 결과를 다시 확인하거나", "이번 학기 과목을 반영하세요"],
       forbidden: ["저장한 학기 계획이 있어요"],
     },
     {
@@ -221,17 +225,18 @@ describe("recommendation route integration", () => {
       resumeState: "saved-plan",
       title: "저장한 학기 계획이 있어요",
       action: "저장한 계획 보기",
-      copy: ["이전에 만든 계획과 공식 확인 항목", "저장한 계획 보기"],
+      copy: ["내 결과를 다시 확인하거나", "저장한 계획 보기", "내 결과 다시 보기"],
       forbidden: ["처음이어도 괜찮아요"],
     },
   ])("renders the real resume state for $name", ({ state, resumeState, title, action, copy, forbidden }) => {
     const markup = renderApp("", state);
 
     if (resumeState === "empty") {
-      expect(markup).not.toContain("data-resume-state=");
-      expect(markup).toContain('class="track-home__save-note"');
-      expect(markup).toContain('data-action-priority="primary"');
+      expect(markup).not.toContain('aria-label="이전 입력 이어보기"');
+      expect(markup).toContain('class="journey-home-footer"');
+      expect(markup).toContain('class="journey-home-start"');
     } else {
+      expect(markup).toContain('aria-label="이전 입력 이어보기"');
       expect(markup).toContain(`data-resume-state="${resumeState}"`);
     }
     expect(markup).toContain(title);
@@ -266,13 +271,14 @@ describe("recommendation route integration", () => {
       createEmptyAppState(),
     );
 
-    expect(markup).toContain('id="recommendation-axis-destination-interest"');
-    expect(markup).toContain('id="recommendation-axis-destination-progress"');
-    expect(markup).toContain('id="recommendation-axis-destination-plan"');
-    expect(markup).toContain('data-recommendation-panel="progress"');
+    expect(markup).toContain('id="track-history-title"');
+    expect(markup).toContain('aria-label="다섯 트랙 이수 이력 비교표"');
+    expect(markup.match(/data-history-track=/g)).toHaveLength(5);
+    expect(markup).toContain('aria-label="선택한 트랙의 합산 이수"');
     expect(markup).not.toContain('data-recommendation-panel="interest"');
     expect(markup).not.toContain('data-recommendation-panel="plan"');
-    expect(markup).toContain("이수 과목 입력하기");
+    expect(markup).toContain("이수 과목 수정");
+    expect(markup).toContain("전공 전체 졸업학점이 아닌 트랙 모듈 조건");
   });
 
   it("canonicalizes a reviewed targetless track-major result to the five-track progress comparison", () => {
@@ -293,10 +299,10 @@ describe("recommendation route integration", () => {
       },
     );
 
-    expect(markup).toContain('data-recommendation-panel="progress"');
-    expect(markup).toContain("완료 과목 기준으로 비교한 트랙");
-    expect(markup.match(/data-track-id=/g)).toHaveLength(5);
-    expect(markup).toContain("위 후보에서 진단할 트랙을 선택해 주세요");
+    expect(markup).toContain('id="track-history-title"');
+    expect(markup).toContain("들은 과목으로 트랙을 찾아보세요");
+    expect(markup.match(/data-history-track=/g)).toHaveLength(5);
+    expect(markup).toContain("확인할 트랙을 골라 주세요");
     expect(markup).toMatch(/planner-shell-primary-nav[\s\S]*?aria-current="page"[^>]*>진단 결과<\/button>/);
     expect(markup).toContain("현재 · 트랙 비교");
     expect(markup).not.toContain('data-result-panel="current"');
@@ -310,7 +316,8 @@ describe("recommendation route integration", () => {
       courseInputReviewedAt: "2026-08-30T00:30:00.000Z",
     });
 
-    expect(markup).toContain('data-resume-state="ready"');
+    expect(markup).toContain('aria-label="이전 입력 이어보기"');
+    expect(markup).toContain("내 결과 다시 보기");
     expect(markup).not.toContain("관심 적합도 결과");
     expect(markup).not.toContain("data-map-stop");
   });
@@ -351,18 +358,19 @@ describe("recommendation route integration", () => {
     expect(markup).toContain("트랙형전공으로 전환한다고 가정한 비교");
   });
 
-  it("routes a find-track track-major profile to survey when no target was chosen", () => {
+  it("asks for an entry direction after saving a legacy find-track profile without explicit intent", () => {
     const transition = completeProfileTransition(createEmptyAppState(), findTrackProfile);
 
     expect((transition as { route?: unknown }).route).toEqual({
-      view: "recommendation",
-      step: "survey",
-      audience: "department-student",
+      view: "diagnosis", step: "profile", profileStage: "direction",
     });
     expect(transition.state.profile).toEqual(findTrackProfile);
+    expect(startIntentTransition(transition.state, "interest-survey").route).toEqual({
+      view: "recommendation", step: "survey", audience: "department-student",
+    });
   });
 
-  it("persists a survey choice, preselects it in profile, and continues to courses", () => {
+  it("keeps a survey choice pending through profile completion until multiple-track confirmation", () => {
     const chooseInterestTrackTransition = (
       AppModule as unknown as {
         chooseInterestTrackTransition?: (
@@ -395,16 +403,23 @@ describe("recommendation route integration", () => {
     expect(chosen.state.targetTrackId).toBeUndefined();
     expect(chosen.state.pendingTargetTrackId).toBe("economics");
     expect(chosen.state.interestSurvey?.selectedTrackId).toBe("economics");
-    expect(chosen.state.profileDraft?.goal).toBe("find-track");
+    expect(chosen.state.profileDraft?.goal).toBe("check-progress");
+    expect(chosen.state.pendingSelectedTrackIds).toEqual(["economics"]);
     expect(chosen.route).toEqual({ view: "diagnosis", step: "profile", profileStage: "path" });
 
     const completed = completeProfileTransition(chosen.state, findTrackProfile);
-    expect(completed.state.targetTrackId).toBe("economics");
+    expect(completed.state.targetTrackId).toBeUndefined();
+    expect(completed.state.pendingSelectedTrackIds).toEqual(["economics"]);
     expect(completed.step).toBe("courses");
     expect((completed as { route?: unknown }).route).toEqual({
       view: "diagnosis",
-      step: "courses",
+      step: "tracks",
     });
+    const confirmed = confirmSelectedTracksTransition(completed.state, ["economics", "food-marketing"]);
+    expect(confirmed.state.targetTrackId).toBe("economics");
+    expect(confirmed.state.comparisonTrackIds).toEqual(["food-marketing"]);
+    expect(confirmed.state.pendingSelectedTrackIds).toBeUndefined();
+    expect(confirmed.route).toEqual({ view: "diagnosis", step: "courses" });
   });
 
   it("restores a survey-selected target after a non-track path cleared the active target", () => {
@@ -424,7 +439,7 @@ describe("recommendation route integration", () => {
 
     expect(completed.state.targetTrackId).toBe("economics");
     expect(completed.step).toBe("courses");
-    expect(completed.route).toEqual({ view: "diagnosis", step: "courses" });
+    expect(completed.route).toEqual({ view: "diagnosis", step: "profile", profileStage: "direction" });
   });
 
   it("replaces the active result aggregate with a truthful next-page action", () => {

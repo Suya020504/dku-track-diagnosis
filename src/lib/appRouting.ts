@@ -5,7 +5,7 @@ import { resolveDiagnosisStep, type DiagnosisStep } from "./viewRouting";
 export type ResultSection = "current" | "next" | "confirm";
 export type ResourceSection = "tracks" | "modules" | "curriculum" | "timetable" | "official";
 export type TrackGuideSection = "overview" | "benefits" | "outcomes" | "structure" | "application" | "videos";
-export type ProfileStage = "affiliation" | "path";
+export type ProfileStage = "affiliation" | "path" | "direction";
 
 export type AppRoute =
   | { view: "landing" }
@@ -21,7 +21,7 @@ export type AppRoute =
       axis?: "interest" | "progress" | "plan";
       audience?: InterestSurveyAudience;
     }
-  | { view: "plan"; step: "setup" | "schedule" | "checks" }
+  | { view: "plan"; step: "setup" | "schedule" | "checks"; scope?: "tracks" | "academic" }
   | { view: "result"; section?: ResultSection }
   | { view: "resources"; section?: ResourceSection }
   | { view: "track-guide"; section?: TrackGuideSection; videoId?: OfficialTrackVideoId }
@@ -34,7 +34,7 @@ const planSteps = new Set(["setup", "schedule", "checks"] as const);
 const resultSections = new Set<ResultSection>(["current", "next", "confirm"]);
 const resourceSections = new Set<ResourceSection>(["tracks", "modules", "curriculum", "timetable", "official"]);
 const trackGuideSections = new Set<TrackGuideSection>(["overview", "benefits", "outcomes", "structure", "application", "videos"]);
-const profileStages = new Set<ProfileStage>(["affiliation", "path"]);
+const profileStages = new Set<ProfileStage>(["affiliation", "path", "direction"]);
 
 export function resolveAppRoute(
   search: string,
@@ -81,14 +81,15 @@ export function resolveAppRoute(
   }
 
   if (view === "plan") {
+    const scope = params.get("scope") === "tracks" ? "tracks" : params.get("scope") === "academic" ? "academic" : undefined;
     const rawStep = params.get("step");
     const requested = rawStep && planSteps.has(rawStep as "setup" | "schedule" | "checks")
       ? rawStep as "setup" | "schedule" | "checks"
       : "setup";
-    const step = requested !== "setup" && !state.graduationPlan
+    const step = requested !== "setup" && !(scope === "tracks" ? state.trackPlanning?.result : state.graduationPlan)
       ? "setup"
       : requested;
-    return { view: "plan", step };
+    return scope ? { view: "plan", step, scope } : { view: "plan", step };
   }
 
   if (view === "resources") {
@@ -125,6 +126,7 @@ export function buildAppHref(currentHref: string, route: AppRoute): string {
   url.searchParams.delete("video");
   url.searchParams.delete("audience");
   url.searchParams.delete("record");
+  url.searchParams.delete("scope");
 
   if (route.view === "landing") {
     clearRouteParams(url);
@@ -175,6 +177,7 @@ export function buildAppHref(currentHref: string, route: AppRoute): string {
   if (route.view === "plan") {
     url.searchParams.set("view", "plan");
     url.searchParams.set("step", route.step);
+    if (route.scope) url.searchParams.set("scope", route.scope);
     url.searchParams.delete("axis");
     url.searchParams.delete("section");
     url.searchParams.delete("profile");
@@ -226,6 +229,7 @@ export function writeAppRouteToHistory(
     input: _input,
     video: _video,
     recordId: _recordId,
+    scope: _scope,
     ...unrelatedState
   } = currentState;
   const state = { ...unrelatedState, ...routeHistoryState(route) };
@@ -242,6 +246,7 @@ function clearRouteParams(url: URL): void {
   url.searchParams.delete("input");
   url.searchParams.delete("video");
   url.searchParams.delete("audience");
+  url.searchParams.delete("scope");
 }
 
 function routeHistoryState(route: AppRoute): Record<string, string> {
@@ -272,7 +277,7 @@ function routeHistoryState(route: AppRoute): Record<string, string> {
     }
     return { view: route.view, step: route.step };
   }
-  if (route.view === "plan") return { view: route.view, step: route.step };
+  if (route.view === "plan") return route.scope ? { view: route.view, step: route.step, scope: route.scope } : { view: route.view, step: route.step };
   if (route.view === "resources") return { view: route.view, section: route.section ?? "tracks" };
   if (route.view === "track-guide") {
     return route.section === "videos" && route.videoId

@@ -1,15 +1,15 @@
 import { useRef, useState, type RefObject } from "react";
-import { getAllowedStudyPaths } from "../../data/requirementRules2026";
+import { bridgeProfileMajorContext } from "../../lib/majorContext";
 import type { ProfileStage } from "../../lib/appRouting";
 import type {
-  ServiceGoal,
+  EntryIntent,
   StudentAffiliation,
   StudentProfile,
-  StudyPath,
   TrackId,
 } from "../../types";
 import { AffiliationStep } from "./AffiliationStep";
-import { StudyPathStep } from "./StudyPathStep";
+import { MajorInformationStep } from "./MajorInformationStep";
+import { DirectionStep } from "./DirectionStep";
 
 export type DraftProfile = Partial<StudentProfile> &
   Pick<StudentProfile, "goal" | "curriculumRuleVersion" | "ruleApplicability">;
@@ -24,18 +24,22 @@ export type ProfileFlowProps = {
   onProfileStageChange?: (stage: ProfileStage) => void;
   onChange: (draft: DraftProfile) => void;
   onComplete: (profile: StudentProfile) => void;
+  entryIntent?: EntryIntent;
+  onEntryIntentChange?: (intent: EntryIntent) => void;
+  onStartDirection?: (intent: EntryIntent) => void;
 };
 
 export function ProfileFlow({
   profile,
   initialDraft,
-  targetTrackId,
   profileStage = "affiliation",
   headingRef,
-  onTargetTrackChange,
   onProfileStageChange,
   onChange,
   onComplete,
+  entryIntent,
+  onEntryIntentChange,
+  onStartDirection,
 }: ProfileFlowProps) {
   const [draft, setDraft] = useState<DraftProfile>(() => ({
     goal: "check-progress",
@@ -43,21 +47,14 @@ export function ProfileFlow({
     ruleApplicability: "reference-only",
     ...(initialDraft !== undefined ? initialDraft : profile),
   }));
-  const [draftTargetTrackId, setDraftTargetTrackId] = useState<TrackId | undefined>(targetTrackId);
+  const [direction, setDirection] = useState<EntryIntent>(entryIntent ?? "known-tracks");
   const submittedRef = useRef(false);
-  const allowedPaths = draft.affiliation ? getAllowedStudyPaths(draft.affiliation) : [];
-  const pathValid = Boolean(
-    draft.affiliation && draft.studyPath && allowedPaths.includes(draft.studyPath),
-  );
-  const targetTrackRequired = draft.studyPath === "track-major" && draft.goal === "plan-graduation";
   const entryYearValid = draft.entryYear === undefined || (
     Number.isInteger(draft.entryYear)
     && draft.entryYear >= 2000
     && draft.entryYear <= 2026
   );
-  const valid = pathValid
-    && entryYearValid
-    && (!targetTrackRequired || Boolean(draftTargetTrackId));
+  const valid = Boolean(draft.affiliation) && entryYearValid;
 
   function update(patch: Partial<DraftProfile>) {
     const next = { ...draft, ...patch };
@@ -67,27 +64,18 @@ export function ProfileFlow({
   }
 
   function changeAffiliation(affiliation: StudentAffiliation) {
-    update({ affiliation, studyPath: undefined });
-  }
-
-  function changeStudyPath(studyPath: StudyPath) {
-    if (studyPath !== "track-major") changeTargetTrack(undefined);
-    update({ studyPath });
-  }
-
-  function changeTargetTrack(trackId: TrackId | undefined) {
-    submittedRef.current = false;
-    setDraftTargetTrackId(trackId);
-    onTargetTrackChange?.(trackId);
+    update({ affiliation, studyPath: undefined, majorRole: affiliation === "department-student" ? "primary" : "undecided", otherMajor: undefined });
   }
 
   function complete() {
-    if (submittedRef.current || !valid || !draft.affiliation || !draft.studyPath) return;
+    if (submittedRef.current || !valid || !draft.affiliation) return;
+    const completed = bridgeProfileMajorContext(draft);
+    if (!completed.studyPath) return;
     submittedRef.current = true;
     onComplete({
-      ...draft,
+      ...draft, ...completed,
       affiliation: draft.affiliation,
-      studyPath: draft.studyPath,
+      studyPath: completed.studyPath,
     });
   }
 
@@ -106,8 +94,9 @@ export function ProfileFlow({
           aria-current={profileStage === "path" ? "step" : undefined}
         >
           <span aria-hidden="true" />
-          <strong>이수 경로</strong>
+          <strong>내 정보</strong>
         </li>
+        <li data-profile-stage-marker="direction" aria-current={profileStage === "direction" ? "step" : undefined}><span aria-hidden="true" /><strong>시작 방법</strong></li>
       </ol>
 
       {profileStage === "affiliation" ? (
@@ -117,21 +106,14 @@ export function ProfileFlow({
           onChange={changeAffiliation}
           onNext={() => onProfileStageChange?.("path")}
         />
+      ) : profileStage === "direction" && profile ? (
+        <DirectionStep value={entryIntent ?? direction} headingRef={headingRef} onChange={intent => { setDirection(intent); onEntryIntentChange?.(intent); }} onContinue={intent => onStartDirection?.(intent)} onBack={() => onProfileStageChange?.("path")} />
       ) : (
-        <StudyPathStep
-          affiliation={draft.affiliation}
-          goal={draft.goal as ServiceGoal}
-          studyPath={draft.studyPath}
-          entryYear={draft.entryYear}
+        <MajorInformationStep
+          draft={draft}
           entryYearValid={entryYearValid}
-          targetTrackId={draftTargetTrackId}
-          allowedPaths={allowedPaths}
-          valid={valid}
           headingRef={headingRef}
-          onGoalChange={(goal) => update({ goal })}
-          onStudyPathChange={changeStudyPath}
-          onEntryYearChange={(entryYear) => update({ entryYear })}
-          onTargetTrackChange={changeTargetTrack}
+          onChange={update}
           onBack={() => onProfileStageChange?.("affiliation")}
           onComplete={complete}
         />

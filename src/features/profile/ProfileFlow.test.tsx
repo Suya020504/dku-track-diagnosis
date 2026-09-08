@@ -45,8 +45,9 @@ describe("ProfileFlow", () => {
   it("keeps optional purposes out of the initial path decision", async () => {
     await mountProfileFlow({ profileStage: "path", initialDraft: { affiliation: "department-student" } });
     const purpose = document.querySelector('input[name="goal"]');
-    expect(purpose?.closest("details")?.open).toBe(false);
-    expect(document.querySelector('input[name="studyPath"]')?.closest("details")).toBeNull();
+    expect(purpose).toBeNull();
+    expect(document.querySelector('input[name="studyPath"]')).toBeNull();
+    expect(document.querySelector('input[name="otherMajor"]')).not.toBeNull();
   });
   it("restores an in-progress draft over the last completed profile", async () => {
     await mountProfileFlow({
@@ -63,9 +64,9 @@ describe("ProfileFlow", () => {
       profileStage: "path",
     });
 
-    expect(document.querySelector('input[name="studyPath"][value="double-major"]')).not.toBeNull();
-    expect(document.querySelector('input[name="studyPath"]:checked')).toBeNull();
-    expect(document.querySelector('[role="status"]')?.textContent).toContain("이수 경로를 선택해 주세요");
+    expect(document.querySelector('input[name="majorRole"][value="double-major"]')).not.toBeNull();
+    expect(document.querySelector<HTMLInputElement>('input[name="majorRole"][value="undecided"]')?.checked).toBe(true);
+    expect(document.querySelector('[role="status"]')?.textContent).toContain("학사 이수 기준은 확정하지 않아요");
   });
 
   it("keeps affiliation as the only first-step decision and stores it in the draft", async () => {
@@ -115,11 +116,11 @@ describe("ProfileFlow", () => {
     });
 
     expect(document.querySelector('fieldset[aria-labelledby="affiliation-question"]')).toBeNull();
-    expect(document.querySelector('input[name="studyPath"]')).not.toBeNull();
-    expect(document.querySelector<HTMLButtonElement>(".study-path-complete")?.disabled).toBe(true);
+    expect(document.querySelector('input[name="majorRole"]')).not.toBeNull();
+    expect(document.querySelector<HTMLButtonElement>(".study-path-complete")?.disabled).toBe(false);
 
-    await act(async () => click('input[name="studyPath"][value="minor"]'));
-    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ studyPath: "minor" }));
+    await act(async () => click('input[name="majorRole"][value="minor"]'));
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ majorRole: "minor" }));
     expect(onComplete).not.toHaveBeenCalled();
 
     await act(async () => {
@@ -178,7 +179,106 @@ describe("ProfileFlow", () => {
     expect(year.value).toBe("2027");
   });
 
-  it("lets a progress-checking track-major continue without choosing a target and clear an old target", async () => {
+  it("selects a recent admission year and keeps clearing it optional without changing study rules", async () => {
+    const completed: StudentProfile[] = [];
+    await mountProfileFlow({
+      profileStage: "path",
+      initialDraft: {
+        affiliation: "external-student",
+        studyPath: "minor",
+        goal: "check-progress",
+      },
+      onComplete: (profile) => { completed.push(profile); },
+    });
+
+    const year = document.querySelector<HTMLSelectElement>('.dku-profile-year select');
+    expect(year).not.toBeNull();
+    if (!year) return;
+    expect([...year.options].map(option => option.value)).toEqual([
+      "", "2026", "2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018", "2017", "custom",
+    ]);
+    expect(year.value).toBe("");
+    expect(document.querySelector('.dku-profile-year input[type="number"]')).toBeNull();
+    expect(document.querySelector<HTMLButtonElement>(".study-path-complete")?.disabled).toBe(false);
+
+    await act(async () => {
+      year.value = "2023";
+      year.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await act(async () => click(".study-path-complete"));
+    expect(completed[0]).toMatchObject({
+      entryYear: 2023,
+      affiliation: "external-student",
+      studyPath: "minor",
+      curriculumRuleVersion: "2026-provided-final-plan",
+      ruleApplicability: "reference-only",
+    });
+
+    await act(async () => {
+      year.value = "";
+      year.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await act(async () => click(".study-path-complete"));
+    expect(completed).toHaveLength(2);
+    expect(completed[1]?.entryYear).toBeUndefined();
+  });
+
+  it.each([2000, 2016])("preserves an existing %s admission year through the direct input option", async (entryYear) => {
+    const completed: StudentProfile[] = [];
+    await mountProfileFlow({
+      profileStage: "path",
+      initialDraft: {
+        affiliation: "department-student",
+        studyPath: "advanced-major",
+        goal: "check-progress",
+        entryYear,
+      },
+      onComplete: (profile) => { completed.push(profile); },
+    });
+
+    const year = document.querySelector<HTMLSelectElement>('.dku-profile-year select');
+    expect(year?.value).toBe("custom");
+    expect(year?.selectedOptions[0]?.textContent).toBe("이전 연도 직접 입력");
+    expect(document.querySelector<HTMLInputElement>('.dku-profile-year input[type="number"]')?.value).toBe(String(entryYear));
+    await act(async () => click(".study-path-complete"));
+    expect(completed[0]?.entryYear).toBe(entryYear);
+  });
+
+  it("lets a student enter an earlier admission year before returning to the recent-year list", async () => {
+    const completed: StudentProfile[] = [];
+    await mountProfileFlow({
+      profileStage: "path",
+      initialDraft: { affiliation: "external-student", studyPath: "minor" },
+      onComplete: (profile) => { completed.push(profile); },
+    });
+
+    const year = document.querySelector<HTMLSelectElement>('.dku-profile-year select');
+    expect(year).not.toBeNull();
+    if (!year) return;
+    await act(async () => {
+      year.value = "custom";
+      year.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    const directYear = document.querySelector<HTMLInputElement>('.dku-profile-year input[type="number"]');
+    expect(directYear).not.toBeNull();
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(directYear, "2015");
+      directYear?.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => click(".study-path-complete"));
+    expect(completed[0]?.entryYear).toBe(2015);
+
+    await act(async () => {
+      year.value = "2026";
+      year.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    expect(document.querySelector('.dku-profile-year input[type="number"]')).toBeNull();
+    expect(year.value).toBe("2026");
+    await act(async () => click(".study-path-complete"));
+    expect(completed[1]?.entryYear).toBe(2026);
+  });
+
+  it("preserves an old target while academic information is edited separately", async () => {
     const onComplete = vi.fn();
     const onTargetTrackChange = vi.fn();
     await mountProfileFlow({
@@ -193,14 +293,8 @@ describe("ProfileFlow", () => {
       onTargetTrackChange,
     });
 
-    expect(document.body.textContent).toContain(
-      "2·3학년도 현재 이수 과목으로 참고 진단할 수 있습니다. 실제 트랙 신청 가능 시기, 적용 학번과 최종 인정 범위는 학과 확인이 필요합니다.",
-    );
-    expect(document.body.textContent).toContain("아직 정하지 않았어요 · 5개 트랙 비교");
-    expect(document.querySelector('[data-target-track-choice="compare-all"]')?.closest("details")?.open).toBe(false);
-
-    await act(async () => click('[data-target-track-choice="compare-all"]'));
-    expect(onTargetTrackChange).toHaveBeenLastCalledWith(undefined);
+    expect(document.querySelector('input[name="targetTrackId"]')).toBeNull();
+    expect(onTargetTrackChange).not.toHaveBeenCalled();
     expect(document.querySelector<HTMLButtonElement>(".study-path-complete")?.disabled).toBe(false);
 
     await act(async () => click(".study-path-complete"));
@@ -210,7 +304,7 @@ describe("ProfileFlow", () => {
     }));
   });
 
-  it("requires a target only when the student chooses graduation planning", async () => {
+  it("does not require a track while saving academic information for planning", async () => {
     await mountProfileFlow({
       profileStage: "path",
       initialDraft: {
@@ -221,12 +315,8 @@ describe("ProfileFlow", () => {
     });
 
     expect(document.body.textContent).not.toContain("아직 정하지 않았어요 · 5개 트랙 비교");
-    expect(document.querySelector<HTMLButtonElement>(".study-path-complete")?.disabled).toBe(true);
+    expect(document.querySelector<HTMLButtonElement>(".study-path-complete")?.disabled).toBe(false);
     const targetDisclosure = document.querySelector('input[name="targetTrackId"]')?.closest("details");
-    expect(targetDisclosure?.open).toBe(true);
-    await act(async () => targetDisclosure?.querySelector("summary")?.click());
-    expect(targetDisclosure?.open).toBe(false);
-    expect(targetDisclosure?.querySelector("summary")?.textContent).toContain("(필수)");
-    expect(document.querySelector<HTMLButtonElement>(".study-path-complete")?.disabled).toBe(true);
+    expect(targetDisclosure).toBeUndefined();
   });
 });

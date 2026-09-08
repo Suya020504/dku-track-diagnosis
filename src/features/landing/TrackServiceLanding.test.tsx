@@ -20,6 +20,7 @@ async function renderLanding(
     resultReady: false,
     onStartSimulation: vi.fn(),
     onOpenGuide: vi.fn(),
+    onOpenStructure: vi.fn(),
     onOpenRecommendation: vi.fn(),
     ...overrides,
   };
@@ -48,12 +49,12 @@ afterEach(async () => {
 });
 
 describe("TrackServiceLanding", () => {
-  it("numbers only the three required diagnosis steps and keeps an empty start quiet", async () => {
+  it("shows the new journey and marks semester planning as optional", async () => {
     await renderLanding();
-    const steps = [...document.querySelectorAll(".track-home__steps strong")].map(node => node.textContent);
-    expect(steps).toEqual(["이수 유형", "이수 과목", "진단 결과"]);
+    const steps = [...document.querySelectorAll(".journey-home-steps strong")].map(node => node.textContent);
+    expect(steps).toEqual(["내 정보", "트랙 선택", "이수 현황", "학기 계획선택"]);
     expect(document.querySelector("[data-resume-state]")).toBeNull();
-    expect(document.body.textContent).toContain("필수 진단에 포함되지 않아요");
+    expect(document.body.textContent).toContain("학기 계획은 필요할 때만 이용하세요");
   });
 
   it.each(["needs-profile", "needs-courses", "needs-track", "ready", "saved-plan"] as const)("resumes the actual %s state", async (plannerStatus) => {
@@ -67,17 +68,16 @@ describe("TrackServiceLanding", () => {
   it("presents situation simulation first without the retired map metaphor", async () => {
     await renderLanding();
 
-    expect(document.querySelector("h1")?.textContent).toBe("식품자원경제학과 트랙 안내");
-    expect(document.body.textContent).toContain("트랙별로 배우는 내용을 살펴보고, 들은 과목으로 남은 이수 조건을 확인하세요.");
-    expect(button("내 트랙 확인하기").dataset.actionPriority).toBe("primary");
-    expect(button("트랙제 먼저 알아보기").dataset.actionPriority).toBe("secondary");
+    expect(document.querySelector("h1")?.textContent).toBe("내 수업으로 트랙을 완성해요");
+    expect(document.body.textContent).toContain("들은 과목을 확인하고, 남은 수업부터 계획까지 이어가세요.");
+    expect(button("선택한 방법으로 시작하기").classList.contains("journey-home-start")).toBe(true);
     expect(document.querySelector("[data-map-mode]")).toBeNull();
     expect(document.querySelector("[data-map-stop]")).toBeNull();
     expect(document.body.textContent).not.toContain("현재 위치");
     expect(document.body.textContent).not.toContain("지도");
-    expect(document.querySelector<HTMLImageElement>(".track-home__hero-visual img")?.alt).not.toContain("나침반");
-    expect(document.querySelector<HTMLImageElement>(".track-home__hero-visual img")?.src).toContain("track-service-hero-desk-v2.webp");
-    expect(document.querySelectorAll("[data-track-preview]")).toHaveLength(5);
+    expect(document.querySelector<HTMLImageElement>(".journey-home-hero img")?.alt).not.toContain("나침반");
+    expect(document.querySelector<HTMLImageElement>(".journey-home-hero img")?.src).toContain("track-journey-notebook");
+    expect(document.querySelectorAll('input[name="entry-intent"]')).toHaveLength(3);
     expect(document.querySelectorAll("main")).toHaveLength(1);
   });
 
@@ -87,13 +87,28 @@ describe("TrackServiceLanding", () => {
     const onOpenRecommendation = vi.fn();
     await renderLanding({ onStartSimulation, onOpenGuide, onOpenRecommendation });
 
-    await act(async () => button("내 트랙 확인하기").click());
+    await act(async () => button("선택한 방법으로 시작하기").click());
     await act(async () => button("트랙제 먼저 알아보기").click());
-    await act(async () => button("관심으로 트랙 추천받기").click());
+    await act(async () => document.querySelector<HTMLInputElement>('input[value="interest-survey"]')!.click());
+    await act(async () => button("선택한 방법으로 시작하기").click());
 
     expect(onStartSimulation).toHaveBeenCalledTimes(1);
     expect(onOpenGuide).toHaveBeenCalledTimes(1);
     expect(onOpenRecommendation).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens track structure from the track preview without changing the introductory guide action", async () => {
+    let destination = "landing";
+    await renderLanding({
+      onOpenGuide: () => { destination = "overview"; },
+      onOpenStructure: () => { destination = "structure"; },
+    });
+
+    await act(async () => button("5개 트랙 자세히 보기").click());
+    expect(destination).toBe("structure");
+
+    await act(async () => button("트랙제 먼저 알아보기").click());
+    expect(destination).toBe("overview");
   });
 
   it("shows one truthful resume action for a saved plan without fake counts", async () => {
@@ -110,15 +125,22 @@ describe("TrackServiceLanding", () => {
     expect(document.body.textContent).not.toMatch(/\d+개 과목|\d+%/);
   });
 
-  it("preserves the agreed audience copy and trust boundary", async () => {
+  it.each(["known-tracks", "interest-survey", "completed-courses"] as const)("starts the selected %s intent without merging the paths", async (intent) => {
+    const onStartIntent=vi.fn(); await renderLanding({onStartIntent});
+    await act(async()=>document.querySelector<HTMLInputElement>(`input[value="${intent}"]`)!.click());
+    await act(async()=>button("선택한 방법으로 시작하기").click());
+    expect(onStartIntent).toHaveBeenCalledWith(intent);
+  });
+  it("preserves multiple-track and optional-plan scope without a marketing claim", async () => {
     await renderLanding();
 
-    expect(document.body.textContent).toContain("단국대 학생을 위한 트랙제 안내·자가진단");
-    expect(document.body.textContent).toContain("실제 인정 기준은 학과 확인이 필요합니다");
+    expect(document.body.textContent).toContain("여러 트랙을 함께 선택할 수 있어요");
+    expect(document.body.textContent).toContain("학기 계획은 필요할 때만 이용하세요");
+    expect(document.body.textContent).not.toContain("졸업 보장");
   });
   it("does not promise automatic saving when storage is unavailable", async () => {
     await renderLanding({ saveUnavailable: true });
-    expect(document.querySelector('[role="alert"].track-home__save-note')?.textContent).toContain("브라우저 저장이 제한되어 있어요. 지금 입력한 내용은 탭을 닫기 전에 확인해 주세요.");
-    expect(document.querySelector(".track-home__save-note")?.textContent).not.toContain("자동 저장");
+    expect(document.querySelector('[role="alert"]')?.textContent).toContain("브라우저에 저장하지 못하고 있어요");
+    expect(document.body.textContent).not.toContain("자동 저장");
   });
 });

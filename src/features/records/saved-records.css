@@ -143,3 +143,4 @@
   .saved-records__header { margin-bottom: 20px; }
   .saved-records__terms { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+.saved-track-completion{padding:20px;background:#e8f4ed;border-radius:10px;margin:16px 0;color:#17354b}.saved-track-completion h3{margin:0;font-size:20px}.saved-track-completion p{font-size:15px;line-height:1.6}.saved-track-completion ul{list-style:none;margin:0;padding:0}.saved-track-completion li{display:flex;gap:12px;justify-content:space-between;padding:12px 0;border-top:1px solid #bfdacc}.saved-track-completion li span{font-size:13px;color:#456455}@media(max-width:600px){.saved-track-completion li{flex-direction:column;gap:6px}}

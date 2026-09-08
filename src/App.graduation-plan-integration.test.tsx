@@ -39,6 +39,8 @@ const preferences: GraduationPlanPreferences = {
   considerSeasonalTerm: false,
 };
 
+const confirmedTrackProfile: StudentProfile = { ...minorProfile, affiliation: "department-student", studyPath: "track-major", majorRole: "primary", otherMajor: "no" };
+
 let root: Root | undefined;
 
 function readyState(overrides: Partial<SavedAppStateV2> = {}): SavedAppStateV2 {
@@ -325,7 +327,7 @@ describe("graduation plan pure transitions", () => {
     expect(next.graduationPlanPreferences).toEqual(current.graduationPlanPreferences);
   });
 
-  it("returns a reviewed track-major directly to planner setup after a planning target is selected", () => {
+  it("keeps reviewed input when academic information is saved and opens direction separately", () => {
     const current = readyState({
       profile: { ...minorProfile, studyPath: "track-major", goal: "check-progress" },
       targetTrackId: "food-marketing",
@@ -337,12 +339,12 @@ describe("graduation plan pure transitions", () => {
     });
 
     expect(transition.state.courseInputReviewedAt).toBe(current.courseInputReviewedAt);
-    expect(transition.route).toEqual({ view: "plan", step: "setup" });
+    expect(transition.route).toEqual({ view: "diagnosis", step: "profile", profileStage: "direction" });
   });
 
   it.each([
-    ["find-track", { view: "recommendation", step: "survey" }],
-    ["check-progress", { view: "diagnosis", step: "profile" }],
+    ["find-track", { view: "diagnosis", step: "profile", profileStage: "direction" }],
+    ["check-progress", { view: "diagnosis", step: "profile", profileStage: "direction" }],
   ] as const)(
     "keeps committed profile, course review, and saved plan intact when the landing starts %s",
     (goal, route) => {
@@ -416,7 +418,7 @@ describe("App graduation plan pages", () => {
       "reviewed courses with a missing track-major target",
       {
         ...createEmptyAppState(),
-        profile: { ...minorProfile, studyPath: "track-major" as const },
+        profile: confirmedTrackProfile,
         courseInputReviewedAt: "2026-08-30T00:00:00.000Z",
       },
       ["ready", "ready", "pending"],
@@ -425,7 +427,7 @@ describe("App graduation plan pages", () => {
       "selected target with incomplete course input",
       {
         ...createEmptyAppState(),
-        profile: { ...minorProfile, studyPath: "track-major" as const },
+        profile: confirmedTrackProfile,
         targetTrackId: "food-marketing" as const,
       },
       ["ready", "pending", "ready"],
@@ -482,7 +484,7 @@ describe("App graduation plan pages", () => {
       "track-major with a missing target",
       {
         ...createEmptyAppState(),
-        profile: { ...minorProfile, studyPath: "track-major" as const },
+        profile: confirmedTrackProfile,
         courseInputReviewedAt: "2026-08-30T00:00:00.000Z",
         graduationPlanPreferences: preferences,
       },
@@ -525,7 +527,7 @@ describe("App graduation plan pages", () => {
   it("opens setup for a ready track-major profile without showing the prerequisite boundary", async () => {
     saveState({
       ...createEmptyAppState(),
-      profile: { ...minorProfile, studyPath: "track-major" },
+      profile: confirmedTrackProfile,
       courseInputReviewedAt: "2026-08-30T00:00:00.000Z",
       targetTrackId: "food-marketing",
     });
@@ -540,7 +542,7 @@ describe("App graduation plan pages", () => {
   it("opens direct target selection when the planner is missing a target", async () => {
     saveState({
       ...createEmptyAppState(),
-      profile: { ...minorProfile, affiliation: "department-student", studyPath: "track-major" },
+      profile: confirmedTrackProfile,
       profileDraft: {
         goal: "find-track",
         affiliation: "external-student",
@@ -559,8 +561,8 @@ describe("App graduation plan pages", () => {
     expect(saved.profileDraft?.affiliation).toBe("department-student");
     expect(saved.profileDraft?.studyPath).toBe("track-major");
     expect(new URLSearchParams(location.search).get("view")).toBe("diagnosis");
-    expect(new URLSearchParams(location.search).get("profile")).toBe("path");
-    expect(document.body.textContent).toContain("확인할 이수 경로를 정해 주세요");
+    expect(new URLSearchParams(location.search).get("step")).toBe("tracks");
+    expect(document.querySelector('input[name="selectedTrackIds"]')).not.toBeNull();
   });
 
   it.each([

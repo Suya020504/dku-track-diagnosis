@@ -1,3 +1,6 @@
+import type { TrackSemesterPlan } from "./lib/trackSemesterPlanner";
+import type { TrackCompletionScenario } from "./lib/trackCompletion";
+
 export const PDF_IMPORT_LIMITS = {
   maxFileBytes: 10 * 1024 * 1024,
   maxPages: 50,
@@ -150,6 +153,9 @@ export type ServiceGoal =
   | "plan-graduation";
 
 export type StudentAffiliation = "department-student" | "external-student";
+export type MajorRole = "primary" | "double-major" | "minor" | "undecided";
+export type OtherMajor = "yes" | "no" | "unsure";
+export type EntryIntent = "known-tracks" | "interest-survey" | "completed-courses";
 
 export type StudyPath =
   | "advanced-major"
@@ -167,6 +173,8 @@ export type StudentProfile = {
   goal: ServiceGoal;
   affiliation: StudentAffiliation;
   studyPath: StudyPath;
+  majorRole?: MajorRole;
+  otherMajor?: OtherMajor;
   entryYear?: number;
   curriculumRuleVersion: "2026-provided-final-plan";
   ruleApplicability: RuleApplicability;
@@ -217,6 +225,14 @@ export type DiagnosisSnapshot = {
   result: PathProgressResult;
   recommendationAxes?: RecommendationAxes;
   graduationPlan?: GraduationPlanResult;
+  trackPlan?: TrackSemesterPlan;
+  trackCompletion?: TrackCompletionScenario;
+};
+
+export type TrackPlanningState = {
+  draft?: GraduationPlanDraft;
+  manualTerms?: Record<string, string>;
+  result?: TrackSemesterPlan;
 };
 
 export type SavedAppStateV2 = {
@@ -225,12 +241,16 @@ export type SavedAppStateV2 = {
   profileDraft?: Partial<StudentProfile>;
   /** Undefined: no pending edit; null: explicitly targetless profile draft. */
   pendingTargetTrackId?: TrackId | null;
+  pendingSelectedTrackIds?: TrackId[];
+  entryIntent?: EntryIntent;
+  trackPlanning?: TrackPlanningState;
   courseSelections: CourseSelectionRecord[];
   additionalMajorCredits: AdditionalMajorCredit[];
   courseInputReviewedAt?: string;
   targetTrackId?: TrackId;
   comparisonTrackIds: TrackId[];
   interestSurvey?: InterestSurveyState;
+  graduationPlanDraft?: GraduationPlanDraft;
   graduationPlanPreferences?: GraduationPlanPreferences;
   graduationPlan?: GraduationPlanResult;
   currentSemester?: PlanningSemester;
@@ -270,6 +290,19 @@ export type GraduationPlanPreferences = {
   targetGraduationTerm: AcademicTermId;
   maxMajorCoursesPerTerm: number;
   considerSeasonalTerm: boolean;
+};
+
+/** Form text stays editable even when it is incomplete or not yet valid. */
+export type GraduationPlanDraftValues = {
+  currentTerm?: string;
+  targetGraduationTerm?: string;
+  maxMajorCoursesPerTerm?: string | number;
+  considerSeasonalTerm?: boolean;
+};
+
+export type GraduationPlanDraft = {
+  version: 1;
+  values: GraduationPlanDraftValues;
 };
 
 export type PlannedCourseOrigin = "in-progress" | "user-planned" | "generated";

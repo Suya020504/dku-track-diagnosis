@@ -146,8 +146,11 @@ describe("path-aware result integration", () => {
   it("renders track-major profile editing without a target track", () => {
     const markup = renderApp(state(trackProfile), "?view=diagnosis&step=profile&profile=path");
 
-    expect(markup).toContain("이수 경로");
-    expect(markup).toContain("진단할 트랙");
+    expect(markup).toContain("나의 전공 정보를 확인해 주세요");
+    expect(markup).toContain("주전공");
+    expect(markup).toContain('name="otherMajor"');
+    expect(markup).not.toContain('name="studyPath"');
+    expect(markup).not.toContain('name="targetTrackId"');
   });
 
   it("hides only track-specific result panels for a minor", () => {
@@ -181,7 +184,7 @@ describe("path-aware result integration", () => {
       "b-2", "c-1", "c-2", "c-3", "f-1", "f-2", "h-1", "h-2", "i-1", "i-2", "j-1", "j-2", "l-1", "l-2",
     ];
     const markup = renderApp(
-      state(trackProfile, {
+      state({ ...trackProfile, majorRole: "primary", otherMajor: "no" }, {
         targetTrackId: "food-marketing",
         courseSelections: inProgressCourseIds.map((courseId) => ({
           courseId,
@@ -224,7 +227,7 @@ describe("path-aware result integration", () => {
       enrollmentType: "primary",
     });
     const markup = renderApp(
-      state(trackProfile, {
+      state({ ...trackProfile, majorRole: "primary", otherMajor: "no" }, {
         targetTrackId: "food-marketing",
         courseSelections: completedCourseIds.map((courseId) => ({ courseId, status: "completed" as const })),
         additionalMajorCredits: [{
@@ -239,6 +242,7 @@ describe("path-aware result integration", () => {
 
     expect(legacyResult.passed).toBe(true);
     expect(markup).toContain("참고 계산상 충족");
+    expect(markup).toContain("선택한 트랙의 모듈 조건을 채웠어요");
     expect(markup).not.toContain("현재 입력 기준 충족");
     expect(markup).not.toContain("선택한 트랙 조건을 모두 충족했습니다.");
   });
@@ -249,10 +253,11 @@ describe("path-aware result integration", () => {
       "?view=result&step=result",
     );
 
-    expect(markup).toContain("트랙 관련 학점 진행");
-    expect(markup).toContain('id="result-section-current"');
-    expect(markup).toContain('id="result-section-next"');
-    expect(markup).toContain("현재 · 이수 진행 현황");
+    expect(markup).toContain('aria-label="푸드마케팅 모듈 이수 현황"');
+    expect(markup).toContain('id="track-completion-title"');
+    expect(markup).toContain('id="track-next-courses-title"');
+    expect(markup).toContain("현재 · 결과");
+    expect(markup).toContain("전공 전체 학점과 학번별 조건");
     expect(markup).not.toContain('data-result-panel="next"');
   });
 
@@ -280,7 +285,7 @@ describe("path-aware result integration", () => {
         (() => { throw new Error("Missing current result control"); })()).click();
     });
     expect(new URLSearchParams(location.search).get("section")).toBe("current");
-    expect(document.querySelector('[data-result-panel="current"]')).not.toBeNull();
+    expect(document.querySelector("#track-completion-title")).not.toBeNull();
     expect(document.querySelector('[data-result-panel="next"]')).toBeNull();
     expect(document.activeElement).toBe(document.querySelector("h1"));
 
@@ -323,8 +328,10 @@ describe("path-aware result integration", () => {
 
     await mountApp();
 
-    expect(document.querySelector('[data-result-panel="current"]')).not.toBeNull();
-    await act(async () => document.querySelector<HTMLButtonElement>(".print-button")?.click());
+    expect(document.querySelector("#track-completion-title")).not.toBeNull();
+    const printButton = [...document.querySelectorAll<HTMLButtonElement>("button")].find(control => control.textContent?.trim() === "결과 인쇄");
+    expect(printButton).toBeDefined();
+    await act(async () => printButton?.click());
     expect(print).toHaveBeenCalledTimes(1);
   });
 });

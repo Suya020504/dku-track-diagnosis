@@ -1,4 +1,5 @@
 import { getRequirementRule, REQUIRED_COURSE_VARIANTS } from "../data/requirementRules2026";
+import { getMajorContext } from "./majorContext";
 import type { StudentProfile, StudyPath, TrackId } from "../types";
 
 export type CourseInputPolicy = {
@@ -26,7 +27,15 @@ export function getCourseInputPolicy(profile?: StudentProfile, targetTrackId?: T
       description: "소속과 이수 경로를 선택하면 필요한 전공학점과 필수 과목을 안내합니다. 과목은 먼저 입력해도 됩니다.",
     };
   }
-  const title = pathTitles[profile.studyPath];
+  const context = getMajorContext(profile);
+  if (!context.academicRequirementsConfirmed) {
+    return {
+      title: context.label, totalMajorCredits: null, requiredCredits: null, requiredCourseIds: [],
+      marker: "트랙 모듈 현황부터 확인",
+      description: "들은 과목을 먼저 선택하세요. 전공 구분을 확인하면 전공 전체 학점과 필수 조건을 따로 살펴볼 수 있어요.",
+    };
+  }
+  const title = profile.majorRole ? `${context.label} 기준` : pathTitles[profile.studyPath];
   if (profile.studyPath === "track-major" && !targetTrackId) {
     const required = REQUIRED_COURSE_VARIANTS["starred-six-2026"];
     return {

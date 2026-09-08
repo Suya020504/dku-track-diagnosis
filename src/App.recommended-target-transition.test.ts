@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chooseRecommendedTrackTransition, chooseInterestTrackTransition, completeProfileTransition } from "./App";
+import { chooseRecommendedTrackTransition, chooseInterestTrackTransition, completeProfileTransition, confirmSelectedTracksTransition } from "./App";
 import { createEmptyAppState } from "./lib/storage";
 import type { SavedAppStateV2 } from "./types";
 
@@ -32,10 +32,11 @@ describe("recommended target confirmation", () => {
     expect(staged.profile).toEqual(current.profile);
     expect(staged.graduationPlan).toEqual(current.graduationPlan);
     expect(staged.courseInputReviewedAt).toBe(current.courseInputReviewedAt);
-    const confirmed = completeProfileTransition(staged, { ...current.profile!, ...staged.profileDraft }).state;
-    expect(confirmed.targetTrackId).toBe("food-marketing");
-    expect(confirmed.profile?.ruleApplicability).toBe("reference-only");
-    expect(confirmed.graduationPlan).toBeUndefined();
+    const confirmed = confirmSelectedTracksTransition(staged, staged.pendingSelectedTrackIds!).state;
+    expect(confirmed.targetTrackId).toBe("economics");
+    expect(confirmed.comparisonTrackIds).toEqual(["food-marketing"]);
+    expect(confirmed.profile?.ruleApplicability).toBe("officially-verified");
+    expect(confirmed.graduationPlan).toEqual(current.graduationPlan);
     expect(confirmed).toHaveProperty("pendingTargetTrackId", undefined);
     expect(confirmed.profileDraft).toBeUndefined();
   });
@@ -54,11 +55,11 @@ describe("recommended target confirmation", () => {
     expect(next.state.courseSelections).toEqual(current.courseSelections);
     expect(next.state.interestSurvey).toEqual(current.interestSurvey);
     expect(next.state.courseInputReviewedAt).toBe(current.courseInputReviewedAt);
-    expect(next.state.profileDraft).toEqual({ ...current.profile, goal: "check-progress", studyPath: "track-major" });
+    expect(next.state.profileDraft).toEqual({ ...current.profile, goal: "check-progress" });
     expect(next.state.targetTrackId).toBe(current.targetTrackId);
     expect(next.state).toHaveProperty("pendingTargetTrackId", trackId);
     expect(next.state.graduationPlan).toEqual(current.graduationPlan);
-    expect(next.route).toEqual({ view: "diagnosis", step: "profile", profileStage: "path" });
+    expect(next.route).toEqual({ view: "diagnosis", step: "tracks" });
   });
   it("asks for affiliation when none has been entered", () => {
     const next = chooseRecommendedTrackTransition(createEmptyAppState(), "economics");

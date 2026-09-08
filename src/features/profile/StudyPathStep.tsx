@@ -2,6 +2,7 @@ import { ArrowLeft, ArrowRight, ListChecks } from "lucide-react";
 import { useState, type RefObject } from "react";
 import { TrackGlyph } from "../../components/TrackGlyph";
 import { tracks } from "../../data/curriculumData";
+import { AdmissionYearSelect } from "./AdmissionYearSelect";
 import type {
   ServiceGoal,
   StudentAffiliation,
@@ -198,27 +199,8 @@ export function StudyPathStep({
       ) : null}
 
       <details className="dku-profile-options" open={entryYearOpen} onToggle={(event) => setEntryYearOpen(event.currentTarget.open)}>
-      <summary>입학연도 입력 (선택){entryYear ? ` · ${entryYear}년` : ""}{!entryYearValid ? " · 2000~2026년으로 수정 필요" : ""}</summary>
-      <label className="dku-profile-year">
-        <span>입학연도 <small>(선택)</small></span>
-        <input
-          type="number"
-          min="2000"
-          max="2026"
-          inputMode="numeric"
-          aria-invalid={entryYearValid ? undefined : true}
-          aria-describedby={entryYearValid ? undefined : "dku-profile-year-error"}
-          value={entryYear ?? ""}
-          onChange={(event) => onEntryYearChange(
-            event.target.value ? Number(event.target.value) : undefined,
-          )}
-        />
-        {!entryYearValid ? (
-          <small id="dku-profile-year-error" role="alert">
-            입학연도는 2000년부터 2026년 사이로 입력해 주세요.
-          </small>
-        ) : null}
-      </label>
+      <summary>입학연도 선택 (선택){entryYear ? ` · ${entryYear}년` : ""}{!entryYearValid ? " · 2000~2026년으로 수정 필요" : ""}</summary>
+      <AdmissionYearSelect entryYear={entryYear} valid={entryYearValid} onChange={onEntryYearChange} />
       </details>
 
       <p className="dku-profile-status" role="status">

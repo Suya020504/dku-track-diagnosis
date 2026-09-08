@@ -4,10 +4,10 @@ import type { Track, TrackId } from "../../types";
 
 export function TrackPreviewAccordion({
   tracks,
-  onOpenGuide,
+  onOpenStructure,
 }: {
   tracks: readonly Track[];
-  onOpenGuide: () => void;
+  onOpenStructure: () => void;
 }) {
   const [openTrackId, setOpenTrackId] = useState<TrackId | undefined>(tracks[0]?.id);
 
@@ -52,7 +52,7 @@ export function TrackPreviewAccordion({
       <button
         className="track-home__guide-link planner-focusable"
         type="button"
-        onClick={onOpenGuide}
+        onClick={onOpenStructure}
       >
         5개 트랙 자세히 보기
         <ArrowRight aria-hidden="true" size={18} />

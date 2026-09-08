@@ -41,6 +41,30 @@ describe("pending target persistence", () => {
   });
 });
 
+describe("independent planner draft normalization", () => {
+  it("preserves raw unfinished values and normalizes only field types", () => {
+    const state = { ...createEmptyAppState(), targetTrackId: "economics", graduationPlanDraft: {
+      version: 1, values: { currentTerm: "", targetGraduationTerm: "2027-", maxMajorCoursesPerTerm: 1.5, considerSeasonalTerm: false, unwanted: "drop" },
+    } };
+    const storage = makeStorage({ [STORAGE_KEY_V2]: JSON.stringify(state) });
+    expect(loadAppState(storage)).toMatchObject({ targetTrackId: "economics", graduationPlanDraft: {
+      version: 1, values: { currentTerm: "", targetGraduationTerm: "2027-", maxMajorCoursesPerTerm: "1.5", considerSeasonalTerm: false },
+    } });
+    expect((loadAppState(storage) as unknown as typeof state).graduationPlanDraft.values).not.toHaveProperty("unwanted");
+  });
+  it.each([null, [], { version: 9, values: {} }, { version: 1, values: "broken" }])(
+    "discards an unusable draft %s without falling back from the remaining current record", (graduationPlanDraft) => {
+      const state = { ...createEmptyAppState(), targetTrackId: "economics", courseSelections: [{ courseId: "b-1", status: "completed" }], snapshots: [makeSnapshot("preserved")], graduationPlanDraft };
+      const storage = makeStorage({ [STORAGE_KEY_V2]: JSON.stringify(state) });
+      const restored = loadAppState(storage);
+      expect(restored.courseSelections).toEqual([{ courseId: "b-1", status: "completed" }]);
+      expect(restored.targetTrackId).toBe("economics");
+      expect(restored.snapshots).toEqual(state.snapshots);
+      expect(restored).not.toHaveProperty("graduationPlanDraft");
+    },
+  );
+});
+
 Object.defineProperty(globalThis, "localStorage", {
   configurable: true,
   value: {

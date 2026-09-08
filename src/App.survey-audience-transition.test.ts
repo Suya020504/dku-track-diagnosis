@@ -18,7 +18,7 @@ describe("survey audience transition", () => {
       };
       const entry = startEntryFlowTransition(current, "find-track");
       expect(entry.route).toEqual({
-        view: "recommendation", step: "survey", audience: "department-student",
+        view: "diagnosis", step: "profile",
       });
       expect(entry.state.interestSurvey).toEqual(current.interestSurvey);
       const sameAudience = chooseSurveyAudienceTransition(entry.state, "department-student");

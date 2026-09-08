@@ -3,13 +3,13 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { GraduationPlanPreferences } from "../../types";
+import type { GraduationPlanDraftValues } from "../../types";
 import { GraduationPlanSetup } from "./GraduationPlanSetup";
 
 let root: Root | undefined;
 
 async function renderSetup(
-  value: Partial<GraduationPlanPreferences>,
+  value: GraduationPlanDraftValues,
   onChange = vi.fn(),
   onSubmit = vi.fn(),
 ) {
@@ -99,6 +99,14 @@ describe("GraduationPlanSetup", () => {
     });
 
     expect(document.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(true);
+  });
+
+  it.each(["0x2", "0b11", "2e0"])("keeps non-decimal load text %s editable without silently confirming a different number", async (load) => {
+    await renderSetup({ currentTerm: "2026-2", targetGraduationTerm: "2027-2",
+      maxMajorCoursesPerTerm: load, considerSeasonalTerm: false });
+    expect(input("학기당 최대 전공과목 수").value).toBe(load);
+    expect(document.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(true);
+    expect(input("학기당 최대 전공과목 수").getAttribute("aria-invalid")).toBe("true");
   });
 
   it("states that seasonal terms do not add automatic calculation capacity", async () => {

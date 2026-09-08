@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { archiveCurrentDiagnosis } from "./diagnosisArchive";
 import { createEmptyAppState } from "./storage";
 import { calculatePathProgress } from "./progressEngine";
+import { calculateTrackCompletion } from "./trackCompletion";
 import type { SavedAppStateV2 } from "../types";
 
 function fixture(): SavedAppStateV2 { return { ...createEmptyAppState(), profile: {
@@ -9,6 +10,17 @@ function fixture(): SavedAppStateV2 { return { ...createEmptyAppState(), profile
 }, courseInputReviewedAt: "2026-09-08T00:00:00Z", courseSelections: [{ courseId: "b-1", status: "completed" }] }; }
 
 describe("archive current diagnosis without a planner", () => {
+  it("preserves the selected-track calculation at save time and distinguishes it from a legacy-only record", () => {
+    const state = { ...fixture(), targetTrackId: "economics" as const };
+    const result = calculatePathProgress({ profile: state.profile!, courseSelections: state.courseSelections, additionalMajorCredits: [] });
+    const scenario = calculateTrackCompletion({ selectedTrackIds: ["economics"], courseSelections: state.courseSelections }).completed;
+    const legacy = archiveCurrentDiagnosis(state, result, "legacy", "2026-09-08");
+    const next = archiveCurrentDiagnosis(legacy, result, "track-result", "2026-09-09", scenario);
+    expect(next.snapshots).toHaveLength(2);
+    expect(next.snapshots[1].trackCompletion).toEqual(scenario);
+    expect(next.snapshots[1].trackCompletion).not.toBe(scenario);
+    expect(archiveCurrentDiagnosis(next, result, "duplicate", "2026-09-10", scenario)).toBe(next);
+  });
   it("preserves the current input, deep copies the result and does not create a plan", () => {
     const state = fixture();
     const result = calculatePathProgress({ profile: state.profile!, courseSelections: state.courseSelections, additionalMajorCredits: [] });

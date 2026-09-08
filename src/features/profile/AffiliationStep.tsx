@@ -5,11 +5,11 @@ import type { StudentAffiliation } from "../../types";
 const AFFILIATION_LABELS: Record<StudentAffiliation, { title: string; detail: string }> = {
   "department-student": {
     title: "식품자원경제학과 학생",
-    detail: "심화전공·트랙형전공·다전공 이수 기준을 확인합니다.",
+    detail: "주전공 정보를 확인하고 원하는 트랙을 탐색해요.",
   },
   "external-student": {
     title: "타 학과 학생",
-    detail: "복수전공·부전공·트랙형전공 기준을 확인합니다.",
+    detail: "복수전공·부전공을 고려 중이거나 아직 미정이어도 시작해요.",
   },
 };
 
@@ -31,7 +31,7 @@ export function AffiliationStep({
         <h1 id="dku-profile-title" ref={headingRef} tabIndex={-1}>
           현재 소속을 선택해 주세요
         </h1>
-        <p>소속에 따라 다음 단계에서 선택할 수 있는 이수 경로가 달라집니다.</p>
+        <p>내 정보를 한 번 확인하고, 트랙 선택과 수강 이력 입력을 이어가요.</p>
       </header>
 
       <fieldset className="dku-profile-fieldset" aria-labelledby="affiliation-question">
@@ -68,7 +68,7 @@ export function AffiliationStep({
           disabled={!value}
           onClick={onNext}
         >
-          이수 경로 선택
+          내 정보 확인
           <ArrowRight aria-hidden="true" size={18} />
         </button>
       </div>

@@ -1,0 +1,26 @@
+import { afterEach, expect, it, vi } from "vitest";
+import * as originalCatalogue from "../data/curriculumData";
+import { buildTrackSemesterPlan } from "./trackSemesterPlanner";
+import { calculatePathProgress } from "./progressEngine";
+import type { StudentProfile } from "../types";
+afterEach(() => { vi.doUnmock("../data/curriculumData"); vi.resetModules(); });
+it("drops only current manual placements for removed courses, retaining personal inputs and frozen archived plans", async () => {
+  const profile: StudentProfile = { affiliation: "external-student", studyPath: "minor", majorRole: "minor", goal: "check-progress", curriculumRuleVersion: "2026-provided-final-plan", ruleApplicability: "reference-only" };
+  const preferences = { currentTerm: "2026-2" as const, targetGraduationTerm: "2029-2" as const, maxMajorCoursesPerTerm: 4, considerSeasonalTerm: false };
+  const courseSelections = [{ courseId: "b-1", status: "completed" as const }];
+  const manualTerms = { "f-1": "2027-1", "f-2": "2027-2" };
+  const plan = buildTrackSemesterPlan({ selectedTrackIds: ["food-marketing"], courseSelections, preferences, manualTerms, generatedAt: "2026-09-09" });
+  const result = calculatePathProgress({ profile, courseSelections, additionalMajorCredits: [] });
+  const snapshot = { id: "frozen", createdAt: "2026-09-09", ruleVersion: profile.curriculumRuleVersion, profile, courseSelections, additionalMajorCredits: [], targetTrackId: "food-marketing", comparisonTrackIds: [], result, trackPlan: plan };
+  const raw = JSON.stringify({ version: 2, profile, courseSelections, additionalMajorCredits: [], targetTrackId: "food-marketing", comparisonTrackIds: [], courseInputReviewedAt: "2026-09-09", trackPlanning: { manualTerms, result: plan }, snapshots: [snapshot] });
+  vi.resetModules();
+  vi.doMock("../data/curriculumData", () => ({ ...originalCatalogue, courses: originalCatalogue.courses.filter(course => course.id !== "f-1") }));
+  const { loadAppState } = await import("./storage");
+  const restored = loadAppState({ getItem: (key: string) => key === "track-sim:v2" ? raw : null } as Storage);
+  expect(restored.profile).toEqual(profile);
+  expect(restored.courseSelections).toEqual(courseSelections);
+  expect(restored.snapshots[0]?.trackPlan).toEqual(plan);
+  expect(restored.trackPlanning?.manualTerms).toEqual({ "f-2": "2027-2" });
+  expect(restored.trackPlanning?.result).toBeUndefined();
+  expect(restored.trackPlanning?.draft?.values).toEqual(preferences);
+});

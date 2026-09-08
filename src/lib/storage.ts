@@ -1,10 +1,14 @@
 import { courses, CURRICULUM_YEAR, STORAGE_KEY, tracks } from "../data/curriculumData";
 import { getInterestSurveyQuestions } from "../data/interestSurveyQuestions";
 import { getAllowedStudyPaths } from "../data/requirementRules2026";
+import { buildTrackPlanInputSignature, isTrackSemesterPlan } from "./trackSemesterPlanner";
+import { isTrackCompletionScenario } from "./trackCompletion";
+import { isArchivedTrackSemesterPlan } from "./archivedTrackPlan";
 import type {
   AcademicTermId,
   DiagnosisSnapshot,
   EnrollmentType,
+  GraduationPlanDraft,
   GraduationPlanPreferences,
   InterestSurveyAudience,
   PlanTerm,
@@ -33,6 +37,9 @@ const enrollmentTypes = new Set<EnrollmentType>(["primary", "double-major", "min
 const planTerms = new Set<PlanTerm>(["next", "following", "later"]);
 const planningSemesters = new Set(["1-1", "1-2", "2-1", "2-2", "3-1", "3-2", "4-1", "4-2"]);
 const studentAffiliations = new Set(["department-student", "external-student"]);
+const majorRoles = new Set(["primary", "double-major", "minor", "undecided"]);
+const otherMajors = new Set(["yes", "no", "unsure"]);
+const entryIntents = new Set(["known-tracks", "interest-survey", "completed-courses"]);
 const serviceGoals = new Set(["learn-track-system", "find-track", "check-progress", "plan-graduation"]);
 const studyPaths = new Set([
   "advanced-major",
@@ -187,6 +194,25 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+function normalizePlanningDraftState(value: unknown): unknown {
+  if (!isRecord(value) || value.version !== 2 || !("graduationPlanDraft" in value)) return value;
+  const normalized = { ...value };
+  const draft = value.graduationPlanDraft;
+  if (!isRecord(draft) || draft.version !== 1 || !isRecord(draft.values)) {
+    delete normalized.graduationPlanDraft;
+    return normalized;
+  }
+  const values: GraduationPlanDraft["values"] = {};
+  for (const field of ["currentTerm", "targetGraduationTerm"] as const) {
+    if (typeof draft.values[field] === "string") values[field] = draft.values[field];
+  }
+  const load = draft.values.maxMajorCoursesPerTerm;
+  if (typeof load === "string" || isFiniteNumber(load)) values.maxMajorCoursesPerTerm = String(load);
+  if (typeof draft.values.considerSeasonalTerm === "boolean") values.considerSeasonalTerm = draft.values.considerSeasonalTerm;
+  normalized.graduationPlanDraft = { version: 1, values } satisfies GraduationPlanDraft;
+  return normalized;
+}
+
 function isNonNegativeInteger(value: unknown): value is number {
   return isFiniteNumber(value) && Number.isInteger(value) && value >= 0;
 }
@@ -274,7 +300,9 @@ function isStudentProfile(value: unknown): value is StudentProfile {
       value.studyPath as StudentProfile["studyPath"],
     ) ||
     value.curriculumRuleVersion !== "2026-provided-final-plan" ||
-    !ruleApplicabilities.has(value.ruleApplicability as string)
+    !ruleApplicabilities.has(value.ruleApplicability as string) ||
+    value.majorRole !== undefined && !majorRoles.has(value.majorRole as string) ||
+    value.otherMajor !== undefined && !otherMajors.has(value.otherMajor as string)
   ) {
     return false;
   }
@@ -288,6 +316,8 @@ function isProfileDraft(value: unknown): boolean {
     "goal",
     "affiliation",
     "studyPath",
+    "majorRole",
+    "otherMajor",
     "entryYear",
     "curriculumRuleVersion",
     "ruleApplicability",
@@ -296,6 +326,8 @@ function isProfileDraft(value: unknown): boolean {
   if (value.goal !== undefined && !serviceGoals.has(value.goal as string)) return false;
   if (value.affiliation !== undefined && !studentAffiliations.has(value.affiliation as string)) return false;
   if (value.studyPath !== undefined && !studyPaths.has(value.studyPath as string)) return false;
+  if (value.majorRole !== undefined && !majorRoles.has(value.majorRole as string)) return false;
+  if (value.otherMajor !== undefined && !otherMajors.has(value.otherMajor as string)) return false;
   if (
     value.affiliation !== undefined &&
     value.studyPath !== undefined &&
@@ -538,7 +570,26 @@ function isDiagnosisSnapshot(value: unknown): value is DiagnosisSnapshot {
     Array.isArray(value.comparisonTrackIds) && value.comparisonTrackIds.every(isTrackId) &&
     isPathProgressResult(value.result) &&
     (value.recommendationAxes === undefined || isRecommendationAxes(value.recommendationAxes)) &&
-    (value.graduationPlan === undefined || isGraduationPlan(value.graduationPlan));
+    (value.graduationPlan === undefined || isGraduationPlan(value.graduationPlan)) &&
+    (value.trackPlan === undefined || isArchivedTrackSemesterPlan(value.trackPlan, value as unknown as DiagnosisSnapshot)) &&
+    (value.trackCompletion === undefined || isTrackCompletionScenario(value.trackCompletion));
+}
+
+function isTrackPlanningState(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  if (value.draft !== undefined) {
+    if (!isRecord(value.draft) || value.draft.version !== 1 || !isRecord(value.draft.values)) return false;
+    const fields = value.draft.values;
+    if (fields.currentTerm !== undefined && typeof fields.currentTerm !== "string" || fields.targetGraduationTerm !== undefined && typeof fields.targetGraduationTerm !== "string" || fields.maxMajorCoursesPerTerm !== undefined && typeof fields.maxMajorCoursesPerTerm !== "string" && !isFiniteNumber(fields.maxMajorCoursesPerTerm) || fields.considerSeasonalTerm !== undefined && typeof fields.considerSeasonalTerm !== "boolean") return false;
+  }
+  if (value.manualTerms !== undefined && (!isRecord(value.manualTerms) || !Object.entries(value.manualTerms).every(([courseId, term]) => courseIds.has(courseId) && isAcademicTermId(term)))) return false;
+  return value.result === undefined || isTrackSemesterPlan(value.result);
+}
+
+function trackPlanMatchesInputs(state: SavedAppStateV2): boolean {
+  const plan = state.trackPlanning?.result;
+  if (!plan) return true;
+  return plan.inputSignature === buildTrackPlanInputSignature({ selectedTrackIds: [...new Set([...(state.targetTrackId ? [state.targetTrackId] : []), ...state.comparisonTrackIds])], courseSelections: state.courseSelections, preferences: plan.preferences, manualTerms: state.trackPlanning?.manualTerms, generatedAt: plan.generatedAt });
 }
 
 function isSavedAppStateV2(value: unknown): value is SavedAppStateV2 {
@@ -549,6 +600,9 @@ function isSavedAppStateV2(value: unknown): value is SavedAppStateV2 {
     isAdditionalMajorCredits(state.additionalMajorCredits) &&
     (state.targetTrackId === undefined || isTrackId(state.targetTrackId)) &&
     (state.pendingTargetTrackId === undefined || state.pendingTargetTrackId === null || isTrackId(state.pendingTargetTrackId)) &&
+    (state.pendingSelectedTrackIds === undefined || Array.isArray(state.pendingSelectedTrackIds) && state.pendingSelectedTrackIds.every(isTrackId)) &&
+    (state.entryIntent === undefined || entryIntents.has(state.entryIntent)) &&
+    (state.trackPlanning === undefined || isTrackPlanningState(state.trackPlanning)) &&
     Array.isArray(state.comparisonTrackIds) && state.comparisonTrackIds.every(isTrackId) &&
     (state.profile === undefined || isStudentProfile(state.profile)) &&
     (state.profileDraft === undefined || isProfileDraft(state.profileDraft)) &&
@@ -562,7 +616,8 @@ function isSavedAppStateV2(value: unknown): value is SavedAppStateV2 {
       state.graduationPlanPreferences !== undefined &&
       isGraduationPlan(state.graduationPlan) &&
       hasMatchingPreferences(state.graduationPlanPreferences, state.graduationPlan.preferences)) &&
-    Array.isArray(state.snapshots) && state.snapshots.every(isDiagnosisSnapshot);
+    Array.isArray(state.snapshots) && state.snapshots.every(isDiagnosisSnapshot) &&
+    trackPlanMatchesInputs(state as SavedAppStateV2);
 }
 
 function hasCurrentElectiveAllocationContract(plan: Record<string, unknown>): boolean {
@@ -583,6 +638,18 @@ function migrateLegacyV2PlanningContract(value: unknown): unknown {
 
   if (Array.isArray(value.snapshots)) {
     migrated.snapshots = value.snapshots.map((snapshot) => {
+      if (isRecord(snapshot) && snapshot.trackCompletion !== undefined && !isTrackCompletionScenario(snapshot.trackCompletion)) {
+        const withoutInvalidScenario = { ...snapshot };
+        delete withoutInvalidScenario.trackCompletion;
+        snapshot = withoutInvalidScenario;
+        changed = true;
+      }
+      if (isRecord(snapshot) && snapshot.trackPlan !== undefined && !isArchivedTrackSemesterPlan(snapshot.trackPlan, snapshot as unknown as DiagnosisSnapshot)) {
+        const withoutInvalidTrackPlan = { ...snapshot };
+        delete withoutInvalidTrackPlan.trackPlan;
+        snapshot = withoutInvalidTrackPlan;
+        changed = true;
+      }
       if (!isRecord(snapshot) || !isRecord(snapshot.graduationPlan) ||
         hasCurrentElectiveAllocationContract(snapshot.graduationPlan)) {
         return snapshot;
@@ -602,7 +669,19 @@ export function loadAppState(storage: Storage = window.localStorage): SavedAppSt
     try {
       const raw = storage.getItem(key);
       if (!raw) continue;
-      const parsed = migrateLegacyV2PlanningContract(JSON.parse(raw));
+      const parsed = normalizePlanningDraftState(migrateLegacyV2PlanningContract(JSON.parse(raw)));
+      if (isRecord(parsed) && isRecord(parsed.trackPlanning) && parsed.trackPlanning.manualTerms !== undefined) {
+        const entries = isRecord(parsed.trackPlanning.manualTerms) ? Object.entries(parsed.trackPlanning.manualTerms) : [];
+        parsed.trackPlanning = { ...parsed.trackPlanning, manualTerms: Object.fromEntries(entries.filter(([id, term]) => courseIds.has(id) && isAcademicTermId(term))) };
+      }
+      if (isRecord(parsed) && isRecord(parsed.trackPlanning) && parsed.trackPlanning.result !== undefined) {
+        if (!isTrackSemesterPlan(parsed.trackPlanning.result) || !Array.isArray(parsed.comparisonTrackIds) || !Array.isArray(parsed.courseSelections) || !trackPlanMatchesInputs(parsed as SavedAppStateV2)) {
+          const previousResult = parsed.trackPlanning.result;
+          const recoveredDraft = isRecord(previousResult) && isGraduationPlanPreferences(previousResult.preferences)
+            ? { version: 1, values: { ...previousResult.preferences } } : undefined;
+          parsed.trackPlanning = { ...parsed.trackPlanning, draft: parsed.trackPlanning.draft ?? recoveredDraft, result: undefined };
+        }
+      }
       if (isSavedAppStateV2(parsed)) {
         return { ...parsed, snapshots: normalizeSnapshotHistory(parsed.snapshots) };
       }
@@ -636,7 +715,7 @@ export function saveAppState(state: SavedAppStateV2, storage: Storage = window.l
   let previousPrimary: string | null;
   let previousLastValid: string | null;
   try {
-    const normalized = { ...state, snapshots: normalizeSnapshotHistory(state.snapshots) };
+    const normalized = normalizePlanningDraftState({ ...state, snapshots: normalizeSnapshotHistory(state.snapshots) });
     if (!isSavedAppStateV2(normalized)) return false;
     serialized = JSON.stringify(normalized);
     previousPrimary = storage.getItem(STORAGE_KEY_V2);

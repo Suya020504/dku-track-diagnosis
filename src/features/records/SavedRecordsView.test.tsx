@@ -5,6 +5,8 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DiagnosisSnapshot } from "../../types";
 import { SavedRecordsView } from "./SavedRecordsView";
+import { calculateTrackCompletion } from "../../lib/trackCompletion";
+import { buildTrackSemesterPlan } from "../../lib/trackSemesterPlanner";
 
 function snapshot(overrides: Partial<DiagnosisSnapshot> = {}): DiagnosisSnapshot {
   return {
@@ -40,6 +42,22 @@ beforeEach(() => {
 afterEach(async () => { if (root) await act(async () => root!.unmount()); root = undefined; vi.restoreAllMocks(); });
 
 describe("SavedRecordsView", () => {
+  it("keeps a multi-track plan and frozen module results readable without changing current data", async () => {
+    const selectedTrackIds=["food-marketing","agri-food-distribution"] as const;
+    const plan=buildTrackSemesterPlan({selectedTrackIds,courseSelections:[],preferences:{currentTerm:"2026-2",targetGraduationTerm:"2029-2",maxMajorCoursesPerTerm:4,considerSeasonalTerm:false},generatedAt:"2026-09-09T01:00:00Z"});
+    const record=deepFreeze(snapshot({targetTrackId:selectedTrackIds[0],comparisonTrackIds:[selectedTrackIds[1]],trackPlan:plan,trackCompletion:calculateTrackCompletion({selectedTrackIds,courseSelections:[]}).completed}));
+    const before=JSON.stringify(record); await mount({snapshots:[record],recordId:record.id});
+    expect(document.body.textContent).toContain("푸드마케팅 · 농식품유통");
+    expect(document.body.textContent).toContain("함께 저장한 트랙 공동 계획");
+    expect(document.body.textContent).toContain("저장 당시 트랙 모듈 현황");
+    expect(JSON.stringify(record)).toBe(before);
+  });
+  it("does not show a hypothetical academic target for an unconfirmed legacy track profile", async () => {
+    const record=snapshot({profile:{goal:"check-progress",affiliation:"external-student",studyPath:"track-major",curriculumRuleVersion:"2026-provided-final-plan",ruleApplicability:"reference-only"},result:{requiredProgress:"not-applicable",trackProgress:"not-applicable",totalMajorProgress:{completedCredits:3,requiredCredits:63,missingCredits:60},status:"incomplete",reviewItems:[]}});
+    await mount({snapshots:[record],recordId:record.id});
+    expect(document.body.textContent).not.toContain("3 / 63학점");
+    expect(document.body.textContent).toContain("전체 전공학점 기준은 표시하지 않아요");
+  });
   it("explains an empty archive without claiming automatic input has been lost", async () => {
     await mount();
     expect(document.body.textContent).toContain("아직 따로 보관한 기록이 없어요");

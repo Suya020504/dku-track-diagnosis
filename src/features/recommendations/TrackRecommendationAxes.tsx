@@ -14,7 +14,7 @@ import type {
 import { AxisResultCard } from "./AxisResultCard";
 
 export type RecommendationAxisId = "interest" | "progress" | "plan";
-const CandidateChoice = createContext<{ chosen?: TrackId; choose?: (id: TrackId) => void }>({});
+const CandidateChoice = createContext<{ chosen?: TrackId; chosenIds?: readonly TrackId[]; choose?: (id: TrackId) => void }>({});
 
 export type TrackRecommendationAxesProps = {
   axes?: RecommendationAxes;
@@ -27,6 +27,9 @@ export type TrackRecommendationAxesProps = {
   onOpenCourseInput: () => void;
   onOpenGraduationPlan: () => void;
   onChooseTrack?: (trackId: TrackId) => void;
+  pendingSelectedTrackIds?: readonly TrackId[];
+  onPendingTrackIdsChange?: (ids: TrackId[]) => void;
+  onChooseTracks?: (ids: TrackId[]) => void;
 };
 
 const AXIS_PAGES: ReadonlyArray<{
@@ -99,10 +102,10 @@ function CandidateCollection<T extends { trackId: TrackId }>({
               </header>
               <div className="dc-track-evidence">{renderEvidence(candidate)}</div>
               {choice.choose ? <button className="dc-row-choice" type="button"
-                  aria-pressed={choice.chosen === candidate.trackId}
+                  aria-pressed={choice.chosenIds?.includes(candidate.trackId) ?? choice.chosen === candidate.trackId}
                   aria-label={`${trackName(candidate.trackId)} 진단 트랙 선택`}
                   onClick={() => choice.choose?.(candidate.trackId)}>
-                  {choice.chosen === candidate.trackId ? "선택됨" : "진단 트랙으로 선택"}
+                  {(choice.chosenIds?.includes(candidate.trackId) ?? choice.chosen === candidate.trackId) ? "선택됨" : "함께 선택"}
               </button> : null}
             </article>
           </li>
@@ -216,8 +219,17 @@ export function TrackRecommendationAxes({
   onOpenCourseInput,
   onOpenGraduationPlan,
   onChooseTrack,
+  pendingSelectedTrackIds,
+  onPendingTrackIdsChange,
+  onChooseTracks,
 }: TrackRecommendationAxesProps) {
   const [chosenTrack, setChosenTrack] = useState<TrackId>();
+  const [localChosenTracks, setLocalChosenTracks] = useState<TrackId[]>([]);
+  const chosenTracks = pendingSelectedTrackIds ?? localChosenTracks;
+  const chooseMultiple = (id: TrackId) => {
+    const next = chosenTracks.includes(id) ? chosenTracks.filter(item => item !== id) : [...chosenTracks, id];
+    setLocalChosenTracks(next); onPendingTrackIdsChange?.(next);
+  };
   const interest = axes?.interest?.length ? axes.interest : undefined;
   const progress = courseInputReady && axes?.progress.length ? axes.progress : undefined;
   const plan = axes?.plan?.length ? axes.plan : undefined;
@@ -330,16 +342,16 @@ export function TrackRecommendationAxes({
         </nav>
 
         <div className="dc-active-axis">
-          <CandidateChoice.Provider value={{ chosen: chosenTrack, choose: onChooseTrack ? setChosenTrack : undefined }}>
+          <CandidateChoice.Provider value={{ chosen: chosenTrack, chosenIds: onChooseTracks ? chosenTracks : undefined, choose: onChooseTracks ? chooseMultiple : onChooseTrack ? setChosenTrack : undefined }}>
             {renderActiveAxis()}
           </CandidateChoice.Provider>
 
-          {onChooseTrack && (activeAxis === "interest" ? interest : activeAxis === "progress" ? progress : plan) ? (
+          {(onChooseTrack || onChooseTracks) && (activeAxis === "interest" ? interest : activeAxis === "progress" ? progress : plan) ? (
             <section className="dc-choice-workspace" aria-label="선택한 트랙 진단 확인">
-              <p>기존 이수 유형은 유지됩니다. 다음 화면에서 진단 조건을 확인해 주세요.</p>
-              <button className="dc-confirm-choice" type="button" disabled={!chosenTrack}
-                onClick={() => chosenTrack && onChooseTrack(chosenTrack)}>
-                {chosenTrack ? `${trackName(chosenTrack)} 트랙으로 진단 조건 확인` : "위 후보에서 진단할 트랙을 선택해 주세요"}
+              <p>여러 트랙을 함께 선택할 수 있어요. 전공 구분과 이수 이력은 유지됩니다.</p>
+              <button className="dc-confirm-choice" type="button" disabled={onChooseTracks ? !chosenTracks.length : !chosenTrack}
+                onClick={() => { if (onChooseTracks && chosenTracks.length) onChooseTracks([...chosenTracks]); else if (chosenTrack) onChooseTrack?.(chosenTrack); }}>
+                {onChooseTracks ? (chosenTracks.length ? `${chosenTracks.length}개 트랙으로 이어가기` : "위 후보에서 확인할 트랙을 선택해 주세요") : chosenTrack ? `${trackName(chosenTrack)} 트랙으로 진단 조건 확인` : "위 후보에서 진단할 트랙을 선택해 주세요"}
               </button>
             </section>
           ) : null}

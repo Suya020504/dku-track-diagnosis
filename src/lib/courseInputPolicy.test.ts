@@ -23,11 +23,12 @@ describe("getCourseInputPolicy", () => {
   });
   it("does not choose a default track or throw when the target is still undecided", () => {
     const policy = getCourseInputPolicy(profile("external-student", "track-major"));
-    expect(policy).toMatchObject({ title: "트랙형 전공 기준", totalMajorCredits: null, requiredCredits: 18 });
-    expect(policy.description).toContain("트랙 선택 후");
+    expect(policy).toMatchObject({ title: "전공 이수 형태 미정", totalMajorCredits: null, requiredCredits: null });
+    expect(policy.description).toContain("전공 구분을 확인하면");
   });
-  it("uses the selected track's total rather than a primary-major shortcut", () => {
-    expect(getCourseInputPolicy(profile("external-student", "track-major"), "economics").totalMajorCredits).toBe(48);
-    expect(getCourseInputPolicy(profile("department-student", "track-major"), "economics").totalMajorCredits).toBe(63);
+  it("does not expose a hypothetical academic total until the degree context is known", () => {
+    expect(getCourseInputPolicy(profile("external-student", "track-major"), "economics").totalMajorCredits).toBeNull();
+    expect(getCourseInputPolicy(profile("department-student", "track-major"), "economics").totalMajorCredits).toBeNull();
+    expect(getCourseInputPolicy({...profile("department-student", "track-major"),majorRole:"primary",otherMajor:"no"}, "economics").totalMajorCredits).toBe(63);
   });
 });

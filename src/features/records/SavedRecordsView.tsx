@@ -1,6 +1,9 @@
 import { useId, useState, type ReactNode, type RefObject } from "react";
 import { Archive, ArrowLeft, ArrowRight, CalendarDays, CheckCheck, ChevronDown, ChevronRight, FileClock, GraduationCap, Info, Printer } from "lucide-react";
 import { courses, tracks } from "../../data/curriculumData";
+import { getMajorContext } from "../../lib/majorContext";
+import type { TrackSemesterPlan } from "../../lib/trackSemesterPlanner";
+import type { TrackCompletionScenario } from "../../lib/trackCompletion";
 import type { DiagnosisSnapshot, GraduationPlanResult, PlannedCoursePlacement, ReviewItem, StudyPath } from "../../types";
 import "./saved-records.css";
 
@@ -22,6 +25,8 @@ function savedDate(value: string, withTime = false): string {
 }
 
 function recordTrackName(record: DiagnosisSnapshot): string | undefined {
+  const ids = record.trackPlan?.selectedTrackIds ?? record.trackCompletion?.trackResults.map(item => item.trackId);
+  if (ids?.length) return ids.map(id => tracks.find(track => track.id === id)?.name ?? id).join(" · ");
   if (!record.targetTrackId) return undefined;
   if (record.result.trackProgress !== "not-applicable" && record.result.trackProgress.trackId === record.targetTrackId) return record.result.trackProgress.trackName;
   return tracks.find((track) => track.id === record.targetTrackId)?.name ?? record.targetTrackId;
@@ -46,7 +51,7 @@ function RecordListItem({ record, selected, onSelect }: { record: DiagnosisSnaps
       <time dateTime={record.createdAt}>{savedDate(record.createdAt, true)}</time>
       <small className="saved-records__list-summary">완료 {counts.completed}과목 · 전공 {record.result.totalMajorProgress.completedCredits}학점</small>
       {pending && <small>{pending}</small>}
-      <small>{record.graduationPlan ? "진단 + 학기 계획" : "진단 기록"}</small>
+      <small>{record.trackPlan ? "트랙 공동 계획" : record.graduationPlan ? "진단 + 학기 계획" : "진단 기록"}</small>
     </span><ChevronRight size={19} aria-hidden="true" />
   </button></li>;
 }
@@ -107,33 +112,44 @@ function StoredPlan({ plan }: { plan: GraduationPlanResult }) {
   </section>;
 }
 
+function StoredTrackCompletion({value}:{value:TrackCompletionScenario}) {
+  return <section className="saved-track-completion" aria-label="보관한 트랙 모듈 결과"><h3>저장 당시 트랙 모듈 현황</h3><p>겹치는 과목을 뺀 남은 수강: <strong>{value.unionRemainingCourseCount}과목 · {value.unionRemainingCredits}학점</strong></p><ul>{value.trackResults.map(track=><li key={track.trackId}><strong>{track.trackName}</strong><span>{track.creditedCredits} / {track.requiredCredits}학점 · {track.satisfied?"모듈 조건 충족":`${track.remainingCourseCount}과목 보완`}</span></li>)}</ul></section>;
+}
+
+function StoredTrackPlan({plan}:{plan:TrackSemesterPlan}) {
+  const terms=[...new Set(plan.placements.map(item=>item.term))].sort();
+  return <section className="saved-records__plan" aria-label="보관한 트랙 공동 학기 계획"><header className="saved-records__section-heading"><CalendarDays size={21} aria-hidden="true"/><h3>함께 저장한 트랙 공동 계획</h3></header><p>{plan.preferences.currentTerm} 기준 · 목표 {plan.preferences.targetGraduationTerm} · 학기당 {plan.preferences.maxMajorCoursesPerTerm}과목</p><div className="saved-records__terms">{terms.map(term=><section className="saved-records__term" key={term}><header><h4>{term}</h4></header><ul>{plan.placements.filter(item=>item.term===term).map(item=><li key={item.courseId}><strong><CourseName id={item.courseId}/></strong><small>{item.trackIds.map(id=>tracks.find(t=>t.id===id)?.name??id).join(" · ")}</small></li>)}</ul></section>)}</div>{plan.unplaced.length>0&&<Disclosure title={`배치하지 못한 과목 · ${plan.unplaced.length}개`}><ul className="saved-records__course-list">{plan.unplaced.map(item=><li key={item.courseId}><strong><CourseName id={item.courseId}/></strong><span>{item.message}</span></li>)}</ul></Disclosure>}<p className="saved-records__muted">저장된 계획을 그대로 보여줍니다. 전공 전체 졸업 계획과는 별도예요.</p></section>;
+}
+
 function RecordDetail({ record, onPrint, onOpenCurrent, onBackToList }: { record: DiagnosisSnapshot; onPrint: () => void; onOpenCurrent: () => void; onBackToList: () => void }) {
   const track = recordTrackName(record);
   const counts = countSavedCourses(record);
   const required = record.result.requiredProgress;
   const trackProgress = record.result.trackProgress;
+  const context=getMajorContext(record.profile);
   return <article className="saved-records__detail" data-record-detail>
     <button type="button" className="saved-records__button is-link saved-records__mobile-back" data-record-back-top onClick={onBackToList}><ArrowLeft size={17} aria-hidden="true" />기록 목록으로</button>
-    <header className="saved-records__detail-header"><div><span className="saved-records__eyebrow">저장 기록 · 읽기 전용</span><h2>{track ?? pathLabels[record.profile.studyPath]} {record.graduationPlan ? "학기 계획" : "진단"}</h2><p>{pathLabels[record.profile.studyPath]} · <time dateTime={record.createdAt}>{savedDate(record.createdAt, true)}</time></p></div>
+    <header className="saved-records__detail-header"><div><span className="saved-records__eyebrow">저장 기록 · 읽기 전용</span><h2>{track ?? context.label} {record.trackPlan ? "공동 계획" : record.graduationPlan ? "학기 계획" : "진단"}</h2><p>{record.profile.majorRole ? context.label : pathLabels[record.profile.studyPath]} · <time dateTime={record.createdAt}>{savedDate(record.createdAt, true)}</time></p></div>
       <button type="button" className="saved-records__button is-utility" data-record-print onClick={onPrint}><Printer size={18} aria-hidden="true" />저장 기록 인쇄</button>
     </header>
-    <div className="saved-records__summary"><div data-record-total><GraduationCap size={23} aria-hidden="true" /><span>전체 전공학점<strong>{record.result.totalMajorProgress.completedCredits} / {record.result.totalMajorProgress.requiredCredits}학점</strong></span></div><div><CheckCheck size={22} aria-hidden="true" /><span>저장 당시 입력 기준<strong>{savedResultLabels[record.result.status]}</strong></span></div></div>
+    {record.trackCompletion ? <StoredTrackCompletion value={record.trackCompletion}/> : null}
+    {context.academicRequirementsConfirmed ? <div className="saved-records__summary"><div data-record-total><GraduationCap size={23} aria-hidden="true" /><span>전체 전공학점<strong>{record.result.totalMajorProgress.completedCredits} / {record.result.totalMajorProgress.requiredCredits}학점</strong></span></div><div><CheckCheck size={22} aria-hidden="true" /><span>저장 당시 입력 기준<strong>{savedResultLabels[record.result.status]}</strong></span></div></div> : <p className="saved-records__muted">저장 당시 전공 이수 형태가 미정이라 전체 전공학점 기준은 표시하지 않아요.</p>}
     <div className="saved-records__status-counts" aria-label="저장된 과목 상태">{(Object.keys(counts) as Array<keyof typeof counts>).map((status) => <span key={status} data-record-status={status}>{courseStatusLabels[status]} <strong>{counts[status]}과목</strong></span>)}</div>
-    <dl className="saved-records__facts saved-records__profile"><div><dt>소속</dt><dd>{record.profile.affiliation === "department-student" ? "식품자원경제학과 학생" : "타 학과 학생"}</dd></div><div><dt>이수 경로</dt><dd>{pathLabels[record.profile.studyPath]}</dd></div><div><dt>목표 트랙</dt><dd>{track ?? "미선택"}</dd></div>{record.profile.entryYear && <div><dt>입학 연도</dt><dd>{record.profile.entryYear}년</dd></div>}</dl>
-    <div className="saved-records__requirements"><div data-record-required><span>필수과목</span><strong>{required === "not-applicable" ? "별도 필수 조건 없음" : `${required.completedCredits} / ${required.requiredCredits}학점`}</strong></div><div data-record-track><span>트랙 조건</span><strong>{trackProgress === "not-applicable" ? "트랙 조건 적용 없음" : `${trackProgress.completionRate}% · ${trackProgress.passed ? "참고 계산상 충족" : "보완 필요"}`}</strong></div></div>
-    {record.graduationPlan ? <StoredPlan plan={record.graduationPlan} /> : <p className="saved-records__plan-empty"><FileClock size={20} aria-hidden="true" />이 기록에는 진단 결과만 저장되어 있습니다. 학기 계획은 포함되어 있지 않습니다.</p>}
+    <dl className="saved-records__facts saved-records__profile"><div><dt>소속</dt><dd>{record.profile.affiliation === "department-student" ? "식품자원경제학과 학생" : "타 학과 학생"}</dd></div><div><dt>전공 구분</dt><dd>{context.label}</dd></div><div><dt>목표 트랙</dt><dd>{track ?? "미선택"}</dd></div>{record.profile.entryYear && <div><dt>입학 연도</dt><dd>{record.profile.entryYear}년</dd></div>}</dl>
+    {context.academicRequirementsConfirmed && !record.trackCompletion && <div className="saved-records__requirements"><div data-record-required><span>필수과목</span><strong>{required === "not-applicable" ? "별도 필수 조건 없음" : `${required.completedCredits} / ${required.requiredCredits}학점`}</strong></div><div data-record-track><span>트랙 조건</span><strong>{trackProgress === "not-applicable" ? "트랙 조건 적용 없음" : `${trackProgress.completionRate}% · ${trackProgress.passed ? "참고 계산상 충족" : "보완 필요"}`}</strong></div></div>}
+    {record.trackPlan ? <StoredTrackPlan plan={record.trackPlan}/> : record.graduationPlan ? <StoredPlan plan={record.graduationPlan} /> : <p className="saved-records__plan-empty"><FileClock size={20} aria-hidden="true" />이 기록에는 진단 결과만 저장되어 있습니다. 학기 계획은 포함되어 있지 않습니다.</p>}
     <Disclosure title={`저장한 과목과 추가 전공학점 · ${record.courseSelections.length}과목`}>
       {record.courseSelections.length ? <ul className="saved-records__course-list">{record.courseSelections.map((item, index) => <li key={`${item.courseId}-${index}`}><strong><CourseName id={item.courseId} /></strong><span>{courseStatusLabels[item.status]}{item.status === "planned" && item.plannedTerm ? ` · ${plannedTermLabels[item.plannedTerm]}` : ""}</span></li>)}</ul> : <p>선택한 과목 없이 저장한 기록입니다.</p>}
       <h4>추가 전공학점 · {record.additionalMajorCredits.length}건</h4>
       <p className="saved-records__muted">추가 전공학점은 모듈 과목과 별도로 저장된 항목입니다.</p>
       {record.additionalMajorCredits.length ? <ul className="saved-records__course-list">{record.additionalMajorCredits.map((item, index) => <li key={`${item.id}-${index}`}><strong>{item.label} · {item.credits}학점</strong><span>{item.status === "officially-verified" ? "공식 확인으로 저장됨" : "학생 입력 · 인정 여부 확인 필요"}</span>{item.note && <small>{item.note}</small>}</li>)}</ul> : <p>별도로 입력한 전공학점이 없습니다.</p>}
     </Disclosure>
-    <Disclosure title="저장 당시 이수 조건과 확인 사항">
+    {context.academicRequirementsConfirmed && <Disclosure title="저장 당시 이수 조건과 확인 사항">
       <h4>필수과목 조건</h4>{required === "not-applicable" ? <p>이 기록에는 별도 필수 조건이 적용되지 않았습니다.</p> : <><p>완료 {required.completedCredits}학점 · 부족 {required.missingCredits}학점</p><ul className="saved-records__course-list">{required.missingCourseIds.map((id, index) => <li key={`${id}-${index}`}><CourseName id={id} /><span>보완할 필수과목</span></li>)}</ul></>}
       <h4>트랙 모듈별 조건</h4>{trackProgress === "not-applicable" ? <p>이 기록에는 트랙 조건이 적용되지 않았습니다.</p> : <><p>저장된 트랙 관련 학점: {trackProgress.trackCredits}학점</p><ul className="saved-records__course-list">{trackProgress.moduleProgress.map((module, index) => <li key={`${module.moduleId}-${index}`}><strong>{module.label}</strong><span>{module.completedCredits} / {module.requiredCredits}학점 · 부족 {module.missingCredits}학점</span></li>)}</ul></>}
       <h4>저장 당시 확인 사항</h4><ReviewItems items={record.result.reviewItems} />
       <h4>계산 기준 기록</h4><code className="saved-records__rule-version">{record.ruleVersion}</code><p className="saved-records__muted">이 기록에는 원문 파일 정보가 포함되어 있지 않습니다. 현재 자료로 다시 계산하거나 새 PDF를 소급 적용하지 않았습니다.</p>
-    </Disclosure>
+    </Disclosure>}
     <p className="saved-records__notice"><Info size={18} aria-hidden="true" />실제 개설과 인정 여부는 학과 확인이 필요합니다.</p>
     <footer className="saved-records__actions"><button type="button" className="saved-records__button is-primary" data-record-current onClick={onOpenCurrent}>현재 입력으로 돌아가기<ArrowRight size={18} aria-hidden="true" /></button><button type="button" className="saved-records__button is-link" data-record-back onClick={onBackToList}><ArrowLeft size={17} aria-hidden="true" />기록 목록으로</button></footer>
   </article>;

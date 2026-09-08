@@ -1,9 +1,9 @@
 import { getAllowedStudyPaths } from "../data/requirementRules2026";
 import type { SavedAppStateV2 } from "../types";
 
-export type DiagnosisStep = "profile" | "courses" | "result";
+export type DiagnosisStep = "profile" | "tracks" | "courses" | "result";
 
-const DIAGNOSIS_STEPS = new Set<DiagnosisStep>(["profile", "courses", "result"]);
+const DIAGNOSIS_STEPS = new Set<DiagnosisStep>(["profile", "tracks", "courses", "result"]);
 
 function hasValidProfile(state: SavedAppStateV2): boolean {
   const profile = state.profile;

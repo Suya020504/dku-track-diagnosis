@@ -1,0 +1,24 @@
+.dku-profile-page .dku-profile-year__select {
+  min-width: 0;
+  width: 100%;
+  max-width: 320px;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid #91abc5;
+  border-radius: 6px;
+  background: white;
+  color: inherit;
+  font: inherit;
+}
+
+.dku-profile-page .dku-profile-year__direct {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dku-profile-page h1,
+.dku-profile-step h1 {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}

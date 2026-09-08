@@ -15,7 +15,7 @@ describe("StudyPathSetup", () => {
     expect(markup).not.toContain('name="studyPath"');
   });
 
-  it("does not show minor to department students", () => {
+  it("sets the department role to primary without administrative path radios", () => {
     const markup = renderToStaticMarkup(
       <StudyPathSetup
         profile={{
@@ -32,12 +32,12 @@ describe("StudyPathSetup", () => {
       />,
     );
 
-    expect(markup).toContain("심화전공");
-    expect(markup).toContain("트랙형전공");
-    expect(markup).not.toContain("부전공");
+    expect(markup).toContain("주전공");
+    expect(markup).not.toContain('name="majorRole"');
+    expect(markup).not.toContain('name="studyPath"');
   });
 
-  it("restores an incomplete draft without enabling the primary action", () => {
+  it("lets an undecided external student continue without a forced major commitment", () => {
     const markup = renderToStaticMarkup(
       <StudyPathSetup
         profile={undefined}
@@ -50,7 +50,8 @@ describe("StudyPathSetup", () => {
 
     expect(markup).toContain("복수전공");
     expect(markup).toContain("부전공");
-    expect(markup).toContain("disabled=\"\"");
+    expect(markup).not.toContain("disabled=\"\"");
+    expect(markup).toContain('value="undecided"');
   });
 
   it("keeps the target optional for a progress-checking track-major", () => {
@@ -71,10 +72,8 @@ describe("StudyPathSetup", () => {
       />,
     );
 
-    expect(markup).toContain("진단할 트랙");
-    expect(markup).toContain("푸드마케팅");
-    expect(markup).toContain("경제학");
-    expect(markup).toContain("아직 정하지 않았어요 · 5개 트랙 비교");
+    expect(markup).not.toContain('name="targetTrackId"');
+    expect(markup).toContain("내 정보 저장하고 계속");
     expect(markup).not.toContain("disabled=\"\"");
   });
 
@@ -96,7 +95,7 @@ describe("StudyPathSetup", () => {
       />,
     );
 
-    expect(markup).toContain("푸드마케팅");
+    expect(markup).not.toContain('name="targetTrackId"');
     expect(markup).not.toContain("disabled=\"\"");
   });
 
@@ -118,12 +117,12 @@ describe("StudyPathSetup", () => {
       />,
     );
 
-    expect(markup).toContain("설문 전에는 선택하지 않아도 됩니다");
-    expect(markup).toContain("관심 설문으로 이동");
-    expect(markup).not.toMatch(/<button[^>]*disabled[^>]*>관심 설문으로 이동<\/button>/);
+    expect(markup).not.toContain('name="targetTrackId"');
+    expect(markup).toContain("내 정보 저장하고 계속");
+    expect(markup).not.toContain('disabled=""');
   });
 
-  it("keeps an incompatible affiliation and path pair incomplete", () => {
+  it("reads an incompatible legacy path as undecided without displaying an academic conclusion", () => {
     const markup = renderToStaticMarkup(
       <StudyPathSetup
         profile={{
@@ -139,8 +138,8 @@ describe("StudyPathSetup", () => {
       />,
     );
 
-    expect(markup).toContain("disabled=\"\"");
-    expect(markup).toContain("이수 경로를 선택해 주세요");
+    expect(markup).not.toContain("disabled=\"\"");
+    expect(markup).toContain("학사 이수 기준은 확정하지 않아요");
     expect(markup).not.toContain("심화전공 기준을 사용합니다");
   });
 });
