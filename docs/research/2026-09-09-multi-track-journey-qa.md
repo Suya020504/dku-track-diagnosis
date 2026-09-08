@@ -76,7 +76,7 @@ PASS는 적힌 범위의 증거만 뜻한다. EXCLUDED는 제품 범위 밖, BLO
 | PROD-ACCESSIBILITY | BLOCKED | 대표 접근성 항목 통과, 전체 WCAG·실물 기기 감사 미실행 |
 | PROD-PERFORMANCE | BLOCKED | 타입·빌드와 실제 응답 확인. Lighthouse/실사용 성능 수치 미측정, 번들 경고 유지 |
 | PROD-OPERATIONS | PASS | 기존 프로젝트·배포 방식 유지, 문서와 원문 업로드 제외 |
-| PROD-RELEASE | BLOCKED | 아래 승격 전·후 확인 뒤 업데이트 |
+| PROD-RELEASE | PASS | 34728a6 배포·승격·운영 실제 파일/대표 흐름·비공개 경로404 확인 |
 | PROD-OUTCOME | PASS | 학생이 2개·5개 목표에서 잔여 과목을 보고 공동 계획으로 이동 |
 
 SDCORE-TEST-FIRST: 회귀 및 신규 계산 실패 조건을 테스트로 정의했다. SDCORE-RELATED/FULL/TYPECHECK/PRODUCTION-BUILD/DIFF-CHECK: 위 명령 결과. SDCORE-CONSOLE-OVERLAY: 대표 CUA 흐름 오류 미발견. 최종 실행 결과와 배포는 아래 별도 기록한다.
@@ -100,3 +100,9 @@ SDCORE-TEST-FIRST: 회귀 및 신규 계산 실패 조건을 테스트로 정의
 - 기능 커밋 `9b8a8e5` 푸시 완료. 첫 승격 전 배포 `dpl_5E27p2suNvrRRRH3TEjCYGKAtDMa`에서 새 방문자 → 주전공 정보 → 2트랙 → 0과목 결과14/42 → 식품유통경제학 완료 후13/39 → 공동 계획 → 유통관리론2029-1 이동 → 보관1건 → 새로고침 복원을 확인했다.
 - 해당 배포의 430×932 검수에서 페이지 넘침0·main/h1각1·깨진 이미지0을 확인했다. 계획 버튼의 어절 중간 줄바꿈을 추가 보완하고 최종 빌드를 다시 만들었다. 첫 배포는 운영 대표 주소로 승격하지 않았다.
 - 후속 CSS 빌드: `index-Rkrspfu_.css` 312.64kB, 로컬 JS `index-BDgtJzrc.js` 586.98kB. 서버 설치본 Vite7.3.6과 로컬7.3.5가 달라 JS 파일명은 다를 수 있으며 실제 배포 DOM·동작과 배포의 git SHA를 함께 확인한다.
+- 최종 기능 소스 `34728a62bb6cd19f9ce627eb9e6c1d59365f94c7`을 배포 `dpl_EsCzCXtUxGfMjGJM3zX1Qb6fQYDJ`로 만들었다. CSS 후속 수정 뒤 전용16테스트와 TypeScript·빌드·staged diff 검사를 다시 통과했다.
+- 승격 전 최종 주소: `https://dku-track-diagnosis-ra509qlgr-startlink0504.vercel.app`. 430px에서 이력 분기 → 내 정보 → 식품유통경제학 완료 → 5개 모듈 비교 → 2개 선택 → 결과 → 2029-2 계획 생성 → 보관 → 새로고침을 실제 실행했다. 13과목과 입력2026-2/2029-2/4가 유지됐고 계획 버튼 어절 줄바꿈 수정도 확인했다.
+- `vercel promote` 성공 후 운영 `https://dku-track-diagnosis.vercel.app`에서 `index-Cm8vdJuE.js`와 `index-Rkrspfu_.css`가 최종 배포본과 일치했다. Vercel API의 READY와 git SHA도 확인했다.
+- 운영1920×1080 홈, 기존 입력 이어보기(트랙 미선택 상태의 이력 비교), 5개 트랙 자세히 보기→`section=structure`, 운영390×844 홈을 확인했다. 해당 페이지 넘침0, main/h1각1, 깨진 이미지0. 운영의 과목·조건·목표를 수정하거나 초기화하지 않았다.
+- 운영 HTTP: 홈200, 노트WebP200, 비공개원문 `/documents/2026-ere-module-track-curriculum.pdf` 404, 내부 QA 문서 경로404. 원문·실제 학생 파일 업로드 없음.
+- 운영 홈 캡처: 작업 폴더 `_workspace/journey-production-home.jpg`. 브라우저 크기 임시 설정을 기본값으로 복원했다. 전체 자동946개는 기능 최종본, 뒤의 CSS-only 수정은 전용16개 및 빌드·배포 브라우저 검증으로 확인했다.
