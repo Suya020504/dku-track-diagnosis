@@ -1,6 +1,6 @@
 # 학과 트랙 안내·이수 지원 — 로컬 마감 검수
 
-2026-09-08. 기능 구현과 로컬 검증 결과다. 새 PDF 원문은 사용자 요청대로 비공개 처리했다. GitHub·운영 반영과 원격 검수 결과는 배포가 끝난 뒤 이 문서에 추가한다.
+2026-09-08. 기능 구현·로컬 검증·GitHub 갱신·운영 배포와 배포 후 검수를 마쳤다. 새 PDF 원문은 사용자 요청대로 비공개 처리했다. 학교의 공식 승인이나 개인별 학사 인정 완료를 뜻하지 않는다.
 
 ## 바뀐 사용 흐름
 
@@ -102,6 +102,28 @@
 - `matrix-final-courses-{390,860,1920}.png`, `records-list-refined-{390,860}.png`: 최종 시각 증거
 
 ## 공개와 남은 경계
+
+### 배포와 실제 운영 검수
+
+| 항목 | 확인 결과 |
+| --- | --- |
+| GitHub 반영 | `codex/track-service-expansion`에 기능 커밋 `ed7a6b957d0bfd098e3bc3fcd54b619ba94fd7f6` 푸시 완료. main 병합이나 새 PR은 수행하지 않음 |
+| Vercel 배포 | `dpl_Hip4cXPrZ4J19Maty7WLBq7vcVc2`, Ready, target production |
+| 승격 전 주소 | <https://dku-track-diagnosis-cb8zliyke-startlink0504.vercel.app> |
+| 운영 주소 | <https://dku-track-diagnosis.vercel.app> — 같은 배포본 승격 완료, HTTP200 |
+| 운영 정적 자산 | `index-Dwi-JLE9.js`, `index-CYvqSJDe.css` |
+| 검수한 스타일 일치 | 운영 CSS261,669bytes, SHA-256 `ACF0623876A47FD74E6349A8FF3C71989652A8D5710D9F14DC6449AB9AFCAC29`, 검증한 로컬 CSS와 동일 |
+| 원문 비공개 | 제공 원본·비공개 복사본 해시 일치. public/dist/Git 추적에 원문 없음. 승격 전·운영 원문 경로404/text/plain, `%PDF` 서명 없음 |
+| 승격 전 브라우저 | 핵심20개, 오류·복구17개, 신규 방문자/시간표/설문3흐름, 비공개 안내3화면×2크기6조합 PASS |
+| 운영 직접 브라우저 | 동일 핵심20개·복구17개·3흐름·비공개6조합 PASS. 별도31화면×9크기279건 PASS |
+| 운영 매트릭스 | hardFailures=[], touchFailureRows=0, 콘솔 오류·경고·가로 넘침·랜드마크 중복·노출 요소 하단 가림·원문 링크0 |
+| 기록 보관 | 운영 UI에서 새 synthetic 기록12개 생성, 계획 학기 새로고침 복원·기록 상세 복귀·현재 입력 불변 확인 |
+
+승격 전 주소는 보호 설정을 해제하지 않았다. 기존 승인된 `vercel curl`이 가져온 **해당 배포의 실제 원격 응답**을 Playwright 요청에 전달해 렌더·클릭을 검수했다. 로컬 빌드 파일을 원격 응답 대신 사용하지 않았고 인증 파일·토큰·쿠키를 읽거나 출력하지 않았다. CLI 중계 때문에 탐색 제한만120초이며 이 구간을 사이트 성능 측정으로 해석하지 않는다. 운영 주소 검수는 중계 없이 직접 접속했다.
+
+원격 빌드는 Vite7.3.6, 로컬은7.3.5여서 JS 청크 이름은 다르다. 실제 원격 결과와 완주 동작을 별도로 검수했다. 원격 빌드에도500kB 크기 경고와 esbuild 설치 스크립트 승인 안내가 있으나 빌드는 성공했고 설정을 임의 변경하지 않았다. 브라우저 콘솔은 깨끗했다. 서버 로그 수집·지속 모니터링·새 외부 분석 도구는 추가하지 않았다.
+
+추가 증거(앞의 작업 폴더): `preview-release-core-service.json`, `core-flow-preview-release.json`, `edge-preview-release.json`, `preview-release-private-ui.json`, `production-release-core-service.json`, `core-flow-production-release.json`, `edge-production-release.json`, `production-release-private-ui.json`, `production-responsive-matrix-summary.json`, `production-responsive-matrix-raw.json`, `production-private-source-probe.json`, `production-representative-interaction.json`. 승격 전과 운영 결과를 서로 대신하는 증거로 사용하지 않았다.
 
 새 제공 PDF는 사용자 요청으로 **원문 비공개**를 확정했다. 원본은 보존하고 개발용 복사본은 저장소 밖의 비공개 작업 폴더로 옮겼다. Git/Vercel 제외 규칙과 배포 경계 테스트를 추가했으며 사이트에서는 내려받기 링크 대신 제공 자료의 제목·받은 날·참고 쪽수와 비공개 상태를 설명한다. 승인된 소스·운영 사이트 갱신은 이 범위로 진행한다.
 
