@@ -305,7 +305,7 @@ describe("App recommendation browser interactions", () => {
     const heading = document.querySelector<HTMLHeadingElement>("#contact-page-title");
     expect(document.querySelectorAll("main")).toHaveLength(1);
     expect(document.querySelectorAll("h1")).toHaveLength(1);
-    expect(heading?.textContent).toBe("무엇을 확인하고 싶으세요?");
+    expect(heading?.textContent).toBe("학과 사무실에 물어보세요");
     expect(heading?.tabIndex).toBe(-1);
     expect(document.activeElement).toBe(heading);
     expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });

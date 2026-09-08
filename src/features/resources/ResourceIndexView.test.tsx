@@ -69,11 +69,11 @@ describe("resource reading routes", () => {
     await mountAt("?view=resources&section=official");
     const links = [...document.querySelectorAll<HTMLAnchorElement>(".dku-resource-source-list > li > a")];
     expect(links.map((link) => link.getAttribute("aria-label"))).toEqual([
-      "학과 정규 교과과정 원문 열기",
-      "2026-2 실제 개설 시간표 원문 열기",
-      "2026학년도 학사종합안내 원문 열기",
+      "학과 정규 교과과정 바로가기",
+      "수강 시간표 조회 바로가기",
+      "학사종합안내 바로가기",
     ]);
-    expect(links.every((link) => link.textContent === "원문 열기 ↗")).toBe(true);
+    expect(links.every((link) => link.textContent?.includes("바로가기"))).toBe(true);
   });
 
   it("renders five focused URLs with a route-controlled active page index", async () => {
@@ -152,28 +152,31 @@ describe("resource reading routes", () => {
     await goTo("?view=resources&section=modules");
     for (const module of modules) expect(document.body.textContent).toContain(`${module.id}. ${module.name}`);
     expect(document.body.textContent).toContain("49과목");
-    expect(document.body.textContent).toContain("45과목");
+    expect(document.querySelectorAll('[data-module-disclosure]')).toHaveLength(15);
   });
 
   it("renders the complete department table rather than a track or timetable proxy", async () => {
     await mountAt("?view=resources&section=curriculum");
-    expect(document.querySelectorAll("tbody tr")).toHaveLength(47);
-    expect(document.body.textContent).toContain("게시·개정연도 미표기");
+    expect(document.querySelectorAll(".dku-roadmap-course-button")).toHaveLength(47);
+    expect(document.querySelectorAll(".dku-roadmap-table tbody tr")).toHaveLength(6);
     expect(document.body.textContent).toContain("국내인턴십1(환경자원경제)");
     expect(document.body.textContent).toContain("18학점");
-    expect(document.querySelectorAll('[data-label="트랙 자료 연결"]')).toHaveLength(47);
-    expect([...document.querySelectorAll('[data-label="트랙 자료 연결"]')].filter((node) => node.textContent?.includes("트랙 밖"))).toHaveLength(10);
+    expect(document.querySelectorAll('[data-learning-area="practice"] .dku-roadmap-course-button')).toHaveLength(10);
+    expect(document.querySelectorAll('.dku-roadmap-table thead tr:last-child th')).toHaveLength(8);
   });
 
   it("shows all actual sections with unknowns and source meaning intact", async () => {
     await mountAt("?view=resources&section=timetable");
-    expect(document.querySelectorAll("tbody tr")).toHaveLength(37);
+    expect(document.querySelector('.dku-tt-weekly')).not.toBeNull();
+    const listButton=[...document.querySelectorAll<HTMLButtonElement>('button')].find(button=>button.textContent==='분반 목록')!;
+    await act(async()=>listButton.click());
+    expect(document.querySelectorAll(".dku-tt-list tbody tr")).toHaveLength(37);
     expect(document.body.textContent).toContain("19:50–21:35");
     expect(document.body.textContent).toContain("토 7~10교시");
     expect(document.body.textContent).toContain("교수 미표기");
-    expect(document.body.textContent).toContain("실시간 수업 여부 미표기");
-    expect(document.body.textContent).toContain("사전녹화온라인강의");
-    expect(document.body.textContent).toContain("실시간 자동 갱신되지 않습니다");
+    expect(document.body.textContent).toContain("온라인·시간 확인");
+    expect(document.body.textContent).toContain("사전녹화 온라인");
+    expect(document.querySelector('.dku-tt-caption')?.textContent).toContain("2026-09-08");
   });
 
   it("keeps official sources, functional videos, contact and historical boundaries", async () => {
@@ -186,8 +189,9 @@ describe("resource reading routes", () => {
       expect(link.rel.split(" ")).toEqual(expect.arrayContaining(["noopener", "noreferrer"]));
       expect(new URL(link.href).protocol).toBe("https:");
     }
-    expect(page.textContent).toContain("과거 2026-1 개설 이력을 소급 검증하지 않았습니다");
-    expect(page.textContent).toContain("인쇄 60쪽");
-    expect(document.querySelector(".dku-resource-footer")?.textContent).toContain("학과 공개·제공 자료를 바탕으로 안내");
+    expect(page.textContent).not.toContain("소급 검증");
+    expect(page.textContent).not.toContain("SHA-256");
+    expect(page.querySelector('.dku-resource-method')).toBeNull();
+    expect(document.querySelector(".dku-resource-footer")?.textContent).toContain("다음 자료도 함께 살펴보세요");
   });
 });

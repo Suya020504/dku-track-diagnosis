@@ -48,6 +48,13 @@ beforeEach(() => {
 afterEach(async () => { if (root) await act(async () => root?.unmount()); root = undefined; });
 
 describe("recommendation course planning", () => {
+  it("identifies both recommendation priority and course reasons as module-required, not cohort academic requirements", async () => {
+    await render();
+    expect(document.querySelector(".planner-result-heading p")?.textContent).toContain("모듈 내 필수 보완 후보부터 표시");
+    expect(candidate().querySelector(".dku-results-candidate-reason")?.textContent).toContain("모듈 내 필수 보완");
+    expect(document.querySelector("output")?.textContent).toBe("[]");
+  });
+
   it("adds a candidate with later as the honest undecided default and can remove it", async () => {
     await render();
     await act(async () => button("수강 계획에 추가", candidate()).click());

@@ -1,7 +1,9 @@
 import type { RefObject } from "react";
 import { ResultDisclosure } from "./ResultDisclosure";
 import { TrackGlyph } from "../../components/TrackGlyph";
+import { AcademicMajorRequirements } from "./AcademicMajorRequirements";
 import type {
+  CourseSelectionRecord,
   DiagnosisResult,
   PathProgressResult,
   StudentProfile,
@@ -80,13 +82,24 @@ export function CurrentProgressView({
   profile,
   pathProgress,
   headingRef,
+  courseSelections = [],
 }: {
   result: DiagnosisResult;
   profile: StudentProfile;
   pathProgress: PathProgressResult;
   headingRef: RefObject<HTMLHeadingElement | null>;
+  courseSelections?: readonly CourseSelectionRecord[];
 }) {
-  const statusLabel = getSafePathStatusLabel(pathProgress.status);
+  const satisfied = pathProgress.status === "current-input-satisfied"
+    || pathProgress.status === "reference-calculation-satisfied";
+  const checkedScopes = [
+    pathProgress.requiredProgress !== "not-applicable" ? "모듈" : null,
+    pathProgress.trackProgress !== "not-applicable" ? "트랙" : null,
+    "전공학점",
+  ].filter(Boolean).join("·");
+  const statusLabel = satisfied
+    ? `${checkedScopes} 기준상 충족`
+    : getSafePathStatusLabel(pathProgress.status);
 
   return (
     <div className="planner-result-section planner-current-progress">
@@ -96,11 +109,12 @@ export function CurrentProgressView({
           {statusLabel}
         </h1>
         <p>
-          완료 과목 기준의 참고 계산입니다. 최종 인정은 학과 확인이 필요합니다.
+          완료 과목으로 계산한 모듈·트랙 및 전공학점 현황입니다. 최종 인정은 학과 확인이 필요합니다.
         </p>
       </header>
 
       <PathProgressSummary profile={profile} result={pathProgress} />
+      <AcademicMajorRequirements profile={profile} courseSelections={courseSelections} />
 
       <ResultDisclosure id="result-track-comparison-detail" title="트랙 비교 · 다른 조건과 수강 후보 자세히">
       <section className="planner-track-comparison" aria-labelledby="track-comparison-title">

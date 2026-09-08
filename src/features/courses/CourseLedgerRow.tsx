@@ -43,7 +43,6 @@ export function CourseLedgerRow({
   course,
   selection,
   moduleLabel,
-  evidenceText,
   trackModule,
   requiredForEnrollment,
   onToggleCourse,
@@ -77,7 +76,7 @@ export function CourseLedgerRow({
         <span className="dku-check-course">
           <span>
             <strong>{course.name}</strong>
-            {requiredForEnrollment ? <em>필수</em> : null}
+            {requiredForEnrollment ? <em>모듈필수</em> : null}
           </span>
           <small>{formatSemester(course.recommendedSemester)} · {moduleLabel}</small>
         </span>
@@ -123,7 +122,6 @@ export function CourseLedgerRow({
           <span data-module-marker={course.moduleId}><small>모듈</small><strong>{moduleLabel}</strong></span>
           <span><small>권장 학기</small><strong>{formatSemester(course.recommendedSemester)}</strong></span>
         </div>
-        <p>근거: {evidenceText}</p>
         {trackModule ? <em>선택 트랙 관련 모듈</em> : null}
       </details>
     </article>

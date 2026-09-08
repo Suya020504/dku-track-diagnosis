@@ -4,8 +4,12 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
-import { tracks, OFFICIAL_CURRICULUM_SOURCE } from "./data/curriculumData";
-import { OFFICIAL_TRACK_VIDEOS, TRACK_REGULATION_URL, TRACK_DEGREE_VIDEO_URL, TRACK_CERTIFICATE_VIDEO_URL, TRACK_LATE_ENTRY_VIDEO_URL, DEPARTMENT_CURRICULUM_URL } from "./data/officialResources";
+import { tracks } from "./data/curriculumData";
+import { OFFICIAL_TRACK_VIDEOS, TRACK_DEGREE_VIDEO_URL, TRACK_CERTIFICATE_VIDEO_URL, TRACK_LATE_ENTRY_VIDEO_URL, DEPARTMENT_CURRICULUM_URL } from "./data/officialResources";
+
+const APPLICATION_URL = "https://portal.dankook.ac.kr/p/CTT006?b=1&dm=r&p=19752";
+const ACADEMIC_REQUIRED_URL = "https://portal.dankook.ac.kr/p/CTT006?b=1&dm=r&p=19347";
+const ACADEMIC_GUIDE_URL = "https://www.dankook.ac.kr/web/kor/%ED%95%99%EC%82%AC%EC%A2%85%ED%95%A9%EC%95%88%EB%82%B4-%EC%B2%9C%EC%95%88-";
 
 let root: Root | undefined;
 
@@ -63,28 +67,52 @@ afterEach(async () => {
 });
 
 describe("separate track guide journey", () => {
-  it("explains degrees to a new student while retaining dated evidence and uncertainty", async () => {
+  it("shows distinct major routes and clearly marked notation examples without an uncertainty wall", async () => {
     await mountAt("/?view=track-guide&section=outcomes");
     expect(document.querySelector("h1")?.textContent).toBe("학위와 트랙 이수 기록은 어떻게 다른가요?");
-    const degree = document.querySelector(".guide-degree");
-    expect(degree?.textContent).toContain("경제학사");
-    expect(degree?.textContent).toContain("식품자원경제학");
-    expect(document.querySelector(".guide-track-record")?.textContent).toContain("트랙명은 별도의 학위명이 아닙니다");
-    expect(document.querySelector(".guide-track-record")?.textContent).toContain("2024 학과 공식 영상");
-    expect(document.body.textContent).toContain("2026년에 트랙명이 어떤 증명서에 표시되는지");
-    expect(document.body.textContent).toContain("최신 공개 공지는 확인되지 않았습니다");
+    expect(document.querySelectorAll("[data-guide-study-path]")).toHaveLength(3);
+    const primary = document.querySelector('[data-guide-study-path="primary"]');
+    const double = document.querySelector('[data-guide-study-path="double-major"]');
+    const minor = document.querySelector('[data-guide-study-path="minor"]');
+    expect(primary?.textContent).toContain("63학점");
+    expect(primary?.textContent).toContain("다전공 병행 시 42학점");
+    expect(primary?.textContent).toContain("경제학사");
+    expect(double?.textContent).toContain("42학점");
+    expect(minor?.textContent).toContain("21학점");
+    expect(minor?.textContent).toContain("부전공 표기");
+    expect(minor?.textContent).toContain("경제학사가 추가되지는 않아요");
+    expect(document.querySelectorAll('[data-guide-notation-example]')).toHaveLength(2);
+    expect(document.body.textContent).toContain("표기 예시");
+    expect(document.body.textContent).toContain("식품자원경제학과 푸드마케팅 트랙");
+    expect(document.querySelectorAll('.guide-records a[href="tel:0415503610"]')).toHaveLength(1);
+    expect(document.body.textContent).not.toContain("최신 공개 공지는 확인되지 않았습니다");
+    expect(document.querySelector(".planner-evidence-band")).toBeNull();
     expect(document.body.textContent).not.toContain("근거별로 나누어 설명합니다");
     expect(document.body.textContent).not.toContain("서비스 역할");
     expect(document.querySelectorAll("main")).toHaveLength(1);
   });
 
-  it("uses learner-facing benefit labels without dropping the recognition caveat", async () => {
+  it("keeps the four benefits without the removed graduation and employment disclaimer", async () => {
     await mountAt("/?view=track-guide&section=benefits");
     expect(document.querySelector(".guide-reasons-intro")?.textContent).toContain("어떤 분야를 배울지");
     expect(document.querySelectorAll(".guide-reason-list article")).toHaveLength(4);
     expect(document.body.textContent).not.toContain("서비스 역할");
-    expect(document.querySelector(".guide-caution")?.textContent).toContain("졸업 단축·취업·자동 인정을 보장하는 제도는 아닙니다");
+    expect(document.querySelector(".guide-caution")).toBeNull();
+    expect(document.body.textContent).not.toContain("졸업 단축·취업·자동 인정");
     expect(document.querySelectorAll(".guide-reason-list details, .guide-reason-list a")).toHaveLength(0);
+  });
+
+  it("separates cohort academic requirements from module-required credits in optional detail", async () => {
+    await mountAt("/?view=track-guide&section=outcomes");
+    const detail = document.querySelector("details[data-guide-cohort-requirements]");
+    expect(detail).not.toBeNull();
+    expect(detail?.hasAttribute("open")).toBe(false);
+    expect(document.querySelector('[data-guide-cohort="2024"]')?.textContent).toContain("전공필수 없음");
+    expect(document.querySelector('[data-guide-cohort="2020"]')?.textContent).toContain("15학점");
+    expect(document.querySelector('[data-guide-cohort="2019"]')?.textContent).toContain("18학점");
+    expect(detail?.textContent).toContain("타 학과생의 복수·부전공에는 이 기준을 적용하지 않아요");
+    expect(document.querySelector('[data-guide-study-path="primary"]')?.textContent).toContain("모듈 내 필수 18학점");
+    expect(document.querySelector('[data-guide-study-path="minor"]')?.textContent).toContain("모듈 내 필수 조건 없음");
   });
 
   it("uses the new concept illustration with live captions and no retired guide classes", async () => {
@@ -113,7 +141,7 @@ describe("separate track guide journey", () => {
     await click("공식 영상·자료 보기");
     expect(new URLSearchParams(location.search).get("section")).toBe("videos");
     expect(document.activeElement).toBe(document.querySelector("h1"));
-    for (const href of [OFFICIAL_CURRICULUM_SOURCE.url, TRACK_REGULATION_URL, TRACK_DEGREE_VIDEO_URL, TRACK_CERTIFICATE_VIDEO_URL, TRACK_LATE_ENTRY_VIDEO_URL]) {
+    for (const href of [ACADEMIC_GUIDE_URL, APPLICATION_URL, TRACK_DEGREE_VIDEO_URL, TRACK_CERTIFICATE_VIDEO_URL, TRACK_LATE_ENTRY_VIDEO_URL]) {
       expect(document.querySelector(`.dku-guide-page a[href="${href}"]`)).not.toBeNull();
     }
     await moveNativeHistory("back");
@@ -125,7 +153,7 @@ describe("separate track guide journey", () => {
     await mountAt(`/?view=track-guide&section=${section}`);
     expect(document.querySelectorAll("[data-guide-materials-entry]")).toHaveLength(1);
     const links = [...document.querySelectorAll<HTMLAnchorElement>("[data-track-guide-section] a")];
-    expect(links.every(link => link.href.startsWith("tel:") || link.textContent?.includes("학과 사무실 위치·연락처"))).toBe(true);
+    expect(links.every(link => link.href.startsWith("tel:") || (section === "application" && (link.href === APPLICATION_URL || link.href.startsWith("mailto:"))))).toBe(true);
   });
 
   it.each(["overview", "benefits", "outcomes", "structure", "application"])(
@@ -135,18 +163,26 @@ describe("separate track guide journey", () => {
       expect(document.querySelector("[data-guide-source-ledger]")).toBeNull();
       await click("공식 영상·자료");
       expect(document.querySelectorAll("[data-guide-source-ledger]")).toHaveLength(1);
-      expect(document.querySelector('a[href="https://cms.dankook.ac.kr/web/ere/-6"]')).not.toBeNull();
+      expect(document.querySelector(`a[href="${APPLICATION_URL}"]`)).not.toBeNull();
     },
   );
 
-  it("separates application preparation from unverified application procedures", async () => {
+  it("shows the closed 2026 application period and original-submission steps without uploading forms", async () => {
     await mountAt("/?view=track-guide&section=application");
-    expect(document.querySelector("h1")?.textContent).toBe("트랙 신청 전에 무엇을 확인해야 하나요?");
+    expect(document.querySelector("h1")?.textContent).toBe("트랙 신청은 이렇게 준비하세요");
     expect(document.querySelector('[data-track-guide-section="application"]')).not.toBeNull();
     expect(document.querySelector("[data-guide-source-ledger]")).toBeNull();
-    expect(document.body.textContent).toContain("2026년 신청 기간과 방법은 학과에 확인해 주세요");
-    expect(document.body.textContent).toContain("2024년 안내 영상");
-    expect(document.querySelector('a[href="tel:0415503610"]')).not.toBeNull();
+    expect(document.body.textContent).toContain("2026년 1학기 신청 (마감)");
+    expect(document.body.textContent).toContain("4월 13일(월) 10:00");
+    expect(document.body.textContent).toContain("4월 16일(목) 16:00");
+    expect(document.body.textContent).toContain("2학기 이상 수료한 재학생");
+    expect(document.body.textContent).toContain("인원 제한 없음");
+    expect(document.body.textContent).toContain("사회과학관 337호");
+    expect(document.body.textContent).toContain("원본");
+    expect(document.body.textContent).toContain("복수 선택");
+    expect(document.body.textContent).not.toContain("신청 기간과 방법은 학과에 확인");
+    expect(document.querySelector(`.guide-application a[href="${APPLICATION_URL}"]`)).not.toBeNull();
+    expect(document.querySelector('.guide-application a[href="mailto:jhuu11@dankook.ac.kr"]')).not.toBeNull();
     expect(document.querySelector('a[href="/documents/2026-ere-module-track-curriculum.pdf"]')).toBeNull();
     expect(document.querySelector(`.guide-application a[href="${DEPARTMENT_CURRICULUM_URL}"]`)).toBeNull();
     expect(document.querySelector("[data-guide-materials-entry]")).not.toBeNull();
@@ -158,15 +194,16 @@ describe("separate track guide journey", () => {
     expect(new URLSearchParams(location.search).get("view")).toBe("diagnosis");
   });
 
-  it("keeps the supplied source traceable but private in the materials ledger", async () => {
+  it("offers five school shortcuts without private-file metadata or hosted attachments", async () => {
     await mountAt("/?view=track-guide&section=videos");
     const ledger = document.querySelector("[data-guide-source-ledger]");
-    expect(ledger?.textContent).toContain("제공된 2026 트랙 교육과정 PDF");
-    expect(ledger?.textContent).toContain("2026-09-08");
-    expect(ledger?.textContent).toContain("제공자료 · 원문 비공개");
-    expect(ledger?.textContent).toContain("모듈별 과목과 학점");
-    expect(ledger?.textContent).toContain("4–5쪽");
-    expect(ledger?.textContent).toContain("6쪽");
+    expect(ledger?.querySelectorAll("li")).toHaveLength(5);
+    expect(ledger?.textContent).toContain("학교 바로가기");
+    expect(ledger?.textContent).not.toContain("제공된 2026 트랙 교육과정 PDF");
+    expect(ledger?.textContent).not.toContain("2026-09-08");
+    expect(ledger?.textContent).not.toContain("제공자료 · 원문 비공개");
+    expect(ledger?.textContent).not.toContain("받은 날");
+    expect(ledger?.querySelector(`a[href="${ACADEMIC_REQUIRED_URL}"]`)).not.toBeNull();
     expect(ledger?.querySelector('a[href="/documents/2026-ere-module-track-curriculum.pdf"]')).toBeNull();
     expect(ledger?.querySelector(`a[href="${DEPARTMENT_CURRICULUM_URL}"]`)).not.toBeNull();
     expect(ledger?.querySelector('button[disabled]')).toBeNull();
@@ -219,7 +256,9 @@ describe("separate track guide journey", () => {
     expect(document.querySelectorAll("[data-official-track-video]")).toHaveLength(4);
     expect(document.querySelector("iframe")).toBeNull();
     expect(document.body.textContent).toContain("3편 · 트랙제");
-    expect(document.body.textContent).toContain("2024년 공식 설명");
+    expect(document.querySelectorAll(".guide-playlist small")).toHaveLength(0);
+    expect(document.querySelector("details.guide-video-moments")).not.toBeNull();
+    expect(document.querySelector("details.guide-video-moments")?.hasAttribute("open")).toBe(false);
 
     await click("공식 영상 재생");
     const iframe = document.querySelector<HTMLIFrameElement>("iframe");
@@ -261,8 +300,8 @@ describe("separate track guide journey", () => {
     expect(document.body.textContent).toContain("15개 모듈");
     expect(document.querySelectorAll("[data-track-guide-track]")).toHaveLength(5);
     await click("공식 영상·자료");
-    expect(document.querySelector('a[href^="https://www.dankook.ac.kr/documents/"]')).not.toBeNull();
-    expect(document.querySelector('a[href="https://cms.dankook.ac.kr/web/ere/-6"]')).not.toBeNull();
+    expect(document.querySelector(`a[href="${ACADEMIC_GUIDE_URL}"]`)).not.toBeNull();
+    expect(document.querySelector(`a[href="${ACADEMIC_REQUIRED_URL}"]`)).not.toBeNull();
     expect(document.querySelector('a[href="https://www.youtube.com/@FoodandResourcesEconomics_dku/videos"]')).not.toBeNull();
   });
 
@@ -272,14 +311,13 @@ describe("separate track guide journey", () => {
     expect(document.querySelector('[data-track-guide-section="outcomes"]')).not.toBeNull();
     expect(document.body.textContent).toContain("경제학사");
     expect(document.body.textContent).toContain("식품자원경제학");
-    expect(document.body.textContent).toContain("별도의 학위명이 아닙니다");
-    expect(document.body.textContent).toContain("학위증·성적증명서");
-    expect(document.body.textContent).toContain("2026년에 트랙명이 어떤 증명서에 표시되는지");
-    expect(document.body.textContent).toContain("신청 절차는 학과에 확인해 주세요");
+    expect(document.body.textContent).toContain("학위증·성적증명서에 트랙명이 적히는 모습을 예시로 살펴보세요");
+    expect(document.body.textContent).toContain("실제 증명서 표기와 발급은 학과 사무실에 문의해 주세요");
+    expect(document.body.textContent).toContain("부전공 21학점과 트랙 30학점은 다른 조건");
     expect(document.querySelector('.guide-records a[href*="seq=9926"]')).toBeNull();
     expect(document.querySelector('.guide-records a[href*="osc9yOuq0IU"]')).toBeNull();
     await click("공식 영상·자료 보기");
-    expect(document.querySelector('a[href*="seq=9926"]')).not.toBeNull();
+    expect(document.querySelector(`a[href="${ACADEMIC_GUIDE_URL}"]`)).not.toBeNull();
     expect(document.querySelector('a[href*="osc9yOuq0IU"][href*="t=860s"]')).not.toBeNull();
   });
 

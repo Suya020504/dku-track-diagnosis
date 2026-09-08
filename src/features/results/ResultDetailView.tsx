@@ -91,6 +91,7 @@ export function ResultDetailView({
             profile={profile}
             pathProgress={pathProgress}
             headingRef={headingRef}
+            courseSelections={courseSelections}
           />
         ) : section === "next" ? (
           <NextCoursesView

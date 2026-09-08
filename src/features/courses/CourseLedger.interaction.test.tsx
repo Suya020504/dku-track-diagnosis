@@ -64,7 +64,7 @@ describe("course input interactions", () => {
   });
   it("shows b-2 as required for double majors, but no required badges for minors", async () => {
     await render();
-    expect(row("b-2").querySelector(".dku-check-course em")?.textContent).toBe("필수");
+    expect(row("b-2").querySelector(".dku-check-course em")?.textContent).toBe("모듈필수");
     expect(row("b-1").querySelector(".dku-check-course em")).toBeNull();
     await act(async () => root?.render(<Harness profile={{ ...doubleMajor, studyPath: "minor" }} />));
     expect(document.querySelectorAll(".dku-check-course em")).toHaveLength(0);

@@ -212,7 +212,7 @@ describe("result decision pages", () => {
     expect(markup).toContain("적용 이수 경로");
     expect(markup).toContain("트랙형전공");
     expect(markup).toContain("공식 공개 확인");
-    expect(markup).toContain("필수과목 진행");
+    expect(markup).toContain("모듈 내 필수 진행");
     expect(markup).toContain("트랙 관련 학점 진행");
     expect(markup).toContain("전체 전공학점 진행");
     expect(markup).toContain("트랙 비교");

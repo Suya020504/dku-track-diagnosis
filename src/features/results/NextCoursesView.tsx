@@ -93,7 +93,7 @@ function courseContext(course: Course, result: DiagnosisResult) {
 
   return {
     reason: requiredFor.length > 0
-      ? `${requiredFor.join(", ")} 필수과목 보완`
+      ? `${requiredFor.join(", ")} 모듈 내 필수 보완`
       : trackNames.length > 0
         ? `${trackNames.join(", ")} 부족 모듈 보완 후보`
         : "입력한 이수 현황을 기준으로 다음 수강 후보로 계산된 과목입니다.",
@@ -187,7 +187,7 @@ export function NextCoursesView({
           다음 수강 후보와 선택 이유를 확인하세요
         </h1>
         <p>
-          {pathLabel} 기준 {recommendations.length}개 후보입니다. 필수과목 보완 후보부터 표시합니다. 자동으로 수강 선택하지 않습니다.
+          {pathLabel} 기준 {recommendations.length}개 후보입니다. 모듈 내 필수 보완 후보부터 표시합니다. 자동으로 수강 선택하지 않습니다.
         </p>
       </header>
 

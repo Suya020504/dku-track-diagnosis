@@ -11,9 +11,9 @@
 .dku-resource-page .dku-resource-nav { display:flex; gap:6px; flex-wrap:wrap; padding-bottom:20px; border-bottom:1px solid var(--resource-line); }
 .dku-resource-page .dku-resource-nav button { background:transparent; border:0; }
 .dku-resource-page .dku-resource-nav button[aria-current] { background:#173f59; color:white; }
-.dku-resource-page .dku-resource-heading { padding:32px 0 28px; max-width:900px; }
+.dku-resource-page .dku-resource-heading { padding:20px 0 14px; max-width:900px; }
 .dku-resource-page .dku-resource-heading>span { color:var(--resource-muted); font-size:13px; font-weight:750; }
-.dku-resource-page .dku-resource-heading h1 { margin:12px 0; font-size:clamp(27px,3vw,40px); line-height:1.3; letter-spacing:-.045em; }
+.dku-resource-page .dku-resource-heading h1 { margin:0 0 8px; font-size:clamp(25px,2.3vw,32px); line-height:1.3; letter-spacing:-.045em; }
 .dku-resource-page .dku-resource-heading p { color:var(--resource-muted); font-size:16px; }
 .dku-resource-page .dku-resource-toolbar { display:flex; flex-wrap:wrap; gap:14px; align-items:end; padding:22px 0; }
 .dku-resource-page .dku-resource-toolbar label { display:grid; gap:8px; font-size:14px; font-weight:650; min-width:110px; }

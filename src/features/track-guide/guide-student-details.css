@@ -1,0 +1,60 @@
+.dku-guide-page .guide-study-paths { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+.dku-guide-page .guide-study-paths article { min-width:0; padding:22px; background:#f5f9f6; border:1px solid var(--guide-line); border-radius:10px; }
+.dku-guide-page .guide-study-paths h3 { margin:8px 0 15px; font-size:1.1rem; }
+.dku-guide-page .guide-study-credits { display:block; color:var(--guide-green); font-size:2rem; letter-spacing:-.05em; }
+.dku-guide-page .guide-study-paths small { display:block; margin-top:4px; color:#56685e; font-size:.78rem; }
+.dku-guide-page .guide-study-paths p { margin-top:18px; color:#364d49; font-size:.87rem; }
+.dku-guide-page .guide-study-module { display:block; margin-top:18px; padding-top:14px; border-top:1px solid var(--guide-line); font-size:.8rem; color:#415d50; }
+.dku-guide-page .guide-cohort-detail { margin-top:16px; border-bottom:1px solid var(--guide-line); padding-bottom:8px; }
+.dku-guide-page .guide-cohort-detail dl { display:grid; gap:8px; max-width:580px; padding:8px 0 14px; }
+.dku-guide-page .guide-cohort-detail dl > div { display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px 18px; }
+.dku-guide-page .guide-cohort-detail dd { margin:0; color:var(--guide-green); font-weight:650; }
+.dku-guide-page .guide-cohort-detail p { color:#52656c; font-size:.8rem; }
+.dku-guide-page .guide-notation-heading { display:flex; gap:14px; align-items:flex-start; margin:32px 0 20px; }
+.dku-guide-page .guide-notation-heading > svg { width:30px; height:30px; color:var(--guide-green); }
+.dku-guide-page .guide-notation-heading h2 { font-size:1.18rem; line-height:1.5; }
+.dku-guide-page .guide-notation-heading p { margin-top:6px; font-size:.87rem; color:#52656c; }
+.dku-guide-page .guide-notation-examples { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+.dku-guide-page .guide-notation-examples figure { min-width:0; padding:22px; border:1px solid #abc5b5; border-radius:10px; background:linear-gradient(125deg,#f3f8f3,#fff); }
+.dku-guide-page .guide-notation-examples figcaption { display:flex; align-items:center; flex-wrap:wrap; gap:8px; font-size:.77rem; color:#52675c; margin-bottom:22px; }
+.dku-guide-page .guide-notation-examples figcaption span { color:#19543e; border:1px solid #a9c6b6; border-radius:5px; background:#e4f0e7; padding:3px 7px; font-weight:700; }
+.dku-guide-page .guide-notation-examples figure > div + div { margin-top:18px; padding-top:16px; border-top:1px solid #d3e0d7; }
+.dku-guide-page .guide-notation-examples small { display:block; margin-bottom:7px; font-size:.74rem; color:#587164; }
+.dku-guide-page .guide-notation-examples strong { display:block; font-size:1.65rem; font-weight:750; line-height:1.55; letter-spacing:-.03em; overflow-wrap:anywhere; }
+.dku-guide-page .guide-notation-examples .guide-notation-external { font-size:1.25rem; max-width:310px; }
+.dku-guide-page .guide-notation-examples .guide-notation-note { margin-top:24px; font-size:.82rem; color:#52656c; }
+.dku-guide-page .guide-notation-condition { margin-top:16px; font-size:.82rem; color:#52656c; }
+.dku-guide-page .guide-notation-contact { display:flex; align-items:center; flex-wrap:wrap; gap:0 16px; margin-top:8px; }
+.dku-guide-page .guide-notation-contact p { font-size:.82rem; color:#52656c; }
+.dku-guide-page .guide-application-round { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:22px; padding:22px; margin-top:24px; background:#f3f7f3; border-radius:9px; }
+.dku-guide-page .guide-closed-badge { display:inline-block; font-size:.84rem; font-weight:750; color:#506058; background:#e3eae4; border-radius:5px; padding:6px 9px; }
+.dku-guide-page .guide-application-round p { margin-top:10px; font-size:.88rem; }
+.dku-guide-page .guide-application-round dl { display:grid; gap:10px; font-size:.84rem; }
+.dku-guide-page .guide-application-round dl > div { display:flex; flex-wrap:wrap; gap:8px 18px; }
+.dku-guide-page .guide-application-round dt { color:#627266; }
+.dku-guide-page .guide-application-round dd { margin:0; font-weight:650; }
+.dku-guide-page .guide-application-steps { display:grid; gap:0; margin:24px 0; padding:0; list-style:none; }
+.dku-guide-page .guide-application-steps li { display:flex; gap:20px; padding:22px 0; border-bottom:1px solid var(--guide-line); }
+.dku-guide-page .guide-application-steps li > span { color:#8aa293; font-size:1.1rem; font-weight:750; }
+.dku-guide-page .guide-application-steps li > div { min-width:0; }
+.dku-guide-page .guide-application-steps h3 { margin-bottom:6px; }
+.dku-guide-page .guide-application-steps p { font-size:.88rem; color:#465c53; max-width:800px; }
+.dku-guide-page .guide-application-cancel { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px 22px; }
+.dku-guide-page .guide-application-cancel strong { font-size:.9rem; }
+.dku-guide-page .guide-application-cancel p { margin-top:3px; font-size:.84rem; color:#52656c; }
+.dku-guide-page .guide-video-moments { border-top:1px solid var(--guide-line); }
+.dku-guide-page .guide-video-moments > div { display:flex; flex-wrap:wrap; gap:2px 24px; padding-bottom:8px; }
+@media (max-width:850px) {
+  .dku-guide-page .guide-study-paths { grid-template-columns:1fr; }
+  .dku-guide-page .guide-study-paths article { padding:18px; }
+  .dku-guide-page .guide-study-paths h3 { margin:6px 0 10px; }
+  .dku-guide-page .guide-study-paths p { margin-top:10px; }
+  .dku-guide-page .guide-study-module { margin-top:12px; padding-top:10px; }
+}
+@media (max-width:700px) {
+  .dku-guide-page .guide-notation-examples { grid-template-columns:1fr; }
+  .dku-guide-page .guide-notation-examples figure { padding:18px; }
+  .dku-guide-page .guide-notation-heading { margin-top:24px; gap:10px; }
+  .dku-guide-page .guide-application-round { padding:16px; }
+  .dku-guide-page .guide-application-steps li { gap:12px; }
+}

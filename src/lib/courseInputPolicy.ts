@@ -31,19 +31,19 @@ export function getCourseInputPolicy(profile?: StudentProfile, targetTrackId?: T
     const required = REQUIRED_COURSE_VARIANTS["starred-six-2026"];
     return {
       title, totalMajorCredits: null, requiredCredits: required.requiredCredits, requiredCourseIds: required.courseIds,
-      marker: `필수 ${required.requiredCredits}학점 · 전체 기준은 트랙 선택 후 확인`,
-      description: `필수 ${required.courseIds.length}과목 ${required.requiredCredits}학점을 반영합니다. 전체 전공학점과 모듈 기준은 트랙 선택 후 확인할 수 있습니다.`,
+      marker: `모듈 내 필수 ${required.requiredCredits}학점 · 전체 기준은 트랙 선택 후 확인`,
+      description: `모듈 내 필수 ${required.courseIds.length}과목 ${required.requiredCredits}학점을 확인합니다. 전체 기준은 트랙 선택 후 확인할 수 있습니다. 입학연도별 전공필수는 결과에서 따로 확인하세요.`,
     };
   }
   const rule = getRequirementRule(profile, targetTrackId);
   const required = rule.requiredCourseVariantId ? REQUIRED_COURSE_VARIANTS[rule.requiredCourseVariantId] : null;
   const requiredCredits = required?.requiredCredits ?? 0;
   const requirementText = required
-    ? `필수 ${required.courseIds.length}과목 ${requiredCredits}학점을 포함해 전공 ${rule.totalMajorCredits}학점이 필요합니다.`
-    : `전공 ${rule.totalMajorCredits}학점이 필요하며, 별도로 지정된 필수 과목 조건은 없습니다.`;
+    ? `모듈 내 필수 ${required.courseIds.length}과목 ${requiredCredits}학점과 전공 ${rule.totalMajorCredits}학점을 확인합니다. 입학연도별 전공필수는 결과에서 따로 확인하세요.`
+    : `부전공은 전공 ${rule.totalMajorCredits}학점을 확인하며, 이 계산에는 별도의 모듈필수 조건을 적용하지 않습니다.`;
   return {
     title, totalMajorCredits: rule.totalMajorCredits, requiredCredits, requiredCourseIds: required?.courseIds ?? [],
-    marker: `전공 ${rule.totalMajorCredits}학점 · ${required ? `필수 ${requiredCredits}학점` : "필수 과목 조건 없음"}`,
-    description: `${requirementText} 제공된 2026 교육과정 안내 기준이며, 개인별 적용과 최종 이수 인정은 학과에서 확인해 주세요.`,
+    marker: `전공 ${rule.totalMajorCredits}학점 · ${required ? `모듈 내 필수 ${requiredCredits}학점` : "모듈필수 조건 없음"}`,
+    description: requirementText,
   };
 }

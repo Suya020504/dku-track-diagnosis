@@ -1,45 +1,133 @@
-import { useState } from "react";
-import { departmentCurriculum, normalizeCourseSearch, OFFICIAL_2026_SOURCE } from "../../data/officialTimetable2026";
+import { useId, useRef, useState } from "react";
+import { departmentCurriculum, OFFICIAL_2026_SOURCE, type DepartmentCourse } from "../../data/officialTimetable2026";
+import { buildCurriculumRoadmap } from "./curriculumRoadmap";
+import "./curriculum-roadmap.css";
+
+function CurriculumCourseTile({ course, expanded, onToggle, onClose }: {
+  course: DepartmentCourse;
+  expanded: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+}) {
+  const detailId = useId();
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  function closeDetail() {
+    onClose();
+    buttonRef.current?.focus();
+  }
+
+  return <div className="dku-roadmap-course" onKeyDown={(event) => {
+    if (event.key === "Escape" && expanded) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeDetail();
+    }
+  }}>
+    <button
+      ref={buttonRef}
+      type="button"
+      className="dku-roadmap-course-button"
+      data-curriculum-course={course.officialCourseCode}
+      aria-label={`${course.courseName}, ${course.credits}학점, 과목 정보`}
+      aria-expanded={expanded}
+      aria-controls={expanded ? detailId : undefined}
+      onClick={onToggle}
+    >
+      <span className="dku-roadmap-course-name">{course.courseName}</span>
+      <span className="dku-roadmap-course-credit">{course.credits}학점 <span aria-hidden="true">{expanded ? "−" : "+"}</span></span>
+    </button>
+    {expanded ? <div id={detailId} className="dku-roadmap-course-detail" role="region" aria-label={`${course.courseName} 과목 정보`}>
+      <dl>
+        <div><dt>학사 과목코드</dt><dd>{course.officialCourseCode}</dd></div>
+        <div><dt>학점</dt><dd>{course.credits}학점</dd></div>
+        <div><dt>배치 학기</dt><dd>{course.grade}학년 {course.semester}학기</dd></div>
+      </dl>
+      <button type="button" aria-label={`${course.courseName} 과목 정보 닫기`} onClick={closeDetail}>닫기</button>
+    </div> : null}
+  </div>;
+}
 
 export function CurriculumReferenceView() {
   const [query, setQuery] = useState("");
   const [grade, setGrade] = useState("all");
-  const rows = departmentCurriculum.filter((course) => normalizeCourseSearch(`${course.courseName} ${course.officialCourseCode}`).includes(normalizeCourseSearch(query)) && (grade === "all" || String(course.grade) === grade));
-  return <section aria-label="학과 정규 교과과정">
-    <div className="dku-resource-scope-strip"><strong>학과 전체 47과목</strong><span>트랙과 겹치는 A–L 37과목 + 트랙 밖 10과목</span><a href={OFFICIAL_2026_SOURCE.departmentCurriculumUrl} target="_blank" rel="noopener noreferrer">학과 교과과정 원문 ↗</a></div>
-    <div className="dku-resource-toolbar"><label>교육과정 검색<input type="search" placeholder="과목명 또는 학사 과목코드" value={query} onChange={(event) => setQuery(event.target.value)} /></label><label>학년<select value={grade} onChange={(event) => setGrade(event.target.value)}><option value="all">전체 학년</option>{[1, 2, 3, 4].map((year) => <option key={year} value={year}>{year}학년</option>)}</select></label><span role="status">{rows.length}과목</span></div>
-    <p className="dku-resource-note">2026-09-08 확인 · 원문 게시·개정연도 미표기. 학년·학기는 교육과정상 배치이며 해당 학기 개설 보장이 아닙니다. 트랙 밖 과목을 진단 학점에 자동 합산하지 않습니다.</p>
-    <details className="dku-resource-method"><summary>과목명과 배치 학기 안내</summary><p>47과목의 이름·학사 과목코드·학점·학년·학기는 학과 교과과정 표기를 따릅니다. 트랙 자료와 띄어쓰기나 표현이 다를 수 있으므로 학사 과목코드로 구분하세요. 이 배치 학기는 실제 강좌 시간표와 별개입니다.</p></details>
-    {rows.length ? (
-      <div className="dku-resource-table-wrap">
-        <table className="dku-resource-data-table">
-          <caption>학과 현재 공개 교과과정 · 47과목 중 {rows.length}과목</caption>
-          <thead>
-            <tr>
-              <th>학년·학기</th>
-              <th>과목명</th>
-              <th>학사 과목코드</th>
-              <th>학점</th>
-              <th>트랙 자료 연결</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((course) => (
-              <tr key={course.officialCourseCode}>
-                <td data-label="학년·학기">{course.grade}학년 {course.semester}학기</td>
-                <th scope="row">{course.courseName}</th>
-                <td data-label="학사 과목코드">{course.officialCourseCode}</td>
-                <td data-label="학점">{course.credits}학점</td>
-                <td data-label="트랙 자료 연결">{course.projectCourseId?.toUpperCase() ?? "트랙 밖 · 전공선택"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    ) : (
-      <p className="dku-resource-empty" role="status">
-        조건에 맞는 과목이 없습니다. 검색어나 학년 필터를 바꿔 보세요.
-      </p>
-    )}
+  const [expandedCode, setExpandedCode] = useState<string | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const instructionsId = useId();
+  const tableId = useId();
+  const roadmap = buildCurriculumRoadmap(departmentCurriculum, { query, grade });
+  const years = [...new Set(roadmap.columns.map((column) => column.grade))];
+
+  return <section className="dku-curriculum-roadmap" aria-label="학과 정규 교과과정">
+    <div className="dku-roadmap-intro">
+      <strong>학과 전체 {departmentCurriculum.length}과목</strong>
+      <span>1학년부터 4학년까지, 학기별 학습 흐름</span>
+      <a href={OFFICIAL_2026_SOURCE.departmentCurriculumUrl} target="_blank" rel="noopener noreferrer">학과 교과과정 원문 ↗</a>
+    </div>
+
+    <div className="dku-resource-toolbar dku-roadmap-toolbar">
+      <label>교육과정 검색<input ref={searchRef} type="search" placeholder="과목명 또는 학사 과목코드" value={query} onChange={(event) => {
+        setQuery(event.target.value);
+        setExpandedCode(null);
+      }} /></label>
+      <label>학년<select value={grade} onChange={(event) => {
+        setGrade(event.target.value);
+        setExpandedCode(null);
+      }}>
+        <option value="all">전체 학년</option>
+        {[1, 2, 3, 4].map((year) => <option key={year} value={year}>{year}학년</option>)}
+      </select></label>
+      <span className="dku-roadmap-count" role="status" aria-live="polite">{roadmap.courseCount}과목</span>
+    </div>
+
+    <div className="dku-roadmap-reading-guide">
+      <p id={instructionsId}>학년을 고르거나 표를 좌우로 살펴보세요. 과목을 누르면 상세 정보가 열립니다.</p>
+    </div>
+
+    {roadmap.courseCount > 0 ? <div
+      className="dku-roadmap-scroll"
+      data-curriculum-scroll
+      role="region"
+      aria-label="학년·학기별 교육과정 표"
+      aria-describedby={instructionsId}
+      tabIndex={0}
+    >
+      <table className={`dku-roadmap-table${grade !== "all" ? " dku-roadmap-table-single-year" : ""}`}>
+        <caption>학습분야별 학기 배치 · {roadmap.courseCount}과목</caption>
+        <colgroup><col className="dku-roadmap-area-column" /></colgroup>
+        {years.map((year) => <colgroup key={year} span={2} />)}
+        <thead>
+          <tr>
+            <th rowSpan={2} className="dku-roadmap-corner">학습분야</th>
+            {years.map((year) => <th key={year} id={`${tableId}-year-${year}`} scope="colgroup" colSpan={2}>{year}학년</th>)}
+          </tr>
+          <tr>{roadmap.columns.map((column) => <th key={column.id} id={`${tableId}-semester-${column.id}`} scope="col">{column.semester}학기</th>)}</tr>
+        </thead>
+        <tbody>
+          {roadmap.rows.map((row) => <tr key={row.id} data-learning-area={row.id}>
+            <th id={`${tableId}-area-${row.id}`} scope="row" className="dku-roadmap-row-heading">{row.label}</th>
+            {row.cells.map((cell) => <td key={cell.columnId} data-semester={cell.columnId} headers={`${tableId}-area-${row.id} ${tableId}-year-${cell.columnId.split("-")[0]} ${tableId}-semester-${cell.columnId}`}>
+              {cell.courses.length > 0 ? <div className="dku-roadmap-cell-courses">
+                {cell.courses.map((course) => <CurriculumCourseTile
+                  key={course.officialCourseCode}
+                  course={course}
+                  expanded={expandedCode === course.officialCourseCode}
+                  onToggle={() => setExpandedCode((current) => current === course.officialCourseCode ? null : course.officialCourseCode)}
+                  onClose={() => setExpandedCode(null)}
+                />)}
+              </div> : <span className="dku-roadmap-no-course" aria-label="배치 과목 없음">—</span>}
+            </td>)}
+          </tr>)}
+        </tbody>
+      </table>
+    </div> : <div className="dku-resource-empty dku-roadmap-empty" role="status">
+      <p>조건에 맞는 과목이 없습니다. 검색어나 학년 필터를 바꿔 보세요.</p>
+      <button type="button" onClick={() => {
+        setQuery("");
+        setGrade("all");
+        setExpandedCode(null);
+        searchRef.current?.focus();
+      }}>전체 교육과정 보기</button>
+    </div>}
   </section>;
 }

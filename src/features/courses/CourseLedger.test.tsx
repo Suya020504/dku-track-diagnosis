@@ -118,7 +118,7 @@ describe("CourseLedger", () => {
     expect(renderLedger({ courses: [course], query: "바이오 헬스 인체의 신비" })).toContain("인체의 신비");
     expect(renderLedger({ courses: [course], query: "541980" })).toContain("인체의 신비");
   });
-  it("shows every planning status with real course, module, credit, term, and evidence text", () => {
+  it("shows planning status, course, module, credit, and term without internal audit text", () => {
     document.body.innerHTML = renderLedger();
 
     const rows = [...document.querySelectorAll<HTMLElement>(".dku-check-row")];
@@ -130,7 +130,7 @@ describe("CourseLedger", () => {
     expect(rowFor("소비자경제학")?.textContent).toContain("플래너에서 정한 시작 학기 기준");
     expect(rowFor("소비자경제학")?.textContent).toContain("3학점");
     expect(rowFor("소비자경제학")?.textContent).toContain("2학년 1학기");
-    expect(rowFor("소비자경제학")?.textContent).toContain("공개 학기표와 제공 최종안");
+    expect(rowFor("소비자경제학")?.textContent).not.toContain("공개 학기표와 제공 최종안");
     expect(rowFor("소비자경제학")?.querySelector('[data-module-marker="C"]')).toBeTruthy();
 
     expect(rowFor("경제원론")?.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked).toBe(true);

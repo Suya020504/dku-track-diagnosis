@@ -1,0 +1,61 @@
+.dku-academic-required {
+  min-width: 0;
+}
+
+.dku-academic-required .dku-results-disclosure > button strong {
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.dku-academic-required__cohort,
+.dku-academic-required__complete,
+.dku-academic-required__conditional,
+.dku-academic-required__guidance {
+  margin: 0;
+  color: var(--text-muted, #5c6573);
+  font-size: 0.875rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.dku-academic-required__complete,
+.dku-academic-required__conditional {
+  margin-top: 0.65rem;
+}
+
+.dku-academic-required__guidance {
+  padding: 0.65rem 0;
+}
+
+.dku-academic-required__missing {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1.5rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dku-academic-required__missing li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+  font-size: 0.9rem;
+}
+
+.dku-academic-required__missing li span {
+  overflow-wrap: anywhere;
+}
+
+.dku-academic-required__missing small {
+  flex-shrink: 0;
+  color: var(--text-muted, #5c6573);
+}
+
+@media (max-width: 640px) {
+  .dku-academic-required__missing {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
