@@ -87,7 +87,7 @@ PASS는 아래 증거의 범위만 의미한다. 변경 없는 엔진·저장 �
 | PROD-ACCESSIBILITY | PASS | 320 리플로·표 예외·명명·키보드의 범위 검사; 실제 스크린리더 미수행 |
 | PROD-PERFORMANCE | EXCLUDED | 성능 개선 요청 범위 아님, 현장 p75 없음, 번들 경고 기록 |
 | PROD-OPERATIONS | PASS | 문의 연락처·337호·마감 표시; 장애복구 훈련 의미 아님 |
-| PROD-RELEASE | BLOCKED | 이 문서 생성 시 배포 전. 아래 배포 확인에 후속 기록 |
+| PROD-RELEASE | PASS | 9bb2a20 소스, 배포 READY, 승격 전·운영 동일 대표 조회 흐름 확인 |
 | PROD-OUTCOME | EXCLUDED | 사용성 효과나 이탈률을 측정한 사용자 표본 없음 |
 
 ## Remaining Risk
@@ -100,4 +100,13 @@ PASS는 아래 증거의 범위만 의미한다. 변경 없는 엔진·저장 �
 
 ## 배포 확인
 
-배포 진행 전. 커밋·배포 ID·운영 확인은 검증 후 추가한다.
+- 기능 소스: `9bb2a20d6e15e557c72a76e86442decc02bb5c3f`, `codex/track-service-expansion`에 push 완료. 별도 PR 생성·main 병합은 하지 않았다.
+- Vercel 배포: `dpl_3RGGoJn2xnnnjNzDHshtvY4reqP7`, READY. 배포 메타의 `gitCommitSha`가 위 소스와 일치한다.
+- 승격 전 주소: `https://dku-track-diagnosis-79uf73lh2-startlink0504.vercel.app`.
+- 운영 주소: `https://dku-track-diagnosis.vercel.app`.
+- 기존 보호 설정은 변경하지 않았다. CUA에서 배포 전용 주소를 직접 열 수 있어 CLI 우회·인증 추출 없이 검수했다.
+- 두 환경에서 각각 390px 학교 자료 스크린샷, audit 문자열 부재, 과목 47개/8개 학기→미시경제학 검색 1건, 시간표 목록 37행, 1136px 전공 유형 3개/표기 예시 2개/신청 마감·원본·337호를 확인했다. 페이지 가로 넘침 및 앱 콘솔 오류·경고 0. 운영 장점 페이지의 기존 면책 문장도 제거됨을 확인했다.
+- 운영 원문 PDF 경로 `/documents/2026-ere-module-track-curriculum.pdf`는 HTTP 404. 내부 감사 문서 경로 `/docs/research/2026-09-09-internal-resource-audit.md`도 HTTP 404다.
+- 로컬 JS 번들에서도 제거한 audit 제목·옛 파일 해시·원문 PDF 다운로드 경로가 모두 발견되지 않았다. 내부 자료는 브라우저 표시뿐 아니라 배포 업로드에서도 제외했다.
+- 운영 빌드는 Vite 7.3.6, 로컬은 7.3.5여서 자산 파일 해시는 달랐다. 운영의 `index-ieQxkmCi.js`를 실제 DOM에서 확인했고 배포 소스 커밋과 동작을 별도로 대조했다. 잠금파일·설치 정책의 재현성 통일은 이번 학생 UI 변경에서 수정하지 않았다.
+- 배포 후 정적 SPA 대표 페이지·콘솔은 확인했다. 서버 로그 수집·장애복구 훈련·사용자 성과 측정은 수행하지 않았다.
