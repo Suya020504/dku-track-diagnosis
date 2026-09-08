@@ -11,7 +11,7 @@ export function ModuleReferenceView() {
   return <section className="dku-resource-modules" aria-label="모듈별 과목 자료">
     <div className="dku-resource-toolbar"><label>모듈·과목 검색<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="과목명, 모듈명, 학사 과목코드" /></label><span role="status">{visible.length} / 49과목</span></div>
     <p className="dku-resource-note">A 학문기초 4과목을 포함한 트랙 구성 전체입니다. 직접 진단의 전공 입력 목록은 A를 제외한 45과목입니다.</p>
-    {visible.length === 0 && <p className="dku-resource-empty" role="status">조건에 맞는 과목이 없습니다. 검색어를 바꿔보세요.</p>}
+    {visible.length === 0 && <p className="dku-resource-empty" role="status">조건에 맞는 과목이 없습니다. 검색어를 바꿔 보세요.</p>}
     <div className="dku-resource-module-grid">{modules.map((module) => {
       const rows = visible.filter((course) => course.moduleId === module.id);
       if (!rows.length) return null;
@@ -21,6 +21,6 @@ export function ModuleReferenceView() {
         {module.sourceNote && <p className="dku-resource-note">{module.sourceNote}</p>}
       </details>;
     })}</div>
-    <details className="dku-resource-method"><summary>자료 범위와 해석 주의</summary><p>2026 학사종합안내의 트랙 구성과 제공된 최종안을 구분해 참고합니다. M/N/O 코드 정규화와 과목 수 차이는 원자료에도 남아 있습니다. 이 화면의 과목 목록은 이번 학기 실제 개설 목록이 아닙니다.</p></details>
+    <details className="dku-resource-method"><summary>자료 범위와 주의 사항</summary><p>2026 학사종합안내의 트랙 구성과 제공된 최종안은 서로 다른 자료입니다. M/N/O 코드를 맞추는 문제와 과목 수 차이는 원자료에도 남아 있습니다. 이 과목 목록은 이번 학기 실제 개설 목록이 아닙니다.</p></details>
   </section>;
 }

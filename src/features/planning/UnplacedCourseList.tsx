@@ -6,7 +6,7 @@ const courseById = new Map(courses.map((course) => [course.id, course]));
 
 const reasonLabels: Record<UnplacedCourse["reason"], string> = {
   "offering-unknown": "개설 근거 확인 필요",
-  "user-plan-conflict": "지정 학기와 개설 패턴 충돌",
+  "user-plan-conflict": "지정 학기와 확인된 개설 학기가 다름",
   "capacity-before-target": "수강 한도 초과",
   "after-target": "목표 학기 이후 배치 필요",
 };
@@ -25,7 +25,7 @@ export function UnplacedCourseList({
         <h1 id="unplaced-course-title" ref={headingRef} tabIndex={-1}>배치하지 못한 과목</h1>
       </header>
       {items.length === 0 ? (
-        <p className="plan-check-empty">현재 계획에서 따로 남은 과목은 없습니다.</p>
+        <p className="plan-check-empty">현재 계획에서 배치하지 못한 과목은 없습니다.</p>
       ) : (
         <ul className="unplaced-course-list">
           {items.map((item) => {

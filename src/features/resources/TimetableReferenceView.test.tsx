@@ -26,7 +26,7 @@ it("filters actual sections by official code, then restores empty combined filte
   await change(document.querySelector("input")!, " 541 990 ");
   expect(document.querySelectorAll("tbody tr")).toHaveLength(2);
   expect(document.querySelector("tbody")?.textContent).toContain("19:50–21:35");
-  expect(document.querySelector("tbody")?.textContent).toContain("동기식 여부 미표기");
+  expect(document.querySelector("tbody")?.textContent).toContain("실시간 수업 여부 미표기");
   await change(document.querySelectorAll("select")[0], "토");
   expect(document.querySelectorAll("tbody tr")).toHaveLength(0);
   expect(document.body.textContent).toContain("미개설·폐지를 뜻하지 않습니다");

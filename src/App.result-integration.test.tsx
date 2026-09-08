@@ -252,7 +252,7 @@ describe("path-aware result integration", () => {
     expect(markup).toContain("트랙 관련 학점 진행");
     expect(markup).toContain('id="result-section-current"');
     expect(markup).toContain('id="result-section-next"');
-    expect(markup).toContain("현재 · 계산된 진행 경로");
+    expect(markup).toContain("현재 · 이수 진행 현황");
     expect(markup).not.toContain('data-result-panel="next"');
   });
 

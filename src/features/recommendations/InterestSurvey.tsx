@@ -137,7 +137,7 @@ export function InterestSurvey({
                   여러 관심 방향이 비슷하게 나타났어요
                 </h1>
                 <p>
-                  상위 점수 차이가 가까워요. 상위 두 결과의 차이는 {comparison.scoreGap}점으로
+                  상위 관심 점수가 비슷해요. 상위 두 결과의 차이는 {comparison.scoreGap}점으로
                   {" "}{CLOSE_INTEREST_SCORE_GAP}점 이내입니다. 관심 방향을 비교한 뒤 직접 선택해 주세요.
                 </p>
               </>
@@ -146,7 +146,7 @@ export function InterestSurvey({
                 <h1 id="interest-result-title" ref={headingRef} tabIndex={-1}>
                   {topResult.trackName} 관심 점수가 높게 나타났어요
                 </h1>
-                <p>과목 이수 여부가 아닌 지금의 관심 방향만 비교한 결과입니다.</p>
+                <p>지금의 관심 방향만 비교한 결과입니다. 과목 이수 여부는 반영하지 않았습니다.</p>
               </>
             )}
           </div>
@@ -238,7 +238,7 @@ export function InterestSurvey({
         </section>
 
         <p className="ds-result-note">
-          관심 점수는 흥미 방향을 보여주는 참고 결과이며, 현재 이수 가능도나 졸업 계획과는 별도 기준입니다.
+          관심 점수는 흥미 방향을 보여주는 참고 결과입니다. 현재 이수 가능도나 졸업 계획과는 별도 기준입니다.
         </p>
         <div className="ds-result-actions">
           <button

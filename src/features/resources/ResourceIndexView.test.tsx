@@ -65,6 +65,17 @@ afterEach(async () => {
 });
 
 describe("resource reading routes", () => {
+  it("gives every original-document link a distinct accessible name", async () => {
+    await mountAt("?view=resources&section=official");
+    const links = [...document.querySelectorAll<HTMLAnchorElement>(".dku-resource-source-list > li > a")];
+    expect(links.map((link) => link.getAttribute("aria-label"))).toEqual([
+      "학과 정규 교과과정 원문 열기",
+      "2026-2 실제 개설 시간표 원문 열기",
+      "2026학년도 학사종합안내 원문 열기",
+    ]);
+    expect(links.every((link) => link.textContent === "원문 열기 ↗")).toBe(true);
+  });
+
   it("renders five focused URLs with a route-controlled active page index", async () => {
     await mountAt("?view=resources&section=tracks");
 
@@ -160,9 +171,9 @@ describe("resource reading routes", () => {
     expect(document.body.textContent).toContain("19:50–21:35");
     expect(document.body.textContent).toContain("토 7~10교시");
     expect(document.body.textContent).toContain("교수 미표기");
-    expect(document.body.textContent).toContain("동기식 여부 미표기");
+    expect(document.body.textContent).toContain("실시간 수업 여부 미표기");
     expect(document.body.textContent).toContain("사전녹화온라인강의");
-    expect(document.body.textContent).toContain("실시간 자동 갱신이 아닌");
+    expect(document.body.textContent).toContain("실시간 자동 갱신되지 않습니다");
   });
 
   it("keeps official sources, functional videos, contact and historical boundaries", async () => {
@@ -177,6 +188,6 @@ describe("resource reading routes", () => {
     }
     expect(page.textContent).toContain("과거 2026-1 개설 이력을 소급 검증하지 않았습니다");
     expect(page.textContent).toContain("인쇄 60쪽");
-    expect(document.querySelector(".dku-resource-footer")?.textContent).toContain("학생 제작 참고 도구");
+    expect(document.querySelector(".dku-resource-footer")?.textContent).toContain("학과 공개·제공 자료를 바탕으로 안내");
   });
 });

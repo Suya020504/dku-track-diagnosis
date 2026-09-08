@@ -165,7 +165,7 @@ async function choosePdf(name = "20261234_홍길동_성적표.pdf") {
 }
 
 async function openAndAnalyze() {
-  await click("PDF로 선택값 채우기 beta");
+  await click("PDF로 과목 선택하기 beta");
   return choosePdf();
 }
 
@@ -244,15 +244,16 @@ describe("App PDF import integration", () => {
     expect(document.body.textContent).toContain("지금까지 이수한 과목을 선택하세요");
     expect(document.body.textContent).toContain("직접 선택만으로 진단을 완료할 수 있어요");
     expect(document.body.textContent).toContain("수강 중");
-    expect(document.body.textContent).toContain("수강 계획 · 다음 학기");
+    expect(document.querySelector<HTMLSelectElement>('[aria-label="소비자경제학 이수 상태"]')?.value).toBe("planned");
+    expect(document.querySelector<HTMLSelectElement>('[aria-label="소비자경제학 계획 학기"]')?.value).toBe("next");
     expect(labeledCheckbox("통계학기초").checked).toBe(true);
     const file = await openAndAnalyze();
 
     expect(location.search).toContain("input=pdf-review");
     expect(document.body.textContent).toContain("추가할 과목을 직접 확인해 주세요");
     expect(document.activeElement).toBe(document.querySelector("#pdf-review-title"));
-    expect(document.body.textContent).toContain("기존 직접 선택 3개는 그대로 유지됩니다");
-    expect(document.body.textContent).toContain("승인한 PDF 후보만 새 과목으로 추가");
+    expect(document.body.textContent).toContain("기존에 직접 선택한 3개는 그대로 유지됩니다");
+    expect(document.body.textContent).toContain("PDF에서 찾은 후보 중 승인한 과목만 새로 추가");
     expect(document.body.textContent).not.toContain("아직 어떤 과목도 선택되지 않았어요");
     expect(document.body.textContent).not.toContain(file.name);
     expect(document.body.textContent).not.toContain("private transcript source");
@@ -362,7 +363,7 @@ describe("App PDF import integration", () => {
       signal = nextSignal;
       return new Promise<PdfImportDraft>(() => undefined);
     }));
-    await click("PDF로 선택값 채우기 beta");
+    await click("PDF로 과목 선택하기 beta");
     await choosePdf();
 
     await click("분석 취소");
@@ -384,7 +385,7 @@ describe("App PDF import integration", () => {
     expect(location.search).toBe("?view=diagnosis&step=courses&utm_source=share");
     expect(location.hash).toBe("#review");
     expect(document.body.textContent).toContain(
-      "개인정보 보호를 위해 PDF 검수 내용은 새로고침 후 저장하지 않았어요. 직접 선택은 그대로 유지됩니다.",
+      "개인정보 보호를 위해 PDF에서 확인하던 내용은 새로고침 후 남기지 않아요. 직접 선택한 과목은 그대로 유지됩니다.",
     );
     expect(labeledCheckbox("통계학기초").checked).toBe(true);
   });

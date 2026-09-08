@@ -12,7 +12,7 @@ import {
 } from "./graduationPlanner";
 
 const FUTURE_OFFERING_MESSAGE =
-  "2026학년도 개설 이력을 참고한 계획입니다. 이후 학기의 반복 개설을 보장하지 않으며, 실제 개설·폐강·인정 여부는 해당 학기 수강신청 시스템과 학과 안내를 확인해야 합니다.";
+  "2026학년도 개설 이력을 참고한 계획입니다. 이후 학기의 반복 개설을 보장하지 않습니다. 실제 개설·폐강·인정 여부는 해당 학기 수강신청 시스템과 학과 안내를 확인해야 합니다.";
 
 const externalMinorProfile: StudentProfile = {
   goal: "plan-graduation",

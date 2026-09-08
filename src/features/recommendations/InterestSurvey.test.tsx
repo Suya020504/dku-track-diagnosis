@@ -100,7 +100,7 @@ describe("InterestSurvey", () => {
     );
 
     expect(markup).toContain("여러 관심 방향이 비슷하게 나타났어요");
-    expect(markup).toContain("상위 점수 차이가 가까워요");
+    expect(markup).toContain("상위 관심 점수가 비슷해요");
     expect(markup).toMatch(/<h1[^>]*tabindex="-1"/);
     expect(markup).toContain("경제학을 선택했어요");
     expect(markup).toContain("선택한 트랙으로 자가진단 이어가기");

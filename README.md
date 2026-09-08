@@ -12,6 +12,16 @@
 
 ## 사이트 목적
 
+### 2026-09-08 서비스 완성 작업 · 배포 전 검증 중
+
+- 과목 입력에서 완료·수강 중·계획을 직접 바꾸고, 검색·학년 필터로 목록을 좁힐 수 있습니다. 휴대폰은6개, 그 외 화면은12개씩 표시합니다.
+- 세미나·인턴십 등 목록 밖에서 완료한 전공학점은 별도 입력합니다. 전체 전공학점에만 더하며 트랙 모듈에는 자동 반영하지 않습니다.
+- 추천 후보를 수강 계획에 실제로 추가·해제하고 계획 시작 학기 기준의 상대 학기를 선택할 수 있습니다.
+- 학기 계획 없이도 현재 진단을 보관할 수 있습니다. `?view=records`에서 최근12개의 진단·계획을 읽기 전용으로 열며 현재 입력을 덮어쓰지 않습니다.
+- 가이드의 `?view=track-guide&section=application`에서 신청 전 학과에 확인할 내용을 안내합니다. 제공 자료의 표기 차이는 숨기지 않고 확인 항목으로 남깁니다.
+
+새 제공 자료의 범위와 계산 반영 내용은 [PDF 대조 기록](docs/service-completion/2026-09-08-provided-pdf-audit.md)을 참고하세요. 로그인·기기 간 동기화는 추가하지 않습니다. 사용자가 제공한 PDF 원문은 비공개이며 저장소와 배포 파일에서 제외합니다. 출처 설명과 참고 쪽수, 별도의 학과 공개 자료 링크는 유지합니다.
+
 안내 자료만으로는 트랙별 모듈, 이수 과목, 부족 과목을 한눈에 파악하기 어렵다는 문제에서 시작했습니다. 교육과정표를 그대로 옮기는 대신 학생이 “지금 무엇을 채웠고, 무엇이 남았는지”를 이해한 뒤 수강신청 행동으로 이어가게 하는 것이 목표입니다.
 
 - 내가 선택한 트랙에서 어떤 모듈이 부족한지 확인
@@ -43,7 +53,8 @@
 | 화면 | 주소 |
 | --- | --- |
 | 랜딩 | / |
-| 트랙 가이드 5개 페이지 | ?view=track-guide&section=overview, benefits, outcomes, structure, videos · 선택 영상은 video 값으로 복원 |
+| 트랙 가이드 6개 페이지 | ?view=track-guide&section=overview, benefits, outcomes, structure, application, videos · 선택 영상은 video 값으로 복원 |
+| 저장 기록 | ?view=records · 특정 기록은 record 값으로 복원 |
 | 관심 설문 | ?view=recommendation&step=survey |
 | 소속·이수 경로 | ?view=diagnosis&step=profile&profile=affiliation 또는 profile=path |
 | 과목 직접 선택 | ?view=diagnosis&step=courses |

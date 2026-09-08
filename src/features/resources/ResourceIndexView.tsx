@@ -7,11 +7,11 @@ import { TrackSystemOverview } from "./TrackSystemOverview";
 import { TimetableReferenceView } from "./TimetableReferenceView";
 
 const pages = [
-  { id: "tracks", label: "트랙", title: "다섯 트랙, 다섯 가지 학습 방향", body: "어떤 분야를 배우고 싶은지, 연결된 모듈에서 찾아보세요." },
+  { id: "tracks", label: "트랙", title: "다섯 트랙, 다섯 가지 학습 방향", body: "배우고 싶은 분야가 있다면 관련 모듈을 살펴보세요." },
   { id: "modules", label: "모듈", title: "15개 모듈에 담긴 49과목", body: "모듈을 펼치면 과목과 학점, 학사 과목코드를 볼 수 있습니다." },
   { id: "curriculum", label: "교육과정", title: "학과 교육과정 47과목", body: "현재 학과 홈페이지의 교과과정입니다. 게시·개정연도는 표시되어 있지 않습니다." },
-  { id: "timetable", label: "시간표", title: "2026년 2학기 실제 시간표", body: "천안 캠퍼스 공개검색에서 확인한 37분반입니다. 2026-09-08 조회 시점의 정적 자료입니다." },
-  { id: "official", label: "공식 근거", title: "원문과 학과에서 확인하기", body: "교육과정, 시간표, 안내 영상은 서로 다른 질문에 답하는 자료입니다." },
+  { id: "timetable", label: "시간표", title: "2026년 2학기 실제 시간표", body: "천안 캠퍼스 공개검색에서 확인한 37분반입니다. 2026-09-08 조회 시점의 자료로 자동 갱신되지 않습니다." },
+  { id: "official", label: "공식 근거", title: "원문과 학과에서 확인하기", body: "교육과정에서 과목 구성을, 시간표에서 개설 강좌를, 안내 영상에서 제도 설명을 확인하세요." },
 ] as const;
 export const RESOURCE_SECTION_TITLES: Record<ResourceSection, string> = {
   tracks: "5개 트랙 자료", modules: "모듈·과목 자료", curriculum: "학과 교육과정 자료",
@@ -40,7 +40,7 @@ export function ResourceIndexView({ section, onSectionChange }: ResourceIndexVie
       {section === "timetable" && <TimetableReferenceView />}
       {section === "official" && <OfficialResourcesView />}
     </article>
-    <footer className="dku-resource-footer"><p>학생 제작 참고 도구입니다. 개인별 이수 인정과 최종 판정은 학교·학과 확인이 필요합니다.</p>
+    <footer className="dku-resource-footer"><p>학과 공개·제공 자료를 바탕으로 안내합니다. 개인별 적용과 최종 이수 인정은 학과에서 확인해 주세요.</p>
       <button type="button" onClick={() => onSectionChange(next.id)}>{next.label} 보기 →</button>
     </footer>
   </div>;

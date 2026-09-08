@@ -241,12 +241,12 @@ describe("result decision pages", () => {
     expect(markup).toContain("유통관리론");
     expect(markup).toContain("추천 이유");
     expect(markup).toContain("F. 유통무역");
-    expect(markup).toContain("모듈 기여");
-    expect(markup).toContain("2026 이력");
+    expect(markup).toContain("어떤 모듈을 채우는지");
+    expect(markup).toContain("2026년에 확인한 개설 이력");
     expect(markup).toContain("이후 개설을 보장하지 않습니다");
     expect(markup).toContain("모듈별 충족 현황");
     expect(markup).toContain("세 기준별 트랙 비교 보기");
-    expect(markup).toContain("추천 과목을 학기 계획에 담기");
+    expect(markup).toContain("이 결과로 학기 계획 만들기");
   });
 
   it("renders only the confirm page with document conflicts, official questions, links, and print", () => {

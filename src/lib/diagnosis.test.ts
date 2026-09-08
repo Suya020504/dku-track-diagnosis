@@ -15,7 +15,7 @@ describe("calculateDiagnosis", () => {
     expect(result.totalCredits).toBe(3);
   });
 
-  it("excludes first-year required courses for double major and minor modes", () => {
+  it("keeps all six required courses for double majors and none for minors", () => {
     const doubleMajor = calculateDiagnosis({
       trackIds: ["food-marketing"],
       completedCourseIds: [],
@@ -27,10 +27,10 @@ describe("calculateDiagnosis", () => {
       enrollmentType: "minor",
     });
 
-    expect(doubleMajor.missingRequiredCourses.map((course) => course.id)).not.toContain("b-2");
-    expect(minor.missingRequiredCourses.map((course) => course.id)).not.toContain("b-2");
-    expect(doubleMajor.excludedRequiredCourses.map((course) => course.id)).toContain("b-2");
-    expect(minor.excludedRequiredCourses.map((course) => course.id)).toContain("b-2");
+    expect(doubleMajor.missingRequiredCourses.map((course) => course.id)).toEqual(["b-2", "c-1", "c-2", "c-3", "f-1", "h-1"]);
+    expect(minor.missingRequiredCourses).toEqual([]);
+    expect(doubleMajor.excludedRequiredCourses).toEqual([]);
+    expect(minor.excludedRequiredCourses).toHaveLength(6);
   });
 
   it.each(tracks)("returns missing requirements for empty state: $name", (track) => {

@@ -29,7 +29,7 @@ type ResumeDetail = {
 const resumeDetails: Record<LandingPlannerStatus, ResumeDetail> = {
   empty: {
     title: "처음이어도 괜찮아요",
-    description: "학생 유형과 들은 과목부터 차례로 확인합니다. 입력 내용은 이 브라우저에 자동 저장돼요.",
+    description: "학생 유형과 들은 과목부터 차례로 확인해요. 입력 내용은 이 브라우저에 자동 저장돼요.",
     Icon: ClipboardCheck,
   },
   "needs-profile": {
@@ -40,7 +40,7 @@ const resumeDetails: Record<LandingPlannerStatus, ResumeDetail> = {
   },
   "needs-courses": {
     title: "과목 선택부터 이어가세요",
-    description: "저장된 학생 유형은 그대로 두고, 들은 과목만 마저 확인하면 됩니다.",
+    description: "저장된 학생 유형은 그대로 두고 들은 과목만 마저 확인하면 됩니다.",
     actionLabel: "이수 과목 확인하기",
     Icon: RotateCcw,
   },
@@ -52,7 +52,7 @@ const resumeDetails: Record<LandingPlannerStatus, ResumeDetail> = {
   },
   ready: {
     title: "진단 결과가 준비됐어요",
-    description: "현재 결과를 바탕으로 목표 학기까지의 참고 계획을 선택해서 만들 수 있어요.",
+    description: "현재 결과를 바탕으로 목표 학기까지의 참고 계획도 만들 수 있어요. 계획 만들기는 선택 사항이에요.",
     actionLabel: "학기 플래너 열기",
     Icon: CheckCircle2,
   },
@@ -73,6 +73,7 @@ export type TrackServiceLandingProps = {
   onOpenGuide: () => void;
   onOpenRecommendation: () => void;
   onPlannerAction?: () => void;
+  saveUnavailable?: boolean;
 };
 
 export function TrackServiceLanding({
@@ -84,6 +85,7 @@ export function TrackServiceLanding({
   onOpenGuide,
   onOpenRecommendation,
   onPlannerAction,
+  saveUnavailable = false,
 }: TrackServiceLandingProps) {
   const resume = resumeDetails[plannerStatus];
   const ResumeIcon = resume.Icon;
@@ -94,10 +96,10 @@ export function TrackServiceLanding({
         <div className="track-home__hero-copy">
           <p className="track-home__service-label">단국대 학생을 위한 트랙제 안내·자가진단</p>
           <h1 id="track-home-title" ref={headingRef} tabIndex={-1}>
-            어떤 트랙이 나한테<br /> <em>잘 맞을까?</em>
+            식품자원경제학과 <em>트랙 안내</em>
           </h1>
           <p className="track-home__hero-description">
-            지금까지 들은 과목으로 다섯 트랙의 이수 현황과 앞으로 더 들어야 할 과목을 확인해 보세요.
+            트랙별로 배우는 내용을 살펴보고, 들은 과목으로 남은 이수 조건을 확인하세요.
           </p>
           <div className="track-home__hero-actions">
             <button
@@ -120,7 +122,7 @@ export function TrackServiceLanding({
             </button>
           </div>
           <p className="track-home__trust-copy">
-            자가진단 결과는 학업 계획을 돕는 참고 정보이며, 실제 인정 기준은 학과 확인이 필요합니다.
+            자가진단 결과는 학업 계획을 돕는 참고 정보이며 실제 인정 기준은 학과 확인이 필요합니다.
           </p>
         </div>
         <figure className="track-home__hero-visual">
@@ -134,6 +136,7 @@ export function TrackServiceLanding({
         </figure>
       </section>
 
+      {saveUnavailable ? <p className="track-home__save-note" role="alert">브라우저 저장이 제한되어 있어요. 지금 입력한 내용은 탭을 닫기 전에 확인해 주세요.</p> : null}
       {plannerStatus !== "empty" ? (
       <section className="track-home__resume" data-resume-state={plannerStatus}>
         <div className="track-home__resume-icon"><ResumeIcon aria-hidden="true" /></div>
@@ -148,7 +151,7 @@ export function TrackServiceLanding({
           </button>
         ) : null}
       </section>
-      ) : <p className="track-home__save-note">학생 유형 → 이수 과목 → 진단 결과 · 입력은 이 브라우저에 자동 저장돼요.</p>}
+      ) : !saveUnavailable ? <p className="track-home__save-note">학생 유형 → 이수 과목 → 진단 결과 · 입력은 이 브라우저에 자동 저장돼요.</p> : null}
 
       <section className="track-home__flow" aria-labelledby="track-home-flow-title">
         <div className="track-home__section-heading">
@@ -162,7 +165,7 @@ export function TrackServiceLanding({
         <div>
           <Sparkles aria-hidden="true" size={24} />
           <h2>관심부터 살펴보고 싶다면</h2>
-          <p>진단과 별개로, 소속에 맞는 관심 질문으로 다섯 트랙을 비교해 보세요.</p>
+          <p>진단과 별개로 소속에 맞는 관심 질문에 답하며 다섯 트랙을 비교해 보세요.</p>
           <button className="planner-focusable" type="button" onClick={onOpenRecommendation}>관심으로 트랙 추천받기 <ArrowRight aria-hidden="true" size={17} /></button>
         </div>
         <div>
@@ -177,7 +180,7 @@ export function TrackServiceLanding({
         <div className="track-home__section-heading">
           <span>2026 교육과정 기준</span>
           <h2 id="track-home-tracks-title">다섯 트랙을 한눈에 비교해 보세요</h2>
-          <p>트랙 이름을 열면 학습 주제와 연결 분야를 간단히 확인할 수 있습니다.</p>
+          <p>트랙 이름을 누르면 학습 주제와 연결 분야를 간단히 확인할 수 있습니다.</p>
         </div>
         <TrackPreviewAccordion tracks={tracks} onOpenGuide={onOpenGuide} />
       </section>

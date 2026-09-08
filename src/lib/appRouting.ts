@@ -4,7 +4,7 @@ import { resolveDiagnosisStep, type DiagnosisStep } from "./viewRouting";
 
 export type ResultSection = "current" | "next" | "confirm";
 export type ResourceSection = "tracks" | "modules" | "curriculum" | "timetable" | "official";
-export type TrackGuideSection = "overview" | "benefits" | "outcomes" | "structure" | "videos";
+export type TrackGuideSection = "overview" | "benefits" | "outcomes" | "structure" | "application" | "videos";
 export type ProfileStage = "affiliation" | "path";
 
 export type AppRoute =
@@ -25,14 +25,15 @@ export type AppRoute =
   | { view: "result"; section?: ResultSection }
   | { view: "resources"; section?: ResourceSection }
   | { view: "track-guide"; section?: TrackGuideSection; videoId?: OfficialTrackVideoId }
-  | { view: "contact" };
+  | { view: "contact" }
+  | { view: "records"; recordId?: string };
 
 const recommendationAxes = new Set(["interest", "progress", "plan"] as const);
 const surveyAudiences = new Set<InterestSurveyAudience>(["department-student", "external-student"]);
 const planSteps = new Set(["setup", "schedule", "checks"] as const);
 const resultSections = new Set<ResultSection>(["current", "next", "confirm"]);
 const resourceSections = new Set<ResourceSection>(["tracks", "modules", "curriculum", "timetable", "official"]);
-const trackGuideSections = new Set<TrackGuideSection>(["overview", "benefits", "outcomes", "structure", "videos"]);
+const trackGuideSections = new Set<TrackGuideSection>(["overview", "benefits", "outcomes", "structure", "application", "videos"]);
 const profileStages = new Set<ProfileStage>(["affiliation", "path"]);
 
 export function resolveAppRoute(
@@ -110,6 +111,11 @@ export function resolveAppRoute(
 
   if (view === "contact") return { view };
 
+  if (view === "records") {
+    const recordId = params.get("record");
+    return recordId ? { view, recordId } : { view };
+  }
+
   return { view: "landing" };
 }
 
@@ -118,6 +124,7 @@ export function buildAppHref(currentHref: string, route: AppRoute): string {
   url.searchParams.delete("input");
   url.searchParams.delete("video");
   url.searchParams.delete("audience");
+  url.searchParams.delete("record");
 
   if (route.view === "landing") {
     clearRouteParams(url);
@@ -193,6 +200,7 @@ export function buildAppHref(currentHref: string, route: AppRoute): string {
     return `${url.pathname}${url.search}${url.hash}`;
   }
 
+  if (route.view === "records" && route.recordId) url.searchParams.set("record", route.recordId);
   url.searchParams.set("view", route.view);
   url.searchParams.delete("step");
   url.searchParams.delete("axis");
@@ -217,6 +225,7 @@ export function writeAppRouteToHistory(
     profile: _profile,
     input: _input,
     video: _video,
+    recordId: _recordId,
     ...unrelatedState
   } = currentState;
   const state = { ...unrelatedState, ...routeHistoryState(route) };
@@ -224,6 +233,7 @@ export function writeAppRouteToHistory(
 }
 
 function clearRouteParams(url: URL): void {
+  url.searchParams.delete("record");
   url.searchParams.delete("view");
   url.searchParams.delete("step");
   url.searchParams.delete("axis");
@@ -235,6 +245,9 @@ function clearRouteParams(url: URL): void {
 }
 
 function routeHistoryState(route: AppRoute): Record<string, string> {
+  if (route.view === "records") return route.recordId
+    ? { view: route.view, recordId: route.recordId }
+    : { view: route.view };
   if (route.view === "diagnosis") {
     const state = {
       view: route.step === "result" ? "result" : "diagnosis",

@@ -67,7 +67,7 @@ function PlanStatusSummary({
         ? "완료로 입력한 과목과 학점만 기준으로 계산했습니다. 공식 인정 여부는 별도로 확인해 주세요."
         : result.status === "official-review-required"
           ? "현재 자료만으로 배치하거나 판단하기 어려운 항목을 확인 목록에 남겼습니다."
-          : "입력한 목표 학기와 수강량 안에서 과목과 익명 선택 전공 자리를 나눴습니다.";
+          : "입력한 목표 학기와 수강량에 맞춰 과목을 배치했습니다. 과목이 정해지지 않은 선택 전공학점은 별도로 자리를 두었습니다.";
 
   return (
     <header className={`dku-plan-heading status-${result.status}`}>
@@ -186,8 +186,7 @@ export function GraduationPlanResult({
         <div><dt>학기당 입력 한도</dt><dd>전공 {result.preferences.maxMajorCoursesPerTerm}과목</dd></div>
       </dl>
       <EvidenceBand state="historical-2026-snapshot">
-        최근 개설 패턴 기준인 2026학년도 개설 이력을 다음 학기에 반복해 배치한 참고안이며,
-        실제 반복 개설을 보장하지 않습니다.
+        2026학년도 개설 이력을 최근 개설 패턴으로 삼아 다음 학기에도 반복된다고 가정한 참고안입니다. 실제 반복 개설을 보장하지 않습니다.
       </EvidenceBand>
       <p className="dku-plan-legend"><span>실선: 과목을 정한 참고 배치</span><span>점선: 과목 미정 · 학점 예약</span></p>
       <section

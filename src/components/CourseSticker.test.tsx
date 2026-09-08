@@ -6,7 +6,7 @@ import { CourseSticker } from "./CourseSticker";
 describe("CourseSticker", () => {
   it.each<[EvidenceState, string]>([
     ["official-public-confirmed", "공식 공개 확인"],
-    ["historical-2026-snapshot", "2026 이력 스냅샷"],
+    ["historical-2026-snapshot", "2026 개설 이력"],
     ["provided-final-plan-reference", "제공 최종안 참고"],
     ["department-confirmation-required", "학과 확인 필요"],
   ])("keeps the %s evidence state visible in the planner row", (evidenceState, label) => {

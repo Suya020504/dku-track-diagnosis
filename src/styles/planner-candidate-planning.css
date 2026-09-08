@@ -1,0 +1,77 @@
+.dku-results-page .dku-results-candidate-row > .dku-candidate-plan {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px dashed #ccdcd8;
+  color: #315d52;
+  font-size: 13px;
+}
+
+.dku-results-page .dku-candidate-plan :is(button, select) {
+  min-height: 44px;
+  max-width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #b5cbc4;
+  border-radius: 5px;
+  background: white;
+  color: #244d42;
+  font: inherit;
+  cursor: pointer;
+}
+
+.dku-results-page .dku-candidate-plan :is(button, select):focus-visible {
+  outline: 3px solid #0863b8;
+  outline-offset: 3px;
+}
+
+.dku-results-page .dku-candidate-plan button,
+.dku-results-page .dku-candidate-plan-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.dku-results-page .dku-candidate-plan .dku-candidate-plan-add {
+  border-color: #25725c;
+  color: #165c45;
+  background: #f0f8f4;
+}
+
+.dku-results-page .dku-candidate-plan .dku-candidate-plan-remove {
+  margin-left: auto;
+}
+
+.dku-results-page .dku-candidate-plan-term {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  min-width: 0;
+}
+
+.dku-results-page .dku-candidate-plan-term small {
+  font-size: 11px;
+  line-height: 1.5;
+  color: #52697e;
+}
+
+@media (max-width: 600px) {
+  .dku-results-page .dku-candidate-plan-term {
+    flex: 1 1 100%;
+  }
+  .dku-results-page .dku-candidate-plan-term select {
+    width: 100%;
+  }
+  .dku-results-page .dku-candidate-plan .dku-candidate-plan-remove {
+    margin-left: 0;
+  }
+}
+
+@media print {
+  .dku-results-page .dku-candidate-plan button { display: none; }
+}

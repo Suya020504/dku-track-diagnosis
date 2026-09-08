@@ -132,7 +132,7 @@ describe("GraduationPlanResult distributed pages", () => {
     const markup = renderResult(baseResult);
     expect(markup).toContain('aria-label="C-2 소비자경제학 과목 정보"');
     expect(markup).toContain("과목 미정 · 학점 예약");
-    expect(markup.match(/최근 개설 패턴 기준/g)).toHaveLength(1);
+    expect(markup.match(/최근 개설 패턴으로/g)).toHaveLength(1);
   });
   it("shows per-term named placements and anonymous elective reservations on schedule only", () => {
     const markup = renderResult(baseResult, "schedule");
@@ -147,7 +147,7 @@ describe("GraduationPlanResult distributed pages", () => {
     expect(markup).toContain("C-2 소비자경제학");
     expect(markup).toContain("B-2 통계학기초");
     expect(markup).toContain("전공 선택 과목 3학점 자리");
-    expect(markup).toContain("최근 개설 패턴 기준");
+    expect(markup).toContain("최근 개설 패턴으로");
     expect(markup).toContain("반복 개설을 보장하지 않습니다");
     expect(markup).toContain("계획 저장");
     expect(markup).toContain(">확인</button>");

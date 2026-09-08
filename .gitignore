@@ -10,3 +10,10 @@ debug.log
 /output/
 /.superpowers/
 .playwright-cli/
+
+# User-provided curriculum source: private, never publish the original PDF.
+/public/documents/2026-ere-module-track-curriculum.pdf
+**/private-reference-materials/
+# Local agent handoff notes are not part of the public product documentation.
+/docs/service-completion/2026-09-08-goal.md
+/docs/service-completion/task-*.md

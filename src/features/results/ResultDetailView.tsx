@@ -3,7 +3,9 @@ import { Printer } from "lucide-react";
 import type { ResultSection } from "../../lib/appRouting";
 import type {
   DiagnosisResult,
+  CourseSelectionRecord,
   PathProgressResult,
+  PlanTerm,
   StudentProfile,
 } from "../../types";
 import { CurrentProgressView } from "./CurrentProgressView";
@@ -16,9 +18,9 @@ const RESULT_PAGES: ReadonlyArray<{
   label: string;
   description: string;
 }> = [
-  { id: "current", index: "01", label: "현재", description: "진행 경로" },
-  { id: "next", index: "02", label: "다음", description: "과목과 행동" },
-  { id: "confirm", index: "03", label: "확인", description: "공식 점검" },
+  { id: "current", index: "01", label: "현재", description: "이수 현황" },
+  { id: "next", index: "02", label: "다음", description: "추천 과목" },
+  { id: "confirm", index: "03", label: "확인", description: "학과 확인" },
 ];
 
 export function ResultDetailView({
@@ -31,6 +33,9 @@ export function ResultDetailView({
   onOpenRecommendations,
   onGoToPlan,
   onPrint,
+  courseSelections,
+  onPlannedCourseChange,
+  planStartTerm,
 }: {
   result: DiagnosisResult;
   profile: StudentProfile;
@@ -41,6 +46,9 @@ export function ResultDetailView({
   onOpenRecommendations: () => void;
   onGoToPlan: () => void;
   onPrint: () => void;
+  courseSelections?: readonly CourseSelectionRecord[];
+  onPlannedCourseChange?: (courseId: string, term: PlanTerm | null) => void;
+  planStartTerm?: string;
 }) {
   return (
     <div className="dku-results-page">
@@ -92,6 +100,9 @@ export function ResultDetailView({
             headingRef={headingRef}
             onOpenRecommendations={onOpenRecommendations}
             onGoToPlan={onGoToPlan}
+            courseSelections={courseSelections}
+            onPlannedCourseChange={onPlannedCourseChange}
+            planStartTerm={planStartTerm}
           />
         ) : (
           <OfficialChecksView

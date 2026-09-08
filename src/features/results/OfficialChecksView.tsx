@@ -71,7 +71,7 @@ export function OfficialChecksView({
       <section className="planner-check-ledger" aria-labelledby="document-conflict-title">
         <header>
           <span>문서 대조</span>
-          <h2 id="document-conflict-title">입력·문서에서 발견한 확인 항목</h2>
+          <h2 id="document-conflict-title">입력 내용·문서에서 확인할 항목</h2>
         </header>
         {conflictItems.length > 0 ? (
           <ul>
@@ -85,8 +85,7 @@ export function OfficialChecksView({
           </ul>
         ) : (
           <p className="planner-directed-empty">
-            현재 입력에는 문서 충돌이나 알 수 없는 과목이 기록되지 않았습니다.
-            원본 성적표와 교육과정표를 대조하지 않았다면 학과 상담 때 함께 확인해 주세요.
+            현재 입력에는 문서 간 차이나 알 수 없는 과목이 기록되지 않았습니다. 원본 성적표와 교육과정표를 대조하지 않았다면 학과 상담 때 함께 확인해 주세요.
           </p>
         )}
       </section>
@@ -123,7 +122,7 @@ export function OfficialChecksView({
       {otherReviewItems.length > 0 ? (
         <ResultDisclosure id="result-extra-review" title={`추가 확인 근거 · ${otherReviewItems.length}개`}><section className="planner-check-ledger" aria-labelledby="additional-review-title">
           <header>
-            <span>계산에서 남은 항목</span>
+            <span>계산 후 확인할 항목</span>
             <h2 id="additional-review-title">추가로 확인할 근거</h2>
           </header>
           <ul>

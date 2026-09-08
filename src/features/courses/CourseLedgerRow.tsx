@@ -1,15 +1,16 @@
-import { Check, ChevronDown, CircleDot, Clock3, Info } from "lucide-react";
+import { Check, Info } from "lucide-react";
 import { courseOfferings2026 } from "../../data/courseOfferings2026";
 import type {
   Course,
   CourseSelectionRecord,
   CourseSelectionStatus,
+  PlanTerm,
 } from "../../types";
 
 const planTermLabels = {
-  next: "다음 학기",
-  following: "다다음 학기",
-  later: "나중",
+  next: "계획 시작 학기",
+  following: "그다음 학기",
+  later: "이후 학기",
 } as const;
 
 function selectionStatusLabel(selection?: CourseSelectionRecord): string {
@@ -19,13 +20,6 @@ function selectionStatusLabel(selection?: CourseSelectionRecord): string {
   return selection.plannedTerm
     ? `수강 계획 · ${planTermLabels[selection.plannedTerm]}`
     : "수강 계획";
-}
-
-function SelectionStatusIcon({ status }: { status?: CourseSelectionStatus }) {
-  if (status === "completed") return <Check aria-hidden="true" size={15} />;
-  if (status === "in-progress") return <CircleDot aria-hidden="true" size={15} />;
-  if (status === "planned") return <Clock3 aria-hidden="true" size={15} />;
-  return null;
 }
 
 function formatSemester(semester?: string): string {
@@ -41,8 +35,8 @@ export type CourseLedgerRowProps = {
   evidenceText: string;
   trackModule: boolean;
   requiredForEnrollment: boolean;
-  showTerm: boolean;
   onToggleCourse: (courseId: string) => void;
+  onCourseStatusChange: (courseId: string, status: CourseSelectionStatus | null, plannedTerm?: PlanTerm) => void;
 };
 
 export function CourseLedgerRow({
@@ -52,11 +46,11 @@ export function CourseLedgerRow({
   evidenceText,
   trackModule,
   requiredForEnrollment,
-  showTerm,
   onToggleCourse,
+  onCourseStatusChange,
 }: CourseLedgerRowProps) {
   const status = selection?.status;
-  const checked = status === "completed" || status === "in-progress";
+  const checked = Boolean(selection);
   const statusLabel = selectionStatusLabel(selection);
   const rowClassName = [
     "dku-check-row",
@@ -65,7 +59,7 @@ export function CourseLedgerRow({
   ].filter(Boolean).join(" ");
 
   return (
-    <article className={rowClassName} data-course-status={status ?? "unselected"}>
+    <article className={rowClassName} data-course-id={course.id} data-course-status={status ?? "unselected"}>
       <label className="dku-check-row-primary">
         <span className="dku-check-check-target" data-touch-target="44">
           <input
@@ -85,26 +79,43 @@ export function CourseLedgerRow({
             <strong>{course.name}</strong>
             {requiredForEnrollment ? <em>필수</em> : null}
           </span>
-          {showTerm ? <small>{formatSemester(course.recommendedSemester)}</small> : null}
+          <small>{formatSemester(course.recommendedSemester)} · {moduleLabel}</small>
         </span>
 
         <span className="dku-check-row-meta">
         <span className="dku-check-credit">{course.credits}학점</span>
-        {status ? (
-          <span className={`dku-check-status dku-check-status--${status}`}>
-            <SelectionStatusIcon status={status} />
-            {statusLabel}
-          </span>
-        ) : <span className="sr-only">미선택</span>}
         </span>
       </label>
+
+      <div className="dku-check-state-controls">
+        <select className="dku-check-status-select" aria-label={`${course.name} 이수 상태`} value={status ?? ""}
+          onChange={(event) => {
+            const nextStatus = event.currentTarget.value as CourseSelectionStatus | "";
+            onCourseStatusChange(course.id, nextStatus || null,
+              nextStatus === "planned" ? selection?.plannedTerm ?? "later" : undefined);
+          }}>
+          <option value="">{selection ? "선택 해제" : "선택하세요"}</option>
+          <option value="completed">이수 완료</option>
+          <option value="in-progress">수강 중</option>
+          <option value="planned">수강 계획</option>
+        </select>
+        {status === "planned" ? (
+          <div className="dku-check-plan-term">
+            <select aria-label={`${course.name} 계획 학기`} aria-describedby={`plan-term-help-${course.id}`}
+              value={selection?.plannedTerm ?? "later"}
+              onChange={(event) => onCourseStatusChange(course.id, "planned", event.currentTarget.value as PlanTerm)}>
+              {Object.entries(planTermLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+            <small id={`plan-term-help-${course.id}`}>플래너에서 정한 시작 학기 기준</small>
+          </div>
+        ) : null}
+      </div>
 
       <details className="dku-check-row-details">
         <summary>
           <Info aria-hidden="true" size={15} />
           <span className="dku-check-info-label" aria-hidden="true">과목 정보</span>
           <span className="sr-only">{course.name} 과목 정보</span>
-          <ChevronDown aria-hidden="true" size={15} />
         </summary>
         <div>
           <span><small>학사 과목코드</small><strong>{courseOfferings2026[course.id]?.officialCourseCode ?? "미표기"}</strong></span>

@@ -117,8 +117,7 @@ export function GraduationPlanSetup({
       </fieldset>
 
       <EvidenceBand state="historical-2026-snapshot">
-        최근 개설 패턴 기준인 2026학년도 개설 이력을 참고합니다. 이후 반복 개설은 보장하지 않으며,
-        실제 개설·폐강·인정 여부는 <a href="?view=resources">공식 자료 화면</a>에서 다시 확인해 주세요.
+        2026학년도 개설 이력을 최근 개설 패턴으로 참고합니다. 이후 반복 개설은 보장하지 않습니다. 실제 개설·폐강·인정 여부는 <a href="?view=resources">공식 자료 화면</a>에서 다시 확인해 주세요.
       </EvidenceBand>
       <p className="seasonal-term-notice">
         계절학기는 자동 가능성 계산에 포함하지 않고 확인할 항목으로만 남겨요.

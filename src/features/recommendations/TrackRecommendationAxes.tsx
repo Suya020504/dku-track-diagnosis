@@ -35,7 +35,7 @@ const AXIS_PAGES: ReadonlyArray<{
   label: string;
   description: string;
 }> = [
-  { id: "interest", index: "01", label: "관심", description: "질문에서 보인 방향" },
+  { id: "interest", index: "01", label: "관심", description: "답변에서 나타난 관심 분야" },
   { id: "progress", index: "02", label: "현재 완료 과목", description: "완료로 표시한 과목" },
   { id: "plan", index: "03", label: "졸업 전 계획", description: "목표 학기까지의 배치" },
 ];
@@ -111,7 +111,7 @@ function CandidateCollection<T extends { trackId: TrackId }>({
 
       {leaderTieTrackIds.length > 1 ? (
         <p className="dc-tie-note">
-          동점 후보 사이에는 우열을 정하지 않습니다. 선두가 같은 후보: {leaderTieTrackIds.map(trackName).join(" · ")}
+          동점 후보 사이에는 우열을 정하지 않습니다. 공동 선두 후보: {leaderTieTrackIds.map(trackName).join(" · ")}
         </p>
       ) : null}
     </div>
@@ -131,7 +131,7 @@ function InterestCandidates({ candidates }: { candidates: InterestAxisCandidate[
       leaderTieTrackIds={leaderTieTrackIds}
       relationLabel={(candidate, index) => {
         if (candidate.score === top.score && hasLeaderTie) return "공동 선두 후보";
-        if (index === 0) return "기준 안의 선두 후보";
+        if (index === 0) return "이 기준의 선두 후보";
         if (candidate.closeLeader) return "선두와 가까운 후보";
         return "비교 후보";
       }}
@@ -159,7 +159,7 @@ function ProgressCandidates({ candidates }: { candidates: ProgressAxisCandidate[
       secondaryTitle="같은 기준으로 비교"
       relationLabel={(candidate, index) => {
         if (sameProgressLeader(candidate, top) && hasLeaderTie) return "공동 선두 후보";
-        return index === 0 ? "기준 안의 선두 후보" : "비교 후보";
+        return index === 0 ? "이 기준의 선두 후보" : "비교 후보";
       }}
       renderEvidence={(candidate) => (
         <dl className="dc-evidence-list">
@@ -192,7 +192,7 @@ function PlanCandidates({ candidates }: { candidates: PlanAxisCandidate[] }) {
       leaderTieTrackIds={leaderTieTrackIds}
       relationLabel={(candidate, index) => {
         if (samePlanLeader(candidate, top) && hasLeaderTie) return "공동 선두 후보";
-        return index === 0 ? "기준 안의 선두 후보" : "비교 후보";
+        return index === 0 ? "이 기준의 선두 후보" : "비교 후보";
       }}
       renderEvidence={(candidate) => (
         <dl className="dc-evidence-list">
@@ -237,7 +237,7 @@ export function TrackRecommendationAxes({
         <AxisResultCard
           id="interest"
           title="관심이 향하는 트랙"
-          description="소속별 관심 질문의 답변만 반영합니다. 완료 과목이나 졸업 계획은 이 순서에 섞지 않습니다."
+          description="소속별 관심 질문의 답변만 반영합니다. 완료 과목이나 졸업 계획은 이 순서에 반영하지 않습니다."
           unavailable={interest ? undefined : {
             message: "관심 설문을 완료하면 흥미 방향에 가까운 트랙을 비교할 수 있어요.",
             actionLabel: "관심 설문 시작하기",
@@ -253,11 +253,11 @@ export function TrackRecommendationAxes({
       return (
         <AxisResultCard
           id="progress"
-          title="현재 완료 과목에서 가까운 트랙"
+          title="완료 과목 기준으로 비교한 트랙"
           description="완료 과목을 기준으로 부족한 과목·학점·모듈을 비교합니다."
           assumption={progress?.[0]?.assumption === "track-major-hypothesis"}
           unavailable={progress ? undefined : {
-            message: "프로필과 현재까지 완료한 이수 과목을 확인하면 이 기준을 계산할 수 있어요.",
+            message: "프로필과 지금까지 이수 완료한 과목을 확인하면 이 기준으로 비교할 수 있어요.",
             actionLabel: "이수 과목 입력하기",
             onAction: onOpenCourseInput,
           }}
@@ -271,7 +271,7 @@ export function TrackRecommendationAxes({
       <AxisResultCard
         id="plan"
         title="졸업 전 계획에 배치하기 쉬운 트랙"
-        description="목표 졸업학기와 학기당 수강량을 기준으로 배치 상태, 미배치 과목, 추가 학기를 따로 봅니다."
+        description="목표 졸업학기와 학기당 수강량을 기준으로 과목 배치 결과, 배치하지 못한 과목, 추가 학기를 각각 확인합니다."
         assumption={plan?.[0]?.assumption === "track-major-hypothesis"}
         unavailable={plan ? undefined : {
           message: "현재 학기, 목표 졸업학기, 학기당 수강량을 입력하면 계획 가능성을 비교할 수 있어요.",
@@ -289,7 +289,7 @@ export function TrackRecommendationAxes({
       <header className="dc-axes-hero">
         <span>TRACK COMPARISON · 트랙 비교</span>
         <h1 id="recommendation-axes-title" ref={headingRef} tabIndex={-1}>
-          나에게 맞는 방향, 다섯 트랙을 비교해요
+          나에게 맞는 다섯 트랙을 기준별로 비교해요
         </h1>
         <p>세 기준의 점수는 합치지 않습니다. 근거를 보고 직접 골라 주세요.</p>
       </header>
@@ -301,7 +301,7 @@ export function TrackRecommendationAxes({
       ) : null}
 
       <div className="dc-index-layout">
-        <nav className="dc-axis-index" aria-label="독립 추천 기준">
+        <nav className="dc-axis-index" aria-label="트랙 비교 기준">
           <span className="dc-axis-index__title">비교 기준</span>
           <ol className="dc-axis-destinations">
             {AXIS_PAGES.map((page) => {
@@ -346,7 +346,7 @@ export function TrackRecommendationAxes({
 
           {availableAxisCount < 2 ? (
             <aside className="dc-axis-summary" aria-label="비교 기준 입력 상태">
-              {availableAxisCount === 0 ? "아직 입력된 기준이 없습니다. 비교할 기준의 입력부터 시작해 주세요." : "현재 한 기준만 확인할 수 있어요. 다른 기준을 입력하면 선두 후보를 함께 비교할 수 있습니다."}
+              {availableAxisCount === 0 ? "아직 비교에 필요한 입력이 없습니다. 원하는 기준부터 입력해 주세요." : "현재 한 기준만 확인할 수 있어요. 다른 기준을 입력하면 선두 후보를 함께 비교할 수 있습니다."}
             </aside>
           ) : aligned ? (
             <aside className="dc-axis-summary recommendation-axis-summary--aligned" aria-label="두 기준 이상에서 같은 선두 후보">
@@ -356,7 +356,7 @@ export function TrackRecommendationAxes({
                 <strong>
                   {alignedLeaderTrackIds.map((trackId) => trackName(trackId)).join(" · ")} 후보가 두 개 이상의 기준에서 선두로 나타났습니다.
                 </strong>
-                <p>기준이 겹친다는 뜻일 뿐 세 축을 합친 결론이 아닙니다. 각 축의 근거를 다시 확인해 주세요.</p>
+                <p>각 기준에서 따로 나온 결과가 겹친다는 뜻이며 세 기준을 합친 결론은 아닙니다. 기준별 근거를 다시 확인해 주세요.</p>
               </div>
               <div className="dc-axis-summary__tracks">
                 {alignedLeaderTrackIds.map((trackId) => (
@@ -373,7 +373,7 @@ export function TrackRecommendationAxes({
               <div>
                 <span>기준 비교 요약</span>
                 <strong>기준마다 선두 후보가 다릅니다.</strong>
-                <p>축을 바꿔 근거를 직접 비교해 선택해 주세요. 이 화면이 한 트랙을 대신 고르지 않습니다.</p>
+                <p>비교 기준을 바꿔 근거를 확인하고 트랙을 직접 선택해 주세요. 자동으로 선택되지는 않습니다.</p>
               </div>
             </aside>
           )}
@@ -382,7 +382,7 @@ export function TrackRecommendationAxes({
 
       <footer className="dc-axes-footer">
         <Heart aria-hidden="true" size={19} />
-        <span>어느 축도 최종 결정을 대신하지 않습니다. 트랙 상세와 공식 안내도 함께 확인하세요.</span>
+        <span>비교 결과는 선택을 돕는 참고 정보입니다. 트랙 상세와 공식 안내도 함께 확인하고 직접 결정하세요.</span>
       </footer>
     </main>
   );

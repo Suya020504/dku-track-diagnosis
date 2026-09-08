@@ -53,7 +53,7 @@ export function OfficialCheckQuestions({ items }: { items: ReviewItem[] }) {
       </div>
 
       {items.length === 0 ? (
-        <p className="plan-check-empty">현재 계산에서 추가로 생성된 공식 확인 항목은 없습니다.</p>
+        <p className="plan-check-empty">현재 계산에서 추가로 나온 공식 확인 항목은 없습니다.</p>
       ) : (
         <>
           <details className="official-review-items" open>

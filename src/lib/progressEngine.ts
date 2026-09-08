@@ -73,6 +73,20 @@ export function calculatePathProgress(input: PathProgressInput): PathProgressRes
     : "not-applicable";
 
   const reviewItems = [] as PathProgressResult["reviewItems"];
+  if (input.profile.studyPath === "advanced-major") {
+    reviewItems.push({
+      code: "document-conflict",
+      message: "제공 PDF 4쪽은 심화전공의 자유 이수학점을 본문에서 45학점, 괄호에서 39학점으로 적고 있습니다. 최소 전공학점 63학점을 참고 계산에 사용하며 세부 적용은 학과 확인이 필요합니다.",
+      evidence: "official-review-required",
+    });
+  }
+  if (input.profile.studyPath === "department-with-other-major") {
+    reviewItems.push({
+      code: "document-conflict",
+      message: "제공 PDF 4쪽의 ‘필수 18학점(모듈 B·C)’은 과목표의 B·C 범위와 학점이 일치하지 않습니다. 다른 쪽의 필수 6과목 18학점과 전체 42학점으로 참고 계산하며 학과 확인이 필요합니다.",
+      evidence: "official-review-required",
+    });
+  }
   if (unknownIds.length > 0) {
     reviewItems.push({
       code: "unknown-course",
@@ -93,7 +107,7 @@ export function calculatePathProgress(input: PathProgressInput): PathProgressRes
       message:
         rule.evidence === "official-review-required"
           ? "제공 문서의 최소학점 범위와 계산 결과가 달라 공식 확인이 필요합니다."
-          : "제공된 2026 최종안 기준의 참고 계산입니다.",
+          : "제공된 2026 교육과정 자료를 바탕으로 한 참고 계산입니다.",
       evidence: rule.evidence,
     });
   }

@@ -15,11 +15,11 @@ export function TimetableReferenceView() {
       <label>조회 구분<select value={scope} onChange={(event) => setScope(event.target.value)}><option value="all">전체 범위</option><option value="D-MAJOR">학과 전공</option><option value="D-FOUNDATION">학문기초</option><option value="CONVERGENCE">융합 관련</option></select></label>
     </div>
     <p role="status" className="dku-resource-count">검색 결과 <strong>{rows.length}분반</strong></p>
-    <p className="dku-resource-note">원격수업의 표기 시간만으로 충돌을 확정하지 않습니다. 사전녹화 여부가 없는 강좌는 동기식 여부 미표기입니다. 여석·타학과 수강 가능·트랙 인정은 별도 확인하세요.</p>
+    <p className="dku-resource-note">원격수업은 표기된 시간만으로 시간표 충돌을 확정하지 않습니다. 사전녹화 여부가 없는 강좌는 실시간 수업인지 표시되어 있지 않습니다. 여석·타학과 수강 가능·트랙 인정은 별도 확인하세요.</p>
     {rows.length ? (
       <div className="dku-resource-table-wrap">
         <table className="dku-resource-data-table dku-resource-timetable">
-          <caption>2026-2 천안 · 2026-09-08 공개조회 스냅샷</caption>
+          <caption>2026-2 천안 · 2026-09-08 공개조회 기록</caption>
           <thead>
             <tr>
               <th>과목·분반</th>
@@ -50,7 +50,7 @@ export function TimetableReferenceView() {
                   {row.delivery}
                   <small>강의실 {row.room ?? "미표기"}</small>
                   {row.remoteTiming === "asynchronous" && <small>사전녹화온라인강의</small>}
-                  {row.remoteTiming === "unknown" && <small>동기식 여부 미표기</small>}
+                  {row.remoteTiming === "unknown" && <small>실시간 수업 여부 미표기</small>}
                 </td>
                 <td data-label="확인 사항">
                   <small>{row.scope === "D-FOUNDATION" ? "학문기초" : "전공선택"}</small>
@@ -77,6 +77,6 @@ export function TimetableReferenceView() {
         </button>
       </div>
     )}
-    <details className="dku-resource-method"><summary>조회 조건과 교시 해석</summary><p>2026 / 2학기 / 천안 · 비로그인 공개조회. 실시간 자동 갱신이 아닌 2026-09-08 정적 스냅샷입니다.</p><ul>{Object.entries(TIMETABLE_QUERY_SCOPES).map(([key, value]) => <li key={key}>{value}</li>)}</ul><p>주간 1~18교시는 30분 단위입니다. 야간 19~24교시는 50분 수업과 5분 간격을 적용합니다. 금21~22는 19:50~21:35입니다. 토요일 분반도 포함합니다.</p><a href={`${OFFICIAL_2026_SOURCE.pdfUrl}#page=138`} target="_blank" rel="noopener noreferrer">공식 교시표 · 파일 138쪽 / 인쇄 4쪽 ↗</a><p>이번 조회에서 나오지 않은 M-5, N-2~N-4, O-1은 폐지나 미래 미개설로 해석하지 않습니다.</p></details>
+    <details className="dku-resource-method"><summary>조회 조건과 교시 해석</summary><p>2026 / 2학기 / 천안 · 비로그인 공개조회. 2026-09-08에 확인한 자료로 실시간 자동 갱신되지 않습니다.</p><ul>{Object.entries(TIMETABLE_QUERY_SCOPES).map(([key, value]) => <li key={key}>{value}</li>)}</ul><p>주간 1~18교시는 30분 단위입니다. 야간 19~24교시는 50분 수업과 5분 간격을 적용합니다. 금21~22는 19:50~21:35입니다. 토요일 분반도 포함합니다.</p><a href={`${OFFICIAL_2026_SOURCE.pdfUrl}#page=138`} target="_blank" rel="noopener noreferrer">공식 교시표 · 파일 138쪽 / 인쇄 4쪽 ↗</a><p>이번 조회에서 나오지 않은 M-5, N-2~N-4, O-1은 폐지나 미래 미개설로 해석하지 않습니다.</p></details>
   </section>;
 }

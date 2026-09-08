@@ -24,7 +24,7 @@ export const OFFICIAL_TRACK_VIDEOS = [
   {
     id: "nhELHq51gdY",
     title: "모듈형 교육과정 트랙제_1편(날개단대 영상)",
-    shortTitle: "1편 · 한눈에 시작",
+    shortTitle: "1편 · 트랙제 첫 안내",
     publishedAt: "2024-02-02",
     duration: "2:15",
     focus: "모듈과 트랙의 관계를 짧게 훑는 공식 입문 영상",

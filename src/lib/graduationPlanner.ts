@@ -21,7 +21,7 @@ import { findMinimumCourseCombinations } from "./courseCombination";
 import { calculatePathProgress } from "./progressEngine";
 
 const FUTURE_OFFERING_MESSAGE =
-  "2026학년도 개설 이력을 참고한 계획입니다. 이후 학기의 반복 개설을 보장하지 않으며, 실제 개설·폐강·인정 여부는 해당 학기 수강신청 시스템과 학과 안내를 확인해야 합니다.";
+  "2026학년도 개설 이력을 참고한 계획입니다. 이후 학기의 반복 개설을 보장하지 않습니다. 실제 개설·폐강·인정 여부는 해당 학기 수강신청 시스템과 학과 안내를 확인해야 합니다.";
 
 const courseById = new Map(courses.map((course) => [course.id, course]));
 
@@ -602,8 +602,8 @@ function buildPlanningReviewItems(
     reviewItems.push({
       code: "elective-placeholder",
       message: scheduled.remainingElectiveCredits > 0
-        ? `과목이 정해지지 않은 선택 전공 ${unallocatedElectiveCredits}학점 중 ${allocatedElectiveCredits}학점은 학기별 익명 자리로 배정했고, 학기 미배정 선택전공 ${scheduled.remainingElectiveCredits}학점은 공식 확인 항목으로 남겼습니다.`
-        : `과목이 정해지지 않은 선택 전공 ${unallocatedElectiveCredits}학점은 3학점 과목 기준 학기별 익명 자리로 배정했습니다.`,
+        ? `과목이 정해지지 않은 선택 전공 ${unallocatedElectiveCredits}학점 중 ${allocatedElectiveCredits}학점은 학기별 과목 미정 자리로 배정했습니다. 학기 미배정 선택전공 ${scheduled.remainingElectiveCredits}학점은 공식 확인 항목으로 남겼습니다.`
+        : `과목이 정해지지 않은 선택 전공 ${unallocatedElectiveCredits}학점은 3학점 과목 기준으로 학기별 과목 미정 자리로 배정했습니다.`,
       evidence: "project-derived",
     });
   }
@@ -624,14 +624,14 @@ function buildPlanningReviewItems(
   if (scheduled.unplacedCourses.some((item) => item.reason !== "offering-unknown")) {
     reviewItems.push({
       code: "plan-input",
-      message: "사용자 지정 학기 또는 목표 학기 안의 수강 한도와 충돌하는 과목이 있습니다.",
+      message: "직접 지정한 학기 또는 목표 학기 안의 수강 한도에 맞지 않는 과목이 있습니다.",
       evidence: "official-review-required",
     });
   }
   if (scheduled.remainingElectiveSlots > 0) {
     reviewItems.push({
       code: "plan-input",
-      message: "목표 학기와 추가 두 학기 안에도 익명 선택 전공 슬롯을 모두 배치할 수 없습니다.",
+      message: "목표 학기와 추가 두 학기 안에도 과목 미정 선택 전공 자리를 모두 배치할 수 없습니다.",
       evidence: "official-review-required",
     });
   }

@@ -38,7 +38,7 @@ export function CurriculumReferenceView() {
       </div>
     ) : (
       <p className="dku-resource-empty" role="status">
-        조건에 맞는 과목이 없습니다. 검색어나 학년 필터를 바꿔보세요.
+        조건에 맞는 과목이 없습니다. 검색어나 학년 필터를 바꿔 보세요.
       </p>
     )}
   </section>;

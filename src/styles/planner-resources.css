@@ -75,6 +75,8 @@
 .dku-resource-page .dku-resource-footer { display:flex; align-items:center; justify-content:space-between; gap:24px; border-top:1px solid var(--resource-line); margin-top:32px; padding-top:24px; }
 .dku-resource-page .dku-resource-footer p { font-size:13px; max-width:650px; color:var(--resource-muted); }
 .dku-resource-page .dku-resource-footer button { background:#173f59; color:white; white-space:nowrap; }
+.dku-resource-page :is(.dku-resource-track-intro,.dku-resource-scope-strip,.dku-resource-source-list,.dku-resource-video-links,.dku-resource-contact,.dku-resource-method) a,
+.dku-resource-page .dku-resource-official-columns > section > a { display:inline-flex; align-items:center; min-height:44px; min-width:44px; max-width:100%; padding-block:10px; gap:6px; }
 @media(max-width:900px) {
  .dku-resource-page { padding:20px 24px 36px; }
  .dku-resource-page .dku-resource-track-intro { grid-template-columns:1fr 240px; gap:24px; }

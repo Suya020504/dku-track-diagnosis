@@ -20,6 +20,7 @@
 .dku-plan-page .secondary-button { display:inline-flex; align-items:center; padding:10px 16px; border:1px solid var(--plan-line); background:#fffdf7; border-radius:8px; color:#594315; }
 .dku-plan-page .planner-evidence-band { margin:16px 0; padding:12px 16px; border:1px solid #decda5; border-radius:8px; background:#f6edda; color:#594315; font-size:13px; box-shadow:none; }
 .dku-plan-page .planner-evidence-band strong, .dku-plan-page .planner-evidence-band a { color:#594315; }
+.dku-plan-page .dku-plan-form .planner-evidence-band a { display:inline-flex; align-items:center; min-height:44px; min-width:44px; max-width:100%; padding:8px 4px; margin-inline:2px; vertical-align:middle; text-underline-offset:3px; }
 .dku-plan-page .planner-evidence-band p { margin:2px 0; }
 .dku-plan-page.dku-plan-setup { max-width:920px; }
 .dku-plan-page .dku-plan-form { display:grid; grid-template-columns:1.2fr 1fr; gap:20px; }

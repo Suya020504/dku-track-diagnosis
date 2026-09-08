@@ -32,7 +32,7 @@ export function AxisResultCard({
       aria-labelledby={headingId}
     >
       <header className="dc-result-page__heading">
-        <span>독립 기준</span>
+        <span>비교 기준</span>
         <h2 id={headingId}>{title}</h2>
         <p>{description}</p>
       </header>
@@ -48,7 +48,7 @@ export function AxisResultCard({
       {unavailable ? (
         <div className="dc-unavailable">
           <span>입력 필요</span>
-          <h3>이 기준을 아직 열 수 없어요</h3>
+          <h3>비교에 필요한 정보를 입력해 주세요</h3>
           <p>{unavailable.message}</p>
           <button className="planner-focusable" type="button" onClick={unavailable.onAction}>
             {unavailable.actionLabel}

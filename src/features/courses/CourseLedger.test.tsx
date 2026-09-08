@@ -64,6 +64,7 @@ function renderLedger(overrides: Partial<React.ComponentProps<typeof CourseLedge
       semesterFilter="all"
       query=""
       onToggleCourse={vi.fn()}
+      onCourseStatusChange={vi.fn()}
       {...overrides}
     />,
   );
@@ -84,6 +85,7 @@ async function renderInteractiveLedger(mode: "semester" | "module") {
       semesterFilter="all"
       query=""
       onToggleCourse={vi.fn()}
+      onCourseStatusChange={vi.fn()}
     />,
   ));
 }
@@ -124,7 +126,8 @@ describe("CourseLedger", () => {
     expect(rows).toHaveLength(4);
     expect(rowFor("경제원론")?.textContent).toContain("이수 완료");
     expect(rowFor("미시경제학")?.textContent).toContain("수강 중");
-    expect(rowFor("소비자경제학")?.textContent).toContain("수강 계획 · 다음 학기");
+    expect(rowFor("소비자경제학")?.querySelector<HTMLSelectElement>('select[aria-label="소비자경제학 이수 상태"]')?.value).toBe("planned");
+    expect(rowFor("소비자경제학")?.textContent).toContain("플래너에서 정한 시작 학기 기준");
     expect(rowFor("소비자경제학")?.textContent).toContain("3학점");
     expect(rowFor("소비자경제학")?.textContent).toContain("2학년 1학기");
     expect(rowFor("소비자경제학")?.textContent).toContain("공개 학기표와 제공 최종안");
@@ -132,22 +135,21 @@ describe("CourseLedger", () => {
 
     expect(rowFor("경제원론")?.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked).toBe(true);
     expect(rowFor("미시경제학")?.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked).toBe(true);
-    expect(rowFor("소비자경제학")?.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked).toBe(false);
+    expect(rowFor("소비자경제학")?.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked).toBe(true);
     expect(rows.every((row) => row.querySelector('[data-touch-target="44"]'))).toBe(true);
     expect(rows.every((row) => row.querySelector("details.dku-check-row-details:not([open])"))).toBe(true);
     expect(rowFor("경제원론")?.querySelector(".dku-check-row-details summary .sr-only")?.textContent)
       .toBe("경제원론 과목 정보");
   });
 
-  it("starts as a compact accordion with only the first semester expanded", () => {
+  it("shows a flat continuous list without semester or module accordions", () => {
     document.body.innerHTML = renderLedger();
 
     const groups = [...document.querySelectorAll<HTMLDetailsElement>("details.dku-check-group")];
-    expect(groups).toHaveLength(4);
-    expect(groups[0]?.open).toBe(true);
-    expect(groups.slice(1).every((group) => !group.open)).toBe(true);
+    expect(groups).toHaveLength(0);
+    expect(document.querySelectorAll(".dku-check-row")).toHaveLength(4);
     expect(document.querySelector(".dku-check-index")).toBeNull();
-    expect(groups[0]?.querySelector("summary")?.textContent).toContain("선택 1 / 1");
+    expect(document.querySelector(".dku-check-summary")?.textContent).toContain("3");
   });
 
   it("filters by semester and query without replacing the ledger row structure", () => {
@@ -163,7 +165,7 @@ describe("CourseLedger", () => {
     expect(moduleMarkup).toContain("미시경제학");
     expect(moduleMarkup).not.toContain("소비자경제학");
     expect(moduleMarkup).toContain('data-dku-check-mode="module"');
-    expect(moduleMarkup).toContain('id="dku-check-group-module-c"');
+    expect(moduleMarkup).toContain('data-module-marker="C"');
   });
 
   it("can reduce the ledger to courses that already have a saved status", async () => {

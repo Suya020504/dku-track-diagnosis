@@ -95,8 +95,8 @@ describe("PdfMatchReview", () => {
   it("explains that existing completed, in-progress, and planned selections stay unchanged", async () => {
     await renderReview({ existingSelectionCount: 3 });
 
-    expect(document.body.textContent).toContain("기존 직접 선택 3개는 그대로 유지됩니다");
-    expect(document.body.textContent).toContain("승인한 PDF 후보만 새 과목으로 추가");
+    expect(document.body.textContent).toContain("기존에 직접 선택한 3개는 그대로 유지됩니다");
+    expect(document.body.textContent).toContain("PDF에서 찾은 후보 중 승인한 과목만 새로 추가");
     expect(document.body.textContent).not.toContain("아직 어떤 과목도 선택되지 않았어요");
   });
 

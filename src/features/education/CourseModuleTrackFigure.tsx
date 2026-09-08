@@ -46,8 +46,7 @@ export function CourseModuleTrackFigure() {
       </div>
 
       <EvidenceBand state="official-public-confirmed">
-        이 관계는 {OFFICIAL_CURRICULUM_SOURCE.title}의 현재 공개본 {OFFICIAL_CURRICULUM_SOURCE.currentPage}쪽에서
-        공식 공개 확인했습니다. 개인별 공식 이수 완료 판정이 아닙니다.
+        이 관계는 {OFFICIAL_CURRICULUM_SOURCE.title}의 현재 공개본 {OFFICIAL_CURRICULUM_SOURCE.currentPage}쪽에서 확인한 공식 공개 내용입니다. 개인별 공식 이수 완료 판정은 아닙니다.
       </EvidenceBand>
     </figure>
   );

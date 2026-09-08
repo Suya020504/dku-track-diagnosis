@@ -153,7 +153,7 @@ describe("recommendation route integration", () => {
     const primaryActionIndex = markup.indexOf("내 트랙 확인하기");
     const secondaryActionIndex = markup.indexOf("트랙제 먼저 알아보기");
 
-    expect(markup.replace(/<[^>]+>/g, "")).toContain("어떤 트랙이 나한테 잘 맞을까?");
+    expect(markup.replace(/<[^>]+>/g, "")).toContain("식품자원경제학과 트랙 안내");
     expect(markup).toContain("내 트랙 확인하기");
     expect(markup).toContain("트랙제 먼저 알아보기");
     expect(markup).toContain("관심으로 트랙 추천받기");
@@ -294,7 +294,7 @@ describe("recommendation route integration", () => {
     );
 
     expect(markup).toContain('data-recommendation-panel="progress"');
-    expect(markup).toContain("현재 완료 과목에서 가까운 트랙");
+    expect(markup).toContain("완료 과목 기준으로 비교한 트랙");
     expect(markup.match(/data-track-id=/g)).toHaveLength(5);
     expect(markup).toContain("위 후보에서 진단할 트랙을 선택해 주세요");
     expect(markup).toMatch(/planner-shell-primary-nav[\s\S]*?aria-current="page"[^>]*>진단 결과<\/button>/);

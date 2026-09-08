@@ -91,7 +91,7 @@ export function CurrentProgressView({
   return (
     <div className="planner-result-section planner-current-progress">
       <header className="planner-result-heading">
-        <span>현재 · 계산된 진행 경로</span>
+        <span>현재 · 이수 진행 현황</span>
         <h1 id="result-current-title" ref={headingRef} tabIndex={-1}>
           {statusLabel}
         </h1>

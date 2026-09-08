@@ -81,7 +81,7 @@ export function SurveyAudienceStep({
       </section>
 
       <p className="ds-audience-note">
-        소속을 바꾸면 관심 설문 답변만 새로 시작하며, 입력한 과목과 저장한 진단·계획은 유지됩니다.
+        소속을 바꾸면 관심 설문 답변만 새로 시작합니다. 입력한 과목과 저장한 진단·계획은 유지됩니다.
       </p>
       {onSkip ? (
         <button className="ds-skip-button" type="button" onClick={onSkip}>

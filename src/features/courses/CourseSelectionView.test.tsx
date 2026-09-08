@@ -4,7 +4,7 @@ import { act, createRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { courses } from "../../data/curriculumData";
-import type { CourseSelectionRecord } from "../../types";
+import type { CourseSelectionRecord, StudentProfile } from "../../types";
 import {
   CourseSelectionView,
   type CourseGradeFilter,
@@ -28,7 +28,7 @@ function link(label: string): HTMLAnchorElement {
   return match;
 }
 
-function Harness({ onSave = vi.fn() }: { onSave?: () => void }) {
+function Harness({ onSave = vi.fn(), profile }: { onSave?: () => void; profile?: StudentProfile }) {
   const [mode, setMode] = useState<CourseGroupMode>("semester");
   const [gradeFilter, setGradeFilter] = useState<CourseGradeFilter>("all");
   const [semesterFilter, setSemesterFilter] = useState<CourseSemesterFilter>("all");
@@ -47,6 +47,8 @@ function Harness({ onSave = vi.fn() }: { onSave?: () => void }) {
         courseSelections={selections}
         selectedTrackIds={["food-marketing"]}
         enrollmentType="primary"
+        profile={profile}
+        additionalCreditsContent={<section aria-label="추가 전공학점">추가 전공학점 입력</section>}
         headingRef={createRef<HTMLHeadingElement>()}
         resultActionRef={resultActionRef}
         mode={mode}
@@ -59,6 +61,7 @@ function Harness({ onSave = vi.fn() }: { onSave?: () => void }) {
         onSemesterFilterChange={setSemesterFilter}
         onQueryChange={setQuery}
         onToggleCourse={vi.fn()}
+        onCourseStatusChange={vi.fn()}
         onSaveCourses={onSave}
         onShowResult={vi.fn()}
         onPdfAnalyzed={vi.fn()}
@@ -122,21 +125,24 @@ describe("CourseSelectionView", () => {
     expect(view?.querySelector(".dku-check-start")).toBeNull();
   });
 
-  it("keeps secondary grade and semester filters in a named collapsed disclosure", async () => {
+  it("keeps all grade buttons visible while semester detail is collapsed", async () => {
     await renderHarness();
 
     const disclosure = document.querySelector<HTMLDetailsElement>(".dku-check-more-filters");
     expect(disclosure).not.toBeNull();
     expect(disclosure?.open).toBe(false);
     expect(disclosure?.querySelector("summary")?.textContent).toContain("추가 필터");
-    expect(disclosure?.querySelector('[aria-label="학년 선택"]')).not.toBeNull();
+    expect(disclosure?.querySelector('[aria-label="학년 선택"]')).toBeNull();
+    expect(document.querySelector('[aria-label="학년 선택"]')?.closest("details")).toBeNull();
+    expect(document.querySelectorAll('[aria-label="학년 선택"] button')).toHaveLength(6);
     expect(disclosure?.querySelector('[aria-label="학기 선택"]')).not.toBeNull();
   });
 
   it("keeps the complete 45-course direct ledger ahead of the optional PDF beta", async () => {
     await renderHarness();
 
-    expect(document.querySelectorAll(".dku-check-row")).toHaveLength(45);
+    expect(document.querySelectorAll(".dku-check-row")).toHaveLength(12);
+    expect(document.querySelector(".dku-check-pagination")?.textContent).toContain("45개");
     expect(document.querySelector("h1")?.textContent).toContain("지금까지 이수한 과목을 선택하세요");
     expect(document.body.textContent).toContain("직접 선택만으로 진단을 완료할 수 있어요");
 
@@ -189,7 +195,7 @@ describe("CourseSelectionView", () => {
     await renderHarness();
 
     const details = [...document.querySelectorAll<HTMLDetailsElement>(".dku-check-row-details")];
-    expect(details).toHaveLength(45);
+    expect(details).toHaveLength(12);
     expect(details.every((detail) => !detail.open)).toBe(true);
     expect(details[0]?.querySelector("summary")?.textContent).toContain("과목 정보");
   });
@@ -207,7 +213,33 @@ describe("CourseSelectionView", () => {
     const applied = document.querySelector('[aria-label="적용 중인 필터"]');
     expect(applied?.textContent).toContain("2학년");
     await act(async () => button("필터 초기화").click());
-    expect(document.querySelectorAll(".dku-check-row")).toHaveLength(45);
+    expect(document.querySelectorAll(".dku-check-row")).toHaveLength(12);
     expect(document.querySelector('[aria-label="적용 중인 필터"]')).toBeNull();
+  });
+
+  it("searches the whole ledger and clears the visible grade and semester controls", async () => {
+    await renderHarness();
+    await act(async () => button("2학년").click());
+    await act(async () => button("2학기").click());
+    const search = document.querySelector<HTMLInputElement>('input[type="search"]')!;
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(search, "경제원론");
+      search.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(document.querySelectorAll(".dku-check-row")).toHaveLength(1);
+    expect(document.querySelector(".dku-check-row")?.textContent).toContain("경제원론");
+    expect(button("전체").getAttribute("aria-pressed")).toBe("true");
+    expect(button("전체 학기").getAttribute("aria-pressed")).toBe("true");
+    expect(document.querySelector('[aria-label="적용 중인 필터"]')).toBeNull();
+  });
+
+  it("places the additional-credit slot after policy and before save and PDF", async () => {
+    await renderHarness();
+    const policy = document.querySelector(".dku-check-policy")!;
+    const extra = document.querySelector('[aria-label="추가 전공학점"]')!;
+    const save = document.querySelector(".dku-check-save-band")!;
+    expect(extra).toBeTruthy();
+    expect(Boolean(policy.compareDocumentPosition(extra) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+    expect(Boolean(extra.compareDocumentPosition(save) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
   });
 });

@@ -140,7 +140,7 @@ export function PathProgressSummary({
         </p>
       ) : null}
 
-      <ol className="planner-progress-path" aria-label={`${pathLabel} 독립 학점 진행`}>
+      <ol className="planner-progress-path" aria-label={`${pathLabel} 학점 현황 · 별도 계산`}>
         {result.requiredProgress !== "not-applicable" ? (
           <ProgressStep label="필수과목 진행" progress={result.requiredProgress}>
           </ProgressStep>
@@ -157,7 +157,7 @@ export function PathProgressSummary({
         {pathLabel} · {profile.entryYear ? `${profile.entryYear}학번 입력` : "입력한 학적 정보"} 기준.
         개인별 최종 적용은 학과 확인이 필요합니다.
       </EvidenceBand>
-      <p className="dku-results-note">각 기준은 독립적으로 확인합니다. 겹치는 조건의 부족 학점은 합산하지 않습니다.</p>
+      <p className="dku-results-note">각 기준은 따로 확인합니다. 겹치는 조건의 부족 학점은 합산하지 않습니다.</p>
       {missingRequiredCourses.length > 0 ? <ResultDisclosure id="result-required-detail" title={`보완할 필수과목 · ${missingRequiredCourses.length}개 확인`}>
               <ul className="planner-progress-path__modules" aria-label="보완할 필수과목">
                 {missingRequiredCourses.map((course) => (

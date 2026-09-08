@@ -76,12 +76,12 @@ describe("PdfCourseImportPanel", () => {
   it("keeps the beta workflow collapsed behind explicit privacy and limit copy", async () => {
     await renderPanel(vi.fn());
 
-    expect(document.body.textContent).toContain("PDF로 선택값 채우기 beta");
+    expect(document.body.textContent).toContain("PDF로 과목 선택하기 beta");
     expect(document.body.textContent).toContain("선택 사항");
     expect(document.body.textContent).toContain("직접 선택만으로 진단을 완료할 수 있어요");
     expect(document.body.textContent).not.toContain("브라우저 안에서만 분석");
 
-    await act(async () => button("PDF로 선택값 채우기 beta").click());
+    await act(async () => button("PDF로 과목 선택하기 beta").click());
 
     expect(document.body.textContent).toContain("10MB 이하");
     expect(document.body.textContent).toContain("50쪽 이하");
@@ -97,7 +97,7 @@ describe("PdfCourseImportPanel", () => {
       new Promise<PdfImportDraft>((resolve) => { resolveDraft = resolve; }),
     );
     const { onAnalyzed } = await renderPanel(analyzeFile);
-    await act(async () => button("PDF로 선택값 채우기 beta").click());
+    await act(async () => button("PDF로 과목 선택하기 beta").click());
 
     const file = new File(["private transcript"], "20261234_홍길동_성적표.pdf", {
       type: "application/pdf",
@@ -118,7 +118,7 @@ describe("PdfCourseImportPanel", () => {
   it("clears the native filename synchronously and exposes only a generic picker label while pending", async () => {
     const analyzeFile = vi.fn(() => new Promise<PdfImportDraft>(() => undefined));
     await renderPanel(analyzeFile);
-    await act(async () => button("PDF로 선택값 채우기 beta").click());
+    await act(async () => button("PDF로 과목 선택하기 beta").click());
     const file = new File(["private transcript"], "20261234_홍길동_성적표.pdf", {
       type: "application/pdf",
     });
@@ -149,7 +149,7 @@ describe("PdfCourseImportPanel", () => {
         </StrictMode>,
       );
     });
-    await act(async () => button("PDF로 선택값 채우기 beta").click());
+    await act(async () => button("PDF로 과목 선택하기 beta").click());
 
     await chooseFile(new File(["strict"], "strict.pdf", { type: "application/pdf" }));
 
@@ -163,7 +163,7 @@ describe("PdfCourseImportPanel", () => {
       return new Promise<PdfImportDraft>(() => undefined);
     });
     await renderPanel(analyzeFile);
-    await act(async () => button("PDF로 선택값 채우기 beta").click());
+    await act(async () => button("PDF로 과목 선택하기 beta").click());
 
     const repeatedFile = new File(["same"], "same.pdf", { type: "application/pdf" });
     await chooseFile(repeatedFile, "C:\\fakepath\\same.pdf");
@@ -187,7 +187,7 @@ describe("PdfCourseImportPanel", () => {
   it("shows a fixed failure path and clears the input so the same file can retry", async () => {
     const analyzeFile = vi.fn().mockRejectedValue(new Error("student raw text"));
     await renderPanel(analyzeFile);
-    await act(async () => button("PDF로 선택값 채우기 beta").click());
+    await act(async () => button("PDF로 과목 선택하기 beta").click());
 
     await chooseFile(new File(["secret"], "secret.pdf", { type: "application/pdf" }));
 

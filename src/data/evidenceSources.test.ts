@@ -13,7 +13,7 @@ describe("planner evidence sources", () => {
 
   it("does not treat a 2026 offering snapshot as a future offering guarantee", () => {
     expect(getEvidenceSource("historical-2026-snapshot")).toMatchObject({
-      label: "2026 이력 스냅샷",
+      label: "2026 개설 이력",
       allowsFutureOfferingGuarantee: false,
     });
   });

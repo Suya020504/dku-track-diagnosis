@@ -161,9 +161,7 @@ export function calculateTrackRecommendations(
 }
 
 export function isRequiredCourseApplicable(course: Course, enrollmentType: EnrollmentType): boolean {
-  if (!course.required) return false;
-  if (enrollmentType === "primary") return true;
-  return getRecommendedGrade(course) !== 1;
+  return enrollmentType !== "minor" && Boolean(course.required);
 }
 
 export function getRequiredCourses(enrollmentType: EnrollmentType): Course[] {

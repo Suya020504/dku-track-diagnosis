@@ -5,11 +5,26 @@
 .dku-contact-page p { margin:0; font-size:15px; line-height:1.8; color:#496076; word-break:keep-all; }
 .dku-contact-page span { display:block; margin-bottom:12px; color:#365a7c; font-size:13px; font-weight:750; }
 .dku-contact-page a { display:inline-flex; align-items:center; gap:8px; min-height:44px; color:#0754ad; font-size:15px; font-weight:750; overflow-wrap:anywhere; }
-.dku-contact-page__official { display:grid; grid-template-columns:140px 1fr; gap:16px 28px; padding:30px; background:#fff; border-top:4px solid #244d73; }
-.dku-contact-page__official>a { grid-column:2; justify-self:start; }
-.dku-contact-page__operator { display:grid; grid-template-columns:1fr 1fr; gap:40px; padding:40px 0; }
+.dku-contact-page__official { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:24px 32px; padding:28px; background:#fff; border-top:4px solid #244d73; border-radius:0 0 12px 12px; }
+.dku-contact-page .dku-contact-page__phone { padding:14px 20px; min-height:54px; color:#fff; background:#175886; border-radius:8px; font-size:20px; text-decoration:none; }
+.dku-contact-page .dku-contact-page__phone:hover { background:#10456b; }
 .dku-contact-page address { display:flex; flex-direction:column; align-items:flex-start; font-style:normal; padding-left:24px; border-left:1px solid #bacddd; min-width:0; }
 .dku-contact-page address strong { margin:0 0 12px; font-size:16px; }
+.dku-contact-page :is(a,summary):focus-visible { outline:3px solid #1e6ec7; outline-offset:4px; }
+.dku-contact-page__preparation { padding:32px 0; }
+.dku-contact-page__preparation>ul { display:grid; grid-template-columns:1fr 1fr; gap:0 28px; list-style:none; padding:0; margin:12px 0 20px; }
+.dku-contact-page__preparation>ul>li { display:flex; gap:12px; padding:18px 0; border-bottom:1px solid #c8dbe7; }
+.dku-contact-page__preparation svg { color:#11634b; flex-shrink:0; margin-top:4px; }
+.dku-contact-page__preparation h3 { margin:0 0 6px; font-size:16px; line-height:1.5; }
+.dku-contact-page__preparation li p { font-size:14px; }
+.dku-contact-page .dku-contact-page__privacy { padding:16px 18px; background:#e5f1f8; border-radius:8px; font-size:14px; }
+.dku-contact-page__reference { display:flex; gap:18px; padding:24px; margin-bottom:20px; background:#fff; border:1px solid #c8dbe7; border-radius:12px; }
+.dku-contact-page__reference>svg { flex-shrink:0; color:#175886; }
+.dku-contact-page__reference h2 { font-size:18px; margin-bottom:6px; }
+.dku-contact-page__reference p { font-size:13px; }
+.dku-contact-page__support { border-top:1px solid #bacddd; padding:10px 0; }
+.dku-contact-page__support summary { min-height:44px; padding:12px 0; cursor:pointer; font-weight:750; }
+.dku-contact-page__support p { font-size:14px; margin-bottom:12px; }
 .dku-contact-page__updates { border-top:1px solid #bacddd; padding:16px 0; }
 .dku-contact-page__updates summary { min-height:44px; padding:12px 0; cursor:pointer; font-weight:750; }
 .dku-contact-page__updates>ol { padding:0; list-style:none; }
@@ -17,11 +32,14 @@
 .dku-contact-page__updates time { font-size:14px; color:#496076; }
 .dku-contact-page__updates h3 { margin:0 0 10px; font-size:17px; }
 .dku-contact-page__updates ul { padding-left:18px; color:#496076; line-height:1.8; font-size:14px; }
+@media(max-width:800px) {
+ .dku-contact-page__official { grid-template-columns:1fr; }
+ .dku-contact-page address { padding:0; border:0; }
+}
 @media(max-width:599px) {
  .dku-contact-page h1 { font-size:28px; } .dku-contact-page h2 { font-size:21px; }
- .dku-contact-page__official,.dku-contact-page__operator { grid-template-columns:1fr; padding:22px 18px; gap:16px; }
- .dku-contact-page__official>a { grid-column:1; }
- .dku-contact-page__operator { padding-inline:0; padding-block:30px; }
- .dku-contact-page address { padding:20px 0 0; border-left:0; border-top:1px solid #bacddd; }
+ .dku-contact-page__official { padding:22px 18px; gap:16px; }
+ .dku-contact-page__preparation>ul { grid-template-columns:1fr; }
+ .dku-contact-page__reference { padding:20px 18px; gap:12px; }
  .dku-contact-page__updates>ol>li { grid-template-columns:1fr; gap:8px; }
 }

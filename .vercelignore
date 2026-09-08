@@ -1,0 +1,17 @@
+node_modules
+dist
+.vite
+.tools
+tmp
+*.local
+debug.log
+.vercel
+output
+.superpowers
+.playwright-cli
+.git
+# Keep the supplied curriculum original and any private copies out of uploads.
+public/documents/2026-ere-module-track-curriculum.pdf
+**/private-reference-materials/**
+docs/service-completion/2026-09-08-goal.md
+docs/service-completion/task-*.md

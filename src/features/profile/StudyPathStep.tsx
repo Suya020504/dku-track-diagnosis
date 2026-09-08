@@ -82,7 +82,7 @@ export function StudyPathStep({
         </header>
         <div className="profile-recovery" role="status">
           <strong>소속을 먼저 선택해 주세요.</strong>
-          <p>직접 링크로 이 단계에 들어왔습니다. 소속을 선택하면 가능한 이수 경로를 정확히 보여드릴게요.</p>
+          <p>직접 링크로 이 단계에 들어왔어요. 소속을 먼저 선택하면 가능한 이수 경로를 보여드릴게요.</p>
           <button
             className="profile-secondary-action planner-focusable"
             data-profile-recover
@@ -172,7 +172,7 @@ export function StudyPathStep({
                 <ListChecks aria-hidden="true" size={24} />
                 <span>
                   <strong>아직 정하지 않았어요 · 5개 트랙 비교</strong>
-                  <small>현재 이수 과목만으로 가까운 트랙을 나란히 봅니다.</small>
+                  <small>현재 이수 과목을 기준으로 트랙마다 남은 이수 조건을 나란히 봅니다.</small>
                 </span>
               </label>
             ) : null}

@@ -17,8 +17,8 @@ export const EVIDENCE_SOURCES: Record<EvidenceState, EvidenceSource> = {
     allowsFutureOfferingGuarantee: false,
   },
   "historical-2026-snapshot": {
-    label: "2026 이력 스냅샷",
-    description: "2026년에 확인한 개설 이력이며, 이후 개설을 보장하지 않습니다.",
+    label: "2026 개설 이력",
+    description: "2026년에 확인한 개설 이력입니다. 이후 개설을 보장하지 않습니다.",
     allowsFutureOfferingGuarantee: false,
   },
   "provided-final-plan-reference": {

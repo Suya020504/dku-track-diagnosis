@@ -67,7 +67,8 @@ describe("TrackServiceLanding", () => {
   it("presents situation simulation first without the retired map metaphor", async () => {
     await renderLanding();
 
-    expect(document.querySelector("h1")?.textContent).toBe("어떤 트랙이 나한테 잘 맞을까?");
+    expect(document.querySelector("h1")?.textContent).toBe("식품자원경제학과 트랙 안내");
+    expect(document.body.textContent).toContain("트랙별로 배우는 내용을 살펴보고, 들은 과목으로 남은 이수 조건을 확인하세요.");
     expect(button("내 트랙 확인하기").dataset.actionPriority).toBe("primary");
     expect(button("트랙제 먼저 알아보기").dataset.actionPriority).toBe("secondary");
     expect(document.querySelector("[data-map-mode]")).toBeNull();
@@ -114,5 +115,10 @@ describe("TrackServiceLanding", () => {
 
     expect(document.body.textContent).toContain("단국대 학생을 위한 트랙제 안내·자가진단");
     expect(document.body.textContent).toContain("실제 인정 기준은 학과 확인이 필요합니다");
+  });
+  it("does not promise automatic saving when storage is unavailable", async () => {
+    await renderLanding({ saveUnavailable: true });
+    expect(document.querySelector('[role="alert"].track-home__save-note')?.textContent).toContain("브라우저 저장이 제한되어 있어요. 지금 입력한 내용은 탭을 닫기 전에 확인해 주세요.");
+    expect(document.querySelector(".track-home__save-note")?.textContent).not.toContain("자동 저장");
   });
 });

@@ -9,6 +9,12 @@ import { getAllowedStudyPaths } from "./data/requirementRules2026";
 import { OFFICIAL_TRACK_VIDEOS, type OfficialTrackVideoId } from "./data/officialResources";
 import { ProfileFlow } from "./features/profile/ProfileFlow";
 import { ContactPage } from "./features/contact/ContactPage";
+import { SavedRecordsView } from "./features/records/SavedRecordsView";
+import { AdditionalCreditsInput } from "./features/courses/AdditionalCreditsInput";
+import { updateCourseSelection } from "./lib/courseSelectionEditing";
+import { getCourseInputPolicy } from "./lib/courseInputPolicy";
+import { archiveCurrentDiagnosis } from "./lib/diagnosisArchive";
+import { acquireBrowserStorage } from "./lib/browserStorage";
 import { GraduationPlanResult } from "./features/planning/GraduationPlanResult";
 import { GraduationPlanSetup } from "./features/planning/GraduationPlanSetup";
 import { GraduationPlanPrerequisite } from "./features/planning/GraduationPlanPrerequisite";
@@ -45,6 +51,7 @@ import {
   saveAppState,
 } from "./lib/storage";
 import {
+  buildAppHref,
   resolveAppRoute,
   writeAppRouteToHistory,
   type AppRoute,
@@ -73,9 +80,10 @@ import type {
   StudentProfile,
   Track,
   TrackId,
+  CourseSelectionStatus,
 } from "./types";
 
-type ViewId = "landing" | "resources" | "track-guide" | "diagnosis" | "recommendation" | "plan" | "result" | "contact";
+type ViewId = "landing" | "resources" | "track-guide" | "diagnosis" | "recommendation" | "plan" | "result" | "contact" | "records";
 type GradeFilter = "all" | "1" | "2" | "3" | "4" | "unknown";
 type SemesterFilter = "all" | "1" | "2" | "unknown";
 type GuideStep = {
@@ -96,14 +104,14 @@ const guideSteps: GuideStep[] = [
   },
   {
     title: "2. 결과에서 지금 상태를 확인합니다",
-    body: "목표가 없으면 5개 트랙의 현재 접근성을 비교하고, 목표를 정했다면 해당 트랙의 남은 과목과 부족 모듈을 확인합니다.",
+    body: "목표가 없으면 5개 트랙에서 앞으로 더 들어야 할 과목을 비교하고 목표를 정했다면 해당 트랙의 남은 과목과 부족 모듈을 확인합니다.",
     items: ["목표 없는 5개 트랙 비교", "선택한 트랙의 충족·부족 상태", "어느 모듈에서 몇 과목이 더 필요한지 확인"],
     action: "결과 보기",
     viewId: "result",
   },
   {
     title: "3. 추천 비교에서 기준을 나눠 봅니다",
-    body: "관심, 현재 이수 과목, 졸업 전 계획을 섞지 않고 각각의 기준으로 트랙을 비교합니다.",
+    body: "관심, 현재 이수 과목, 졸업 전 계획을 기준으로 각각 트랙을 비교합니다.",
     items: ["관심 설문 기준", "완료한 이수 과목 기준", "졸업 전 계획 가능성 기준"],
     action: "추천 기준 비교하기",
     viewId: "recommendation",
@@ -129,19 +137,19 @@ const enrollmentOptions: Array<{
     id: "primary",
     label: "주전공",
     title: "주전공 기준",
-    description: "PDF 필수 과목을 모두 필수 누락 계산에 반영합니다.",
+    description: "교육과정 PDF의 필수 과목을 모두 확인해 아직 이수하지 않은 과목을 계산합니다.",
   },
   {
     id: "double-major",
     label: "복수전공",
     title: "복수전공 기준",
-    description: "1학년 필수 과목은 필수 누락에서 제외해 진단합니다.",
+    description: "필수 6과목 18학점을 포함해 전공 42학점을 확인합니다.",
   },
   {
     id: "minor",
     label: "부전공",
     title: "부전공 기준",
-    description: "1학년 필수 과목은 제외하고, 부전공 학점 기준은 공식 안내 확인이 필요합니다.",
+    description: "필수 과목 조건 없이 전공 21학점을 확인합니다. 개인별 적용은 학과에서 확인해 주세요.",
   },
 ];
 
@@ -149,7 +157,7 @@ const trackKindGuides = [
   {
     kind: "학과전공" as const,
     title: "학과전공 트랙",
-    description: "식품자원경제학과 전공 모듈을 중심으로 5개 모듈을 깊게 채우는 방식입니다.",
+    description: "식품자원경제학과 전공 모듈을 중심으로 5개 모듈을 깊이 배우는 방식입니다.",
   },
   {
     kind: "융합전공" as const,
@@ -545,9 +553,10 @@ export function saveGraduationPlanSnapshotTransition(
 }
 
 function App({ storage }: { storage?: Storage } = {}) {
-  const appStorage = storage ?? window.localStorage;
+  const [storageAccess] = useState(() => acquireBrowserStorage(storage));
+  const appStorage = storageAccess.storage;
   const [savedState, setSavedState] = useState<SavedAppStateV2>(() => loadAppState(appStorage));
-  const [storageError, setStorageError] = useState(false);
+  const [storageError, setStorageError] = useState(storageAccess.unavailable);
   const [pdfImportDraft, setPdfImportDraft] = useState<PdfImportDraft>();
   const [pdfImportRecoveryNotice, setPdfImportRecoveryNotice] = useState(
     () => requestsPdfReview(window.location.search),
@@ -568,6 +577,11 @@ function App({ storage }: { storage?: Storage } = {}) {
     const route = resolveExperienceRoute(window.location.search, savedState);
     return route.view === "result" ? route.section ?? "current" : "current";
   });
+  const [recordId, setRecordId] = useState<string | undefined>(() => {
+    const route = resolveExperienceRoute(window.location.search, savedState);
+    return route.view === "records" ? route.recordId : undefined;
+  });
+  const [archiveNotice, setArchiveNotice] = useState("");
   const [resourceSection, setResourceSection] = useState<ResourceSection>(() => {
     const route = resolveExperienceRoute(window.location.search, savedState);
     return route.view === "resources" ? route.section ?? "tracks" : "tracks";
@@ -705,7 +719,8 @@ function App({ storage }: { storage?: Storage } = {}) {
       || activeView === "result"
       || activeView === "recommendation"
       || activeView === "track-guide"
-      || activeView === "contact";
+      || activeView === "contact"
+      || activeView === "records";
     if (!focusEntryHeading) return;
     stepHeadingRef.current?.focus();
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -718,6 +733,7 @@ function App({ storage }: { storage?: Storage } = {}) {
     recommendationAudience,
     interestCompletedAt,
     resultSection,
+    recordId,
     trackGuideSection,
   ]);
 
@@ -783,6 +799,8 @@ function App({ storage }: { storage?: Storage } = {}) {
   function applyRoute(route: AppRoute) {
     const nextView = viewForRoute(route);
     setActiveView(nextView);
+    setArchiveNotice("");
+    if (route.view === "records") setRecordId(route.recordId);
     if (nextView === "landing") setGuideOpen(false);
     setPdfInputRoute(route.view === "diagnosis" ? route.input : undefined);
     if (route.view === "diagnosis") {
@@ -807,6 +825,7 @@ function App({ storage }: { storage?: Storage } = {}) {
   }
 
   function navigateAppRoute(route: AppRoute) {
+    if (buildAppHref(window.location.href, route) === `${window.location.pathname}${window.location.search}${window.location.hash}`) return;
     writeAppRouteToHistory(route, "push");
     applyRoute(route);
   }
@@ -928,8 +947,7 @@ function App({ storage }: { storage?: Storage } = {}) {
   function toggleCourse(courseId: string) {
     persist((current) => {
       const exists = current.courseSelections.some(
-        (selection) => selection.courseId === courseId &&
-          (selection.status === "completed" || selection.status === "in-progress"),
+        (selection) => selection.courseId === courseId,
       );
       const remaining = current.courseSelections.filter((selection) => selection.courseId !== courseId);
       return applyPlanningSourceChange(current, {
@@ -938,6 +956,13 @@ function App({ storage }: { storage?: Storage } = {}) {
           : [...remaining, { courseId, status: "completed" }],
       });
     });
+    setPlanSaveStatus("idle");
+  }
+
+  function changeCourseStatus(courseId: string, status: CourseSelectionStatus | null, plannedTerm?: PlanTerm) {
+    persist(current => applyPlanningSourceChange(current, {
+      courseSelections: updateCourseSelection(current.courseSelections, courseId, status, plannedTerm),
+    }));
     setPlanSaveStatus("idle");
   }
 
@@ -1157,7 +1182,7 @@ function App({ storage }: { storage?: Storage } = {}) {
                     section: trackGuideSection,
                     ...(trackGuideSection === "videos" ? { videoId: trackGuideVideoId } : {}),
                   }
-              : { view: activeView };
+              : activeView === "records" ? { view: "records", recordId } : { view: activeView };
   const courseResultReady = Boolean(savedState.profile && savedState.courseInputReviewedAt);
   const exactPathReady = Boolean(courseResultReady && pathProgress);
   const targetTrackReady = savedState.profile?.studyPath !== "track-major" || Boolean(savedState.targetTrackId);
@@ -1175,15 +1200,16 @@ function App({ storage }: { storage?: Storage } = {}) {
             ? "plan"
             : activeView === "track-guide"
               ? "tracks"
-              : activeView === "contact"
+              : activeView === "contact" || activeView === "records"
                 ? ""
                 : "resources";
-  const utilityActiveId = activeView === "contact" ? activeView : undefined;
+  const utilityActiveId = activeView === "contact" || activeView === "records" ? activeView : undefined;
   const mobileActiveId = utilityActiveId ?? guideActiveId;
   const currentLabel = activeView === "recommendation"
     ? recommendationStep === "survey" ? "관심 트랙 추천" : "트랙 비교"
     : activeView === "track-guide"
       ? "트랙 가이드"
+    : activeView === "records" ? "저장한 진단과 계획"
     : activeView === "contact"
       ? "문의사항"
       : guideActiveId === "start"
@@ -1245,11 +1271,13 @@ function App({ storage }: { storage?: Storage } = {}) {
     { id: "plan", label: "계획", available: planNavAvailable, unavailableReason: "결과 확인 후 열려요.", onSelect: () => navigateAppRoute({ view: "plan", step: "setup" }) },
   ];
   const mobileMoreItems: MobileJourneyItem[] = [
+    { id: "records", label: `저장 기록 ${savedState.snapshots.length}`, available: true, onSelect: () => navigateAppRoute({ view: "records" }) },
     { id: "tracks", label: "트랙 가이드", available: true, onSelect: () => navigateAppRoute({ view: "track-guide", section: "overview" }) },
     { id: "resources", label: "자료", available: true, onSelect: () => navigateAppRoute({ view: "resources", section: "tracks" }) },
     { id: "contact", label: "문의", available: true, onSelect: () => navigateAppRoute({ view: "contact" }) },
   ];
   const utilityItems: MobileJourneyItem[] = [
+    { id: "records", label: `저장 기록 ${savedState.snapshots.length}`, available: true, onSelect: () => navigateAppRoute({ view: "records" }) },
     { id: "contact", label: "문의사항", available: true, onSelect: () => navigateAppRoute({ view: "contact" }) },
   ];
   const isProgressComparison = activeView === "recommendation"
@@ -1340,10 +1368,24 @@ function App({ storage }: { storage?: Storage } = {}) {
     );
   }
 
+  if (activeView === "records") {
+    return renderGuidebook(<SavedRecordsView
+      snapshots={savedState.snapshots}
+      saveUnavailable={storageError}
+      recordId={recordId}
+      headingRef={stepHeadingRef}
+      onOpenRecord={id => navigateAppRoute({ view: "records", recordId: id })}
+      onBackToList={() => navigateAppRoute({ view: "records" })}
+      onOpenCurrent={goToDiagnosis}
+      onPrint={() => window.print()}
+    />, []);
+  }
+
   if (activeView === "landing") {
     return renderGuidebook(
       <TrackServiceLanding
         headingRef={stepHeadingRef}
+        saveUnavailable={storageError}
         tracks={tracks}
         plannerStatus={landingPlannerStatus}
         resultReady={courseResultReady}
@@ -1495,7 +1537,7 @@ function App({ storage }: { storage?: Storage } = {}) {
               <h1 id="graduation-plan-setup-title" ref={planHeadingRef} tabIndex={-1}>
                 학기별 참고 계획의 범위를 정해 주세요
               </h1>
-              <p>검토한 이수 과목은 그대로 두고, 앞으로 배치할 학기와 한 학기 수강량만 입력합니다.</p>
+              <p>검토한 이수 과목은 그대로 두고 앞으로 배치할 학기와 한 학기 수강량만 입력합니다.</p>
             </header>
             <GraduationPlanSetup
               value={planDraft}
@@ -1602,6 +1644,7 @@ function App({ storage }: { storage?: Storage } = {}) {
             {requiresTrack && (trackSetupOpen ? (
               <TrackPicker
                 selectedTrackIds={selectedTrackIds}
+                profile={savedState.profile}
                 enrollmentType={enrollmentType}
                 onToggleTrack={toggleTrack}
                 onEditProfile={editProfile}
@@ -1611,6 +1654,7 @@ function App({ storage }: { storage?: Storage } = {}) {
             ) : (
               <TrackSetupSummary
                 selectedTrackNames={selectedTracks.map((track) => track.name)}
+                profile={savedState.profile}
                 enrollmentType={enrollmentType}
                 onEdit={() => setTrackSetupOpen(true)}
               />
@@ -1619,7 +1663,7 @@ function App({ storage }: { storage?: Storage } = {}) {
               <section className="dku-courses-surface">
                 {pdfImportRecoveryNotice && (
                   <p className="pdf-import-recovery-notice" role="status">
-                    개인정보 보호를 위해 PDF 검수 내용은 새로고침 후 저장하지 않았어요. 직접 선택은 그대로 유지됩니다.
+                    개인정보 보호를 위해 PDF에서 확인하던 내용은 새로고침 후 남기지 않아요. 직접 선택한 과목은 그대로 유지됩니다.
                   </p>
                 )}
                 <CourseSelectionView
@@ -1627,6 +1671,12 @@ function App({ storage }: { storage?: Storage } = {}) {
                   courseSelections={savedState.courseSelections}
                   selectedTrackIds={selectedTrackIds}
                   enrollmentType={enrollmentType}
+                  profile={savedState.profile}
+                  targetTrackId={savedState.targetTrackId}
+                  additionalCreditsContent={<AdditionalCreditsInput credits={savedState.additionalMajorCredits} onChange={additionalMajorCredits => {
+                    persist(current => applyPlanningSourceChange(current, { additionalMajorCredits }));
+                    setPlanSaveStatus("idle");
+                  }} />}
                   headingRef={stepHeadingRef}
                   resultActionRef={diagnosisResultActionRef}
                   searchInputRef={courseSearchInputRef}
@@ -1639,6 +1689,7 @@ function App({ storage }: { storage?: Storage } = {}) {
                   onSemesterFilterChange={setSemesterFilter}
                   onQueryChange={setCourseQuery}
                   onToggleCourse={toggleCourse}
+                  onCourseStatusChange={changeCourseStatus}
                   onSaveCourses={saveCompletedCoursesNow}
                   onShowResult={confirmCourseInput}
                   onPdfAnalyzed={openPdfMatchReview}
@@ -1653,6 +1704,13 @@ function App({ storage }: { storage?: Storage } = {}) {
           <section className="dku-result-surface">
             <ResultDetailView
               result={result}
+              courseSelections={savedState.courseSelections}
+              planStartTerm={savedState.graduationPlanPreferences?.currentTerm}
+              onPlannedCourseChange={(courseId, plannedTerm) => {
+                persist(current => changePlannedCourseTerm(current, courseId, plannedTerm));
+                setPlanSaveStatus("idle");
+                setArchiveNotice("");
+              }}
               profile={savedState.profile}
               pathProgress={pathProgress}
               section={resultSection}
@@ -1662,6 +1720,24 @@ function App({ storage }: { storage?: Storage } = {}) {
               onGoToPlan={() => navigateAppRoute({ view: "plan", step: "setup" })}
               onPrint={printResultReport}
             />
+            <div className="diagnosis-archive-actions no-print" aria-label="진단 기록 보관">
+              <p>이 결과를 남겨 두고 나중에 다시 확인할 수 있어요. 최근 12개 기록을 이 브라우저에 보관합니다.</p>
+              <div>
+                <button type="button" className="icon-button" onClick={() => {
+                  const next = archiveCurrentDiagnosis(savedState, pathProgress, crypto.randomUUID(), new Date().toISOString());
+                  if (!saveAppState(next, appStorage)) {
+                    setStorageError(true);
+                    setArchiveNotice("기록을 보관하지 못했어요. 브라우저 저장 공간을 확인하거나 결과를 인쇄해 주세요.");
+                    return;
+                  }
+                  setStorageError(false);
+                  setSavedState(next);
+                  setArchiveNotice(next === savedState ? "같은 입력과 결과가 이미 보관되어 있어요." : "현재 진단을 저장 기록에 보관했어요.");
+                }}>이 진단 보관하기</button>
+                <button type="button" className="icon-button" onClick={() => navigateAppRoute({ view: "records" })}>저장 기록 보기</button>
+              </div>
+              {archiveNotice ? <p role="status">{archiveNotice}</p> : null}
+            </div>
           </section>
         )}
 
@@ -1747,7 +1823,7 @@ function GuideDialog({
         <div className="guide-dialog-top">
           <div>
             <span>처음 사용하는 학생을 위한 안내</span>
-            <h2 id="guide-dialog-title" ref={headingRef} tabIndex={-1}>사이트 사용방법</h2>
+            <h2 id="guide-dialog-title" ref={headingRef} tabIndex={-1}>사이트 사용 방법</h2>
           </div>
           <button className="guide-close-button" type="button" aria-label="사용법 닫기" onClick={onClose}>
             <X aria-hidden="true" size={18} />
@@ -1805,12 +1881,14 @@ function GuideDialog({
 
 export function EnrollmentProfileSummary({
   enrollmentType,
+  profile,
   onEditProfile,
 }: {
   enrollmentType: EnrollmentType;
+  profile?: StudentProfile;
   onEditProfile: () => void;
 }) {
-  const selected = enrollmentOptions.find((option) => option.id === enrollmentType) ?? enrollmentOptions[0];
+  const selected = profile ? getCourseInputPolicy(profile) : enrollmentOptions.find((option) => option.id === enrollmentType) ?? enrollmentOptions[0];
   return (
     <div className="study-mode-panel enrollment-profile-summary" aria-label="현재 이수 경로">
       <div className="study-mode-head">
@@ -1827,6 +1905,7 @@ export function EnrollmentProfileSummary({
 function TrackPicker({
   selectedTrackIds,
   enrollmentType,
+  profile,
   onToggleTrack,
   onEditProfile,
   onReset,
@@ -1834,6 +1913,7 @@ function TrackPicker({
 }: {
   selectedTrackIds: TrackId[];
   enrollmentType: EnrollmentType;
+  profile?: StudentProfile;
   onToggleTrack: (trackId: TrackId) => void;
   onEditProfile: () => void;
   onReset: () => void;
@@ -1849,7 +1929,7 @@ function TrackPicker({
         <RotateCcw aria-hidden="true" size={18} />
         <span>입력 초기화</span>
       </button>
-      <EnrollmentProfileSummary enrollmentType={enrollmentType} onEditProfile={onEditProfile} />
+      <EnrollmentProfileSummary enrollmentType={enrollmentType} profile={profile} onEditProfile={onEditProfile} />
       <div className="track-kind-groups">
         {trackKindGuides.map((guide) => {
           const groupedTracks = tracks.filter((track) => track.kind === guide.kind);
@@ -1889,7 +1969,7 @@ function TrackPicker({
           type="button"
           onClick={onContinue}
         >
-          {selectedTrackIds.length > 0 ? "선택한 트랙으로 과목 보기" : "트랙 없이 5개 비교"}
+          {selectedTrackIds.length > 0 ? "선택한 트랙으로 과목 보기" : "목표 없이 5개 트랙 비교"}
           <ArrowRight aria-hidden="true" size={17} />
         </button>
       )}
@@ -1900,10 +1980,12 @@ function TrackPicker({
 function TrackSetupSummary({
   selectedTrackNames,
   enrollmentType,
+  profile,
   onEdit,
 }: {
   selectedTrackNames: string[];
   enrollmentType: EnrollmentType;
+  profile?: StudentProfile;
   onEdit: () => void;
 }) {
   return (
@@ -1911,7 +1993,7 @@ function TrackSetupSummary({
       <div>
         <span>1단계 입력 완료</span>
         <strong>
-          {getEnrollmentLabel(enrollmentType)} · {selectedTrackNames.length > 0
+          {profile ? getCourseInputPolicy(profile).title : getEnrollmentLabel(enrollmentType)} · {selectedTrackNames.length > 0
             ? `${selectedTrackNames.length}개 트랙`
             : "5개 트랙 비교 모드"}
         </strong>

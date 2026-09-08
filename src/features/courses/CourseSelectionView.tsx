@@ -1,10 +1,14 @@
 import { ArrowRight, ChevronDown, Save, ShieldCheck } from "lucide-react";
-import type { RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
+import { getCourseInputPolicy } from "../../lib/courseInputPolicy";
 import type {
   Course,
   CourseSelectionRecord,
+  CourseSelectionStatus,
   EnrollmentType,
   PdfImportDraft,
+  PlanTerm,
+  StudentProfile,
   TrackId,
 } from "../../types";
 import { CourseLedger } from "./CourseLedger";
@@ -18,29 +22,14 @@ import { PdfCourseImportPanel } from "./PdfCourseImportPanel";
 
 export type { CourseGradeFilter, CourseGroupMode, CourseSemesterFilter };
 
-const policyByEnrollment: Record<EnrollmentType, { title: string; description: string; marker: string }> = {
-  primary: {
-    title: "주전공 기준",
-    description: "제공된 최종안의 필수 과목을 현재 진단 계산에 반영합니다.",
-    marker: "필수 전체 반영",
-  },
-  "double-major": {
-    title: "복수전공 기준",
-    description: "1학년 필수 과목은 제외하며, 복수전공 최소학점은 학과 확인이 필요합니다.",
-    marker: "1학년 필수 제외",
-  },
-  minor: {
-    title: "부전공 기준",
-    description: "1학년 필수 과목은 제외하며, 부전공 학점 기준은 공식 안내 확인이 필요합니다.",
-    marker: "1학년 필수 제외",
-  },
-};
-
 export type CourseSelectionViewProps = {
   courses: Course[];
   courseSelections: CourseSelectionRecord[];
   selectedTrackIds: TrackId[];
   enrollmentType: EnrollmentType;
+  profile?: StudentProfile;
+  targetTrackId?: TrackId;
+  additionalCreditsContent?: ReactNode;
   headingRef: RefObject<HTMLHeadingElement | null>;
   resultActionRef: RefObject<HTMLButtonElement | null>;
   searchInputRef?: RefObject<HTMLInputElement | null>;
@@ -54,6 +43,7 @@ export type CourseSelectionViewProps = {
   onSemesterFilterChange: (semester: CourseSemesterFilter) => void;
   onQueryChange: (query: string) => void;
   onToggleCourse: (courseId: string) => void;
+  onCourseStatusChange: (courseId: string, status: CourseSelectionStatus | null, plannedTerm?: PlanTerm) => void;
   onSaveCourses: () => void;
   onShowResult: () => void;
   onPdfAnalyzed: (draft: PdfImportDraft) => void;
@@ -64,6 +54,9 @@ export function CourseSelectionView({
   courseSelections,
   selectedTrackIds,
   enrollmentType,
+  profile,
+  targetTrackId,
+  additionalCreditsContent,
   headingRef,
   resultActionRef,
   searchInputRef,
@@ -77,11 +70,12 @@ export function CourseSelectionView({
   onSemesterFilterChange,
   onQueryChange,
   onToggleCourse,
+  onCourseStatusChange,
   onSaveCourses,
   onShowResult,
   onPdfAnalyzed,
 }: CourseSelectionViewProps) {
-  const policy = policyByEnrollment[enrollmentType];
+  const policy = getCourseInputPolicy(profile, targetTrackId);
   const ledgerCourseIds = new Set(ledgerCourses.map((course) => course.id));
   const relevantSelections = courseSelections.filter((selection) => ledgerCourseIds.has(selection.courseId));
   const completedCount = relevantSelections.filter((selection) => selection.status === "completed").length;
@@ -98,9 +92,8 @@ export function CourseSelectionView({
   return (
     <div className="dku-courses-page">
       <header className="dku-courses-heading">
-        <span>나의 진단 / 02 이수 과목</span>
         <h1 ref={headingRef} tabIndex={-1}>지금까지 이수한 과목을 선택하세요.</h1>
-        <p className="dku-courses-help">들었던 과목만 체크하세요. 아직 이수한 과목이 없어도 결과를 볼 수 있어요.</p>
+        <p className="dku-courses-help">학년과 관계없이 들었던 과목을 찾아 체크하세요. 수강 중이거나 계획한 과목은 상태를 바꿔 입력할 수 있어요.</p>
         <p className="dku-courses-total" aria-label="전체 선택 과목 수" aria-live="polite">선택한 과목 <strong>{relevantSelections.length}개</strong></p>
       </header>
 
@@ -112,11 +105,11 @@ export function CourseSelectionView({
         결과로 건너뛰기
       </a>
 
-      <section className="dku-courses-actions" aria-label="과목 입력 현황과 다음 행동">
+      <section className="dku-courses-actions" aria-label="과목 입력 현황과 다음 단계">
         <div className="dku-courses-counts">
           <span>이수 완료 <strong>{completedCount}</strong></span>
           <span>수강 중 <strong>{inProgressCount}</strong></span>
-          <span>계획 <strong>{plannedCount}</strong></span>
+          <span>수강 계획 <strong>{plannedCount}</strong></span>
         </div>
         <button
           id="diagnosis-result-action"
@@ -146,11 +139,14 @@ export function CourseSelectionView({
         courseSelections={courseSelections}
         selectedTrackIds={selectedTrackIds}
         enrollmentType={enrollmentType}
+        profile={profile}
+        targetTrackId={targetTrackId}
         mode={mode}
         gradeFilter={gradeFilter}
         semesterFilter={semesterFilter}
         query={query}
         onToggleCourse={onToggleCourse}
+        onCourseStatusChange={onCourseStatusChange}
       />
       </div>
 
@@ -165,6 +161,8 @@ export function CourseSelectionView({
         <p>{policy.description}</p>
         <p>직접 진단은 트랙 전공 45과목을 대상으로 합니다. 학과 교육과정 47과목·트랙 구성 49과목·실제 시간표 37분반은 서로 범위가 다릅니다. 학사 과목코드나 시간표 과목명으로도 검색할 수 있습니다. 트랙 밖 과목은 이 목록과 진단 학점에 자동 포함되지 않습니다.</p>
       </details>
+
+      {additionalCreditsContent}
 
       <section className="dku-check-save-band" aria-label="과목 선택 저장 상태">
         <div>

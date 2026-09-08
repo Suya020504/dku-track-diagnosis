@@ -106,7 +106,7 @@ describe("TrackRecommendationAxes", () => {
   it("does not infer different leaders from zero or one populated axis", () => {
     const empty = renderAxes("interest", { progress: [], alignedLeaderTrackIds: [] });
     const single = renderAxes("interest", { interest: differingAxes.interest, progress: [], alignedLeaderTrackIds: [] });
-    expect(empty).toContain("아직 입력된 기준이 없습니다");
+    expect(empty).toContain("아직 비교에 필요한 입력이 없습니다");
     expect(single).toContain("현재 한 기준만");
     expect(empty + single).not.toContain("기준마다 선두 후보가 다릅니다");
   });
@@ -198,7 +198,7 @@ describe("TrackRecommendationAxes", () => {
     const markup = renderAxes("interest");
 
     expect(markup).toContain("기준마다 선두 후보가 다릅니다");
-    expect(markup).toContain("직접 비교해 선택해 주세요");
+    expect(markup).toContain("근거를 확인하고 트랙을 직접 선택해 주세요");
     expect(markup).not.toContain("recommendation-axis-summary--aligned");
     expect(markup).not.toContain("Compass Path");
     expect(markup).not.toContain("가장 좋은 트랙");
@@ -255,7 +255,11 @@ describe("TrackRecommendationAxes", () => {
 
     const markup = renderAxes("interest", tiedAxes);
 
-    expect(markup.match(/공동 선두 후보/g)).toHaveLength(2);
+    const view = document.createElement("div");
+    view.innerHTML = markup;
+    const leaderLabels = [...view.querySelectorAll(".dc-track-row > header > span")]
+      .filter((node) => node.textContent === "공동 선두 후보");
+    expect(leaderLabels).toHaveLength(2);
     expect(markup).toContain("동점 후보 사이에는 우열을 정하지 않습니다");
   });
 
@@ -271,7 +275,7 @@ describe("TrackRecommendationAxes", () => {
 
     const markup = renderAxes("interest", tiedAxes);
 
-    expect(markup).toContain("선두가 같은 후보: 푸드마케팅 · 경제학 · 농식품유통 · 푸드바이오경제");
+    expect(markup).toContain("공동 선두 후보: 푸드마케팅 · 경제학 · 농식품유통 · 푸드바이오경제");
     expect(markup).toContain("융합 산업");
   });
 

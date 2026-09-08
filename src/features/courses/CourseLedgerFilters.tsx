@@ -18,7 +18,7 @@ type CourseLedgerFiltersProps = {
 };
 
 const gradeOptions: Array<{ value: CourseGradeFilter; label: string }> = [
-  { value: "all", label: "전체 학년" },
+  { value: "all", label: "전체" },
   { value: "1", label: "1학년" },
   { value: "2", label: "2학년" },
   { value: "3", label: "3학년" },
@@ -48,7 +48,7 @@ export function CourseLedgerFilters({
   const semesterLabel = semesterOptions.find((option) => option.value === semesterFilter)?.label ?? "전체 학기";
 
   return (
-    <section className="dku-check-filters" aria-label="과목 원장 필터">
+    <section className="dku-check-filters" aria-label="과목 목록 필터">
       <label className="dku-check-search">
         <Search aria-hidden="true" size={18} />
         <span className="sr-only">과목 검색</span>
@@ -57,50 +57,48 @@ export function CourseLedgerFilters({
           type="search"
           value={query}
           placeholder="과목명 또는 과목코드 검색"
-          onChange={(event) => onQueryChange(event.currentTarget.value)}
+          onChange={(event) => {
+            onGradeFilterChange("all");
+            onSemesterFilterChange("all");
+            onQueryChange(event.currentTarget.value);
+          }}
         />
       </label>
 
-      <div className="dku-check-mode" aria-label="과목 묶음 방식">
-        <button
-          type="button"
-          aria-pressed={mode === "semester"}
-          className={mode === "semester" ? "is-active" : undefined}
-          onClick={() => onModeChange("semester")}
-        >
-          학년·학기별
-        </button>
-        <button
-          type="button"
-          aria-pressed={mode === "module"}
-          className={mode === "module" ? "is-active" : undefined}
-          onClick={() => onModeChange("module")}
-        >
-          모듈별
-        </button>
+      <div className="dku-check-grade-tabs" role="group" aria-label="학년 선택">
+        {gradeOptions.map((option) => (
+          <button type="button" key={option.value} aria-pressed={gradeFilter === option.value}
+            onClick={() => {
+              onGradeFilterChange(option.value);
+              if (option.value === "unknown") onSemesterFilterChange("all");
+            }}>{option.label}</button>
+        ))}
       </div>
 
       <details className="dku-check-more-filters">
         <summary>
-          <span>추가 필터</span>
+          <span>정렬·추가 필터</span>
           <small>{gradeLabel} · {semesterLabel}</small>
           <ChevronDown aria-hidden="true" size={18} />
         </summary>
         <div className="dku-check-more-filter-content">
-          <div className="dku-check-filter-row">
-            <span>학년</span>
-            <div className="dku-check-filter-options" aria-label="학년 선택">
-              {gradeOptions.map((option) => (
-                <button
-                  type="button"
-                  key={option.value}
-                  aria-pressed={gradeFilter === option.value}
-                  onClick={() => onGradeFilterChange(option.value)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+          <div className="dku-check-mode" aria-label="과목 정렬 방식">
+            <button
+              type="button"
+              aria-pressed={mode === "semester"}
+              className={mode === "semester" ? "is-active" : undefined}
+              onClick={() => onModeChange("semester")}
+            >
+              학년·학기별
+            </button>
+            <button
+              type="button"
+              aria-pressed={mode === "module"}
+              className={mode === "module" ? "is-active" : undefined}
+              onClick={() => onModeChange("module")}
+            >
+              모듈별
+            </button>
           </div>
 
           <div className="dku-check-filter-row">
