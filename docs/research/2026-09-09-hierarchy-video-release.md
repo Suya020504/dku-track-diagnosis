@@ -67,4 +67,8 @@ SD-CORE-TEST-FIRST/RELATED-TESTS/FULL-TESTS/TYPECHECK/PRODUCTION-BUILD/DIFF-CHEC
 
 ## Release
 
-배포 완료 후 실제 검증 결과를 기록한다.
+- 기능 커밋 `bf6939e`, 영상 재제작 소스의 줄바꿈 정리까지 포함한 검증 소스 `48649a942a7a6099bedb32d30d6351ae74805b3b`를 GitHub에 반영했다. staged 검사에서 발견한 소스 마지막 빈 줄은 정리 후 다시 통과했다.
+- Vercel 배포 `dpl_FpZSvVUBknUiSvMveGor3XmjDWup`, 새 주소 `https://dku-track-diagnosis-iwf66p774-startlink0504.vercel.app`의 빌드가 통과했다. 새 주소에서 video.readyState4/duration86, 실제 재생, 가이드5단계와 마지막 홈 연결을 확인했다.
+- `vercel promote` 성공 후 운영 `https://dku-track-diagnosis.vercel.app`에서 새 영상 페이지 제목·86초 메타데이터·재생을 확인했다. 홈은 이미지 네이비 히어로, 주요 메뉴4개, 재방문 시작선택 접힘, 가로 넘침0으로 확인했다. 콘솔 error/warn0.
+- 운영 파일: `index-Bk2rEBJB.js`, `index-QqGRvg2K.css`가 배포 출력과 일치. MP4 HTTP200/video/mp4, 범위요청206(bytes0-15/1568039), 포스터/한국어VTT200. 비공개원문과 내부 검수문서 경로404.
+- 최종 미디어는86초·1,568,039bytes다. 후속 문서 커밋은 검증 기록만 추가한다. 메일 초안은 영상 반영본을 별도 로컬 파일로 보관했으며 발송/업로드하지 않았다.
