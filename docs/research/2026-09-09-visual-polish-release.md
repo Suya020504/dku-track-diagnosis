@@ -17,4 +17,11 @@
 
 ## 배포
 
-검증한 커밋과 실제 운영 반영 결과는 배포 완료 후 이 절에 기록한다.
+- 기능 커밋: `74ac6bd816e8e7c902ae2e3859d7b7ca7a7b8040`. GitHub `codex/track-service-expansion` 브랜치에 업로드했고 원격 SHA 일치를 확인했다.
+- Vercel 배포: `dpl_ADTErLfwe2UVo3f4LUVWZgQDTmMY`, 상태 READY. 새 배포 주소는 `https://dku-track-diagnosis-peey6l4ut-startlink0504.vercel.app`.
+- `vercel deploy --prod --skip-domain --yes`로 생성 후 새 주소에서 검수하고 `vercel promote` 성공을 확인했다. 운영 주소는 `https://dku-track-diagnosis.vercel.app`.
+- 새 주소에서 첫 안내 자동 표시 → 확인 → 새로고침 재노출 없음, 390px 홈의 그라데이션/‘트랙’ 색/안내 버튼1개, 안내 클릭→overview, 로고 클릭→홈을 실제 확인했다. 콘솔 error/warn0건.
+- 운영에서도 통합 안내→‘트랙제 알아보기’/overview, 로고→홈, 390px 넘침0·깨진 이미지0·안내버튼1개 확인. 운영의 기존 입력을 수정·삭제하지 않았다.
+- 운영 HTML의 `index-y2RPYmJy.js` 및 `index-CvD2kZVK.css`가 새 배포 출력과 일치한다. 원격 빌드 Vite7.3.6과 로컬7.3.5 차이로 JS 해시는 로컬과 다르지만 CSS와 실제 동작·배포본을 대조했다.
+- HTTP 홈200, 새 WebP2개200, 비공개 PDF 원래 경로404, 내부 릴리스 문서 경로404. 원문·실제 학생 파일은 업로드하지 않았다.
+- 이후 문서 전용 커밋은 이 운영 검증 기록을 보존한다. 런타임 소스는 위 기능 커밋과 동일하다.
