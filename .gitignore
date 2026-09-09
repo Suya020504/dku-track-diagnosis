@@ -8,6 +8,10 @@ debug.log
 
 .vercel
 /output/
+/design-proposals/2026-09-09-hierarchy/video-source/fonts/
+/design-proposals/2026-09-09-hierarchy/video-source/segments/
+/design-proposals/2026-09-09-hierarchy/video-source/text/
+/design-proposals/2026-09-09-hierarchy/video-source/concat.txt
 /.superpowers/
 .playwright-cli/
 

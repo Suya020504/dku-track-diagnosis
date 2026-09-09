@@ -49,13 +49,15 @@ it("requires one-time information before a first-time selected intent and resume
   expect(new URLSearchParams(location.search).get('axis')).toBe('progress');
   expect(document.querySelector('#track-history-title')).not.toBeNull();
 });
-it("adds a remaining course to planning without silently assigning its next semester", async () => {
+it("opens optional planning only from the extra tools without altering completed courses", async () => {
   const current: SavedAppStateV2 = { ...createEmptyAppState(), profile: { affiliation: 'external-student', studyPath: 'minor', majorRole: 'minor', goal: 'check-progress', curriculumRuleVersion: '2026-provided-final-plan', ruleApplicability: 'reference-only' }, targetTrackId: 'economics', courseInputReviewedAt: '2026-09-09' };
   localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(current)); history.replaceState({}, '', '/?view=result&section=current'); await mount();
-  const button = document.querySelector<HTMLButtonElement>('[data-plan-course]'); expect(button).not.toBeNull();
-  const courseId = button!.dataset.planCourse;
-  await act(async () => button?.click());
-  expect(readState().courseSelections).toContainEqual({ courseId, status: 'planned', plannedTerm: 'later' });
+  expect(document.querySelector('[data-plan-course]')).toBeNull();
+  const tools = document.querySelector<HTMLDetailsElement>('.track-completion-extra-tools');expect(tools?.open).toBe(false);
+  await act(async()=>tools?.querySelector('summary')?.click());
+  await click('[data-open-track-plan]');
+  expect(new URLSearchParams(location.search).get('scope')).toBe('tracks');
+  expect(readState().courseSelections).toEqual(current.courseSelections);
 });
 it.each(['department-student', 'external-student'] as const)("does not expose legacy total-major planning as confirmed for an undecided %s", async affiliation => {
   const current: SavedAppStateV2 = { ...createEmptyAppState(), profile: { affiliation, studyPath: 'track-major', goal: 'check-progress', curriculumRuleVersion: '2026-provided-final-plan', ruleApplicability: 'reference-only' }, targetTrackId: 'economics', courseInputReviewedAt: '2026-09-09' };

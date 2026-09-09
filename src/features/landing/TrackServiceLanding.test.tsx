@@ -48,10 +48,11 @@ afterEach(async () => {
 });
 
 describe("TrackServiceLanding", () => {
-  it("shows the new journey and marks semester planning as optional", async () => {
+  it("finishes the visible journey at diagnosis results and keeps planning optional", async () => {
     await renderLanding();
     const steps = [...document.querySelectorAll(".journey-home-steps strong")].map(node => node.textContent);
-    expect(steps).toEqual(["내 정보", "트랙 선택", "이수 현황", "학기 계획선택"]);
+    expect(steps).toEqual(["내 정보", "트랙 선택", "진단 결과"]);
+    expect(document.querySelector('.journey-home-steps li:last-child .lucide-arrow-right')).toBeNull();
     expect(document.querySelector("[data-resume-state]")).toBeNull();
     expect(document.body.textContent).toContain("학기 계획은 필요할 때만 이용하세요");
   });
@@ -68,14 +69,14 @@ describe("TrackServiceLanding", () => {
     await renderLanding();
 
     expect(document.querySelector("h1")?.textContent).toBe("내 수업으로 트랙을 완성해요");
-    expect(document.body.textContent).toContain("들은 과목을 확인하고, 남은 수업부터 계획까지 이어가세요.");
+    expect(document.body.textContent).toContain("들은 과목으로 트랙별 이수 현황과 남은 수업을 확인하세요.");
     expect(button("선택한 방법으로 시작하기").classList.contains("journey-home-start")).toBe(true);
     expect(document.querySelector("[data-map-mode]")).toBeNull();
     expect(document.querySelector("[data-map-stop]")).toBeNull();
     expect(document.body.textContent).not.toContain("현재 위치");
     expect(document.body.textContent).not.toContain("지도");
-    expect(document.querySelector<HTMLImageElement>(".journey-home-hero img")?.alt).not.toContain("나침반");
-    expect(document.querySelector<HTMLImageElement>(".journey-home-hero img")?.src).toContain("track-journey-notebook");
+    expect(document.querySelector('.journey-home-copy h1 .journey-home-accent')?.textContent).toBe('트랙');
+    expect(document.querySelector('.journey-home-other-methods')).toBeNull();
     expect(document.querySelectorAll('input[name="entry-intent"]')).toHaveLength(3);
     expect(document.querySelectorAll("main")).toHaveLength(1);
   });
@@ -120,6 +121,54 @@ describe("TrackServiceLanding", () => {
     await act(async () => button("저장한 계획 보기").click());
     expect(onPlannerAction).toHaveBeenCalledTimes(1);
     expect(document.body.textContent).not.toMatch(/\d+개 과목|\d+%/);
+  });
+
+  it("prioritizes the returning result action and folds alternate starting methods", async () => {
+    const onResumeResult = vi.fn();
+    const onPlannerAction = vi.fn();
+    await renderLanding({ plannerStatus: "saved-plan", resultReady: true, onResumeResult, onPlannerAction });
+
+    const alternateMethods = document.querySelector<HTMLDetailsElement>(".journey-home-other-methods")!;
+    expect(alternateMethods.open).toBe(false);
+    expect(alternateMethods.querySelector("summary")?.textContent).toBe("다른 방법으로 시작하기");
+    expect(alternateMethods.contains(button("선택한 방법으로 시작하기"))).toBe(true);
+    const resumeButtons = document.querySelectorAll<HTMLButtonElement>(".journey-home-resume-actions button");
+    expect(resumeButtons[0].textContent).toContain("내 결과 다시 보기");
+    expect(resumeButtons[0].className).toBe("journey-home-resume-primary");
+    expect(resumeButtons[1].className).toBe("journey-home-resume-secondary");
+    await act(async () => resumeButtons[0].click());
+    expect(onResumeResult).toHaveBeenCalledOnce();
+    expect(onPlannerAction).not.toHaveBeenCalled();
+    await act(async () => resumeButtons[1].click());
+    expect(onPlannerAction).toHaveBeenCalledOnce();
+  });
+
+  it("preserves the returning selection while alternate methods are closed and reopened", async () => {
+    const onStartIntent = vi.fn();
+    const onEntryIntentChange = vi.fn();
+    await renderLanding({ plannerStatus: "needs-courses", entryIntent: "completed-courses", onStartIntent, onEntryIntentChange });
+    const details = document.querySelector<HTMLDetailsElement>(".journey-home-other-methods")!;
+    expect(document.querySelector<HTMLInputElement>('input[value="completed-courses"]')?.checked).toBe(true);
+    await act(async () => details.querySelector("summary")!.click());
+    expect(details.open).toBe(true);
+    await act(async () => button("선택한 방법으로 시작하기").click());
+    expect(onStartIntent).toHaveBeenCalledWith("completed-courses");
+    await act(async () => details.querySelector("summary")!.click());
+    expect(details.open).toBe(false);
+    expect(document.querySelector<HTMLInputElement>('input[value="completed-courses"]')?.checked).toBe(true);
+    expect(onEntryIntentChange).not.toHaveBeenCalled();
+  });
+
+  it("keeps video help separate from starting or resuming the actual student journey", async () => {
+    const onOpenExample = vi.fn();
+    const onStartIntent = vi.fn();
+    const onPlannerAction = vi.fn();
+    await renderLanding({ plannerStatus: "ready", onOpenExample, onStartIntent, onPlannerAction });
+    await act(async () => button("사용 방법 영상 보기").click());
+    expect(onOpenExample).toHaveBeenCalledOnce();
+    expect(onStartIntent).not.toHaveBeenCalled();
+    expect(onPlannerAction).not.toHaveBeenCalled();
+    expect(document.querySelector<HTMLDetailsElement>(".journey-home-other-methods")?.open).toBe(false);
   });
 
   it.each(["known-tracks", "interest-survey", "completed-courses"] as const)("starts the selected %s intent without merging the paths", async (intent) => {

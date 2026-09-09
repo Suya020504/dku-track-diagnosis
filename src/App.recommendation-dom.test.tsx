@@ -297,8 +297,8 @@ describe("App recommendation browser interactions", () => {
     await mountApp();
 
     expect([...document.querySelectorAll(".journey-home-steps strong")].map(node => node.textContent))
-      .toEqual(["내 정보", "트랙 선택", "이수 현황", "학기 계획선택"]);
-    expect(document.querySelector(".journey-home-steps li:last-child small")?.textContent).toBe("선택");
+      .toEqual(["내 정보", "트랙 선택", "진단 결과"]);
+    expect(document.querySelector(".journey-home-steps li:last-child small")).toBeNull();
     expect(document.querySelector(".journey-home-footer")?.textContent).toContain("학기 계획은 필요할 때만");
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY_V2)!).graduationPlan.generatedAt).toBe("2026-08-30T01:00:00.000Z");
     expect(document.querySelector('[data-resume-state="saved-plan"]')).not.toBeNull();
@@ -313,7 +313,7 @@ describe("App recommendation browser interactions", () => {
     await mountApp();
 
     expect(document.querySelector(".planner-shell-current-step")?.textContent).toContain("문의사항");
-    const desktopCurrent = [...document.querySelectorAll<HTMLButtonElement>(".planner-shell-utility button")]
+    const desktopCurrent = [...document.querySelectorAll<HTMLButtonElement>(".planner-shell-tool-menu button")]
       .find((candidate) => candidate.textContent?.trim() === "문의사항");
     expect(desktopCurrent?.getAttribute("aria-current")).toBe("page");
     const mobileCurrent = [...document.querySelectorAll<HTMLButtonElement>(".planner-mobile-nav__menu button")]

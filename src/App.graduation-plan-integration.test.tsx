@@ -462,8 +462,8 @@ describe("App graduation plan pages", () => {
 
     expect(document.querySelector(".planner-guidebook-shell")).not.toBeNull();
     expect(document.querySelectorAll("main")).toHaveLength(1);
-    const planIndex = [...document.querySelectorAll<HTMLButtonElement>(".planner-shell-primary-nav button")]
-      .find((candidate) => candidate.textContent?.includes("학기 플래너"));
+    const planIndex = [...document.querySelectorAll<HTMLButtonElement>(".planner-shell-tool-menu button")]
+      .find((candidate) => candidate.textContent?.includes("수강 계획"));
     expect(planIndex?.getAttribute("aria-current")).toBe("page");
   });
 

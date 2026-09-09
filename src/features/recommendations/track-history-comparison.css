@@ -24,7 +24,10 @@
   .track-history-page * { animation:none; transition:none; scroll-behavior:auto; }
 }
 
-.track-timeline-comparison { margin-top:24px; padding:20px; border:1px solid #c8ded8; border-radius:10px; background:#f3f9f6; }
+.track-history-timeline-tools { margin:18px 0; padding:0 18px; border:1px solid #d5e1e3; border-radius:10px; background:#fff; }
+.track-history-timeline-tools>summary { min-height:48px; padding:13px 0; color:#325e70; font-size:14px; line-height:1.6; cursor:pointer; }
+.track-history-timeline-tools>summary:focus-visible { outline:3px solid #087a5b; outline-offset:3px; }
+.track-timeline-comparison { margin:0 0 18px; padding:20px; border:1px solid #c8ded8; border-radius:10px; background:#f3f9f6; }
 .track-timeline-comparison h2 { display:flex; align-items:center; gap:9px; font-size:21px; }
 .track-timeline-comparison > p { margin:8px 0 16px; font-size:14px; }
 .track-timeline-conditions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)) auto; align-items:end; gap:12px; }

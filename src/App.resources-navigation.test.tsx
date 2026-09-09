@@ -51,13 +51,12 @@ describe("resource-only navigation", () => {
     const nav = document.querySelector('nav[aria-label="자가진단 단계"]');
     expect(nav).not.toBeNull();
     expect([...nav!.querySelectorAll("button > strong")].map((node) => node.textContent))
-      .toEqual(["내 정보", "트랙 선택", "이수 현황", "학기 계획 · 선택"]);
-    expect(nav!.querySelector<HTMLButtonElement>('[data-journey-stage="plan"] button')?.disabled).toBe(true);
+      .toEqual(["내 정보", "트랙 선택", "수강 이력"]);
+    expect(nav!.querySelector('[data-journey-stage="plan"]')).toBeNull();
     await act(async () => document.querySelector<HTMLButtonElement>("#diagnosis-result-action")!.click());
     expect(new URLSearchParams(location.search).get("view")).toBe("result");
-    expect(document.querySelector('[data-journey-stage="courses"] button')?.getAttribute("aria-current"))
-      .toBe("step");
-    await act(async () => document.querySelector<HTMLButtonElement>('[data-journey-stage="courses"] button')!.click());
+    expect(document.querySelector('.planner-compass-path')).toBeNull();
+    await act(async () => [...document.querySelectorAll<HTMLButtonElement>('.planner-shell-primary-nav button')].find(button=>button.textContent==='나의 진단')!.click());
     await act(async () => [...document.querySelectorAll<HTMLButtonElement>(".dku-check-mode button")]
       .find((node) => node.textContent === "모듈별")!.click());
     expect(new URLSearchParams(location.search).get("view")).toBe("diagnosis");
@@ -100,6 +99,6 @@ describe("resource-only navigation", () => {
     expect(document.querySelector(".planner-guide-index")).toBeNull();
     expect(document.querySelector('nav[aria-label="학업 여정"]')).toBeNull();
     expect(document.querySelectorAll('.planner-shell-primary-nav [aria-current="page"]')).toHaveLength(0);
-    expect(document.querySelector('.planner-shell-utility [aria-current="page"]')?.textContent).toContain("문의사항");
+    expect(document.querySelector('.planner-shell-tool-menu button[aria-current="page"]')?.textContent).toContain("문의사항");
   });
 });

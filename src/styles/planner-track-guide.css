@@ -37,10 +37,6 @@
 .dku-guide-page .guide-fact-rail dd { margin: 0; color: #144c3b; font-weight: 700; }
 .dku-guide-page .guide-fact-rail dd strong { font-size: 2.7rem; letter-spacing: -.06em; margin-right: 8px; }
 .dku-guide-page .guide-fact-rail p { font-size: .85rem; margin-top: 18px; }
-.dku-guide-page .guide-launch { display: flex; align-items: center; gap: 24px; padding: 26px 8px 8px; flex-wrap: wrap; }
-.dku-guide-page .guide-launch > div { flex: 1; min-width: 230px; }
-.dku-guide-page .guide-launch h2 { font-size: 1.1rem; color: var(--guide-green); margin-bottom: 7px; }
-.dku-guide-page .guide-launch p { font-size: .85rem; max-width: 430px; }
 .dku-guide-page .guide-reasons { display: grid; grid-template-columns: minmax(230px,.75fr) minmax(0,1.65fr); column-gap: 60px; padding: 36px; background: #fff; border: 1px solid var(--guide-line); border-top: 0; }
 .dku-guide-page .guide-reasons-intro h2 { font-size: 24px; line-height: 1.45; letter-spacing: -.035em; margin: 0 0 12px; }
 .dku-guide-page .guide-reasons-intro p { color: #52656c; font-size: .9rem; }
@@ -49,7 +45,7 @@
 .dku-guide-page .guide-reason-list article > svg { color: var(--guide-green); width: 28px; height: 28px; }
 .dku-guide-page .guide-reason-list h3 { font-size: 1.06rem; margin-bottom: 8px; }
 .dku-guide-page .guide-reason-list p { font-size: .87rem; color: #465c66; }
-.dku-guide-page :is(.guide-reason-list,.guide-launch,.guide-application) p { font-size:16px; }
+.dku-guide-page :is(.guide-reason-list,.guide-application) p { font-size:16px; }
 .dku-guide-page .guide-application-steps h3 { display:flex; align-items:center; gap:9px; }
 .dku-guide-page .guide-application-steps h3 svg { width:20px; height:20px; color:var(--guide-green); }
 .dku-guide-page details { font-size: .84rem; }
@@ -175,8 +171,6 @@
   .dku-guide-page .guide-fact-rail dl { display: flex; gap: 28px; }
   .dku-guide-page .guide-fact-rail dl > div { flex: 1; }
   .dku-guide-page .guide-fact-rail dd strong { font-size: 2rem; }
-  .dku-guide-page .guide-launch { padding: 24px 0 0; gap: 14px; align-items: stretch; flex-direction: column; }
-  .dku-guide-page .guide-launch > div { min-width: 0; }
   .dku-guide-page .guide-text-action { justify-content: center; }
   .dku-guide-page .guide-next { width: 100%; padding: 14px; gap: 12px; font-size: .92rem; }
   .dku-guide-page .guide-reasons { grid-template-columns: 1fr; padding: 22px 18px; gap: 28px; }

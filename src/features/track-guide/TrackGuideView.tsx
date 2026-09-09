@@ -30,12 +30,13 @@ function NextAction({ children, onClick }: { children: ReactNode; onClick: () =>
   return <button type="button" className="guide-next" onClick={onClick}>{children}<ArrowRight aria-hidden="true" /></button>;
 }
 
-export function TrackGuideView({ section, headingRef, onSectionChange, onStartInterestSurvey, onStartDiagnosis, videoId, onVideoChange }: {
+export function TrackGuideView({ section, headingRef, onSectionChange, onStartDiagnosis, onStartService, videoId, onVideoChange }: {
   section: TrackGuideSection;
   headingRef: RefObject<HTMLHeadingElement | null>;
   onSectionChange: (section: TrackGuideSection) => void;
   onStartInterestSurvey: () => void;
   onStartDiagnosis: () => void;
+  onStartService?: () => void;
   videoId: OfficialTrackVideoId;
   onVideoChange: (videoId: OfficialTrackVideoId) => void;
 }) {
@@ -56,11 +57,11 @@ export function TrackGuideView({ section, headingRef, onSectionChange, onStartIn
     <nav ref={chaptersRef} className="guide-chapters" aria-label="트랙 가이드 목차">
       {GUIDE_SECTIONS.map((item) => <button type="button" key={item.id} aria-current={item.id === section ? "page" : undefined} onClick={() => { if (item.id !== section) onSectionChange(item.id); }}><item.Icon aria-hidden="true" /><span>{item.label}</span></button>)}
     </nav>
-    {section === "overview" ? <OverviewSection onStartDiagnosis={onStartDiagnosis} onStartInterestSurvey={onStartInterestSurvey} /> : null}
+    {section === "overview" ? <OverviewSection onContinue={() => onSectionChange("benefits")} /> : null}
     {section === "benefits" ? <BenefitsSection onContinue={() => onSectionChange("outcomes")} /> : null}
     {section === "outcomes" ? <GuideOutcomes onContinue={() => onSectionChange("structure")} /> : null}
-    {section === "structure" ? <StructureSection onStartDiagnosis={onStartDiagnosis} /> : null}
-    {section === "application" ? <GuideApplication onStartDiagnosis={onStartDiagnosis} /> : null}
+    {section === "structure" ? <StructureSection onContinue={() => onSectionChange("application")} /> : null}
+    {section === "application" ? <GuideApplication onStartService={onStartService ?? onStartDiagnosis} /> : null}
     {section === "videos" ? <><VideosSection videoId={videoId} onVideoChange={onVideoChange} /><OfficialSourceLedger /></> : null}
     {section !== "videos" ? <footer className="guide-materials-entry" data-guide-materials-entry>
       <span>설명에 참고한 자료가 궁금하다면</span>
@@ -69,7 +70,7 @@ export function TrackGuideView({ section, headingRef, onSectionChange, onStartIn
   </article>;
 }
 
-function OverviewSection({ onStartDiagnosis, onStartInterestSurvey }: { onStartDiagnosis: () => void; onStartInterestSurvey: () => void }) {
+function OverviewSection({ onContinue }: { onContinue: () => void }) {
   return <section className="guide-overview" data-track-guide-section="overview" aria-labelledby="track-guide-overview-heading">
     <div className="guide-concept-layout">
       <figure className="guide-concept">
@@ -87,17 +88,16 @@ function OverviewSection({ onStartDiagnosis, onStartInterestSurvey }: { onStartD
         <p><strong>학과전공 4개 · 융합전공 1개</strong><br />2024학년도 개설 교육과정</p>
       </aside>
     </div>
-    <footer className="guide-launch">
-      <div><h2>내 이수 과목으로 확인해 보세요</h2><p>들은 과목을 체크하면 트랙별 진행도와 남은 과목을 볼 수 있어요.</p></div>
-      <NextAction onClick={onStartDiagnosis}>내 트랙 현황 확인하기</NextAction>
-      <button className="guide-text-action" type="button" onClick={onStartInterestSurvey}>관심으로 트랙 추천받기 <ArrowRight aria-hidden="true" /></button>
+    <footer className="guide-section-footer">
+      <span>트랙이 수업 선택과 진로 탐색에 어떻게 도움이 되는지 알아보세요.</span>
+      <NextAction onClick={onContinue}>트랙제의 장점 알아보기</NextAction>
     </footer>
   </section>;
 }
 
 function BenefitsSection({ onContinue }: { onContinue: () => void }) {
   const reasons = [
-    { Icon: Target, title: "진로를 기준으로 과목 고르기", body: "어떤 분야를 배우고 싶은지 정하면 다음 수업을 선택하기 쉬워져요. 아직 관심 분야가 뚜렷하지 않다면 관심 설문으로 다섯 트랙을 비교해 보세요." },
+    { Icon: Target, title: "진로를 기준으로 과목 고르기", body: "관심 있는 진로와 연결된 모듈을 살펴보면 다음 수업을 선택하기 쉬워져요. 여러 트랙의 학습 분야를 비교하며 관심을 넓힐 수도 있어요." },
     { Icon: Layers3, title: "과목을 묶어서 계획하기", body: "지금까지 들은 수업이 어느 모듈에 포함되는지 확인하고, 앞으로 더 들어야 할 과목을 함께 정리할 수 있어요." },
     { Icon: Network, title: "자연과학까지 넓혀 보기", body: "푸드바이오경제 트랙에서는 학과 전공에 바이오헬스·식품영양·식품공학 분야를 더해 배울 수 있어요." },
     { Icon: FileCheck2, title: "어떤 분야를 배웠는지 기록으로 설명하기", body: "트랙 이수 기록으로 어떤 분야를 집중해서 배웠는지 설명할 수 있어요. 졸업할 때 받는 학위명과는 구분됩니다." },
@@ -113,12 +113,12 @@ function trackModuleIds(track: Track): ModuleId[] {
   return track.rule.type === "major" ? track.rule.moduleIds : [...track.rule.baseModuleIds, ...track.rule.convergenceRequirements.flatMap((requirement) => requirement.moduleIds)];
 }
 
-function StructureSection({ onStartDiagnosis }: { onStartDiagnosis: () => void }) {
+function StructureSection({ onContinue }: { onContinue: () => void }) {
   return <section className="guide-structure" data-track-guide-section="structure" aria-labelledby="track-guide-structure-heading">
     <header className="guide-comparison-intro"><div><span className="guide-eyebrow">공식 확인 · 5개 트랙 / 15개 모듈</span><h2 id="track-guide-structure-heading">학과전공 4개 + 융합전공 1개</h2></div></header>
     <p className="guide-reading-key"><strong>트랙별 모듈 살펴보기</strong> 여러 트랙에서 공통으로 배우는 모듈과 트랙마다 다른 모듈을 비교해 보세요.</p>
     <div className="guide-track-comparison">{tracks.map((track) => <article key={track.id} data-track-guide-track={track.id}><header><TrackGlyph trackId={track.id} /><span>{track.kind}</span><h3>{track.name}</h3></header><p><small>배우는 내용</small>{track.description}</p><h4>구성 모듈</h4><ul>{trackModuleIds(track).map((id) => <li key={id}><span>{id}</span>{modules.find((module) => module.id === id)?.name ?? "모듈"}</li>)}</ul></article>)}</div>
-    <footer className="guide-section-footer"><span>들은 과목을 체크해 트랙별 진행도를 확인해 보세요.</span><NextAction onClick={onStartDiagnosis}>내 상황별 트랙 시뮬레이션 시작</NextAction></footer>
+    <footer className="guide-section-footer"><span>트랙 구성을 살펴봤다면 신청 대상과 준비할 내용을 확인하세요.</span><NextAction onClick={onContinue}>신청·상담 준비 알아보기</NextAction></footer>
   </section>;
 }
 

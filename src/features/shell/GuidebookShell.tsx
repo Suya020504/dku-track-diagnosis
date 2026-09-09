@@ -1,6 +1,6 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { AppRoute } from "../../lib/appRouting";
-import { ExternalLink, HelpCircle, type LucideIcon } from "lucide-react";
+import { ChevronDown, ExternalLink, HelpCircle, type LucideIcon } from "lucide-react";
 import { DEPARTMENT_HOME_URL, DEPARTMENT_YOUTUBE_URL } from "../../data/officialResources";
 import { CompassPathRibbon, type CompassPathItem } from "../journey/CompassPathRibbon";
 import { LocalSaveStatus, type LocalSaveState } from "./LocalSaveStatus";
@@ -71,7 +71,10 @@ export function GuidebookShell({
   children: ReactNode;
 }) {
   const [unavailableMessage, setUnavailableMessage] = useState<string>();
+  const toolsRef = useRef<HTMLDetailsElement>(null);
+  const additionalItems = [...guideItems.filter(item => item.id === "plan" || item.id === "resources"), ...utilityItems.filter(item => item.id !== "records")];
   useEffect(() => { setUnavailableMessage(undefined); }, [activeId]);
+  useEffect(() => { if(toolsRef.current) toolsRef.current.open=false; }, [activeId, utilityActiveId]);
   return (
     <div className="planner-app planner-guidebook-shell" data-service-zone={serviceView}>
       <div
@@ -103,7 +106,7 @@ export function GuidebookShell({
             </span>
           </a>
           <nav className="planner-shell-primary-nav" aria-label="주요 서비스">
-            {guideItems.map((item) => (
+            {guideItems.filter(item => item.id !== "plan" && item.id !== "resources").map((item) => (
               <button
                 className="planner-focusable"
                 type="button"
@@ -125,7 +128,7 @@ export function GuidebookShell({
           <div className="planner-shell-actions">
             {utilityItems.length > 0 ? (
               <nav className="planner-shell-utility" aria-label="보조 화면">
-                {utilityItems.map((item) => (
+                {utilityItems.filter(item => item.id === "records").map((item) => (
                   <button
                     className="planner-focusable"
                     type="button"
@@ -140,6 +143,10 @@ export function GuidebookShell({
                 ))}
               </nav>
             ) : null}
+            <details className="planner-shell-tool-menu" ref={toolsRef} onKeyDown={event => {if(event.key === "Escape"){event.preventDefault();if(toolsRef.current) toolsRef.current.open=false;toolsRef.current?.querySelector('summary')?.focus();}}}>
+              <summary className="planner-focusable" aria-current={additionalItems.some(item => item.id === activeId || item.id === utilityActiveId) ? "page" : undefined}>도구<ChevronDown size={15} aria-hidden="true"/></summary>
+              <div className="planner-shell-tool-menu__panel"><p>필요할 때 사용하는 도구</p>
+              {additionalItems.map(item=><button type="button" key={item.id} className="planner-focusable" aria-current={item.id === activeId || item.id === utilityActiveId ? "page" : undefined} aria-disabled={!item.available || undefined} onClick={() => {if(item.available){if(toolsRef.current) toolsRef.current.open=false;item.onSelect();}else setUnavailableMessage(item.unavailableReason ?? "진단 결과를 먼저 확인해 주세요.");}}>{item.icon ? <item.icon size={18} aria-hidden="true"/> : null}<span>{item.label}</span></button>)}
             {externalLinks.length > 0 ? (
               <nav className="planner-shell-external-links" aria-label="학과 공식 링크">
                 {externalLinks.map((link) => (
@@ -156,6 +163,8 @@ export function GuidebookShell({
                 ))}
               </nav>
             ) : null}
+              </div>
+            </details>
             <button
               className="planner-shell-help planner-focusable"
               type="button"

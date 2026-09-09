@@ -9,7 +9,7 @@ export type ProfileStage = "affiliation" | "path" | "direction";
 
 export type AppRoute =
   | { view: "landing" }
-  | { view: "example" }
+  | { view: "example"; mode?: "interactive" }
   | {
       view: "diagnosis";
       step: DiagnosisStep;
@@ -44,7 +44,9 @@ export function resolveAppRoute(
 ): AppRoute {
   const params = new URLSearchParams(search);
   const view = params.get("view");
-  if (view === "example") return { view: "example" };
+  if (view === "example") return params.get("mode") === "interactive"
+    ? { view: "example", mode: "interactive" }
+    : { view: "example" };
 
   if (view === "diagnosis" || view === "result") {
     const step = resolveDiagnosisStep(search, state);
@@ -124,6 +126,7 @@ export function resolveAppRoute(
 
 export function buildAppHref(currentHref: string, route: AppRoute): string {
   const url = new URL(currentHref, "https://local.invalid");
+  url.searchParams.delete("mode");
   url.searchParams.delete("input");
   url.searchParams.delete("video");
   url.searchParams.delete("audience");
@@ -205,6 +208,7 @@ export function buildAppHref(currentHref: string, route: AppRoute): string {
     return `${url.pathname}${url.search}${url.hash}`;
   }
 
+  if (route.view === "example" && route.mode === "interactive") url.searchParams.set("mode", route.mode);
   if (route.view === "records" && route.recordId) url.searchParams.set("record", route.recordId);
   url.searchParams.set("view", route.view);
   url.searchParams.delete("step");
@@ -232,6 +236,7 @@ export function writeAppRouteToHistory(
     video: _video,
     recordId: _recordId,
     scope: _scope,
+    mode: _mode,
     ...unrelatedState
   } = currentState;
   const state = { ...unrelatedState, ...routeHistoryState(route) };
@@ -239,6 +244,7 @@ export function writeAppRouteToHistory(
 }
 
 function clearRouteParams(url: URL): void {
+  url.searchParams.delete("mode");
   url.searchParams.delete("record");
   url.searchParams.delete("view");
   url.searchParams.delete("step");
@@ -252,6 +258,7 @@ function clearRouteParams(url: URL): void {
 }
 
 function routeHistoryState(route: AppRoute): Record<string, string> {
+  if (route.view === "example" && route.mode === "interactive") return { view: route.view, mode: route.mode };
   if (route.view === "records") return route.recordId
     ? { view: route.view, recordId: route.recordId }
     : { view: route.view };

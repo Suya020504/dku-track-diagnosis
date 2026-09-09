@@ -24,6 +24,7 @@ import { TrackCompletionResults } from "./features/results/TrackCompletionResult
 import { TrackHistoryComparison } from "./features/recommendations/TrackHistoryComparison";
 import { TrackModulePlanner } from "./features/planning/TrackModulePlanner";
 import { ExampleExperience } from "./features/journey/ExampleExperience";
+import { VideoGuide } from "./features/journey/VideoGuide";
 import { getMajorContext } from "./lib/majorContext";
 import { calculateTrackCompletion } from "./lib/trackCompletion";
 import { buildTrackPlanInputSignature, isTrackSemesterPlan, type TrackSemesterPlan } from "./lib/trackSemesterPlanner";
@@ -592,6 +593,10 @@ function App({ storage }: { storage?: Storage } = {}) {
   const [activeView, setActiveView] = useState<ViewId>(() =>
     viewForRoute(resolveExperienceRoute(window.location.search, savedState)),
   );
+  const [exampleMode, setExampleMode] = useState<"interactive" | undefined>(() => {
+    const route = resolveExperienceRoute(window.location.search, savedState);
+    return route.view === "example" ? route.mode : undefined;
+  });
   const [resultSection, setResultSection] = useState<ResultSection>(() => {
     const route = resolveExperienceRoute(window.location.search, savedState);
     return route.view === "result" ? route.section ?? "current" : "current";
@@ -751,6 +756,7 @@ function App({ storage }: { storage?: Storage } = {}) {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [
     activeView,
+    exampleMode,
     diagnosisStep,
     profileStage,
     recommendationStep,
@@ -832,6 +838,7 @@ function App({ storage }: { storage?: Storage } = {}) {
   function applyRoute(route: AppRoute) {
     const nextView = viewForRoute(route);
     setActiveView(nextView);
+    setExampleMode(route.view === "example" ? route.mode : undefined);
     setArchiveNotice("");
     if (route.view === "records") setRecordId(route.recordId);
     if (nextView === "landing") setGuideOpen(false);
@@ -1267,6 +1274,8 @@ function App({ storage }: { storage?: Storage } = {}) {
 
   const shellRoute: AppRoute = activeView === "landing"
     ? { view: "landing" }
+    : activeView === "example"
+      ? { view: "example", ...(exampleMode ? { mode: exampleMode } : {}) }
     : activeView === "recommendation"
       ? recommendationStep === "survey"
         ? { view: "recommendation", step: recommendationStep, audience: recommendationAudience }
@@ -1313,7 +1322,7 @@ function App({ storage }: { storage?: Storage } = {}) {
                 : "resources";
   const utilityActiveId = activeView === "contact" || activeView === "records" ? activeView : undefined;
   const mobileActiveId = utilityActiveId ?? guideActiveId;
-  const currentLabel = activeView === "example" ? "예시 결과 체험" : activeView === "recommendation"
+  const currentLabel = activeView === "example" ? exampleMode === "interactive" ? "예시 결과 체험" : "사용 방법 영상" : activeView === "recommendation"
     ? recommendationStep === "survey" ? "관심 트랙 추천" : "트랙 비교"
     : activeView === "track-guide"
       ? "트랙 가이드"
@@ -1329,7 +1338,7 @@ function App({ storage }: { storage?: Storage } = {}) {
             : guideActiveId === "result"
               ? "결과"
               : guideActiveId === "plan"
-                ? "학기 플래너 · 선택"
+                ? "수강 계획"
                 : "도구 & 정보";
   useEffect(() => {
     const baseTitle = "단국대 식품자원경제학과 트랙제 자가진단";
@@ -1365,21 +1374,21 @@ function App({ storage }: { storage?: Storage } = {}) {
     {
       id: "plan",
       index: "05",
-      label: "학기 플래너 · 선택",
+      label: "수강 계획",
       available: planNavAvailable,
       unavailableReason: "결과 확인과 목표 트랙 선택 후 열려요.",
       onSelect: () => navigateAppRoute({ view: "plan", step: "setup", scope: "tracks" }),
     },
-    { id: "resources", index: "06", label: "도구 & 정보", available: true, onSelect: () => navigateAppRoute({ view: "resources", section: "official" }) },
+    { id: "resources", index: "06", label: "자료실", available: true, onSelect: () => navigateAppRoute({ view: "resources", section: "official" }) },
   ].map(item => ({ ...item, icon: navigationIcons[item.id] }));
   const mobilePrimaryItems: MobileJourneyItem[] = [
     { id: "start", label: "홈", available: true, onSelect: () => navigateAppRoute({ view: "landing" }) },
     { id: "diagnosis", label: "진단", available: true, onSelect: goToDiagnosis },
     { id: "result", label: "결과", available: courseResultReady, unavailableReason: "진단 후 열려요.", onSelect: goToResult },
-    { id: "plan", label: "계획", available: planNavAvailable, unavailableReason: "결과 확인 후 열려요.", onSelect: () => navigateAppRoute({ view: "plan", step: "setup", scope: "tracks" }) },
+    { id: "records", label: "보관함", available: true, onSelect: () => navigateAppRoute({ view: "records" }) },
   ].map(item => ({ ...item, icon: navigationIcons[item.id] }));
   const mobileMoreItems: MobileJourneyItem[] = [
-    { id: "records", label: `저장 기록 ${savedState.snapshots.length}`, available: true, onSelect: () => navigateAppRoute({ view: "records" }) },
+    { id: "plan", label: "수강 계획", available: planNavAvailable, unavailableReason: "진단 결과를 확인하면 사용할 수 있어요.", onSelect: () => navigateAppRoute({ view: "plan", step: "setup", scope: "tracks" }) },
     { id: "tracks", label: "트랙 가이드", available: true, onSelect: () => navigateAppRoute({ view: "track-guide", section: "overview" }) },
     { id: "resources", label: "자료", available: true, onSelect: () => navigateAppRoute({ view: "resources", section: "tracks" }) },
     { id: "contact", label: "문의", available: true, onSelect: () => navigateAppRoute({ view: "contact" }) },
@@ -1390,17 +1399,14 @@ function App({ storage }: { storage?: Storage } = {}) {
   ].map(item => ({ ...item, icon: navigationIcons[item.id] }));
   const isProgressComparison = activeView === "recommendation"
     && recommendationStep === "axes" && recommendationAxis === "progress" && courseResultReady;
-  const inTrackJourney = activeView === "diagnosis" || activeView === "result"
-    || activeView === "recommendation" || activeView === "plan" && planScope === "tracks";
-  const currentJourneyStage = activeView === "plan" ? "plan"
-    : activeView === "recommendation" || activeView === "diagnosis" && (
+  const inTrackJourney = activeView === "diagnosis" || activeView === "recommendation";
+  const currentJourneyStage = activeView === "recommendation" || activeView === "diagnosis" && (
       diagnosisStep === "tracks" || diagnosisStep === "profile" && profileStage === "direction" && Boolean(savedState.profile)
     ) ? "tracks"
     : activeView === "result" || activeView === "diagnosis" && diagnosisStep === "courses" ? "courses"
     : "profile";
   const hasJourneyProfile = Boolean(savedState.profile);
   const hasJourneyTracks = selectedTrackIds.length > 0;
-  const trackPlanAvailable = currentJourneyStage === "plan" || hasJourneyProfile && hasJourneyTracks && courseResultReady;
   const journeyItems: CompassPathItem[] = inTrackJourney ? [
     {
       id: "profile", label: "내 정보", available: true,
@@ -1416,23 +1422,18 @@ function App({ storage }: { storage?: Storage } = {}) {
       onSelect: editSelectedTracks,
     },
     {
-      id: "courses", label: "이수 현황", available: hasJourneyProfile,
+      id: "courses", label: "수강 이력", available: hasJourneyProfile,
       completed: courseResultReady,
       state: currentJourneyStage === "courses" ? "current" : courseResultReady ? "complete" : hasJourneyProfile ? "next" : "pending",
       unavailableReason: "내 정보를 확인하면 들은 과목을 입력할 수 있어요.",
-      onSelect: () => courseResultReady && hasJourneyTracks
-        ? navigateAppRoute({ view: "result", section: "current" }) : navigateDiagnosisStep("courses"),
-    },
-    {
-      id: "plan", label: "학기 계획 · 선택", available: trackPlanAvailable,
-      completed: Boolean(savedState.trackPlanning?.result && !savedState.trackPlanning.draft),
-      state: currentJourneyStage === "plan" ? "current" : savedState.trackPlanning?.result && !savedState.trackPlanning.draft ? "complete" : trackPlanAvailable ? "next" : "pending",
-      unavailableReason: !hasJourneyProfile ? "내 정보와 트랙, 들은 과목을 먼저 확인해 주세요."
-        : !hasJourneyTracks && !courseResultReady ? "트랙을 선택하고 들은 과목을 확인하면 계획할 수 있어요."
-        : !hasJourneyTracks ? "계획할 트랙을 하나 이상 선택해 주세요." : "들은 과목을 확인한 뒤 계획할 수 있어요.",
-      onSelect: () => navigateAppRoute({ view: "plan", scope: "tracks", step: savedState.trackPlanning?.result ? "schedule" : "setup" }),
+      onSelect: () => navigateDiagnosisStep("courses"),
     },
   ] : [];
+
+  if (savedState.entryIntent === "completed-courses") {
+    const historyOrder = ["profile", "courses", "tracks"];
+    journeyItems.sort((a,b) => historyOrder.indexOf(a.id) - historyOrder.indexOf(b.id));
+  }
 
   const hasSavedPlan = Boolean(savedState.trackPlanning?.result || savedState.graduationPlan);
   const hasStartedLanding = Boolean(
@@ -1517,7 +1518,9 @@ function App({ storage }: { storage?: Storage } = {}) {
     />, []);
   }
 
-  if (activeView === "example") return renderGuidebook(<ExampleExperience headingRef={stepHeadingRef} onHome={() => navigateAppRoute({view:"landing"})} onStart={() => navigateAppRoute({view:"landing"})}/>, []);
+  if (activeView === "example") return renderGuidebook(exampleMode === "interactive"
+    ? <ExampleExperience headingRef={stepHeadingRef} onHome={() => navigateAppRoute({view:"landing"})} onStart={() => navigateAppRoute({view:"landing"})}/>
+    : <VideoGuide headingRef={stepHeadingRef} onHome={() => navigateAppRoute({view:"landing"})} onStart={() => navigateAppRoute({view:"landing"})} onOpenInteractive={() => navigateAppRoute({ view:"example", mode:"interactive" })}/>, []);
 
   if (activeView === "landing") {
     return renderGuidebook(
@@ -1550,6 +1553,7 @@ function App({ storage }: { storage?: Storage } = {}) {
           onSectionChange={navigateTrackGuideSection}
           onStartInterestSurvey={() => startIntent("interest-survey")}
           onStartDiagnosis={() => startEntryFlow("check-progress")}
+          onStartService={() => navigateAppRoute({ view: "landing" })}
           videoId={trackGuideVideoId}
           onVideoChange={navigateTrackGuideVideo}
         />
@@ -2064,7 +2068,7 @@ function GuideDialog({
           <ol className="first-visit-guide__steps">
             <li><span aria-hidden="true">1</span><div><h3>나에게 맞는 방법으로 시작해요</h3><p>정한 트랙을 선택하세요. 아직 고민 중이라면 관심 설문이나 들은 과목으로 찾아볼 수 있어요.</p></div></li>
             <li><span aria-hidden="true">2</span><div><h3>내 정보와 들은 과목을 알려주세요</h3><p>소속·전공 정보를 확인하고 과목을 체크해요. 수강 중인 과목과 앞으로 들을 과목은 따로 구분해요.</p></div></li>
-            <li><span aria-hidden="true">3</span><div><h3>남은 수업을 보고 계획까지 이어가요</h3><p>여러 트랙에 겹치는 과목은 한 번만 세어요. 필요하면 남은 수업을 학기별로 나눠 보관할 수 있어요.</p></div></li>
+            <li><span aria-hidden="true">3</span><div><h3>남은 수업을 확인하면 진단이 끝나요</h3><p>여러 트랙에 겹치는 과목은 한 번만 세어요. 수강 계획은 진단 후 ‘필요할 때 더 해보기’에서 따로 이용할 수 있어요.</p></div></li>
           </ol>
           <p className="first-visit-guide__note">입력은 이 브라우저에 저장돼요. 사이트에서 트랙을 고르거나 계획을 보관해도 학교에 신청되지는 않아요.</p>
           <div className="first-visit-guide__actions"><button className="icon-button" type="button" data-welcome-skip onClick={onClose}>건너뛰기</button><button className="primary-button" type="button" onClick={onClose}>확인했어요</button></div>

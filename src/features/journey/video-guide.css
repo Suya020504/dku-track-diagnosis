@@ -1,0 +1,51 @@
+.video-guide { max-width:1080px; margin:0 auto; padding:28px 28px 48px; color:#17354b; }
+.video-guide *, .video-guide *::before, .video-guide *::after { box-sizing:border-box; min-width:0; }
+.video-guide button, .video-guide a { font:600 15px/1.6 var(--planner-font-body); }
+.video-guide button { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:10px 16px; border:1px solid #859ca9; border-radius:10px; color:#145f4d; background:#fff; cursor:pointer; }
+.video-guide button:hover { background:#edf7f2; }
+.video-guide a { display:inline-flex; align-items:center; gap:6px; min-height:44px; color:#145f4d; text-decoration:underline; text-underline-offset:4px; }
+.video-guide button:focus-visible, .video-guide a:focus-visible, .video-guide summary:focus-visible, .video-guide video:focus-visible { outline:3px solid #176bb0; outline-offset:4px; }
+.video-guide .video-guide__back { padding:8px 0; border:0; background:transparent; }
+.video-guide__eyebrow { display:flex; align-items:center; gap:8px; margin-top:16px; color:#12654f; font-size:14px; font-weight:650; }
+.video-guide h1 { margin:12px 0; font-size:clamp(26px,3.2vw,34px); line-height:1.4; letter-spacing:-.025em; word-break:keep-all; }
+.video-guide p { margin:0; color:#405c6b; line-height:1.7; word-break:keep-all; overflow-wrap:anywhere; }
+.video-guide__heading>p { max-width:720px; font-size:16px; }
+.video-guide__player { margin:26px 0 0; overflow:hidden; border:1px solid #b9d0d5; border-radius:14px; background:#fff; box-shadow:0 10px 30px rgb(36 72 68 / 6%); }
+.video-guide__player video { display:block; width:100%; aspect-ratio:16/9; background:#153449; }
+.video-guide__player video::cue { color:#fff; background:rgba(12,32,47,.94); }
+.video-guide__player figcaption { display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px 18px; padding:14px 18px; font-size:13px; line-height:1.7; color:#405c6b; }
+.video-guide__player figcaption>span:first-child { color:#17354b; font-weight:650; }
+.video-guide__status { padding:14px 16px; margin-top:12px!important; background:#edf5fa; border-radius:8px; font-size:14px; }
+.video-guide__error { margin-top:16px; padding:20px; background:#fff3eb; border:1px solid #b88060; border-radius:12px; }
+.video-guide__error h2 { margin:0 0 8px; font-size:18px; color:#793c22; }
+.video-guide__error button { margin-top:12px; }
+.video-guide__error a { margin-left:16px; font-size:14px; }
+.video-guide__context { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; margin-top:16px; }
+.video-guide__context p { max-width:680px; font-size:14px; }
+.video-guide__context a { flex-shrink:0; font-size:13px; }
+.video-guide__transcript { margin-top:24px; padding:0 20px; border:1px solid #c5d9dd; border-radius:12px; background:rgba(255,255,255,.85); }
+.video-guide__transcript summary { min-height:52px; padding:14px 0; color:#205167; font-size:15px; font-weight:650; cursor:pointer; }
+.video-guide__transcript ol { display:grid; gap:20px; padding:0 0 4px 24px; margin:8px 0 20px; }
+.video-guide__transcript li::marker { color:#145f4d; font-weight:700; }
+.video-guide__transcript h2 { margin:0 0 6px; font-size:16px; line-height:1.5; }
+.video-guide__transcript p { font-size:14px; }
+.video-guide__transcript>a { margin-bottom:12px; font-size:13px; }
+.video-guide__next { display:grid; justify-items:center; gap:16px; padding-top:30px; text-align:center; }
+.video-guide__next h2 { margin:0 0 6px; font-size:21px; line-height:1.5; word-break:keep-all; }
+.video-guide__next>button { background:#087b5d; border-color:#087b5d; color:#fff; min-height:48px; }
+.video-guide__next>button:hover { background:#06634b; }
+.video-guide__next>div>p { font-size:14px; }
+.video-guide .video-guide__interactive { margin-top:2px; color:#405c6b; font-size:13px; }
+.video-guide__interactive summary { padding:10px 4px; min-height:44px; cursor:pointer; line-height:1.7; }
+.video-guide__interactive a { font-size:13px; }
+@media (max-width:760px) {
+  .video-guide { padding:20px 16px 36px; }
+  .video-guide__heading>p { font-size:15px; }
+  .video-guide__player { margin-top:20px; border-radius:10px; }
+  .video-guide__player figcaption { padding:12px; font-size:12px; }
+  .video-guide__context { flex-direction:column; gap:4px; }
+  .video-guide__transcript { padding-inline:16px; margin-top:16px; }
+  .video-guide__next { gap:14px; padding-top:24px; }
+  .video-guide__next>button { width:100%; }
+  .video-guide__next h2 { font-size:20px; }
+}

@@ -190,8 +190,12 @@ describe("separate track guide journey", () => {
     expect(document.querySelectorAll("main")).toHaveLength(1);
     expect(document.querySelectorAll("h1")).toHaveLength(1);
     expect(document.querySelector("form")).toBeNull();
-    await click("내 이수 현황 정리하기");
-    expect(new URLSearchParams(location.search).get("view")).toBe("diagnosis");
+    expect(document.querySelector(".guide-application-start button")).toBeNull();
+    const serviceEntry = document.querySelector("[data-guide-service-entry]");
+    expect(serviceEntry).not.toBeNull();
+    expect(serviceEntry?.previousElementSibling?.className).toBe("guide-application-cancel");
+    await click("내게 맞는 방법으로 시작하기");
+    expect(document.querySelector(".journey-home-entry")).not.toBeNull();
   });
 
   it("offers five school shortcuts without private-file metadata or hosted attachments", async () => {
@@ -221,8 +225,10 @@ describe("separate track guide journey", () => {
     expect(document.activeElement).toBe(document.querySelector("h1"));
     expect(document.title).toBe("트랙제란? | 단국대 식품자원경제학과 트랙제 자가진단");
     expect(document.querySelector('nav[aria-label="학업 여정"]')).toBeNull();
-    expect(button("내 트랙 현황 확인하기")).not.toBeNull();
-    expect(button("관심으로 트랙 추천받기")).not.toBeNull();
+    expect(button("트랙제의 장점 알아보기")).not.toBeNull();
+    expect(document.querySelector(".guide-launch")).toBeNull();
+    expect(document.querySelector(".guide-overview")?.textContent).not.toContain("내 트랙 현황 확인하기");
+    expect(document.querySelector(".guide-overview")?.textContent).not.toContain("관심으로 트랙 추천받기");
     expect(document.body.textContent).not.toContain("연결해 보는 지도");
     const guideLabel = [...document.querySelectorAll<HTMLElement>(".planner-shell-primary-nav button")]
       .find((candidate) => candidate.textContent?.includes("트랙 가이드"));
@@ -238,6 +244,29 @@ describe("separate track guide journey", () => {
     await moveNativeHistory("back");
     expect(new URLSearchParams(location.search).get("section")).toBe("overview");
     expect(document.querySelector('[data-track-guide-section="overview"]')).not.toBeNull();
+  });
+
+  it("reads the explanation in order before offering the service at the end", async () => {
+    await mountAt("/?view=track-guide&section=overview");
+    const steps = [
+      ["트랙제의 장점 알아보기", "benefits"],
+      ["학위·이수 결과 확인하기", "outcomes"],
+      ["5개 트랙 구성 비교하기", "structure"],
+      ["신청·상담 준비 알아보기", "application"],
+    ];
+    for (const [label, section] of steps) {
+      expect(document.querySelector("[data-guide-service-entry]")).toBeNull();
+      const next = document.querySelector<HTMLButtonElement>(".guide-next");
+      expect(next?.textContent).toBe(label);
+      await act(async () => next?.click());
+      expect(new URLSearchParams(location.search).get("view")).toBe("track-guide");
+      expect(new URLSearchParams(location.search).get("section")).toBe(section);
+      expect(document.activeElement).toBe(document.querySelector("h1"));
+    }
+    expect(document.querySelector("[data-guide-service-entry]")?.textContent).toContain("내게 맞는 방법으로 시작하기");
+    await moveNativeHistory("back");
+    expect(new URLSearchParams(location.search).get("section")).toBe("structure");
+    expect(document.querySelector("[data-guide-service-entry]")).toBeNull();
   });
 
   it("does not add duplicate history when the current guide tab is selected again", async () => {

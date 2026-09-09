@@ -199,7 +199,7 @@ describe("path-aware result integration", () => {
     expect(markup).toContain("0 / 30학점");
     expect(markup).toContain("0학점");
     expect(markup).not.toContain("result-grid");
-    expect(markup).not.toContain("30학점</dd>");
+    expect(markup).toMatch(/data-completion-rate="[^"]+">0%/);
   });
 
   it("uses the path-progress reference status instead of legacy aggregate completion", () => {

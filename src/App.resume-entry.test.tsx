@@ -17,9 +17,13 @@ it('resumes the saved survey question from home without altering course history'
  await mount(state); await click('이전 입력 이어보기'); expectSurvey(); expect(document.querySelector('.ds-progress-row strong')?.textContent).toBe('2 / 10');
  const saved=JSON.parse(localStorage.getItem(STORAGE_KEY_V2)!); expect(saved.interestSurvey).toEqual(state.interestSurvey); expect(saved.courseSelections).toEqual(state.courseSelections);
 });
-it('starts the survey selected in the track guide even after an earlier known-track journey',async()=>{
+it('finishes the track explanation before choosing a service entry method',async()=>{
  const state: SavedAppStateV2={...base(),entryIntent:'known-tracks',targetTrackId:'food-marketing',courseSelections:[{courseId:'b-1',status:'completed'}]};
- await mount(state,'/?view=track-guide&section=overview'); await click('관심으로 트랙 추천받기'); expectSurvey();
+ await mount(state,'/?view=track-guide&section=application'); await click('내게 맞는 방법으로 시작하기');
+ expect(location.search).toBe('');
+ await act(async()=>document.querySelector<HTMLDetailsElement>('.journey-home-entry details')?.querySelector('summary')?.click());
+ await act(async()=>document.querySelector<HTMLInputElement>('input[value="interest-survey"]')?.click());
+ await click('선택한 방법으로 시작하기');expectSurvey();
  const saved=JSON.parse(localStorage.getItem(STORAGE_KEY_V2)!); expect(saved.entryIntent).toBe('interest-survey'); expect(saved.profile).toEqual(state.profile); expect(saved.targetTrackId).toBe(state.targetTrackId); expect(saved.courseSelections).toEqual(state.courseSelections);
 });
 it.each([{ids:[]},{ids:['food-marketing']}])('resumes the saved track selection draft $ids',async({ids})=>{

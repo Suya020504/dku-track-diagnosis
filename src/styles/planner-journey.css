@@ -277,6 +277,7 @@
 
 
 /* Flat progress hierarchy: context stays visible without competing with the page title. */
+.planner-shell-page:has(.planner-compass-path) .dku-profile-stages { display:none; }
 .planner-compass-path {
   margin-block-end: 16px;
 }
