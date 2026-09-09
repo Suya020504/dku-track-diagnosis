@@ -3,6 +3,7 @@ import { ArrowRight, Bookmark, BookOpen, CalendarDays, Check, ChevronDown, Clipb
 import { courses, tracks } from "../../data/curriculumData";
 import { TrackGlyph } from "../../components/TrackGlyph";
 import { calculateTrackCompletion, type TrackCompletionCandidate } from "../../lib/trackCompletion";
+import { getTrackCourseChoices } from "../../lib/trackCourseChoices";
 import { getMajorContext } from "../../lib/majorContext";
 import type { CourseSelectionRecord, PathProgressResult, StudentProfile, TrackId } from "../../types";
 import { AcademicMajorRequirements } from "./AcademicMajorRequirements";
@@ -48,6 +49,7 @@ export function TrackCompletionResults(props: TrackCompletionResultsProps) {
   const computation = useMemo(() => calculateTrackCompletion({ selectedTrackIds, courseSelections, includeInProgress: true }), [selectedTrackIds, courseSelections]);
   const current = computation.completed;
   const shown = preview ? computation.inProgressPreview ?? current : current;
+  const courseChoices = useMemo(() => new Map(getTrackCourseChoices(shown).map(choice => [choice.courseId, choice])), [shown]);
   const inProgressCount = courseSelections.filter(c => c.status === "in-progress").length;
   const context = getMajorContext(profile);
   const suggestion = shown.discoveryCandidates[0];
@@ -60,18 +62,32 @@ export function TrackCompletionResults(props: TrackCompletionResultsProps) {
       <button type="button" onClick={props.onEditTracks}><SlidersHorizontal size={17} aria-hidden="true" />트랙 변경</button>{props.onEditCourses&&<button type="button" onClick={props.onEditCourses}>이수 과목 수정<ArrowRight size={17} aria-hidden="true"/></button>}</div>
     </header>
     <section className="track-completion-total" aria-label="겹치는 과목을 뺀 트랙 모듈 수강 목록">
-      <BookOpen size={30} aria-hidden="true" /><div><span>{preview ? "수강 중 과목을 통과했을 때" : "함께 이수할 과목"}</span><strong>{shown.unionRemainingCourseCount}과목 <span>·</span> {shown.unionRemainingCredits}학점</strong></div>
+      <BookOpen size={30} aria-hidden="true" /><div><span>{preview ? "수강 중 과목을 통과했을 때" : "추천 조합 기준"}</span><strong>{shown.unionRemainingCourseCount}과목 <span>·</span> {shown.unionRemainingCredits}학점</strong></div>
       <p>선택 트랙의 모듈 조건 기준 · 중복 과목 제외</p>
-      <button type="button" data-open-track-plan onClick={props.onOpenPlan}><CalendarDays size={20} aria-hidden="true" />이 과목으로 계획하기<ArrowRight size={18} aria-hidden="true" /></button>
+      <button type="button" data-open-track-plan onClick={props.onOpenPlan}><CalendarDays size={20} aria-hidden="true" />추천 조합으로 계획하기<ArrowRight size={18} aria-hidden="true" /></button>
     </section>
     <div className="track-completion-columns">
-      <section className="track-completion-courses" aria-labelledby="track-next-courses-title"><header><h2 id="track-next-courses-title">앞으로 들을 과목</h2><p>필요한 모듈을 채우는 과목 조합이에요. 학기 계획에서 배치를 조정할 수 있어요.</p></header>
+      <section className="track-completion-courses" aria-labelledby="track-next-courses-title"><header><h2 id="track-next-courses-title">모듈 조건을 채우는 추천 조합</h2><p>아래 목록은 가능한 조합 중 하나예요. 모두 필수로 들어야 한다는 뜻은 아니에요. 과목별 대체 후보를 확인하고 학기 계획을 세워보세요.</p></header>
+        <div className="track-course-choice-guide"><strong>필수 과목은 따로 확인해요</strong><p>여기서는 트랙의 모듈 학점만 비교해요. 모듈 내 필수 과목과 학번별 전공필수는 아래 ‘전공 전체 학점과 학번별 조건’에서 함께 확인하세요.</p></div>
         {shown.unionRemainingCourseCount ? <div className="track-completion-table-scroll" role="region" aria-label="남은 과목 표" tabIndex={0}><table><thead><tr><th scope="col">과목명</th><th scope="col">학점</th><th scope="col">함께 채우는 트랙</th><th scope="col">계획</th></tr></thead><tbody>
-          {shown.suggestedCourses.map(item => <tr key={item.courseId} data-track-course={item.courseId}><th scope="row"><span>{courseMap.get(item.courseId)?.name ?? item.courseId}</span><small>{item.moduleId} 모듈</small></th><td>{item.credits}학점</td><td><div className="track-course-coverage">{item.selectedTrackIds.map(id => <span key={id}>{trackName(id)}</span>)}</div></td><td>
+          {shown.suggestedCourses.map(item => {
+            const course = courseMap.get(item.courseId);
+            const choice = courseChoices.get(item.courseId);
+            return <tr key={item.courseId} data-track-course={item.courseId}><th scope="row"><span>{course?.name ?? item.courseId}</span><small>{item.moduleId} 모듈</small>
+              {course?.required && <small className="track-course-required-note">모듈 내 필수 표식 있음 · 별도 확인</small>}
+              {choice?.alternativeCourseIds.length ? <details className="track-course-alternatives" data-course-alternatives={item.courseId}>
+                <summary aria-label={`${course?.name ?? item.courseId} 대체 후보 ${choice.alternativeCourseIds.length}개 보기`}>대체 후보 {choice.alternativeCourseIds.length}개 보기<ChevronDown size={14} aria-hidden="true" /></summary>
+                <p>다른 추천 과목은 유지하고 이 과목 하나만 바꿀 때, 선택한 모든 트랙의 모듈 학점을 채우는 후보예요.</p>
+                <ul>{choice.alternativeCourseIds.map(id => <li key={id}><span>{courseMap.get(id)?.name ?? id}</span><small>{courseMap.get(id)?.credits}학점</small></li>)}</ul>
+                {course?.required && <p>모듈 내 필수 과목의 대체 인정 여부는 별도 확인이 필요해요.</p>}
+                <p>조회용 목록이에요. 여러 과목을 동시에 바꾸면 조건이 달라질 수 있으며, 목록을 열어도 계획은 바뀌지 않아요.</p>
+              </details> : <small className="track-course-choice-status">{choice?.checked ? "현재 조합에서 한 과목 대체 후보 없음" : "대체 가능 여부 확인 필요"}</small>}
+            </th><td>{item.credits}학점</td><td><div className="track-course-coverage">{item.selectedTrackIds.map(id => <span key={id}>{trackName(id)}</span>)}</div></td><td>
             <button type="button" data-plan-course={item.courseId} disabled={isPlanned(item.courseId)} onClick={() => props.onPlanCourse(item.courseId)} aria-label={`${courseMap.get(item.courseId)?.name ?? item.courseId} ${isPlanned(item.courseId) ? "계획에 담김" : "계획에 담기"}`}>
               {isPlanned(item.courseId) ? <Check size={16} aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}{isPlanned(item.courseId) ? "담김" : "계획에 담기"}
             </button>
-          </td></tr>)}
+          </td></tr>;
+          })}
         </tbody></table></div> : <div className="track-completion-empty"><Check size={30} aria-hidden="true" /><h3>{shown.trackResults.length ? "선택한 트랙의 모듈 조건을 채웠어요" : "확인할 트랙을 골라 주세요"}</h3><p>{shown.trackResults.length ? "전공 전체의 이수 조건은 아래에서 따로 확인하고, 학과 신청 안내도 살펴보세요." : "여러 트랙을 함께 고를 수 있어요."}</p><button type="button" onClick={shown.trackResults.length ? props.onOpenApplication : props.onEditTracks}>{shown.trackResults.length ? "트랙 신청 안내 보기" : "트랙 선택하기"}<ArrowRight size={17} aria-hidden="true" /></button></div>}
         {!shown.canCompleteWithKnownCourses && <p role="status">현재 교육과정에서 조합을 찾지 못한 조건이 있어요. 남은 모듈을 확인해 주세요.</p>}
       </section>

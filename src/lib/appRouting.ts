@@ -9,6 +9,7 @@ export type ProfileStage = "affiliation" | "path" | "direction";
 
 export type AppRoute =
   | { view: "landing" }
+  | { view: "example" }
   | {
       view: "diagnosis";
       step: DiagnosisStep;
@@ -43,6 +44,7 @@ export function resolveAppRoute(
 ): AppRoute {
   const params = new URLSearchParams(search);
   const view = params.get("view");
+  if (view === "example") return { view: "example" };
 
   if (view === "diagnosis" || view === "result") {
     const step = resolveDiagnosisStep(search, state);

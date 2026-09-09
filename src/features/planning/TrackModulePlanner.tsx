@@ -5,6 +5,8 @@ import type { AcademicTermId, CourseSelectionRecord, GraduationPlanDraftValues, 
 import { buildTrackPlanInputSignature, buildTrackSemesterPlan, MAX_TRACK_PLANNING_FUTURE_TERMS, type TrackSemesterPlan } from "../../lib/trackSemesterPlanner";
 import { courses, tracks } from "../../data/curriculumData";
 import { isCourseInTrack } from "../../lib/diagnosis";
+import { COURSE_OFFERING_SNAPSHOT_META } from "../../data/courseOfferings2026";
+import { CourseCodeCopy } from "./CourseCodeCopy";
 import "./track-module-planner.css";
 
 export type TrackModulePlannerProps = {
@@ -155,7 +157,8 @@ export function TrackModulePlanner({
                   return <tr key={courseId} data-course-id={courseId}>
                     <th scope="row">
                       <strong>{course?.name ?? courseId}</strong>
-                      <span className="track-module-planner__course-meta">{course?.code ?? courseId}{course ? ` · ${course.credits}학점` : " · 교과목 확인 필요"}</span>
+                      <span className="track-module-planner__course-meta">{course ? `${course.credits}학점` : "교과목 확인 필요"}</span>
+                      <CourseCodeCopy courseId={courseId} courseName={course?.name ?? courseId} />
                       <div className="track-module-planner__course-tags">{relevantTracks.map((track) => <span key={track.id}>{track.name.replace(/ 트랙$/, "")}</span>)}</div>
                       <select className="track-module-planner__term-select" aria-label={`${course?.name ?? courseId} 배치 학기`}
                         value={selectedTerm} disabled={pendingChanges || isInProgress}
@@ -204,6 +207,14 @@ export function TrackModulePlanner({
           </section>
           <section className="track-module-planner__rail-block"><h3>배치 전 확인</h3>
             <p>{!result ? "조건을 입력하면 남은 과목과 미배치 사유를 함께 보여드려요." : unplacedCount > 0 ? `${unplacedCount}개 과목이 미배치 상태예요. 표 아래 사유를 확인하고 학기나 수강량을 조정해 주세요.` : "모든 후보 과목을 학기별로 배치했어요."}</p>
+          </section>
+          <section className="track-module-planner__rail-block track-module-planner__registration" aria-labelledby="track-module-registration-title">
+            <h3 id="track-module-registration-title">수강신청 준비</h3>
+            <p>학교 시간표에서 천안 캠퍼스와 조회할 연도·학기를 확인하고 ‘전공 검색’을 선택하세요. 과목명으로 검색한 뒤, 결과의 교과목번호를 계획표의 코드와 대조해 주세요.</p>
+            <a href={COURSE_OFFERING_SNAPSHOT_META.timetableSearchUrl} target="_blank" rel="noopener noreferrer">
+              실제 개설 강좌 확인<ExternalLink size={16} aria-hidden="true" /><span className="sr-only"> (새 탭)</span>
+            </a>
+            <p>개설 강좌·분반·시간표·수강 제한은 학교에서 확인합니다. 트랙 신청은 아래 학과 신청 안내를 따로 확인해 주세요.</p>
           </section>
           <div className="track-module-planner__actions">
             <button type="button" className="track-module-planner__save" disabled={!canSave} onClick={() => { if (result && canSave) onSavePlan(result); }}>

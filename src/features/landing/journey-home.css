@@ -13,6 +13,9 @@
 .journey-home-copy>button { padding-inline:0; border:0; border-radius:0; background:transparent; text-decoration:underline; text-underline-offset:5px; font-size:15px; }
 .journey-home-hero>img { width:100%; height:auto; aspect-ratio:1.7; object-fit:cover; object-position:50% 55%; margin-top:24px; border-radius:12px; }
 .journey-home-entry { align-self:start; padding-top:8px; }
+.journey-home-example { margin:0 0 18px; padding:12px 16px; border-left:3px solid #087a5b; background:#edf7f2; }
+.journey-home-example>span { display:block; color:#405c6b; font-size:13px; line-height:1.6; }
+.journey-home-example>button { padding:5px 0; min-height:36px; border:0; background:transparent; text-decoration:underline; text-underline-offset:4px; }
 .journey-home-entry h2 { margin:0; color:#17354b; font-size:28px; line-height:1.4; letter-spacing:-.025em; word-break:keep-all; }
 .journey-home-entry>p { margin:10px 0 22px; font-size:15px; color:#506d80; line-height:1.6; word-break:keep-all; }
 .journey-entry-options { display:grid; gap:12px; border:0; margin:0; padding:0; }

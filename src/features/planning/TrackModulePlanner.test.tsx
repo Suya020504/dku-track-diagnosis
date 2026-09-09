@@ -232,4 +232,18 @@ describe("TrackModulePlanner", () => {
     expect(document.querySelector(".track-module-planner__rail")?.textContent).not.toContain("실제 복수 트랙 인정 여부");
     expect(document.body.textContent).not.toContain("학교에 신청서를 제출하는 기능은 아니에요");
   });
+
+  it("connects official course lookup in a new tab and separates it from track application", async () => {
+    await mountPlanner({ selectedTrackIds: ["food-marketing"], courseSelections: oneRemainingSelections, state: oneRemainingDraft });
+    await act(async () => button("계획 만들기").click());
+    const link = document.querySelector<HTMLAnchorElement>(".track-module-planner__registration a")!;
+    expect(link.href).toBe("https://webinfo.dankook.ac.kr/tiac/univ/lssn/lpci/views/lssnPopup/tmtbl2.do");
+    expect(link.target).toBe("_blank");
+    expect(link.rel).toContain("noopener");
+    expect(link.textContent).toContain("실제 개설 강좌 확인");
+    expect(document.querySelector(".track-module-planner__registration")?.textContent).toContain("천안 캠퍼스와 조회할 연도·학기");
+    const row = document.querySelector('tr[data-course-id="f-2"]')!;
+    expect(row.querySelector(".track-module-planner__course-code")?.textContent).toContain("446410");
+    expect(row.querySelector(".track-module-planner__course-code button")?.getAttribute("aria-label")).toContain("446410 복사");
+  });
 });

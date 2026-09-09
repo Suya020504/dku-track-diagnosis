@@ -23,6 +23,7 @@ import { TrackSelectionStep } from "./features/profile/TrackSelectionStep";
 import { TrackCompletionResults } from "./features/results/TrackCompletionResults";
 import { TrackHistoryComparison } from "./features/recommendations/TrackHistoryComparison";
 import { TrackModulePlanner } from "./features/planning/TrackModulePlanner";
+import { ExampleExperience } from "./features/journey/ExampleExperience";
 import { getMajorContext } from "./lib/majorContext";
 import { calculateTrackCompletion } from "./lib/trackCompletion";
 import { buildTrackPlanInputSignature, isTrackSemesterPlan, type TrackSemesterPlan } from "./lib/trackSemesterPlanner";
@@ -104,7 +105,7 @@ import type {
   EntryIntent,
 } from "./types";
 
-type ViewId = "landing" | "resources" | "track-guide" | "diagnosis" | "recommendation" | "plan" | "result" | "contact" | "records";
+type ViewId = "landing" | "example" | "resources" | "track-guide" | "diagnosis" | "recommendation" | "plan" | "result" | "contact" | "records";
 const navigationIcons: Record<string, LucideIcon> = { start: House, tracks: Compass, diagnosis: ClipboardCheck, result: ChartNoAxesCombined, plan: CalendarDays, resources: LibraryBig, records: Archive, contact: MessagesSquare };
 type GradeFilter = "all" | "1" | "2" | "3" | "4" | "unknown";
 type SemesterFilter = "all" | "1" | "2" | "unknown";
@@ -738,6 +739,7 @@ function App({ storage }: { storage?: Storage } = {}) {
 
   useEffect(() => {
     const focusEntryHeading = activeView === "landing"
+      || activeView === "example"
       || activeView === "diagnosis"
       || activeView === "result"
       || activeView === "recommendation"
@@ -1294,7 +1296,7 @@ function App({ storage }: { storage?: Storage } = {}) {
   const targetTrackReady = selectedTrackIds.length > 0;
   const planReady = exactPathReady && targetTrackReady;
   const planNavAvailable = courseResultReady || activeView === "plan";
-  const guideActiveId = activeView === "landing"
+  const guideActiveId = activeView === "landing" || activeView === "example"
     ? "start"
     : activeView === "recommendation"
       ? recommendationStep === "survey" ? "diagnosis" : "result"
@@ -1311,7 +1313,7 @@ function App({ storage }: { storage?: Storage } = {}) {
                 : "resources";
   const utilityActiveId = activeView === "contact" || activeView === "records" ? activeView : undefined;
   const mobileActiveId = utilityActiveId ?? guideActiveId;
-  const currentLabel = activeView === "recommendation"
+  const currentLabel = activeView === "example" ? "예시 결과 체험" : activeView === "recommendation"
     ? recommendationStep === "survey" ? "관심 트랙 추천" : "트랙 비교"
     : activeView === "track-guide"
       ? "트랙 가이드"
@@ -1472,7 +1474,7 @@ function App({ storage }: { storage?: Storage } = {}) {
   ) {
     return (
       <GuidebookShell
-        serviceView={isProgressComparison ? "result" : shellRoute.view}
+        serviceView={activeView === "example" ? "landing" : isProgressComparison ? "result" : shellRoute.view}
         activeId={guideActiveId}
         mobileActiveId={mobileActiveId}
         currentLabel={currentLabel}
@@ -1515,6 +1517,8 @@ function App({ storage }: { storage?: Storage } = {}) {
     />, []);
   }
 
+  if (activeView === "example") return renderGuidebook(<ExampleExperience headingRef={stepHeadingRef} onHome={() => navigateAppRoute({view:"landing"})} onStart={() => navigateAppRoute({view:"landing"})}/>, []);
+
   if (activeView === "landing") {
     return renderGuidebook(
       <TrackServiceLanding
@@ -1530,6 +1534,7 @@ function App({ storage }: { storage?: Storage } = {}) {
         entryIntent={savedState.entryIntent}
         onEntryIntentChange={entryIntent => persist(current => ({ ...current, entryIntent }))}
         onStartIntent={startIntent}
+        onOpenExample={() => navigateAppRoute({ view: "example" })}
         onResumeResult={() => navigateAppRoute(selectedTrackIds.length ? { view: "result", section: "current" } : { view: "recommendation", step: "axes", axis: "progress" })}
       />,
       [],
@@ -1556,6 +1561,7 @@ function App({ storage }: { storage?: Storage } = {}) {
   if (activeView === "recommendation") {
     if (recommendationStep === "axes" && recommendationAxis === "progress") return renderGuidebook(<TrackHistoryComparison
       courseSelections={savedState.courseSelections}
+      initialPlanPreferences={savedState.trackPlanning?.result?.preferences ?? savedState.graduationPlanPreferences}
       selectedTrackIds={selectedTrackIds}
       pendingSelectedTrackIds={savedState.pendingSelectedTrackIds}
       onPendingChange={pendingSelectedTrackIds => persist(current => ({ ...current, pendingSelectedTrackIds }))}

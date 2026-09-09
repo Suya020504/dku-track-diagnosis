@@ -13,6 +13,7 @@ export type TrackServiceLandingProps = {
   onOpenRecommendation: () => void; onPlannerAction?: () => void; saveUnavailable?: boolean;
   entryIntent?: EntryChoice; onEntryIntentChange?: (intent: EntryChoice) => void;
   onStartIntent?: (intent: EntryChoice) => void; onResumeResult?: () => void;
+  onOpenExample?: () => void;
 };
 const journeySteps: {label:string; glyph:ServiceGlyphKind}[] = [
   {label:"내 정보",glyph:"profile"}, {label:"트랙 선택",glyph:"tracks"},
@@ -48,6 +49,7 @@ export function TrackServiceLanding(props: TrackServiceLandingProps) {
       <section className="journey-home-entry" aria-labelledby="journey-start-title">
         <h2 id="journey-start-title">어디서부터 시작할까요?</h2>
         <p>나에게 맞는 방법을 선택하세요. 수강 이력은 한 번만 입력해요.</p>
+        {props.onOpenExample && <div className="journey-home-example"><span>입력 전에 어떤 결과가 나오는지 궁금하다면</span><button type="button" onClick={props.onOpenExample}>예시 결과 먼저 보기<ArrowRight size={17} aria-hidden="true"/></button></div>}
         <EntryChoices value={intent} onChange={next=>{setLocalIntent(next);props.onEntryIntentChange?.(next);}}/>
         <div className="journey-home-actions">
           <button type="button" className="journey-home-start" onClick={start}>선택한 방법으로 시작하기<ArrowRight size={20} aria-hidden="true"/></button>
