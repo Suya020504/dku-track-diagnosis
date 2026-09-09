@@ -78,4 +78,3 @@ def main():
     print(json.dumps({'duration':clock,'bytes':target.stat().st_size,'video':str(target)},ensure_ascii=False),flush=True)
 
 if __name__=='__main__': main()
-
