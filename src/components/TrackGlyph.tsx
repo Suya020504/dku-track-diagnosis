@@ -7,6 +7,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { TrackId } from "../types";
+import "./service-glyphs.css";
 
 type TrackGlyphDefinition = {
   Icon: LucideIcon;
@@ -34,6 +35,7 @@ export function TrackGlyph({ trackId, decorative = false, className }: TrackGlyp
   return (
     <span
       className={classes}
+      data-track-glyph={trackId}
       {...(decorative ? { "aria-hidden": true } : { role: "img", "aria-label": label })}
     >
       <Icon aria-hidden="true" focusable="false" strokeWidth={1.8} />

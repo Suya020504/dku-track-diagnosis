@@ -1077,7 +1077,7 @@
 .dku-profile-page .dku-profile-status { font-size:14px; }
 .dku-profile-page .dku-profile-status--midyear { order:8; font-size:12px; border-top:1px solid #cedce9; padding-top:16px; }
 .dku-profile-page .dku-profile-year { display:grid; gap:8px; }
-.dku-profile-page .dku-profile-year input { padding:10px; min-height:44px; max-width:220px; border:1px solid #91abc5; border-radius:6px; background:white; }
+.dku-profile-page .dku-profile-year input { padding:10px; min-height:44px; max-width:220px; border:1px solid #738797; border-radius:6px; background:white; }
 .dku-profile-page .dku-profile-actions { display:flex; justify-content:flex-end; align-items:center; gap:12px; padding-top:8px; }
 .dku-profile-page .dku-profile-actions--split { justify-content:space-between; }
 .dku-profile-page button { min-height:48px; padding:12px 18px; border-radius:8px; cursor:pointer; }

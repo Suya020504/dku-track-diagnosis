@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { calculateGraduationPlan } from "../../lib/graduationPlanner";
@@ -122,7 +123,10 @@ describe("GraduationPlanResult status language", () => {
   ] as const)("uses the safe heading for %s", (status, heading) => {
     const markup = renderResult({ ...baseResult, status });
 
-    expect(markup).toContain(`<h1 tabindex="-1">${heading}</h1>`);
+    const rendered = document.createElement("div"); rendered.innerHTML = markup;
+    expect(rendered.querySelector("h1")?.textContent).toBe(heading);
+    expect(rendered.querySelector("h1")?.getAttribute("tabindex")).toBe("-1");
+    if (status === "official-review-required") expect(rendered.querySelector("h1 .lucide-circle-check")).toBeNull();
     expect(markup).not.toMatch(/<h[1-6][^>]*>[^<]*(졸업 가능|이수 확정|개설 보장)[^<]*<\/h[1-6]>/);
   });
 });
@@ -138,7 +142,8 @@ describe("GraduationPlanResult distributed pages", () => {
     const markup = renderResult(baseResult, "schedule");
 
     expect(markup).toContain('aria-label="졸업 계획 단계"');
-    expect(markup).toContain('aria-current="page">일정');
+    const rendered = document.createElement("div"); rendered.innerHTML = markup;
+    expect(rendered.querySelector('.dku-plan-tabs [aria-current="page"]')?.textContent).toBe("일정");
     expect(markup).toContain('data-planner-layout="semester-columns"');
     expect(markup).toContain('<section class="term-plan-board" aria-label="학기별 참고 계획"');
     expect(markup).toContain('data-plan-item-kind="named-course"');
@@ -158,7 +163,8 @@ describe("GraduationPlanResult distributed pages", () => {
   it("shows unplaced reasons, official questions, and working actions on checks only", () => {
     const markup = renderResult(baseResult, "checks");
 
-    expect(markup).toContain('aria-current="page">확인');
+    const rendered = document.createElement("div"); rendered.innerHTML = markup;
+    expect(rendered.querySelector('.dku-plan-tabs [aria-current="page"]')?.textContent).toBe("확인");
     expect(markup).toContain('>일정</button>');
     expect(markup).toContain("배치하지 못한 과목");
     expect(markup).toContain("D-2 환경영향 및 전과정평가");

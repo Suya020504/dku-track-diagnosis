@@ -69,7 +69,7 @@ export function CourseLedgerRow({
             onChange={() => onToggleCourse(course.id)}
           />
           <span className="dku-check-check-box" aria-hidden="true">
-            {checked ? <Check size={18} /> : null}
+            {checked ? <Check aria-hidden="true" size={18} strokeWidth={1.8} /> : null}
           </span>
         </span>
 
@@ -112,7 +112,7 @@ export function CourseLedgerRow({
 
       <details className="dku-check-row-details">
         <summary>
-          <Info aria-hidden="true" size={15} />
+          <Info aria-hidden="true" size={20} strokeWidth={1.8} />
           <span className="dku-check-info-label" aria-hidden="true">과목 정보</span>
           <span className="sr-only">{course.name} 과목 정보</span>
         </summary>

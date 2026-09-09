@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { AppRoute } from "../../lib/appRouting";
-import { ExternalLink, HelpCircle } from "lucide-react";
+import { ExternalLink, HelpCircle, type LucideIcon } from "lucide-react";
 import { DEPARTMENT_HOME_URL, DEPARTMENT_YOUTUBE_URL } from "../../data/officialResources";
 import { CompassPathRibbon, type CompassPathItem } from "../journey/CompassPathRibbon";
 import { LocalSaveStatus, type LocalSaveState } from "./LocalSaveStatus";
@@ -13,6 +13,7 @@ export type GuidebookNavItem = {
   available: boolean;
   unavailableReason?: string;
   onSelect: () => void;
+  icon?: LucideIcon;
 };
 
 export type GuidebookExternalLink = {
@@ -82,15 +83,25 @@ export function GuidebookShell({
           본문으로 건너뛰기
         </a>
         <header className="planner-shell-header">
-          <div className="planner-shell-wordmark">
+          <a
+            className="planner-shell-wordmark planner-focusable"
+            href="/"
+            aria-label="식품자원경제학과 트랙 안내 · 자가진단 홈으로"
+            onClick={(event) => {
+              const home = guideItems.find((item) => item.id === "start");
+              if (!home || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+              event.preventDefault();
+              home.onSelect();
+            }}
+          >
             <img src="/dku-logo.png" width="76" height="36" alt="단국대학교" />
             <span className="planner-shell-wordmark__divider" aria-hidden="true" />
             <span className="planner-shell-wordmark__copy">
               <strong>식품자원경제학과</strong>
               <small>트랙 안내 · 자가진단</small>
+              <span className="planner-shell-current-step">현재 · {currentLabel}</span>
             </span>
-          </div>
-          <span className="planner-shell-current-step">현재 · {currentLabel}</span>
+          </a>
           <nav className="planner-shell-primary-nav" aria-label="주요 서비스">
             {guideItems.map((item) => (
               <button
@@ -105,7 +116,8 @@ export function GuidebookShell({
                   else setUnavailableMessage(item.unavailableReason ?? "앞 단계를 완료하면 이용할 수 있어요.");
                 }}
               >
-                {item.label}
+                {item.icon ? <item.icon size={19} strokeWidth={1.8} aria-hidden="true" focusable="false" /> : null}
+                <span>{item.label}</span>
                 {!item.available ? <small className="planner-shell-unavailable">이용 조건 확인</small> : null}
               </button>
             ))}
@@ -122,7 +134,8 @@ export function GuidebookShell({
                     disabled={!item.available}
                     onClick={item.onSelect}
                   >
-                    {item.label}
+                    {item.icon ? <item.icon size={18} strokeWidth={1.8} aria-hidden="true" focusable="false" /> : null}
+                    <span>{item.label}</span>
                   </button>
                 ))}
               </nav>

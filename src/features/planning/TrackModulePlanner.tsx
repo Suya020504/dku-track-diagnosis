@@ -1,5 +1,6 @@
 import { useState, type RefObject } from "react";
-import { BookOpen, Check, CheckCircle2, ExternalLink, Info, RotateCcw, Save } from "lucide-react";
+import { BookOpen, CalendarDays, CalendarPlus, CheckCircle2, ExternalLink, Info, RotateCcw, Save } from "lucide-react";
+import { TrackGlyph } from "../../components/TrackGlyph";
 import type { AcademicTermId, CourseSelectionRecord, GraduationPlanDraftValues, GraduationPlanPreferences, TrackId, TrackPlanningState } from "../../types";
 import { buildTrackPlanInputSignature, buildTrackSemesterPlan, MAX_TRACK_PLANNING_FUTURE_TERMS, type TrackSemesterPlan } from "../../lib/trackSemesterPlanner";
 import { courses, tracks } from "../../data/curriculumData";
@@ -94,7 +95,7 @@ export function TrackModulePlanner({
 
   return <main className="track-module-planner" aria-labelledby="track-module-plan-title">
     <header className="track-module-planner__heading">
-      <h1 id="track-module-plan-title" ref={headingRef} tabIndex={-1}>남은 수업을 학기별로 나눠보세요</h1>
+      <h1 id="track-module-plan-title" ref={headingRef} tabIndex={-1}><CalendarDays size={22} strokeWidth={1.8} aria-hidden="true" />남은 수업을 학기별로 나눠보세요</h1>
       <p>선택한 여러 트랙의 겹치는 과목은 한 번만 담아요.</p>
       <p className="track-module-planner__scope">선택 트랙 모듈 계획 · 전체 졸업 요건은 별도예요.</p>
     </header>
@@ -117,7 +118,7 @@ export function TrackModulePlanner({
         <label><span>학기당 최대 과목 수</span><input value={load} inputMode="numeric"
           aria-invalid={!loadValid} aria-describedby="track-module-plan-load-help"
           onChange={(event) => change({ maxMajorCoursesPerTerm: event.target.value })} /></label>
-        <button type="submit" disabled={!valid}>{result ? "조건 반영해 계획 만들기" : "계획 만들기"}</button>
+        <button type="submit" disabled={!valid}><CalendarPlus size={19} strokeWidth={1.8} aria-hidden="true" />{result ? "조건 반영해 계획 만들기" : "계획 만들기"}</button>
         <div className="track-module-planner__condition-help">
           <p id="track-module-plan-period-help">연도-학기로 입력해 주세요. 현재 학기 이후 최대 12개 정규학기까지 계획할 수 있어요.</p>
           <p id="track-module-plan-load-help">한 학기에 1~6과목. 새 과목은 다음 학기부터, 수강 중인 과목은 현재 학기에 표시해요.</p>
@@ -197,7 +198,7 @@ export function TrackModulePlanner({
         </section>
         <aside aria-label="선택한 트랙" className="track-module-planner__rail">
           <div className="track-module-planner__rail-heading"><h2>선택한 트랙</h2><button type="button" onClick={onEditTracks}>트랙 변경</button></div>
-          <ul className="track-module-planner__track-list">{selectedTracks.map((track) => <li key={track.id}><Check size={19} aria-hidden="true" />{track.name}</li>)}</ul>
+          <ul className="track-module-planner__track-list">{selectedTracks.map((track) => <li key={track.id}><TrackGlyph trackId={track.id} decorative />{track.name}</li>)}</ul>
           <section className="track-module-planner__rail-block"><h3><Info size={17} aria-hidden="true" /> 겹치는 과목은 한 번만</h3>
             <p>여러 트랙에 포함된 같은 과목은 한 번만 담아요.</p>
           </section>

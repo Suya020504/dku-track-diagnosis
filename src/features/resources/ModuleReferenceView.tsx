@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Search } from "lucide-react";
 import { courseOfferings2026 } from "../../data/courseOfferings2026";
 import { courses, modules } from "../../data/curriculumData";
 import { normalizeCourseSearch } from "../../data/officialTimetable2026";
@@ -9,7 +10,7 @@ export function ModuleReferenceView() {
   const needle = normalizeCourseSearch(query);
   const visible = courses.filter((course) => normalizeCourseSearch(`${course.code} ${course.name} ${courseOfferings2026[course.id]?.officialCourseCode} ${courseOfferings2026[course.id]?.timetableName ?? ""} ${modules.find((item) => item.id === course.moduleId)?.name}`).includes(needle));
   return <section className="dku-resource-modules" aria-label="모듈별 과목 자료">
-    <div className="dku-resource-toolbar"><label>모듈·과목 검색<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="과목명, 모듈명, 학사 과목코드" /></label><span role="status">{visible.length} / 49과목</span></div>
+    <div className="dku-resource-toolbar"><label><span className="dku-resource-field-label"><Search size={16} aria-hidden="true" />모듈·과목 검색</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="과목명, 모듈명, 학사 과목코드" /></label><span role="status">{visible.length} / 49과목</span></div>
     <p className="dku-resource-note">A 학문기초 4과목을 포함한 트랙 구성 전체입니다. 직접 진단의 전공 입력 목록은 A를 제외한 45과목입니다.</p>
     {visible.length === 0 && <p className="dku-resource-empty" role="status">조건에 맞는 과목이 없습니다. 검색어를 바꿔 보세요.</p>}
     <div className="dku-resource-module-grid">{modules.map((module) => {

@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronDown, Save, ShieldCheck } from "lucide-react";
+import { ArrowRight, CalendarDays, CheckCircle2, ChevronDown, Clock3, Save, ShieldCheck } from "lucide-react";
 import type { ReactNode, RefObject } from "react";
 import { getCourseInputPolicy } from "../../lib/courseInputPolicy";
 import type {
@@ -107,9 +107,9 @@ export function CourseSelectionView({
 
       <section className="dku-courses-actions" aria-label="과목 입력 현황과 다음 단계">
         <div className="dku-courses-counts">
-          <span>이수 완료 <strong>{completedCount}</strong></span>
-          <span>수강 중 <strong>{inProgressCount}</strong></span>
-          <span>수강 계획 <strong>{plannedCount}</strong></span>
+          <span><CheckCircle2 aria-hidden="true" size={18} strokeWidth={1.8} />이수 완료 <strong>{completedCount}</strong></span>
+          <span><Clock3 aria-hidden="true" size={18} strokeWidth={1.8} />수강 중 <strong>{inProgressCount}</strong></span>
+          <span><CalendarDays aria-hidden="true" size={18} strokeWidth={1.8} />수강 계획 <strong>{plannedCount}</strong></span>
         </div>
         <button
           id="diagnosis-result-action"
@@ -117,7 +117,7 @@ export function CourseSelectionView({
           type="button"
           onClick={onShowResult}
         >
-          진단 결과 확인 <ArrowRight aria-hidden="true" size={17} />
+          진단 결과 확인 <ArrowRight aria-hidden="true" size={20} strokeWidth={1.8} />
         </button>
       </section>
 
@@ -152,12 +152,13 @@ export function CourseSelectionView({
 
       <details className="dku-check-policy">
         <summary>
-          <ShieldCheck aria-hidden="true" size={18} />
-          <span>현재 계산 기준</span>
+          <ShieldCheck aria-hidden="true" size={20} strokeWidth={1.8} />
+          <span>전공 전체 학사 기준</span>
           <strong>{policy.title}</strong>
           <em>{policy.marker}</em>
-          <ChevronDown aria-hidden="true" size={17} />
+          <ChevronDown aria-hidden="true" size={18} strokeWidth={1.8} />
         </summary>
+        <p className="dku-check-policy-scope">아래는 전공 전체 학점과 모듈 내 필수 기준입니다. 트랙 결과는 선택한 트랙의 모듈 학점만 따로 계산해요.</p>
         <p>{policy.description}</p>
         <p>직접 진단은 트랙 전공 45과목을 대상으로 합니다. 학과 교육과정 47과목·트랙 구성 49과목·실제 시간표 37분반은 서로 범위가 다릅니다. 학사 과목코드나 시간표 과목명으로도 검색할 수 있습니다. 트랙 밖 과목은 이 목록과 진단 학점에 자동 포함되지 않습니다.</p>
       </details>
@@ -171,7 +172,7 @@ export function CourseSelectionView({
           <small>{lastManualSaveAt ? `직접 저장: ${lastManualSaveAt}` : "직접 저장 기록 없음"}</small>
         </div>
         <button type="button" onClick={onSaveCourses}>
-          <Save aria-hidden="true" size={18} />
+          <Save aria-hidden="true" size={18} strokeWidth={1.8} />
           지금 저장
         </button>
       </section>

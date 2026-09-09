@@ -1,0 +1,78 @@
+/* Quiet route backgrounds. Cards, controls and semantic status colours keep
+   their own opaque surfaces; no gradient is placed above page content. */
+@media screen {
+  .planner-app.planner-guidebook-shell[data-service-zone] {
+    --service-backdrop-start: #f1f6fa;
+    --service-backdrop-middle: #fcfdfd;
+    --service-backdrop-end: #f3f6f9;
+    background-color: var(--service-backdrop-middle);
+    background-image: linear-gradient(
+      145deg,
+      var(--service-backdrop-start) 0%,
+      var(--service-backdrop-middle) 48%,
+      var(--service-backdrop-end) 100%
+    );
+  }
+
+  .planner-app.planner-guidebook-shell[data-service-zone="landing"] {
+    --service-backdrop-start: #edf8f1;
+    --service-backdrop-middle: #fcfdfb;
+    --service-backdrop-end: #edf5fd;
+  }
+
+  .planner-app.planner-guidebook-shell[data-service-zone="track-guide"] {
+    --service-backdrop-start: #eaf7ef;
+    --service-backdrop-middle: #f9fcf8;
+    --service-backdrop-end: #eef8f6;
+  }
+
+  .planner-app.planner-guidebook-shell[data-service-zone="diagnosis"] {
+    --service-backdrop-start: #f4f8ff;
+    --service-backdrop-middle: #fcfdff;
+    --service-backdrop-end: #f2f9fd;
+  }
+
+  .planner-app.planner-guidebook-shell[data-service-zone="recommendation"] {
+    --service-backdrop-start: #edf9f4;
+    --service-backdrop-middle: #fbfdfb;
+    --service-backdrop-end: #eef7fa;
+  }
+
+  .planner-app.planner-guidebook-shell[data-service-zone="result"] {
+    --service-backdrop-start: #eef8f5;
+    --service-backdrop-middle: #fafdfc;
+    --service-backdrop-end: #eff5fb;
+  }
+
+  .planner-app.planner-guidebook-shell[data-service-zone="plan"] {
+    --service-backdrop-start: #fcf5e8;
+    --service-backdrop-middle: #fffdf7;
+    --service-backdrop-end: #f8f7ef;
+  }
+
+  .planner-app.planner-guidebook-shell[data-service-zone="resources"] {
+    --service-backdrop-start: #f3f1fb;
+    --service-backdrop-middle: #fcfcff;
+    --service-backdrop-end: #eef7fc;
+  }
+
+  .planner-app.planner-guidebook-shell[data-service-zone="contact"] {
+    --service-backdrop-start: #eff9f3;
+    --service-backdrop-middle: #fcfdfb;
+    --service-backdrop-end: #f0f8f7;
+  }
+
+  .planner-app.planner-guidebook-shell[data-service-zone="records"] {
+    --service-backdrop-start: #f1f5f9;
+    --service-backdrop-middle: #fcfdfd;
+    --service-backdrop-end: #f2f7f9;
+  }
+
+  /* These are page backdrops, not the cards and forms inside them. */
+  .planner-app[data-service-zone="landing"] .journey-home,
+  .planner-app[data-service-zone="diagnosis"] .dku-profile-page,
+  .planner-app[data-service-zone="plan"] .dku-plan-shell,
+  .planner-app[data-service-zone="plan"] .track-module-planner {
+    background: transparent;
+  }
+}

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, type ReactNode, type RefObject } from "react";
-import { CheckCircle2, Heart, SlidersHorizontal } from "lucide-react";
+import { BookOpenCheck, CalendarDays, CheckCircle2, Heart, SlidersHorizontal } from "lucide-react";
 import { TrackGlyph } from "../../components/TrackGlyph";
 import { tracks } from "../../data/curriculumData";
 import { findAlignedLeaderTrackIds } from "../../lib/recommendationEngine";
@@ -34,13 +34,13 @@ export type TrackRecommendationAxesProps = {
 
 const AXIS_PAGES: ReadonlyArray<{
   id: RecommendationAxisId;
-  index: string;
+  Icon: typeof Heart;
   label: string;
   description: string;
 }> = [
-  { id: "interest", index: "01", label: "관심", description: "답변에서 나타난 관심 분야" },
-  { id: "progress", index: "02", label: "현재 완료 과목", description: "완료로 표시한 과목" },
-  { id: "plan", index: "03", label: "졸업 전 계획", description: "목표 학기까지의 배치" },
+  { id: "interest", Icon: Heart, label: "관심", description: "답변에서 나타난 관심 분야" },
+  { id: "progress", Icon: BookOpenCheck, label: "현재 완료 과목", description: "완료로 표시한 과목" },
+  { id: "plan", Icon: CalendarDays, label: "졸업 전 계획", description: "목표 학기까지의 배치" },
 ];
 
 const trackNames = new Map(tracks.map((track) => [track.id, track.name]));
@@ -283,11 +283,11 @@ export function TrackRecommendationAxes({
       <AxisResultCard
         id="plan"
         title="졸업 전 계획에 배치하기 쉬운 트랙"
-        description="목표 졸업학기와 학기당 수강량을 기준으로 과목 배치 결과, 배치하지 못한 과목, 추가 학기를 각각 확인합니다."
+        description="전공 전체 학사 기준으로 목표 졸업학기까지의 과목 배치, 미배치 과목, 추가 학기를 확인합니다. 선택 트랙 모듈 공동 계획과 별도인 비교입니다."
         assumption={plan?.[0]?.assumption === "track-major-hypothesis"}
         unavailable={plan ? undefined : {
           message: "현재 학기, 목표 졸업학기, 학기당 수강량을 입력하면 계획 가능성을 비교할 수 있어요.",
-          actionLabel: "졸업 계획 입력하기",
+          actionLabel: "전공 전체 계획 입력하기",
           onAction: onOpenGraduationPlan,
         }}
       >
@@ -299,7 +299,6 @@ export function TrackRecommendationAxes({
   return (
     <main className="dku-comparison-page" aria-labelledby="recommendation-axes-title">
       <header className="dc-axes-hero">
-        <span>TRACK COMPARISON · 트랙 비교</span>
         <h1 id="recommendation-axes-title" ref={headingRef} tabIndex={-1}>
           나에게 맞는 다섯 트랙을 기준별로 비교해요
         </h1>
@@ -319,6 +318,7 @@ export function TrackRecommendationAxes({
             {AXIS_PAGES.map((page) => {
               const selected = activeAxis === page.id;
               const leader = axisLeaders[page.id];
+              const Icon = page.Icon;
               return (
                 <li key={page.id}>
                   <button
@@ -329,7 +329,7 @@ export function TrackRecommendationAxes({
                     aria-current={selected ? "page" : undefined}
                     onClick={() => onAxisChange(page.id)}
                   >
-                    <span>{page.index}</span>
+                    <Icon aria-hidden="true" size={20} strokeWidth={1.8} />
                     <span>
                       <strong>{page.label}</strong>
                       <small>{leader ? `${page.description} · ${trackName(leader)}` : `${page.description} · 입력 필요`}</small>
@@ -362,7 +362,7 @@ export function TrackRecommendationAxes({
             </aside>
           ) : aligned ? (
             <aside className="dc-axis-summary recommendation-axis-summary--aligned" aria-label="두 기준 이상에서 같은 선두 후보">
-              <CheckCircle2 aria-hidden="true" size={22} />
+              <CheckCircle2 aria-hidden="true" size={20} strokeWidth={1.8} />
               <div>
                 <span>기준 비교 요약</span>
                 <strong>
@@ -381,7 +381,7 @@ export function TrackRecommendationAxes({
             </aside>
           ) : (
             <aside className="dc-axis-summary recommendation-axis-summary--diverged" aria-label="기준마다 다른 선두 후보">
-              <SlidersHorizontal aria-hidden="true" size={22} />
+              <SlidersHorizontal aria-hidden="true" size={20} strokeWidth={1.8} />
               <div>
                 <span>기준 비교 요약</span>
                 <strong>기준마다 선두 후보가 다릅니다.</strong>
@@ -393,7 +393,7 @@ export function TrackRecommendationAxes({
       </div>
 
       <footer className="dc-axes-footer">
-        <Heart aria-hidden="true" size={19} />
+        <Heart aria-hidden="true" size={20} strokeWidth={1.8} />
         <span>비교 결과는 선택을 돕는 참고 정보입니다. 트랙 상세와 공식 안내도 함께 확인하고 직접 결정하세요.</span>
       </footer>
     </main>

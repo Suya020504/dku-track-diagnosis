@@ -32,7 +32,6 @@ export function AxisResultCard({
       aria-labelledby={headingId}
     >
       <header className="dc-result-page__heading">
-        <span>비교 기준</span>
         <h2 id={headingId}>{title}</h2>
         <p>{description}</p>
       </header>

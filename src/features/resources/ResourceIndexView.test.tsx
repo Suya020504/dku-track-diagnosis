@@ -139,16 +139,15 @@ describe("resource reading routes", () => {
     expect(scrollTo).toHaveBeenLastCalledWith({ top: 0, left: 0, behavior: "auto" });
   });
 
-  it("keeps official track names and module scope, with a usable image fallback", async () => {
+  it("starts with all five track rows instead of a duplicated guide illustration and keeps module scope", async () => {
     await mountAt("?view=resources&section=tracks");
     for (const track of tracks) expect(document.body.textContent).toContain(track.name);
     expect(document.body.textContent).toContain("F/H/I 각각 3학점 이상");
     expect(document.body.textContent).toContain("M 8학점");
     expect(document.body.textContent).toContain("N+O 7학점");
-    const image = document.querySelector<HTMLImageElement>('[data-concept-image="course-module-track"]')!;
-    expect(image.src).toContain("course-module-track-structure-v2.webp");
-    await act(async () => image.dispatchEvent(new Event("error")));
-    expect(document.querySelector('[data-concept-fallback="course-module-track"]')?.textContent).toContain("아래 목록");
+    expect(document.querySelector('[data-concept-image="course-module-track"]')).toBeNull();
+    expect(document.querySelectorAll("[data-track-id]")).toHaveLength(5);
+    expect(document.querySelectorAll('[data-resource-section] svg[aria-hidden="true"]')).toHaveLength(5);
     await goTo("?view=resources&section=modules");
     for (const module of modules) expect(document.body.textContent).toContain(`${module.id}. ${module.name}`);
     expect(document.body.textContent).toContain("49과목");

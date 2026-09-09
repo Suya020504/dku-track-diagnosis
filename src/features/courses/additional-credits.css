@@ -16,7 +16,7 @@
 .additional-credits__form { background: #f4f8fb; padding: 18px; border-radius: 10px; }
 .additional-credits__form > div { display: grid; grid-template-columns: minmax(0, 1fr) 100px auto; gap: 12px; align-items: end; }
 .additional-credits__form label { display: grid; gap: 7px; font-size: 13px; min-width: 0; }
-.additional-credits__form input { box-sizing: border-box; width: 100%; min-width: 0; height: 44px; border: 1px solid #aac1d2; border-radius: 8px; padding: 10px; color: #16334d; background: white; }
+.additional-credits__form input { box-sizing: border-box; width: 100%; min-width: 0; height: 44px; border: 1px solid #738797; border-radius: 8px; padding: 10px; color: #16334d; background: white; }
 .additional-credits__saved { padding: 0; list-style: none; }
 .additional-credits__saved li { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #d5e2eb; font-size: 13px; }
 .additional-credits__saved li > div { flex: 1; min-width: 0; overflow-wrap: anywhere; }

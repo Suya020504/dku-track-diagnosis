@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { ExternalLink, Search } from "lucide-react";
 import { filterOfficialSections, formatDayPeriod, OFFICIAL_2026_SOURCE, type OfficialClassSection } from "../../data/officialTimetable2026";
 import { createWeeklyTimetable, TEACHING_DAYS, type WeeklyMeeting } from "./timetableStudent";
 import "./timetable-student.css";
@@ -64,7 +65,7 @@ export function TimetableReferenceView() {
 
   return <section className="dku-tt" aria-label="2026-2 실제 강좌 조회">
     <div className="dku-tt-filters">
-      <label className="dku-tt-search">시간표 검색<input type="search" placeholder="과목명, 과목코드, 교수, 강의실" value={query} onChange={(event) => { setQuery(event.target.value); setSelected(null); }} /></label>
+      <label className="dku-tt-search"><span className="dku-resource-field-label"><Search size={16} aria-hidden="true" />시간표 검색</span><input type="search" placeholder="과목명, 과목코드, 교수, 강의실" value={query} onChange={(event) => { setQuery(event.target.value); setSelected(null); }} /></label>
       <label>요일<select value={day} onChange={(event) => { setDay(event.target.value); setSelected(null); }}><option value="all">전체 요일</option>{TEACHING_DAYS.map((value) => <option key={value}>{value}</option>)}</select></label>
       <label>수업방식<select value={delivery} onChange={(event) => { setDelivery(event.target.value); setSelected(null); }}><option value="all">전체 방식</option><option>대면수업</option><option>원격수업</option></select></label>
       <label>조회 구분<select value={scope} onChange={(event) => { setScope(event.target.value); setSelected(null); }}><option value="all">전체 범위</option>{Object.entries(scopeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
@@ -79,7 +80,7 @@ export function TimetableReferenceView() {
     </div>
 
     {rows.length ? <>
-      <div className="dku-tt-caption"><span>{caption}</span><a href={OFFICIAL_2026_SOURCE.timetableUrl} target="_blank" rel="noopener noreferrer">공식 시간표 ↗</a></div>
+      <div className="dku-tt-caption"><span>{caption}</span><a href={OFFICIAL_2026_SOURCE.timetableUrl} target="_blank" rel="noopener noreferrer">공식 시간표 <ExternalLink size={16} aria-hidden="true" /></a></div>
       {view === "weekly" ? <>
         {weekly.meetings.length > 0 && <div className="dku-tt-scroll" role="region" aria-label="요일별 시간표 가로 스크롤" tabIndex={0}>
           <table className="dku-tt-table dku-tt-weekly" aria-label="요일별 시간표" data-single-day={weekly.days.length === 1 || undefined}>

@@ -1,0 +1,32 @@
+.planner-app .first-visit-guide {
+  width: min(620px, 100%);
+  padding: 28px;
+  gap: 20px;
+  background: #fff;
+  color: #183b4a;
+  border: 1px solid #6e8590;
+  border-radius: 16px;
+}
+.first-visit-guide .guide-dialog-top { align-items: flex-start; }
+.first-visit-guide .guide-dialog-top span { color: #086b54; font-size: 13px; }
+.first-visit-guide .guide-dialog-top h2 { margin-top: 8px; font-size: 26px; line-height: 1.4; word-break: keep-all; overflow-wrap: anywhere; }
+.first-visit-guide .guide-close-button { border-color: #6e8590; color: #304f60; background: #fff; }
+.first-visit-guide__intro, .first-visit-guide__steps p, .first-visit-guide__note { margin: 0; font-size: 15px; line-height: 1.65; color: #405c6b; word-break: keep-all; overflow-wrap: anywhere; }
+.first-visit-guide__steps { display: grid; gap: 20px; padding: 0; margin: 0; list-style: none; }
+.first-visit-guide__steps li { display: grid; grid-template-columns: 32px minmax(0,1fr); gap: 12px; }
+.first-visit-guide__steps li > span { display: grid; place-items: center; height: 32px; border-radius: 50%; background: #e6f3ed; color: #086b54; font-size: 14px; font-weight: 800; }
+.first-visit-guide__steps h3 { margin: 2px 0 6px; color: #183b4a; font-size: 16px; line-height: 1.5; word-break: keep-all; }
+.first-visit-guide__note { padding: 14px 16px; border-radius: 8px; background: #edf4f8; font-size: 13px; }
+.first-visit-guide__actions { display: grid; grid-template-columns: auto 1fr; gap: 12px; }
+.first-visit-guide__actions button { min-height: 46px; font-size: 15px; padding: 10px 20px; }
+.planner-app .first-visit-guide__actions .primary-button { background: #087a5b; color: #fff; border-color: #087a5b; }
+.planner-app .first-visit-guide__actions .primary-button:hover { background: #056247; }
+.planner-app .first-visit-guide__actions .icon-button { color: #304f60; background: #fff; border-color: #6e8590; }
+.first-visit-guide__again { margin: -8px 0 0; text-align: center; color: #405c6b; font-size: 12px; line-height: 1.6; }
+.first-visit-guide button:focus-visible { outline: 3px solid #086b54; outline-offset: 3px; }
+@media (max-width: 600px) {
+  .planner-app .first-visit-guide { padding: 20px 16px; gap: 16px; max-height: calc(100dvh - 32px); }
+  .first-visit-guide .guide-dialog-top h2 { font-size: 21px; }
+  .first-visit-guide__steps { gap: 16px; }
+  .first-visit-guide__intro, .first-visit-guide__steps p { font-size: 14px; }
+}

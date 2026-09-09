@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { ExternalLink, Layers3 } from "lucide-react";
+import { TrackGlyph } from "../../components/TrackGlyph";
 import { modules, tracks } from "../../data/curriculumData";
 import { CHEONAN_ACADEMIC_GUIDE_URL } from "../../data/trackApplication2026";
 import type { Track } from "../../types";
@@ -13,8 +15,8 @@ function trackModules(track: Track) {
 }
 export function TrackSystemOverview() {
   return <section aria-label="다섯 트랙의 구성">
-    <div className="dku-resource-track-intro"><div><h2>과목을 묶으면 모듈,<br />모듈을 연결하면 트랙</h2><p>전공의 기초를 쌓고 관심 분야로 넓혀가는 구조입니다. 트랙별 모듈 조합을 비교해 보세요.</p><a href={CHEONAN_ACADEMIC_GUIDE_URL} target="_blank" rel="noopener noreferrer">천안 학사종합안내 ↗</a></div><ResourceConceptImage id="course-module-track" src="/illustrations/course-module-track-structure-v2.webp" alt="과목 카드가 모듈 폴더로 분류되고 다섯 트랙으로 연결되는 개념" fallback="아래 목록에서 과목·모듈·트랙의 관계를 확인할 수 있습니다." /></div>
-    <ol className="dku-resource-track-list">{tracks.map((track, index) => <li key={track.id} data-track-id={track.id}><span className="dku-resource-track-number">0{index + 1}</span><div><small>{track.kind}</small><h2>{track.name}</h2><p>{track.description}</p><div className="dku-resource-module-tags">{trackModules(track).map((id) => <span key={id}>{id} · {modules.find((item) => item.id === id)?.name}</span>)}</div><details><summary>현재 참고 계산 기준</summary>{track.rule.type === "major" ? <p>{track.rule.moduleIds.length}개 모듈에서 각각 {track.rule.requiredCreditsPerModule}학점 · 합계 {track.rule.totalTrackCredits}학점</p> : <p>
+    <div className="dku-resource-track-intro"><p><Layers3 size={20} aria-hidden="true" />트랙별 모듈 조합을 비교해 보세요.</p><a href={CHEONAN_ACADEMIC_GUIDE_URL} target="_blank" rel="noopener noreferrer">천안 학사종합안내 <ExternalLink size={16} aria-hidden="true" /></a></div>
+    <ol className="dku-resource-track-list">{tracks.map((track) => <li key={track.id} data-track-id={track.id}><span className="dku-resource-track-icon"><TrackGlyph trackId={track.id} decorative /></span><div><small>{track.kind}</small><h2>{track.name}</h2><p>{track.description}</p><div className="dku-resource-module-tags">{trackModules(track).map((id) => <span key={id}>{id} · {modules.find((item) => item.id === id)?.name}</span>)}</div><details><summary>현재 참고 계산 기준</summary>{track.rule.type === "major" ? <p>{track.rule.moduleIds.length}개 모듈에서 각각 {track.rule.requiredCreditsPerModule}학점 · 합계 {track.rule.totalTrackCredits}학점</p> : <p>
             {track.rule.baseModuleIds.join("/")} 각각 {track.rule.requiredCreditsPerBaseModule}학점 이상,
             합산 {track.rule.requiredBaseCreditsTotal}학점
             {track.rule.convergenceRequirements.map((requirement) => (

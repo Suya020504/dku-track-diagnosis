@@ -1,4 +1,5 @@
 import type { RefObject } from "react";
+import { CalendarCheck2, CalendarDays, CalendarPlus, CircleAlert, CircleCheck, ClipboardCheck, Save, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import type {
   AcademicTermId,
   GraduationPlanResult as GraduationPlanResultValue,
@@ -16,6 +17,13 @@ const statusHeadings: Record<GraduationPlanStatus, string> = {
   "load-adjustment-needed": "학기당 수강량 조정이 필요해요",
   "extra-term-possible": "추가 학기가 필요할 가능성이 있어요",
   "official-review-required": "계획 전에 공식 확인이 필요해요",
+};
+const statusIcons: Record<GraduationPlanStatus, LucideIcon> = {
+  "currently-satisfied": CircleCheck,
+  "regular-plan-possible": CalendarCheck2,
+  "load-adjustment-needed": SlidersHorizontal,
+  "extra-term-possible": CalendarPlus,
+  "official-review-required": CircleAlert,
 };
 
 function termIndex(termId: AcademicTermId): number {
@@ -68,11 +76,11 @@ function PlanStatusSummary({
         : result.status === "official-review-required"
           ? "현재 자료만으로 배치하거나 판단하기 어려운 항목을 확인 목록에 남겼습니다."
           : "입력한 목표 학기와 수강량에 맞춰 과목을 배치했습니다. 과목이 정해지지 않은 선택 전공학점은 별도로 자리를 두었습니다.";
+  const StatusIcon = statusIcons[result.status];
 
   return (
     <header className={`dku-plan-heading status-${result.status}`}>
-      <span className="dku-plan-eyebrow">선택 도구 · 학기별 참고 계획</span>
-      <h1 ref={headingRef} tabIndex={-1}>{statusHeadings[result.status]}</h1>
+      <h1 ref={headingRef} tabIndex={-1}><StatusIcon size={22} strokeWidth={1.8} aria-hidden="true" />{statusHeadings[result.status]}</h1>
       <p>{detail}</p>
     </header>
   );
@@ -96,16 +104,16 @@ function PlannerRouteLine({
         aria-current={step === "schedule" ? "page" : undefined}
         onClick={onShowSchedule}
       >
-        일정
+        <CalendarDays size={19} strokeWidth={1.8} aria-hidden="true" />일정
       </button>
       <button
         type="button"
         aria-current={step === "checks" ? "page" : undefined}
         onClick={onShowChecks}
       >
-        확인
+        <ClipboardCheck size={19} strokeWidth={1.8} aria-hidden="true" />확인
       </button>
-      <button type="button" onClick={onEdit}>조건 수정</button>
+      <button type="button" onClick={onEdit}><SlidersHorizontal size={19} strokeWidth={1.8} aria-hidden="true" />조건 수정</button>
     </nav>
   );
 }
@@ -208,7 +216,7 @@ export function GraduationPlanResult({
       </section>
       <footer className="dku-plan-result-actions">
         <p>실제 시간표와 학점 인정은 확인 화면에서 점검해 주세요.</p>
-        <button className="primary-button" type="button" onClick={onSave} disabled={saveDisabled}>계획 저장</button>
+        <button className="primary-button" type="button" onClick={onSave} disabled={saveDisabled}><Save size={19} strokeWidth={1.8} aria-hidden="true" />계획 저장</button>
       </footer>
     </main>
   );

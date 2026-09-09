@@ -27,7 +27,7 @@
 .dku-plan-page .dku-plan-form fieldset { min-width:0; margin:0; padding:18px; border:1px solid var(--plan-line); border-radius:10px; background:#fffdf7; display:grid; align-content:start; gap:16px; }
 .dku-plan-page .dku-plan-form legend { padding:0 6px; font-weight:800; color:#775716; }
 .dku-plan-page .dku-plan-form label { display:grid; gap:6px; font-weight:700; }
-.dku-plan-page .dku-plan-form input:not([type=checkbox]) { min-width:0; width:100%; height:46px; border:1px solid #b6a783; border-radius:6px; background:white; padding:10px 12px; color:#342c1e; font:inherit; }
+.dku-plan-page .dku-plan-form input:not([type=checkbox]) { min-width:0; width:100%; height:46px; border:1px solid #907f5e; border-radius:6px; background:white; padding:10px 12px; color:#342c1e; font:inherit; }
 .dku-plan-page .dku-plan-form small { font-size:12px; color:#68593c; font-weight:400; }
 .dku-plan-page .dku-plan-form .field-error { color:#a13424; }
 .dku-plan-page .dku-plan-form input[aria-invalid=true] { border-color:#a46a46; }
@@ -107,3 +107,25 @@
  .dku-plan-page details::details-content { content-visibility:visible; display:block; }
  .dku-plan-page details > *:not(summary) { display:block !important; }
 }
+
+/* Academic planning remains a separate tool; switching tools never edits inputs. */
+.dku-plan-shell { padding-inline:20px; font-variant-numeric:tabular-nums; }
+.academic-plan-scope-bar { display:flex; align-items:center; justify-content:space-between; gap:12px 20px; padding:12px 0; border-bottom:1px solid #ddceb0; color:#584724; }
+.academic-plan-scope-bar>div { display:flex; align-items:center; gap:10px; font-size:13px; line-height:1.6; }
+.academic-plan-scope-bar>div>svg { flex:0 0 20px; }
+.academic-plan-scope-bar strong { display:block; font-size:15px; }
+.academic-plan-scope-bar button { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; border:1px solid #b9cfc4; border-radius:7px; padding:9px 12px; background:#edf6f0; color:#155a46; font:inherit; font-size:14px; font-weight:650; cursor:pointer; }
+.academic-plan-scope-bar button:focus-visible { outline:3px solid #1763aa; outline-offset:3px; }
+.dku-plan-topbar { padding-block:4px; border-bottom:0; font-size:12px; }
+.dku-plan-page { padding-top:14px; }
+.dku-plan-page h1 { display:flex; align-items:center; gap:10px; font-size:clamp(25px,2.5vw,32px); margin:0 0 10px; }
+.dku-plan-page h1>svg { flex:0 0 22px; }
+.dku-plan-page .dku-plan-heading { margin-bottom:16px; }
+.dku-plan-page .dku-plan-tabs { margin-bottom:16px; }
+.dku-plan-page .dku-plan-tabs button { display:inline-flex; align-items:center; justify-content:center; gap:7px; }
+.dku-plan-page .dku-plan-form label { font-size:14px; }
+.dku-plan-page .dku-plan-form input:not([type=checkbox]) { font-size:16px; }
+.dku-plan-page .dku-plan-form fieldset { padding:16px; gap:14px; }
+@media(max-width:650px){.dku-plan-shell{padding-inline:0}.academic-plan-scope-bar{align-items:stretch;flex-direction:column;gap:10px}.academic-plan-scope-bar button{width:100%}.dku-plan-topbar>span{font-size:11px}.dku-plan-page h1{align-items:flex-start}.dku-plan-page h1>svg{margin-top:6px}}
+@media(prefers-reduced-motion:reduce){.dku-plan-shell *{scroll-behavior:auto;transition:none;animation:none}}
+@media print {.academic-plan-scope-bar{display:none}.dku-plan-shell{padding:0}.dku-plan-page h1>svg{display:none}}

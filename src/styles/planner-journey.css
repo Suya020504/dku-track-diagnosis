@@ -275,6 +275,7 @@
   }
 }
 
+
 /* Flat progress hierarchy: context stays visible without competing with the page title. */
 .planner-compass-path {
   margin-block-end: 16px;
@@ -393,3 +394,10 @@
     overflow-wrap: normal;
   }
 }
+
+/* Keep the journey compact enough that the actual task stays in the first view. */
+.planner-compass-path { margin-bottom:14px; font-variant-numeric:tabular-nums; }
+.planner-compass-path button,.planner-compass-path li:first-child button,.planner-compass-path li:last-child button,.planner-compass-path li[data-visual-state="locked"] button { min-height:54px; }
+.planner-compass-path__state-icon svg { width:18px; height:18px; stroke-width:1.8; }
+@media(max-width:760px){.planner-compass-path{margin-bottom:10px}.planner-compass-path button,.planner-compass-path li:first-child button,.planner-compass-path li:last-child button,.planner-compass-path li[data-visual-state="locked"] button{min-height:56px}.planner-compass-path button>strong{font-size:11px;line-height:1.4}}
+@media(prefers-reduced-motion:reduce){.planner-compass-path *{scroll-behavior:auto;animation:none;transition:none}}

@@ -1,4 +1,5 @@
 import { useId, useRef, useState } from "react";
+import { ExternalLink, Search } from "lucide-react";
 import { departmentCurriculum, OFFICIAL_2026_SOURCE, type DepartmentCourse } from "../../data/officialTimetable2026";
 import { buildCurriculumRoadmap } from "./curriculumRoadmap";
 import "./curriculum-roadmap.css";
@@ -62,11 +63,11 @@ export function CurriculumReferenceView() {
     <div className="dku-roadmap-intro">
       <strong>학과 전체 {departmentCurriculum.length}과목</strong>
       <span>1학년부터 4학년까지, 학기별 학습 흐름</span>
-      <a href={OFFICIAL_2026_SOURCE.departmentCurriculumUrl} target="_blank" rel="noopener noreferrer">학과 교과과정 원문 ↗</a>
+      <a href={OFFICIAL_2026_SOURCE.departmentCurriculumUrl} target="_blank" rel="noopener noreferrer">학과 교과과정 원문 <ExternalLink size={16} aria-hidden="true" /></a>
     </div>
 
     <div className="dku-resource-toolbar dku-roadmap-toolbar">
-      <label>교육과정 검색<input ref={searchRef} type="search" placeholder="과목명 또는 학사 과목코드" value={query} onChange={(event) => {
+      <label><span className="dku-resource-field-label"><Search size={16} aria-hidden="true" />교육과정 검색</span><input ref={searchRef} type="search" placeholder="과목명 또는 학사 과목코드" value={query} onChange={(event) => {
         setQuery(event.target.value);
         setExpandedCode(null);
       }} /></label>

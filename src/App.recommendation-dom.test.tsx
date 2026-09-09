@@ -211,8 +211,10 @@ describe("App recommendation browser interactions", () => {
     expect(document.body.textContent).toContain("지금까지 이수한 과목을 선택하세요.");
   });
 
-  it("keeps a fresh landing unobstructed and opens or closes help only on request", async () => {
+  it("keeps landing unobstructed after dismissing the first-visit guide and allows help on request", async () => {
     await mountApp();
+    expect(document.querySelector('[data-first-visit-guide]')).not.toBeNull();
+    await click("건너뛰기");
 
     expect(document.querySelector('[role="dialog"]')).toBeNull();
     expect(button("선택한 방법으로 시작하기").disabled).toBe(false);

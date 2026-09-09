@@ -536,7 +536,7 @@ describe("App graduation plan pages", () => {
     await mountApp();
 
     expect(document.querySelectorAll("[data-plan-readiness]")).toHaveLength(0);
-    expectFocusedPlanHeading("학기별 참고 계획의 범위를 정해 주세요");
+    expectFocusedPlanHeading("전공 전체 계획");
   });
 
   it("opens direct target selection when the planner is missing a target", async () => {
@@ -566,7 +566,7 @@ describe("App graduation plan pages", () => {
   });
 
   it.each([
-    ["setup", readyState(), "학기별 참고 계획의 범위를 정해 주세요"],
+    ["setup", readyState(), "전공 전체 계획"],
     ["schedule", stateWithPlan(), "목표 학기 안에 참고 계획을 만들었어요"],
     ["checks", stateWithPlan(), "배치하지 못한 과목"],
   ] as const)("renders one main and one focused H1 on the %s step", async (step, state, heading) => {
@@ -596,7 +596,7 @@ describe("App graduation plan pages", () => {
     expect(saved.courseSelections).toEqual([{ courseId: "b-1", status: "completed" }]);
     expect(saved.snapshots).toHaveLength(0);
     expect(new URLSearchParams(location.search).get("step")).toBe("schedule");
-    expect(document.body.textContent).toContain("학기별 참고 계획");
+    expect(document.querySelector('[aria-label="학기별 참고 계획"]')).not.toBeNull();
   });
 
   it.each([
@@ -615,9 +615,9 @@ describe("App graduation plan pages", () => {
 
       expect(new URLSearchParams(location.search).get("step")).toBe("setup");
       expect(history.state).toEqual(expect.objectContaining({ view: "plan", step: "setup" }));
-      expect(document.body.textContent).toContain("학기별 참고 계획의 범위를 정해 주세요");
+      expect(document.body.textContent).toContain("전공 전체 계획");
       expect(replaceState).toHaveBeenCalled();
-      expectFocusedPlanHeading("학기별 참고 계획의 범위를 정해 주세요");
+      expectFocusedPlanHeading("전공 전체 계획");
     },
   );
 
@@ -633,7 +633,7 @@ describe("App graduation plan pages", () => {
 
     expect(new URLSearchParams(location.search).get("step")).toBe("setup");
     expect(history.state).toEqual(expect.objectContaining({ view: "plan", step: "setup" }));
-    expect(document.body.textContent).toContain("학기별 참고 계획의 범위를 정해 주세요");
+    expect(document.body.textContent).toContain("전공 전체 계획");
   });
 
   it("invalidates a generated plan and reviewed input after a completed course changes", async () => {
@@ -703,7 +703,7 @@ describe("App graduation plan pages", () => {
 
     await click("조건 수정");
     expect(new URLSearchParams(location.search).get("step")).toBe("setup");
-    expectFocusedPlanHeading("학기별 참고 계획의 범위를 정해 주세요");
+    expectFocusedPlanHeading("전공 전체 계획");
   });
 
   it("restores the previous history scroll policy after leaving plan", async () => {

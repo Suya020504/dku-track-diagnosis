@@ -103,6 +103,22 @@ function renderAxes(
 }
 
 describe("TrackRecommendationAxes", () => {
+  it("names the academic-plan recovery action and keeps it separate from the track-module joint plan", () => {
+    const markup = renderAxes("plan", { progress: [], alignedLeaderTrackIds: [] });
+    const view = document.createElement("div");
+    view.innerHTML = markup;
+    expect(view.querySelector(".dc-unavailable button")?.textContent).toBe("전공 전체 계획 입력하기");
+    expect(view.textContent).toContain("전공 전체 학사 기준");
+    expect(view.textContent).toContain("선택 트랙 모듈 공동 계획과 별도");
+  });
+  it("pairs each named comparison destination with a decorative purpose icon without a duplicate English heading", () => {
+    const container = document.createElement("div");
+    container.innerHTML = renderAxes("interest");
+    expect(container.querySelector(".dc-axes-hero")?.textContent).not.toContain("TRACK COMPARISON");
+    const destinations = [...container.querySelectorAll("[data-axis-destination]")];
+    expect(destinations).toHaveLength(3);
+    expect(destinations.every((button) => button.querySelector('svg[aria-hidden="true"]') && button.querySelector("strong")?.textContent)).toBe(true);
+  });
   it("does not infer different leaders from zero or one populated axis", () => {
     const empty = renderAxes("interest", { progress: [], alignedLeaderTrackIds: [] });
     const single = renderAxes("interest", { interest: differingAxes.interest, progress: [], alignedLeaderTrackIds: [] });
@@ -189,7 +205,7 @@ describe("TrackRecommendationAxes", () => {
 
     expect(markup).toContain("이수 과목 입력하기");
     expect(markup).not.toContain("관심 설문 시작하기");
-    expect(markup).not.toContain("졸업 계획 입력하기");
+    expect(markup).not.toContain("전공 전체 계획 입력하기");
     expect(markup).not.toContain("0점");
     expect(markup).not.toContain("0%");
   });

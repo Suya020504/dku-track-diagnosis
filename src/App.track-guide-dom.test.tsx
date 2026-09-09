@@ -120,7 +120,7 @@ describe("separate track guide journey", () => {
     expect(document.querySelector(".dku-guide-page")).not.toBeNull();
     expect(document.querySelector('.dku-guide-page [class*="planner-track-guide"]')).toBeNull();
     const illustration = document.querySelector<HTMLImageElement>(".guide-concept img");
-    expect(illustration?.getAttribute("src")).toBe("/illustrations/course-module-track-structure-v2.webp");
+    expect(illustration?.getAttribute("src")).toBe("/illustrations/track-module-studio.webp");
     expect(document.querySelector("figcaption")?.textContent).toContain("모듈 — 관련 과목의 묶음");
     expect(document.querySelectorAll(".guide-next")).toHaveLength(1);
   });
@@ -212,7 +212,7 @@ describe("separate track guide journey", () => {
   it("opens from the optional landing guide action and restores one guide section through native history", async () => {
     await mountAt("/");
 
-    await click("트랙제 먼저 알아보기");
+    await click("트랙제와 5개 트랙 알아보기");
     expect(new URLSearchParams(location.search).get("view")).toBe("track-guide");
     expect(new URLSearchParams(location.search).get("section")).toBe("overview");
     expect(document.querySelector('[data-track-guide-section="overview"]')).not.toBeNull();

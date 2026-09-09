@@ -149,7 +149,6 @@ export function InterestSurvey({
       >
         <header className="ds-result-hero">
           <div>
-            <span>관심 적합도 결과</span>
             {comparison.isCloseMatch ? (
               <>
                 <h1 id="interest-result-title" ref={headingRef} tabIndex={-1}>
@@ -169,12 +168,12 @@ export function InterestSurvey({
               </>
             )}
           </div>
-          <Heart aria-hidden="true" size={52} />
+          <Heart aria-hidden="true" size={22} strokeWidth={1.8} />
         </header>
 
         {storageError && (
           <p className="dc-storage-error" role="alert">
-            <AlertTriangle aria-hidden="true" size={18} />
+            <AlertTriangle aria-hidden="true" size={20} strokeWidth={1.8} />
             저장하지 못했어요. 현재 화면을 닫거나 새로고침하면 답변이 사라질 수 있습니다.
           </p>
         )}
@@ -182,7 +181,6 @@ export function InterestSurvey({
         <section className="ds-result-grid" aria-label="관심 트랙 비교 결과">
           <div className="ds-result-list">
             <div className="ds-result-section-head">
-              <span>관심 기준 안에서 비교</span>
               <h2>상위 관심 트랙을 직접 골라 주세요</h2>
               {multiSelect && <p>한 개만 고르지 않아도 돼요. 관심 있는 트랙을 함께 선택하세요.</p>}
             </div>
@@ -196,7 +194,7 @@ export function InterestSurvey({
                     <article>
                       <div className="ds-result-title-row">
                         <div>
-                          <TrackGlyph trackId={result.trackId} />
+                          <TrackGlyph trackId={result.trackId} decorative />
                           <strong>{result.trackName}</strong>
                         </div>
                         <span>
@@ -219,7 +217,7 @@ export function InterestSurvey({
                         aria-label={multiSelect ? `${result.trackName} ${selected ? "선택 해제" : "선택"}` : undefined}
                         onClick={() => toggleResult(result.trackId)}
                       >
-                        {selected && <Check aria-hidden="true" size={17} />}
+                        {selected && <Check aria-hidden="true" size={18} strokeWidth={1.8} />}
                         {selected ? "선택됨" : `${result.trackName} 선택`}
                       </button>
                     </article>
@@ -248,7 +246,7 @@ export function InterestSurvey({
               <>
                 <span>내가 고른 방향</span>
                 <h2>
-                  <TrackGlyph trackId={selectedResult.trackId} />
+                  <TrackGlyph trackId={selectedResult.trackId} decorative />
                   {selectedResult.trackName}을 선택했어요
                 </h2>
                 <p>{selectedResult.summary}</p>
@@ -277,10 +275,10 @@ export function InterestSurvey({
             onClick={() => multiSelect ? selectedResults.length > 0 && onChooseTracks?.([...selectedTrackIds]) : selectedResult && onChooseTrack(selectedResult.trackId)}
           >
             {multiSelect ? selectedResults.length ? `${selectedResults.length}개 트랙으로 이어가기` : "트랙을 먼저 선택해 주세요" : selectedResult ? "선택한 트랙으로 자가진단 이어가기" : "트랙을 먼저 선택해 주세요"}
-            <ArrowRight aria-hidden="true" size={18} />
+            <ArrowRight aria-hidden="true" size={20} strokeWidth={1.8} />
           </button>
           <button className="icon-button" type="button" onClick={restartSurvey}>
-            <RotateCcw aria-hidden="true" size={17} />
+            <RotateCcw aria-hidden="true" size={18} strokeWidth={1.8} />
             다시 답하기
           </button>
         </div>
@@ -299,7 +297,6 @@ export function InterestSurvey({
     >
       <header className="ds-survey-head">
         <div>
-          <span>{audience === "department-student" ? "전공 안에서 관심 트랙 찾기" : "내 전공과 연결할 트랙 찾기"}</span>
           <h1 id="interest-survey-title" ref={headingRef} tabIndex={-1}>
             {audience === "department-student"
               ? "어떤 주제와 활동을 더 깊게 배우고 싶은가요?"
@@ -309,8 +306,8 @@ export function InterestSurvey({
         </div>
         <div className={storageError ? "ds-save-state error" : "ds-save-state"} role="status">
           {storageError
-            ? <AlertTriangle aria-hidden="true" size={17} />
-            : <Save aria-hidden="true" size={17} />}
+            ? <AlertTriangle aria-hidden="true" size={18} strokeWidth={1.8} />
+            : <Save aria-hidden="true" size={18} strokeWidth={1.8} />}
           <span>{storageError ? "저장하지 못했어요" : "이 브라우저에 저장됨"}</span>
         </div>
       </header>
@@ -325,12 +322,12 @@ export function InterestSurvey({
         )}>
           소속 바꾸기
         </button>
-        <button type="button" onClick={restartSurvey}><RotateCcw size={17} aria-hidden="true" />처음부터 다시 답하기</button>
+        <button type="button" onClick={restartSurvey}><RotateCcw size={18} strokeWidth={1.8} aria-hidden="true" />처음부터 다시 답하기</button>
       </aside>
 
       {storageError && (
         <p className="dc-storage-error" role="alert">
-          <AlertTriangle aria-hidden="true" size={18} />
+          <AlertTriangle aria-hidden="true" size={20} strokeWidth={1.8} />
           저장하지 못했어요. 현재 화면을 닫기 전에 답변을 확인해 주세요.
         </p>
       )}
@@ -379,7 +376,7 @@ export function InterestSurvey({
             disabled={currentIndex === 0}
             onClick={() => moveQuestion(currentIndex - 1)}
           >
-            <ArrowLeft aria-hidden="true" size={18} />
+            <ArrowLeft aria-hidden="true" size={20} strokeWidth={1.8} />
             이전
           </button>
           {currentIndex < interestSurveyQuestions.length - 1 ? (
@@ -390,7 +387,7 @@ export function InterestSurvey({
               onClick={() => moveQuestion(currentIndex + 1)}
             >
               다음
-              <ArrowRight aria-hidden="true" size={18} />
+              <ArrowRight aria-hidden="true" size={20} strokeWidth={1.8} />
             </button>
           ) : (
             <button
@@ -400,7 +397,7 @@ export function InterestSurvey({
               onClick={showSurveyResult}
             >
               결과 보기
-              <ArrowRight aria-hidden="true" size={18} />
+              <ArrowRight aria-hidden="true" size={20} strokeWidth={1.8} />
             </button>
           )}
         </div>
@@ -409,7 +406,7 @@ export function InterestSurvey({
 
       <button className="ds-skip-button" type="button" onClick={onSkipToDiagnosis}>
         설문을 건너뛰고 자가진단 바로가기
-        <ArrowRight aria-hidden="true" size={17} />
+        <ArrowRight aria-hidden="true" size={20} strokeWidth={1.8} />
       </button>
     </main>
   );

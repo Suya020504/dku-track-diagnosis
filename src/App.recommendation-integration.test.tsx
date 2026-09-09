@@ -155,7 +155,7 @@ describe("recommendation route integration", () => {
 
     expect(markup.replace(/<[^>]+>/g, "")).toContain("내 수업으로 트랙을 완성해요");
     expect(markup).toContain("선택한 방법으로 시작하기");
-    expect(markup).toContain("트랙제 먼저 알아보기");
+    expect(markup).toContain("트랙제와 5개 트랙 알아보기");
     expect(markup).toContain("관심으로 찾아볼래요");
     expect(primaryActionIndex).toBeGreaterThan(-1);
     expect(primaryActionIndex).toBeGreaterThan(choicesIndex);
@@ -164,7 +164,8 @@ describe("recommendation route integration", () => {
     expect(markup).toContain('value="known-tracks"');
     expect(markup).toContain('value="interest-survey"');
     expect(markup).toContain('value="completed-courses"');
-    expect(markup).toContain("5개 트랙 자세히 보기");
+    expect(markup.match(/트랙제와 5개 트랙 알아보기/g)).toHaveLength(1);
+    expect(markup).not.toContain("5개 트랙 자세히 보기");
     expect(markup).not.toContain("data-map-stop");
     expect(markup).not.toContain("지도 범례");
     expect(markup).not.toContain("현재 예시 60%");
@@ -239,7 +240,7 @@ describe("recommendation route integration", () => {
       expect(markup).toContain('aria-label="이전 입력 이어보기"');
       expect(markup).toContain(`data-resume-state="${resumeState}"`);
     }
-    expect(markup).toContain(title);
+    expect(markup.replace(/<[^>]+>/g, "")).toContain(title);
     if (action) expect(markup).toContain(action);
     copy.forEach((value) => expect(markup).toContain(value));
     forbidden.forEach((value) => expect(markup).not.toContain(value));
@@ -303,7 +304,9 @@ describe("recommendation route integration", () => {
     expect(markup).toContain("들은 과목으로 트랙을 찾아보세요");
     expect(markup.match(/data-history-track=/g)).toHaveLength(5);
     expect(markup).toContain("확인할 트랙을 골라 주세요");
-    expect(markup).toMatch(/planner-shell-primary-nav[\s\S]*?aria-current="page"[^>]*>진단 결과<\/button>/);
+    const primaryNav = markup.match(/<nav[^>]*class="planner-shell-primary-nav"[\s\S]*?<\/nav>/)?.[0] ?? "";
+    const activeButton = primaryNav.match(/<button[^>]*aria-current="page"[^>]*>[\s\S]*?<\/button>/)?.[0] ?? "";
+    expect(activeButton.replace(/<[^>]+>/g, "")).toBe("진단 결과");
     expect(markup).toContain("현재 · 트랙 비교");
     expect(markup).not.toContain('data-result-panel="current"');
   });

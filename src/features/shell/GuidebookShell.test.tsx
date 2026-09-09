@@ -138,7 +138,8 @@ describe("GuidebookShell", () => {
     expect(markup).toContain('href="#planner-main-content"');
     expect(markup).toContain('<span>도움말</span>');
     expect(markup).toContain('aria-label="도움말 열기"');
-    expect(markup).not.toContain('class="planner-shell-wordmark" aria-label=');
+    expect(markup).toContain('class="planner-shell-wordmark planner-focusable" href="/"');
+    expect(markup).toContain('aria-label="식품자원경제학과 트랙 안내 · 자가진단 홈으로"');
     expect((markup.match(/<main/g) ?? [])).toHaveLength(1);
   });
 

@@ -815,13 +815,13 @@ h1 span {
 .kind-major {
   border-color: #a7dff4;
   background: #eefaff;
-  color: #247eae;
+  color: #206d98;
 }
 
 .kind-convergence {
   border-color: #c9eca2;
   background: #f4fbe8;
-  color: #5e9b3e;
+  color: #477a2b;
 }
 
 .primary-panel,
@@ -1767,13 +1767,13 @@ h1 span {
 .track-badge-food-marketing {
   border-color: #a7dff4;
   background: #eefaff;
-  color: #247eae;
+  color: #206d98;
 }
 
 .track-badge-regional-development-consulting {
   border-color: #c9eca2;
   background: #f4fbe8;
-  color: #5e9b3e;
+  color: #477a2b;
 }
 
 .track-badge-agri-food-distribution {
@@ -1791,7 +1791,7 @@ h1 span {
 .track-badge-food-bio-economy {
   border-color: #c9eca2;
   background: #f4fbe8;
-  color: #5e9b3e;
+  color: #477a2b;
 }
 
 .track-tone-food-marketing {

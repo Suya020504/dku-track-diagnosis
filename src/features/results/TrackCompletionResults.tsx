@@ -1,5 +1,5 @@
 import { useMemo, useState, type RefObject } from "react";
-import { ArrowRight, Bookmark, BookOpen, CalendarDays, Check, ChevronDown, GraduationCap, Layers, Plus, Printer, SlidersHorizontal } from "lucide-react";
+import { ArrowRight, Bookmark, BookOpen, CalendarDays, Check, ChevronDown, ClipboardCheck, GraduationCap, Layers, Plus, Printer, SlidersHorizontal } from "lucide-react";
 import { courses, tracks } from "../../data/curriculumData";
 import { TrackGlyph } from "../../components/TrackGlyph";
 import { calculateTrackCompletion, type TrackCompletionCandidate } from "../../lib/trackCompletion";
@@ -55,7 +55,7 @@ export function TrackCompletionResults(props: TrackCompletionResultsProps) {
   const isPlanned = (id: string) => courseSelections.some(c => c.courseId === id && (c.status === "planned" || c.status === "in-progress"));
 
   return <main className="track-completion-page" aria-labelledby="track-completion-title">
-    <header className="track-completion-heading"><h1 id="track-completion-title" ref={headingRef} tabIndex={-1}>선택한 트랙, 남은 수업을 확인하세요</h1>
+    <header className="track-completion-heading"><h1 id="track-completion-title" ref={headingRef} tabIndex={-1}><ClipboardCheck size={22} strokeWidth={1.8} aria-hidden="true" />선택한 트랙, 남은 수업을 확인하세요</h1>
       <div className="track-completion-selected" aria-label="선택한 트랙">{computation.selectedTrackIds.map(id => <span key={id}><TrackGlyph trackId={id} decorative />{trackName(id)}</span>)}
       <button type="button" onClick={props.onEditTracks}><SlidersHorizontal size={17} aria-hidden="true" />트랙 변경</button>{props.onEditCourses&&<button type="button" onClick={props.onEditCourses}>이수 과목 수정<ArrowRight size={17} aria-hidden="true"/></button>}</div>
     </header>

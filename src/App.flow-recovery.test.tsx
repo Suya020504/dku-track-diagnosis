@@ -72,12 +72,9 @@ describe("reported service flow recovery", () => {
     expect(location.search).toBe("?view=recommendation&step=axes&axis=progress");
     expect(document.querySelector('#track-history-title')).not.toBeNull();
   });
-  it("opens structure from five-track details while keeping the overview entry separate", async () => {
+  it("opens the overview from the single combined guide entry", async () => {
     await mount(fixture());
-    await click("5개 트랙 자세히 보기");
-    expect(location.search).toBe("?view=track-guide&section=structure");
-    await remount("/");
-    await click("트랙제 먼저 알아보기");
+    await click("트랙제와 5개 트랙 알아보기");
     expect(location.search).toBe("?view=track-guide&section=overview");
   });
   it("requires confirmation and keeps archived records when resetting current input", async () => {

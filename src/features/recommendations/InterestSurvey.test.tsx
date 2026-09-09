@@ -104,7 +104,8 @@ describe("InterestSurvey", () => {
     expect(markup).toMatch(/<h1[^>]*tabindex="-1"/);
     expect(markup).toContain("경제학을 선택했어요");
     expect(markup).toContain("선택한 트랙으로 자가진단 이어가기");
-    expect(markup).toContain('aria-label="경제학 트랙"');
+    expect(markup).toContain('data-track-glyph="economics" aria-hidden="true"');
+    expect(markup).not.toContain('aria-label="경제학 트랙"');
     expect(markup).toContain("공동 상위");
     expect(markup.match(/aria-pressed=/g)).toHaveLength(3);
     expect(markup).toContain("다른 트랙도 보기");

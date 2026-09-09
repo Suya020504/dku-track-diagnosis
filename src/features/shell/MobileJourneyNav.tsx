@@ -1,4 +1,4 @@
-import { LockKeyhole, MoreHorizontal } from "lucide-react";
+import { LockKeyhole, MoreHorizontal, type LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 export type MobileJourneyItem = {
@@ -7,6 +7,7 @@ export type MobileJourneyItem = {
   available: boolean;
   unavailableReason?: string;
   onSelect: () => void;
+  icon?: LucideIcon;
 };
 
 function JourneyButton({
@@ -43,6 +44,7 @@ function JourneyButton({
           event.currentTarget.closest("details")?.removeAttribute("open");
         }}
       >
+        {item.icon ? <item.icon size={20} strokeWidth={1.8} aria-hidden="true" focusable="false" /> : null}
         <span>{item.label}</span>
         {locked ? (
           <small data-mobile-lock-label>

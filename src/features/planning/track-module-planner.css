@@ -28,7 +28,7 @@
 
 .track-module-planner__conditions { display: grid; grid-template-columns: minmax(130px, 1fr) minmax(130px, 1fr) minmax(130px, 1fr) auto; gap: 10px 20px; align-items: end; padding: 16px; margin-bottom: 16px; border: 1px solid #d5e5ec; background: #edf5f9; border-radius: 8px; }
 .track-module-planner__conditions > label { display: grid; gap: 7px; min-width: 0; font-size: 14px; font-weight: 650; }
-.track-module-planner__conditions input { display: block; width: 100%; max-width: 100%; padding: 9px 12px; border: 1px solid #b6cbd6; border-radius: 5px; background: white; color: var(--tmp-ink); font-size: 16px; }
+.track-module-planner__conditions input { display: block; width: 100%; max-width: 100%; padding: 9px 12px; border: 1px solid #738797; border-radius: 5px; background: white; color: var(--tmp-ink); font-size: 16px; }
 .track-module-planner__conditions input[aria-invalid="true"]:not(:placeholder-shown) { border-color: #9a593d; }
 .track-module-planner .track-module-planner__conditions > button { background: var(--tmp-green); border-color: var(--tmp-green); color: white; }
 .track-module-planner__condition-help { grid-column: 1 / -1; color: var(--tmp-muted); font-size: 12px; line-height: 1.65; }
@@ -70,7 +70,7 @@
 .track-module-planner__course-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-block: 6px; }
 .track-module-planner__course-tags span { background: #e5f3ec; border-radius: 10px; color: #265d49; font-size: 10px; line-height: 1.55; font-weight: 550; padding: 2px 6px; }
 .track-module-planner__course-tags span:nth-child(even) { background: #e6f0fa; color: #315d7a; }
-.track-module-planner__term-select { width: 100%; max-width: 100%; border: 1px solid #b7cbd5; border-radius: 4px; padding: 7px 6px; background: white; color: var(--tmp-ink); font-size: 12px !important; }
+.track-module-planner__term-select { width: 100%; max-width: 100%; border: 1px solid #738797; border-radius: 4px; padding: 7px 6px; background: white; color: var(--tmp-ink); font-size: 12px !important; }
 .track-module-planner__term-select:disabled { background: #f0f3f4; color: #576b76; opacity: 1; }
 .track-module-planner .track-module-planner__reset-current { margin-top: 7px; width: 100%; padding: 8px 5px; font-size: 11px; background: #edf5f9; }
 .track-module-planner__placement { display: grid; justify-items: center; align-content: center; gap: 5px; min-height: 74px; padding: 10px 7px; background: #eaf6ef; border: 1px solid #cce7db; border-radius: 5px; font-size: 12px; line-height: 1.5; }
@@ -125,3 +125,29 @@
   .track-module-planner__layout { display: block; }
   .track-module-planner__rail { margin-top: 16px; }
 }
+
+/* Keep the conditions and real course workspace ahead of supporting guidance. */
+.track-module-planner { padding:8px 20px 28px; font-variant-numeric:tabular-nums; }
+.track-module-planner__heading { margin-bottom:16px; }
+.track-module-planner__heading h1 { display:flex; align-items:center; gap:10px; font-size:clamp(25px,2.5vw,32px); line-height:1.35; }
+.track-module-planner__heading h1>svg { flex:0 0 22px; }
+.track-module-planner__heading>p { margin-top:6px; font-size:15px; }
+.track-module-planner__heading .track-module-planner__scope { margin-top:4px; font-size:13px; }
+.track-module-planner__conditions { padding:14px 16px; gap:10px 16px; }
+.track-module-planner__conditions>button { display:inline-flex; align-items:center; justify-content:center; gap:8px; }
+.track-module-planner__conditions>label { font-size:14px; }
+.track-module-planner__conditions input { font-size:16px; }
+.track-module-planner__track-list .planner-track-glyph { flex:0 0 20px; width:20px; height:20px; }
+.track-module-planner__rail { padding:18px; }
+.track-module-planner__rail h2 { font-size:20px; }
+.track-module-planner__rail-heading button { min-height:44px; }
+@media(max-width:760px){
+  .track-module-planner { padding:4px 0 24px; }
+  .track-module-planner__heading h1 { align-items:flex-start; gap:8px; }
+  .track-module-planner__heading h1>svg { margin-top:6px; }
+  .track-module-planner__conditions { padding:14px 12px; gap:10px; }
+  .track-module-planner__conditions>label { font-size:14px; }
+  .track-module-planner__conditions input { font-size:16px; }
+}
+@media(prefers-reduced-motion:reduce){.track-module-planner *{scroll-behavior:auto;transition:none;animation:none}}
+@media print {.track-module-planner { padding:0; }.track-module-planner__heading h1>svg { display:none; }}

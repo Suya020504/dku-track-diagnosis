@@ -91,6 +91,28 @@ afterEach(async () => {
 });
 
 describe("CourseSelectionView", () => {
+  it("labels the academic reference separately from the selected-track module result", async () => {
+    await renderHarness({ profile: {
+      affiliation: "department-student", studyPath: "advanced-major", goal: "check-progress",
+      curriculumRuleVersion: "2026-provided-final-plan", ruleApplicability: "reference-only",
+    } });
+    const policy = document.querySelector(".dku-check-policy")!;
+    expect(policy.querySelector("summary")?.textContent).toContain("전공 전체 학사 기준");
+    expect(policy.textContent).toContain("트랙 결과는 선택한 트랙의 모듈 학점만 따로 계산해요");
+    expect(policy.textContent).toContain("전공 63학점");
+    expect(policy.textContent).toContain("모듈 내 필수 18학점");
+  });
+
+  it("keeps a visible search label and labelled status indicators with decorative icons", async () => {
+    await renderHarness();
+    const label = document.querySelector(".dku-check-search-label");
+    expect(label?.textContent).toBe("과목 검색");
+    expect(label?.classList.contains("sr-only")).toBe(false);
+    const indicators = [...document.querySelectorAll(".dku-courses-counts > span")];
+    expect(indicators).toHaveLength(3);
+    expect(indicators.every((item) => item.querySelector('svg[aria-hidden="true"]') && item.textContent?.trim())).toBe(true);
+  });
+
   it("announces the real total without confusing planned courses with completed courses", async () => {
     await renderHarness();
     expect(document.querySelector('[aria-label="전체 선택 과목 수"]')?.textContent).toContain("3개");

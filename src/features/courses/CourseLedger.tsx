@@ -119,11 +119,11 @@ export function CourseLedger({
         <p aria-live="polite">검색 결과 {visibleCourses.length}개{visibleCourses.length ? ` · ${(currentPage - 1) * pageSize + 1}–${Math.min(currentPage * pageSize, visibleCourses.length)}번째` : ""}</p>
         <div>
           <button type="button" disabled={currentPage === 1 || !visibleCourses.length} onClick={() => setPagination({ filterKey, page: currentPage - 1 })}>
-            <ChevronLeft aria-hidden="true" size={16} />이전
+            <ChevronLeft aria-hidden="true" size={18} strokeWidth={1.8} />이전
           </button>
           <span aria-live="polite" aria-atomic="true">{currentPage} / {pageCount}<span className="sr-only"> 페이지</span></span>
           <button type="button" disabled={currentPage === pageCount || !visibleCourses.length} onClick={() => setPagination({ filterKey, page: currentPage + 1 })}>
-            다음<ChevronRight aria-hidden="true" size={16} />
+            다음<ChevronRight aria-hidden="true" size={18} strokeWidth={1.8} />
           </button>
         </div>
       </nav>

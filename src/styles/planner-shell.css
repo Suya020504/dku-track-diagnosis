@@ -29,6 +29,8 @@
   align-items: center;
   justify-self: start;
   letter-spacing: -0.02em;
+  text-decoration: none;
+  color: inherit;
 }
 
 .planner-shell-wordmark > img {
@@ -305,8 +307,7 @@
 
   .planner-shell-current-step {
     display: block;
-    grid-column: 1;
-    grid-row: 2;
+    line-height: 1.35;
   }
 
   .planner-shell-actions {
@@ -445,3 +446,20 @@
     padding: 0;
   }
 }
+
+/* Navigation keeps text labels; icons support recognition without adding rows. */
+.planner-shell-primary-nav button,.planner-shell-utility button { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:44px; }
+.planner-shell-primary-nav button>svg,.planner-shell-utility button>svg { flex:0 0 auto; }
+.planner-shell-primary-nav button { padding-inline:10px; }
+.planner-shell-primary-nav button:has(.planner-shell-unavailable) { display:grid; grid-template-columns:auto minmax(0,1fr); column-gap:7px; row-gap:1px; }
+.planner-shell-primary-nav button:has(.planner-shell-unavailable)>svg { grid-column:1; grid-row:1/3; }
+.planner-shell-primary-nav button:has(.planner-shell-unavailable)>span,.planner-shell-primary-nav button:has(.planner-shell-unavailable)>small { grid-column:2; }
+.planner-shell-unavailable { font-size:10px; font-weight:500; }
+.planner-shell-page { padding-top:20px; }
+.planner-local-save { font-variant-numeric:tabular-nums; }
+@media(max-width:760px){
+  .planner-shell-page { padding-top:10px; }
+  .planner-mobile-nav__item button>svg { flex:0 0 20px; width:20px; height:20px; }
+  .planner-mobile-nav__menu .planner-mobile-nav__item button { flex-direction:row; align-items:center; gap:8px; }
+}
+@media(prefers-reduced-motion:reduce){.planner-shell-header *,.planner-mobile-nav *{scroll-behavior:auto;animation:none;transition:none}}

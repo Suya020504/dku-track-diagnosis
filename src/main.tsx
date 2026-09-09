@@ -16,6 +16,7 @@ import "./styles/planner-planning.css";
 import "./styles/planner-resources.css";
 import "./styles/planner-responsive.css";
 import "./styles/planner-service-zones.css";
+import "./styles/planner-backgrounds.css";
 import "./styles/planner-print.css";
 
 createRoot(document.getElementById("root")!).render(

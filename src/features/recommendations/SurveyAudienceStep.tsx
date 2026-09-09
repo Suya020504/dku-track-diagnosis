@@ -43,9 +43,8 @@ export function SurveyAudienceStep({
       aria-labelledby="survey-audience-title"
     >
       <header className="ds-audience-heading">
-        <div className="ds-audience-icon"><UsersRound aria-hidden="true" /></div>
+        <div className="ds-audience-icon"><UsersRound aria-hidden="true" size={22} strokeWidth={1.8} /></div>
         <div>
-          <span>관심 트랙 추천 · 1단계</span>
           <h1 id="survey-audience-title" ref={headingRef} tabIndex={-1}>
             먼저 현재 소속을 알려주세요
           </h1>
@@ -55,7 +54,7 @@ export function SurveyAudienceStep({
 
       {storageError ? (
         <p className="dc-storage-error" role="alert">
-          <AlertTriangle aria-hidden="true" size={18} />
+          <AlertTriangle aria-hidden="true" size={20} strokeWidth={1.8} />
           저장하지 못했어요. 현재 화면을 닫기 전에 선택 내용을 확인해 주세요.
         </p>
       ) : null}
@@ -69,13 +68,13 @@ export function SurveyAudienceStep({
             key={value}
             onClick={() => onSelect(value)}
           >
-            <span className="ds-audience-option-icon"><Icon aria-hidden="true" /></span>
+            <span className="ds-audience-option-icon"><Icon aria-hidden="true" size={22} strokeWidth={1.8} /></span>
             <span>
               <strong>{title}</strong>
               <b>{description}</b>
               <small>{detail}</small>
             </span>
-            <ArrowRight aria-hidden="true" size={22} />
+            <ArrowRight aria-hidden="true" size={20} strokeWidth={1.8} />
           </button>
         ))}
       </section>
@@ -86,7 +85,7 @@ export function SurveyAudienceStep({
       {onSkip ? (
         <button className="ds-skip-button" type="button" onClick={onSkip}>
           설문을 건너뛰고 자가진단 바로가기
-          <ArrowRight aria-hidden="true" size={17} />
+          <ArrowRight aria-hidden="true" size={20} strokeWidth={1.8} />
         </button>
       ) : null}
     </main>

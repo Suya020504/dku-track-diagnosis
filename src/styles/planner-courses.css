@@ -1994,7 +1994,7 @@
 .dku-courses-page .dku-courses-workspace { min-width:0; }
 .dku-courses-page button,.dku-courses-page summary { cursor:pointer; min-height:44px; }
 .dku-courses-page .dku-check-filters { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:start; }
-.dku-courses-page .dku-check-search { grid-column:1/-1; display:flex; align-items:center; gap:10px; border:1px solid #b8cadd; border-radius:5px; padding:0 16px; min-height:52px; background:white; }
+.dku-courses-page .dku-check-search { grid-column:1/-1; display:flex; align-items:center; gap:10px; border:1px solid #738797; border-radius:5px; padding:0 16px; min-height:52px; background:white; }
 .dku-courses-page .dku-check-search input { width:100%; min-width:0; min-height:44px; border:0; background:transparent; font-size:14px; }
 .dku-courses-page .dku-check-mode { display:flex; border:1px solid #c6d6e7; border-radius:6px; overflow:hidden; }
 .dku-courses-page .dku-check-mode button { padding:10px 16px; border:0; background:white; font-size:13px; }
@@ -2080,7 +2080,7 @@
 .dku-courses-page .dku-check-mode { flex-wrap:wrap; gap:4px; border:0; }
 .dku-courses-page .dku-check-mode button { padding:8px 12px; border:1px solid #bacde0; border-radius:4px; color:#36516b; font:inherit; font-size:12px; }
 .dku-courses-page .dku-check-mode button[aria-pressed=true] { background:#e6f0ff; border-color:#0863b8; color:#173c63; }
-.dku-courses-page .dku-check-toggle { display:block; width:38px; height:23px; background:#afb9c3; border-radius:20px; padding:3px; }
+.dku-courses-page .dku-check-toggle { display:block; width:38px; height:23px; background:#738797; border-radius:20px; padding:3px; }
 .dku-courses-page .dku-check-toggle::before { content:""; display:block; width:17px; height:17px; background:white; border-radius:50%; }
 .dku-courses-page [aria-pressed=true] .dku-check-toggle { background:#087448; }
 .dku-courses-page [aria-pressed=true] .dku-check-toggle::before { margin-left:auto; }
@@ -2098,7 +2098,7 @@
 .dku-courses-page .dku-check-row-meta { grid-column:3; grid-row:1; }
 .dku-courses-page .dku-check-credit { font-size:14px; padding-inline:8px; color:#53677c; }
 .dku-courses-page .dku-check-state-controls { min-width:0; display:grid; gap:6px; padding-block:5px; }
-.dku-courses-page .dku-check-state-controls select { display:block; width:100%; min-width:0; min-height:44px; border:1px solid #bbc9d5; border-radius:4px; padding:8px 10px; font:inherit; font-size:14px; background:white; color:#3b536a; cursor:pointer; }
+.dku-courses-page .dku-check-state-controls select { display:block; width:100%; min-width:0; min-height:44px; border:1px solid #738797; border-radius:4px; padding:8px 10px; font:inherit; font-size:14px; background:white; color:#3b536a; cursor:pointer; }
 .dku-courses-page .dku-check-row--completed .dku-check-status-select { color:#087448; border-color:#087448; }
 .dku-courses-page .dku-check-row--in-progress .dku-check-status-select { color:#075fbe; border-color:#075fbe; }
 .dku-courses-page .dku-check-row--planned .dku-check-status-select { color:#a14f00; border-color:#b26313; }
@@ -2153,4 +2153,68 @@
   .dku-courses-page .dku-check-row-details :is(p,em) { margin-left:50px; }
   .dku-courses-page .dku-check-pagination { flex-wrap:wrap; }
   .dku-courses-page .dku-check-pagination > div { margin-left:auto; }
+}
+
+/* Compact course-input finishing pass; keep the existing ledger and academic rules. */
+.dku-courses-page { gap:16px; }
+.dku-courses-page .dku-courses-heading {
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:6px 24px;
+  padding:0;
+}
+.dku-courses-page .dku-courses-heading h1 { font-size:clamp(24px,2.5vw,30px); line-height:1.3; }
+.dku-courses-page .dku-courses-help { max-width:76ch; line-height:1.55; }
+.dku-courses-page .dku-courses-total { white-space:nowrap; }
+.dku-courses-page .dku-courses-actions { gap:12px 24px; padding:0; }
+.dku-courses-page .dku-courses-counts { gap:10px 20px; align-items:center; }
+.dku-courses-page .dku-courses-counts > span { display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+.dku-courses-page .dku-courses-counts strong { margin-left:0; font-size:18px; }
+.dku-courses-page .dku-courses-counts svg { color:var(--planner-ink-muted,#53677c); flex-shrink:0; }
+.dku-courses-page #diagnosis-result-action { min-height:44px; padding:10px 18px; gap:12px; flex-shrink:0; }
+.dku-courses-page .dku-check-filters { gap:8px 16px; align-items:center; }
+.dku-courses-page .dku-check-search { display:grid; grid-template-columns:20px auto minmax(0,1fr); gap:10px; min-height:48px; padding-inline:14px; }
+.dku-courses-page .dku-check-search-label { font-size:14px; font-weight:600; white-space:nowrap; color:var(--planner-ink,#19304b); }
+.dku-courses-page .dku-check-search input { min-height:46px; font-size:16px; line-height:1.5; }
+.dku-courses-page .dku-check-more-filters summary { gap:8px; min-height:44px; padding:6px 2px; font-size:14px; }
+.dku-courses-page .dku-check-mode button,
+.dku-courses-page .dku-check-applied-filters button { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:44px; font-size:14px; }
+.dku-courses-page .dku-check-filter-row > span,
+.dku-courses-page .dku-check-filter-options button { font-size:14px; }
+.dku-courses-page .dku-check-summary { gap:10px 16px; padding:4px 0 8px; }
+.dku-courses-page .dku-check-summary h2 { font-size:14px; font-weight:600; }
+.dku-courses-page .dku-check-summary-actions { flex-wrap:wrap; justify-content:flex-end; gap:8px 16px; font-size:14px; }
+.dku-courses-page .dku-check-summary-actions p { margin:0; }
+.dku-courses-page .dku-check-state-controls select,
+.dku-courses-page .dku-check-plan-term select { font-size:16px; line-height:1.5; }
+.dku-courses-page .dku-check-plan-term small { font-size:12px; }
+.dku-courses-page :is(.dku-courses-total,.dku-courses-counts,.dku-check-credit,.dku-check-summary-actions,.dku-check-pagination,.dku-check-save-band) { font-variant-numeric:tabular-nums; }
+.dku-courses-page .dku-check-policy { border-top:1px solid #cfdfed; padding-top:4px; font-size:14px; }
+.dku-courses-page .dku-check-policy summary { gap:8px 12px; padding-block:8px; }
+.dku-courses-page .dku-check-policy summary > svg { flex-shrink:0; }
+.dku-courses-page .dku-check-policy summary > svg:last-child { margin-left:auto; }
+.dku-courses-page .dku-check-policy .dku-check-policy-scope { color:var(--planner-ink,#19304b); max-width:76ch; }
+.dku-courses-page :is(button,input,select,summary,a):focus-visible { outline:3px solid #0863b8; outline-offset:3px; }
+.dku-courses-page :is(button,summary) svg { flex-shrink:0; }
+
+@media(max-width:760px) {
+  .dku-courses-page .dku-courses-actions { flex-wrap:wrap; align-items:center; }
+  .dku-courses-page #diagnosis-result-action { margin-left:auto; }
+}
+@media(max-width:600px) {
+  .dku-courses-page .dku-courses-heading { grid-template-columns:minmax(0,1fr); gap:6px; }
+  .dku-courses-page .dku-courses-total { grid-column:1; grid-row:auto; }
+  .dku-courses-page .dku-courses-actions { align-items:stretch; gap:10px; }
+  .dku-courses-page .dku-courses-counts { justify-content:flex-start; gap:8px 14px; font-size:13px; }
+  .dku-courses-page .dku-courses-counts strong { font-size:16px; }
+  .dku-courses-page #diagnosis-result-action { margin-left:0; }
+  .dku-courses-page .dku-check-search { gap:8px; padding-inline:10px; }
+  .dku-courses-page .dku-check-search input { font-size:16px; }
+  .dku-courses-page .dku-check-grade-tabs button { min-height:44px; font-size:13px; }
+  .dku-courses-page .dku-check-summary-actions { font-size:13px; gap:8px 12px; }
+  .dku-courses-page .dku-check-pagination { font-size:13px; }
+  .dku-courses-page .dku-check-policy summary > em { flex-basis:100%; padding-left:32px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .dku-courses-page :is(button,input,select,summary,svg) { animation:none; transition:none; scroll-behavior:auto; }
 }

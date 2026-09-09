@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { ArrowRight, BookOpenCheck, ExternalLink, FileCheck2, Layers3, Network, PlayCircle, Target } from "lucide-react";
+import { ArrowRight, BookOpenCheck, ExternalLink, FileCheck2, GraduationCap, Layers3, Network, PlayCircle, Target } from "lucide-react";
 import { TrackGlyph } from "../../components/TrackGlyph";
 import { modules, tracks } from "../../data/curriculumData";
 import { DEPARTMENT_CONTACT_URL, DEPARTMENT_CURRICULUM_URL, DEPARTMENT_YOUTUBE_URL, OFFICIAL_TRACK_VIDEOS, TRACK_CERTIFICATE_VIDEO_URL, TRACK_DEGREE_VIDEO_URL, TRACK_LATE_ENTRY_VIDEO_URL, TRACK_QA_VIDEO_URL, privacyEnhancedEmbedUrl, type OfficialTrackVideoId } from "../../data/officialResources";
@@ -10,12 +10,12 @@ import { GuideOutcomes } from "./GuideOutcomes";
 import { GuideApplication } from "./GuideApplication";
 
 const GUIDE_SECTIONS = [
-  { id: "overview", label: "트랙제란?", title: "트랙제 알아보기", description: "관심 분야에 맞는 과목을 모듈로 묶고 모듈을 조합해 이수하는 전공 제도예요." },
-  { id: "benefits", label: "트랙제의 장점", title: "관심 분야에 맞춰 수업을 고르는 방법", description: "과목을 고르고 배운 내용을 설명할 때 트랙을 활용하는 네 가지 이유를 살펴보세요." },
-  { id: "outcomes", label: "학위·이수 결과", title: "학위와 트랙 이수 기록은 어떻게 다른가요?", description: "졸업할 때 받는 학위·전공명과 트랙 이수 기록의 차이를 알아보세요." },
-  { id: "structure", label: "5개 트랙 구성", title: "다섯 트랙, 어떤 모듈을 배우나요?", description: "트랙마다 함께 배우는 과목과 분야를 비교해 보세요." },
-  { id: "application", label: "신청·상담 준비", title: "트랙 신청은 이렇게 준비하세요", description: "신청 대상과 서식 작성, 학과 사무실 제출 순서를 확인하세요." },
-  { id: "videos", label: "공식 영상·자료", title: "학과의 설명을 직접 확인하세요", description: "궁금한 주제의 영상을 골라 보거나 학교 안내로 바로 이동하세요." },
+  { id: "overview", label: "트랙제란?", Icon: BookOpenCheck, title: "트랙제 알아보기", description: "관심 분야에 맞는 과목을 모듈로 묶고 모듈을 조합해 이수하는 전공 제도예요." },
+  { id: "benefits", label: "트랙제의 장점", Icon: Target, title: "관심 분야에 맞춰 수업을 고르는 방법", description: "과목을 고르고 배운 내용을 설명할 때 트랙을 활용하는 네 가지 이유를 살펴보세요." },
+  { id: "outcomes", label: "학위·이수 결과", Icon: GraduationCap, title: "학위와 트랙 이수 기록은 어떻게 다른가요?", description: "졸업할 때 받는 학위·전공명과 트랙 이수 기록의 차이를 알아보세요." },
+  { id: "structure", label: "5개 트랙 구성", Icon: Layers3, title: "다섯 트랙, 어떤 모듈을 배우나요?", description: "트랙마다 함께 배우는 과목과 분야를 비교해 보세요." },
+  { id: "application", label: "신청·상담 준비", Icon: FileCheck2, title: "트랙 신청은 이렇게 준비하세요", description: "신청 대상과 서식 작성, 학과 사무실 제출 순서를 확인하세요." },
+  { id: "videos", label: "공식 영상·자료", Icon: PlayCircle, title: "학과의 설명을 직접 확인하세요", description: "궁금한 주제의 영상을 골라 보거나 학교 안내로 바로 이동하세요." },
 ] as const;
 
 export const TRACK_GUIDE_SECTION_TITLES: Record<TrackGuideSection, string> = {
@@ -50,12 +50,11 @@ export function TrackGuideView({ section, headingRef, onSectionChange, onStartIn
   }, [section]);
   return <article className="dku-guide-page">
     <header className="guide-chapter">
-      <span className="guide-eyebrow">식품자원경제학과 · 학생용 트랙 가이드</span>
       <h1 id="track-guide-title" ref={headingRef} tabIndex={-1}>{meta.title}</h1>
       <p>{meta.description}</p>
     </header>
     <nav ref={chaptersRef} className="guide-chapters" aria-label="트랙 가이드 목차">
-      {GUIDE_SECTIONS.map((item) => <button type="button" key={item.id} aria-current={item.id === section ? "page" : undefined} onClick={() => { if (item.id !== section) onSectionChange(item.id); }}>{item.label}</button>)}
+      {GUIDE_SECTIONS.map((item) => <button type="button" key={item.id} aria-current={item.id === section ? "page" : undefined} onClick={() => { if (item.id !== section) onSectionChange(item.id); }}><item.Icon aria-hidden="true" /><span>{item.label}</span></button>)}
     </nav>
     {section === "overview" ? <OverviewSection onStartDiagnosis={onStartDiagnosis} onStartInterestSurvey={onStartInterestSurvey} /> : null}
     {section === "benefits" ? <BenefitsSection onContinue={() => onSectionChange("outcomes")} /> : null}
@@ -74,7 +73,7 @@ function OverviewSection({ onStartDiagnosis, onStartInterestSurvey }: { onStartD
   return <section className="guide-overview" data-track-guide-section="overview" aria-labelledby="track-guide-overview-heading">
     <div className="guide-concept-layout">
       <figure className="guide-concept">
-        <img src="/illustrations/course-module-track-structure-v2.webp" alt="개별 수업 카드가 모듈 폴더에 모이고 여러 트랙 방향으로 이어지는 구조" />
+        <img src="/illustrations/track-module-studio.webp" alt="개별 과목 종이가 모듈 폴더에 모이고 하나의 트랙 포트폴리오로 연결되는 구조" width="1400" height="700" loading="eager" decoding="async" />
         <figcaption className="guide-concept-captions" aria-label="과목·모듈·트랙의 관계">
           <div><BookOpenCheck aria-hidden="true" /><div><strong>과목 — 하나의 수업</strong><p>개별 과목을 배우며 기초 지식과 역량을 쌓아요.</p></div></div>
           <div><Layers3 aria-hidden="true" /><div><strong>모듈 — 관련 과목의 묶음</strong><p>공통 주제의 과목을 모아 더 깊이 배워요.</p></div></div>
@@ -104,7 +103,7 @@ function BenefitsSection({ onContinue }: { onContinue: () => void }) {
     { Icon: FileCheck2, title: "어떤 분야를 배웠는지 기록으로 설명하기", body: "트랙 이수 기록으로 어떤 분야를 집중해서 배웠는지 설명할 수 있어요. 졸업할 때 받는 학위명과는 구분됩니다." },
   ];
   return <section className="guide-reasons" data-track-guide-section="benefits" aria-labelledby="track-guide-benefits-heading">
-    <div className="guide-reasons-intro"><span className="guide-eyebrow">트랙을 활용하는 네 가지 이유</span><h2 id="track-guide-benefits-heading">수업 선택에<br />배울 과목을 고르는 기준이 생겨요.</h2><p>트랙을 활용하면<br />어떤 분야를 배울지 구체적으로 정할 수 있어요.</p></div>
+    <div className="guide-reasons-intro"><h2 id="track-guide-benefits-heading">배울 과목을 고르는 기준이 생겨요.</h2><p>어떤 분야를 배울지 구체적으로 정할 수 있어요.</p></div>
     <div className="guide-reason-list">{reasons.map(({ Icon, title, body }) => <article key={title}><Icon aria-hidden="true" /><div><h3>{title}</h3><p>{body}</p></div></article>)}</div>
     <footer className="guide-section-footer"><NextAction onClick={onContinue}>학위·이수 결과 확인하기</NextAction></footer>
   </section>;

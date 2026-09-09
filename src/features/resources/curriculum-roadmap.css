@@ -146,7 +146,7 @@
 .dku-curriculum-roadmap .dku-roadmap-course-button[aria-expanded="true"] { border-color: #175e89; background: #e1eff8; }
 .dku-curriculum-roadmap [data-learning-area="common"] .dku-roadmap-course-button { background: #fff7d9; border-color: #c9b96f; border-left-color: #a08a33; }
 .dku-curriculum-roadmap [data-learning-area="practice"] .dku-roadmap-course-button { background: #eaf4fd; border-color: #91bada; border-left-color: #3d79a7; }
-.dku-curriculum-roadmap .dku-roadmap-no-course { display: block; color: #7b91a1; text-align: center; padding: 24px 0; }
+.dku-curriculum-roadmap .dku-roadmap-no-course { display: block; color: #607889; text-align: center; padding: 24px 0; }
 
 .dku-curriculum-roadmap .dku-roadmap-course-detail { padding: 10px 8px 6px; border: 1px solid #9ebdd1; border-top: 0; background: #f0f7fc; font-size: 12px; }
 .dku-curriculum-roadmap .dku-roadmap-course-detail dl { display: grid; gap: 8px; margin: 0; }

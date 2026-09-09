@@ -1,4 +1,4 @@
-import { ChevronDown, Search } from "lucide-react";
+import { CalendarDays, ChevronDown, Layers, RotateCcw, Search, SlidersHorizontal } from "lucide-react";
 import type { RefObject } from "react";
 
 export type CourseGroupMode = "semester" | "module";
@@ -50,8 +50,8 @@ export function CourseLedgerFilters({
   return (
     <section className="dku-check-filters" aria-label="과목 목록 필터">
       <label className="dku-check-search">
-        <Search aria-hidden="true" size={18} />
-        <span className="sr-only">과목 검색</span>
+        <Search aria-hidden="true" size={20} strokeWidth={1.8} />
+        <span className="dku-check-search-label">과목 검색</span>
         <input
           ref={searchInputRef}
           type="search"
@@ -77,9 +77,10 @@ export function CourseLedgerFilters({
 
       <details className="dku-check-more-filters">
         <summary>
+          <SlidersHorizontal aria-hidden="true" size={18} strokeWidth={1.8} />
           <span>정렬·추가 필터</span>
           <small>{gradeLabel} · {semesterLabel}</small>
-          <ChevronDown aria-hidden="true" size={18} />
+          <ChevronDown aria-hidden="true" size={18} strokeWidth={1.8} />
         </summary>
         <div className="dku-check-more-filter-content">
           <div className="dku-check-mode" aria-label="과목 정렬 방식">
@@ -89,7 +90,7 @@ export function CourseLedgerFilters({
               className={mode === "semester" ? "is-active" : undefined}
               onClick={() => onModeChange("semester")}
             >
-              학년·학기별
+              <CalendarDays aria-hidden="true" size={18} strokeWidth={1.8} />학년·학기별
             </button>
             <button
               type="button"
@@ -97,7 +98,7 @@ export function CourseLedgerFilters({
               className={mode === "module" ? "is-active" : undefined}
               onClick={() => onModeChange("module")}
             >
-              모듈별
+              <Layers aria-hidden="true" size={18} strokeWidth={1.8} />모듈별
             </button>
           </div>
 
@@ -124,7 +125,7 @@ export function CourseLedgerFilters({
           <button type="button" onClick={() => {
             onGradeFilterChange("all");
             onSemesterFilterChange("all");
-          }}>필터 초기화</button>
+          }}><RotateCcw aria-hidden="true" size={18} strokeWidth={1.8} />필터 초기화</button>
         </div>
       ) : null}
     </section>

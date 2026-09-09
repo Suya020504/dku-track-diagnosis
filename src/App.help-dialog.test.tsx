@@ -4,6 +4,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
+import { FIRST_VISIT_GUIDE_KEY } from "./lib/firstVisitGuide";
 
 let root: Root | undefined;
 
@@ -40,6 +41,7 @@ beforeEach(() => {
   document.body.innerHTML = '<div id="root"></div>';
   document.body.style.overflow = "";
   localStorage.clear();
+  localStorage.setItem(FIRST_VISIT_GUIDE_KEY, "seen");
   history.replaceState({}, "", "/");
   Object.defineProperty(window, "scrollTo", { configurable: true, value: vi.fn() });
 });

@@ -47,11 +47,11 @@ function RecordListItem({ record, selected, onSelect }: { record: DiagnosisSnaps
   const counts = countSavedCourses(record);
   const pending = [counts["in-progress"] ? `수강 중 ${counts["in-progress"]}과목` : "", counts.planned ? `계획 ${counts.planned}과목` : ""].filter(Boolean).join(" · ");
   return <li><button type="button" data-record-item={record.id} aria-current={selected ? "page" : undefined} onClick={() => onSelect(record.id)}>
-    <span><strong>{recordTrackName(record) ?? pathLabels[record.profile.studyPath]}</strong>
-      <time dateTime={record.createdAt}>{savedDate(record.createdAt, true)}</time>
+    <span><span className="saved-records__list-meta"><time dateTime={record.createdAt}>{savedDate(record.createdAt, true)}</time>
+      <small className="saved-records__kind">{record.trackPlan ? "트랙 공동 계획" : record.graduationPlan ? "진단 + 학기 계획" : "진단 기록"}</small></span>
+      <strong>{recordTrackName(record) ?? pathLabels[record.profile.studyPath]}</strong>
       <small className="saved-records__list-summary">완료 {counts.completed}과목 · 전공 {record.result.totalMajorProgress.completedCredits}학점</small>
       {pending && <small>{pending}</small>}
-      <small>{record.trackPlan ? "트랙 공동 계획" : record.graduationPlan ? "진단 + 학기 계획" : "진단 기록"}</small>
     </span><ChevronRight size={19} aria-hidden="true" />
   </button></li>;
 }
@@ -168,7 +168,7 @@ export function SavedRecordsView({ snapshots, recordId, headingRef, saveUnavaila
   const records = [...snapshots].sort((a, b) => (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0));
   const selected = records.find((record) => record.id === recordId);
   return <main className="saved-records" data-has-record-id={Boolean(recordId)} aria-labelledby="saved-records-title">
-    <header className="saved-records__header"><span className="saved-records__eyebrow"><Archive size={18} aria-hidden="true" />나의 보관함</span><h1 id="saved-records-title" ref={headingRef} tabIndex={-1}>저장한 진단과 계획</h1><p>저장 당시의 입력과 결과를 확인하세요. 현재 입력은 바뀌지 않습니다.</p><p className="saved-records__storage-note">최근 12개 기록을 이 브라우저에 보관합니다. 다른 기기와 동기화되지 않으며 브라우저 데이터를 지우면 사라집니다.</p></header>
+    <header className="saved-records__header"><h1 id="saved-records-title" ref={headingRef} tabIndex={-1}><Archive size={27} aria-hidden="true" />저장한 진단과 계획</h1><p>저장 당시의 입력과 결과를 확인하세요. 현재 입력은 바뀌지 않습니다.</p><details className="saved-records__storage-details"><summary>보관 범위와 저장 안내</summary><p className="saved-records__storage-note">최근 12개 기록을 이 브라우저에 보관합니다. 다른 기기와 동기화되지 않으며 브라우저 데이터를 지우면 사라집니다.</p></details></header>
     {records.length === 0 && (!recordId || saveUnavailable) ? <section className="saved-records__empty">{saveUnavailable ? <Info size={38} aria-hidden="true" /> : <Archive size={38} aria-hidden="true" />}<h2>{saveUnavailable ? "저장 기록을 불러올 수 없어요" : "아직 따로 보관한 기록이 없어요"}</h2><p>{saveUnavailable ? "브라우저 저장이 차단되어 있을 수 있습니다. 설정을 확인하거나 현재 입력으로 돌아가세요." : "과목 입력은 자동으로 저장됩니다. 진단 결과나 학기 계획에서 보관한 기록이 여기에 모입니다."}</p><button type="button" className="saved-records__button is-primary" data-record-current onClick={onOpenCurrent}>현재 입력으로 돌아가기<ArrowRight size={18} aria-hidden="true" /></button></section> : <div className="saved-records__frame">
       <nav className="saved-records__list" aria-label="저장 기록 목록"><header><h2>저장 기록 목록</h2><span>{records.length}개</span></header><ol>{records.map((record) => <RecordListItem key={record.id} record={record} selected={record.id === recordId} onSelect={onOpenRecord} />)}</ol></nav>
       {selected ? <RecordDetail key={selected.id} record={selected} onPrint={onPrint} onOpenCurrent={onOpenCurrent} onBackToList={onBackToList} /> : <section className="saved-records__placeholder"><FileClock size={38} aria-hidden="true" /><h2>{recordId ? "이 기록을 찾을 수 없어요" : "기록을 선택해 주세요"}</h2><p>{recordId ? "현재 브라우저에 없는 기록이거나 주소가 바뀌었을 수 있어요. 보관된 목록에서 다시 선택해 주세요." : "날짜와 트랙을 보고 기록을 골라 주세요. 저장 당시의 과목과 결과를 함께 볼 수 있습니다."}</p>{recordId && <button type="button" className="saved-records__button is-primary" data-record-back onClick={onBackToList}>기록 목록으로<ArrowRight size={18} aria-hidden="true" /></button>}{!recordId && <button type="button" className="saved-records__button is-link" data-record-current onClick={onOpenCurrent}>현재 입력으로 돌아가기<ArrowRight size={18} aria-hidden="true" /></button>}</section>}

@@ -1,8 +1,19 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import {
   ArrowRight,
+  Archive,
+  BookOpenCheck,
+  CalendarDays,
+  ChartNoAxesCombined,
+  ClipboardCheck,
+  Compass,
+  GraduationCap,
+  House,
+  LibraryBig,
+  MessagesSquare,
   RotateCcw,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import { courses, tracks } from "./data/curriculumData";
 import { getAllowedStudyPaths } from "./data/requirementRules2026";
@@ -22,6 +33,8 @@ import { updateCourseSelection } from "./lib/courseSelectionEditing";
 import { getCourseInputPolicy } from "./lib/courseInputPolicy";
 import { archiveCurrentDiagnosis } from "./lib/diagnosisArchive";
 import { acquireBrowserStorage } from "./lib/browserStorage";
+import { rememberFirstVisitGuide, shouldOfferFirstVisitGuide } from "./lib/firstVisitGuide";
+import "./features/journey/first-visit-guide.css";
 import { GraduationPlanResult } from "./features/planning/GraduationPlanResult";
 import { GraduationPlanSetup } from "./features/planning/GraduationPlanSetup";
 import { GraduationPlanPrerequisite } from "./features/planning/GraduationPlanPrerequisite";
@@ -92,6 +105,7 @@ import type {
 } from "./types";
 
 type ViewId = "landing" | "resources" | "track-guide" | "diagnosis" | "recommendation" | "plan" | "result" | "contact" | "records";
+const navigationIcons: Record<string, LucideIcon> = { start: House, tracks: Compass, diagnosis: ClipboardCheck, result: ChartNoAxesCombined, plan: CalendarDays, resources: LibraryBig, records: Archive, contact: MessagesSquare };
 type GradeFilter = "all" | "1" | "2" | "3" | "4" | "unknown";
 type SemesterFilter = "all" | "1" | "2" | "unknown";
 type GuideStep = {
@@ -639,6 +653,9 @@ function App({ storage }: { storage?: Storage } = {}) {
   const [focusCourseSearchOnReturn, setFocusCourseSearchOnReturn] = useState(false);
   const [lastManualSaveAt, setLastManualSaveAt] = useState("");
   const [guideOpen, setGuideOpen] = useState(false);
+  const [quickGuideOpen, setQuickGuideOpen] = useState(false);
+  const [offerFirstGuide] = useState(() => !storageAccess.unavailable && shouldOfferFirstVisitGuide(savedState, appStorage));
+  const firstGuideOfferedRef = useRef(false);
   const [guideStepIndex, setGuideStepIndex] = useState(0);
   const guideInvokerRef = useRef<HTMLButtonElement | null>(null);
   const restoreGuideFocusRef = useRef(false);
@@ -746,8 +763,16 @@ function App({ storage }: { storage?: Storage } = {}) {
   useEffect(() => {
     if (guideOpen || !restoreGuideFocusRef.current) return;
     restoreGuideFocusRef.current = false;
-    guideInvokerRef.current?.focus();
+    if (guideInvokerRef.current?.isConnected) guideInvokerRef.current.focus();
+    else document.querySelector<HTMLButtonElement>('.journey-home-start')?.focus();
   }, [guideOpen]);
+
+  useEffect(() => {
+    if (!offerFirstGuide || firstGuideOfferedRef.current || activeView !== "landing" || !shouldOfferFirstVisitGuide(savedState, appStorage)) return;
+    firstGuideOfferedRef.current = true;
+    setQuickGuideOpen(true);
+    setGuideOpen(true);
+  }, [activeView, offerFirstGuide, savedState, appStorage]);
 
   useEffect(() => {
     if (activeView === "diagnosis" && diagnosisStep === "courses" && !pdfInputRoute) {
@@ -1015,6 +1040,8 @@ function App({ storage }: { storage?: Storage } = {}) {
   }
 
   function openGuide(invoker: HTMLButtonElement) {
+    firstGuideOfferedRef.current = true;
+    setQuickGuideOpen(false);
     guideInvokerRef.current = invoker;
     restoreGuideFocusRef.current = false;
     setGuideStepIndex(0);
@@ -1022,6 +1049,7 @@ function App({ storage }: { storage?: Storage } = {}) {
   }
 
   function dismissGuide(restoreFocus: boolean) {
+    rememberFirstVisitGuide(appStorage);
     restoreGuideFocusRef.current = restoreFocus;
     setGuideOpen(false);
   }
@@ -1341,23 +1369,23 @@ function App({ storage }: { storage?: Storage } = {}) {
       onSelect: () => navigateAppRoute({ view: "plan", step: "setup", scope: "tracks" }),
     },
     { id: "resources", index: "06", label: "도구 & 정보", available: true, onSelect: () => navigateAppRoute({ view: "resources", section: "official" }) },
-  ];
+  ].map(item => ({ ...item, icon: navigationIcons[item.id] }));
   const mobilePrimaryItems: MobileJourneyItem[] = [
     { id: "start", label: "홈", available: true, onSelect: () => navigateAppRoute({ view: "landing" }) },
     { id: "diagnosis", label: "진단", available: true, onSelect: goToDiagnosis },
     { id: "result", label: "결과", available: courseResultReady, unavailableReason: "진단 후 열려요.", onSelect: goToResult },
     { id: "plan", label: "계획", available: planNavAvailable, unavailableReason: "결과 확인 후 열려요.", onSelect: () => navigateAppRoute({ view: "plan", step: "setup", scope: "tracks" }) },
-  ];
+  ].map(item => ({ ...item, icon: navigationIcons[item.id] }));
   const mobileMoreItems: MobileJourneyItem[] = [
     { id: "records", label: `저장 기록 ${savedState.snapshots.length}`, available: true, onSelect: () => navigateAppRoute({ view: "records" }) },
     { id: "tracks", label: "트랙 가이드", available: true, onSelect: () => navigateAppRoute({ view: "track-guide", section: "overview" }) },
     { id: "resources", label: "자료", available: true, onSelect: () => navigateAppRoute({ view: "resources", section: "tracks" }) },
     { id: "contact", label: "문의", available: true, onSelect: () => navigateAppRoute({ view: "contact" }) },
-  ];
+  ].map(item => ({ ...item, icon: navigationIcons[item.id] }));
   const utilityItems: MobileJourneyItem[] = [
     { id: "records", label: `저장 기록 ${savedState.snapshots.length}`, available: true, onSelect: () => navigateAppRoute({ view: "records" }) },
     { id: "contact", label: "문의사항", available: true, onSelect: () => navigateAppRoute({ view: "contact" }) },
-  ];
+  ].map(item => ({ ...item, icon: navigationIcons[item.id] }));
   const isProgressComparison = activeView === "recommendation"
     && recommendationStep === "axes" && recommendationAxis === "progress" && courseResultReady;
   const inTrackJourney = activeView === "diagnosis" || activeView === "result"
@@ -1428,7 +1456,15 @@ function App({ storage }: { storage?: Storage } = {}) {
       : landingPlannerStatus === "needs-track"
         ? () => navigateAppRoute({ view: "recommendation", step: "axes", axis: "progress" })
         : landingPlannerStatus === "needs-profile" || landingPlannerStatus === "needs-courses"
-          ? goToDiagnosis
+          ? () => {
+            if (!savedState.profile) {
+              navigateAppRoute({ view: "diagnosis", step: "profile", profileStage: savedState.profileDraft?.affiliation ? "path" : "affiliation" });
+            } else if (savedState.entryIntent === "interest-survey" && !savedState.interestSurvey?.selectedTrackId) {
+              navigateAppRoute({ view: "recommendation", step: "survey", audience: savedState.profile.affiliation });
+            } else if (savedState.entryIntent === "known-tracks" && (savedState.pendingSelectedTrackIds !== undefined || !selectedTrackIds.length)) {
+              navigateDiagnosisStep("tracks");
+            } else goToDiagnosis();
+          }
           : undefined;
   function renderGuidebook(
     content: ReactNode,
@@ -1452,6 +1488,8 @@ function App({ storage }: { storage?: Storage } = {}) {
         modal={guideOpen ? (
           <GuideDialog
             activeStepIndex={guideStepIndex}
+            quickGuide={quickGuideOpen}
+            onOpenQuickGuide={() => setQuickGuideOpen(true)}
             onClose={closeGuide}
             onMoveStep={moveGuideStep}
             onGoToView={goToGuideStepView}
@@ -1487,7 +1525,6 @@ function App({ storage }: { storage?: Storage } = {}) {
         resultReady={courseResultReady}
         onStartSimulation={() => startEntryFlow("check-progress")}
         onOpenGuide={() => navigateAppRoute({ view: "track-guide", section: "overview" })}
-        onOpenStructure={() => navigateAppRoute({ view: "track-guide", section: "structure" })}
         onOpenRecommendation={() => startEntryFlow("find-track")}
         onPlannerAction={landingPlannerAction}
         entryIntent={savedState.entryIntent}
@@ -1506,7 +1543,7 @@ function App({ storage }: { storage?: Storage } = {}) {
           section={trackGuideSection}
           headingRef={stepHeadingRef}
           onSectionChange={navigateTrackGuideSection}
-          onStartInterestSurvey={() => startEntryFlow("find-track")}
+          onStartInterestSurvey={() => startIntent("interest-survey")}
           onStartDiagnosis={() => startEntryFlow("check-progress")}
           videoId={trackGuideVideoId}
           onVideoChange={navigateTrackGuideVideo}
@@ -1577,7 +1614,7 @@ function App({ storage }: { storage?: Storage } = {}) {
             pendingSelectedTrackIds={savedState.pendingSelectedTrackIds ?? selectedTrackIds}
             onPendingTrackIdsChange={pendingSelectedTrackIds => persist(current => ({ ...current, pendingSelectedTrackIds }))}
             onChooseTracks={confirmSelectedTracks}
-            onOpenGraduationPlan={() => navigateAppRoute({ view: "plan", step: "setup", scope: "tracks" })}
+            onOpenGraduationPlan={() => navigateAppRoute({ view: "plan", step: "setup", scope: "academic" })}
           />
         )}
       </div>,
@@ -1640,7 +1677,11 @@ function App({ storage }: { storage?: Storage } = {}) {
       (snapshot) => snapshot.graduationPlan?.generatedAt === savedState.graduationPlan?.generatedAt,
     ));
     return renderGuidebook(
-      <div className="dku-plan-shell">
+      <div className="dku-plan-shell" data-plan-scope="academic">
+        <div className="academic-plan-scope-bar">
+          <div><GraduationCap size={20} strokeWidth={1.8} aria-hidden="true" /><span>{planStep !== "setup" && <strong>전공 전체 계획</strong>}전공필수와 전체 전공학점 기준을 함께 살펴보는 별도 참고 도구예요.</span></div>
+          <button type="button" className="secondary-button" data-open-selected-track-plan onClick={() => navigateAppRoute({ view: "plan", step: "setup", scope: "tracks" })}><BookOpenCheck size={19} strokeWidth={1.8} aria-hidden="true" />선택 트랙 계획으로 이동<ArrowRight size={18} strokeWidth={1.8} aria-hidden="true" /></button>
+        </div>
         <div className="dku-plan-topbar">
           <button
             className="text-button"
@@ -1671,9 +1712,8 @@ function App({ storage }: { storage?: Storage } = {}) {
         {planStep === "setup" ? (
           <main className="dku-plan-page dku-plan-setup" aria-labelledby="graduation-plan-setup-title">
             <header className="dku-plan-heading">
-              <span className="dku-plan-eyebrow">선택 도구 · 졸업 계획 조건</span>
               <h1 id="graduation-plan-setup-title" ref={planHeadingRef} tabIndex={-1}>
-                학기별 참고 계획의 범위를 정해 주세요
+                <GraduationCap size={22} strokeWidth={1.8} aria-hidden="true" />전공 전체 계획
               </h1>
               <p>검토한 이수 과목은 그대로 두고 앞으로 배치할 학기와 한 학기 수강량만 입력합니다.</p>
             </header>
@@ -1921,12 +1961,16 @@ function App({ storage }: { storage?: Storage } = {}) {
 
 function GuideDialog({
   activeStepIndex,
+  quickGuide,
+  onOpenQuickGuide,
   onClose,
   onMoveStep,
   onGoToView,
   onResetCurrent,
 }: {
   activeStepIndex: number;
+  quickGuide: boolean;
+  onOpenQuickGuide: () => void;
   onClose: () => void;
   onMoveStep: (nextIndex: number) => void;
   onGoToView: (viewId: ViewId) => void;
@@ -1941,6 +1985,8 @@ function GuideDialog({
   const [resetPending, setResetPending] = useState(false);
   const [resetFailed, setResetFailed] = useState(false);
   onCloseRef.current = onClose;
+
+  useEffect(() => { headingRef.current?.focus(); }, [quickGuide]);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -1991,7 +2037,8 @@ function GuideDialog({
     <div className="guide-dialog-backdrop" role="presentation">
       <section
         ref={dialogRef}
-        className="guide-dialog"
+        className={quickGuide ? "guide-dialog first-visit-guide" : "guide-dialog"}
+        data-first-visit-guide={quickGuide ? true : undefined}
         role="dialog"
         aria-modal="true"
         aria-labelledby="guide-dialog-title"
@@ -1999,13 +2046,25 @@ function GuideDialog({
         <div className="guide-dialog-top">
           <div>
             <span>처음 사용하는 학생을 위한 안내</span>
-            <h2 id="guide-dialog-title" ref={headingRef} tabIndex={-1}>사이트 사용 방법</h2>
+            <h2 id="guide-dialog-title" ref={headingRef} tabIndex={-1}>{quickGuide ? "들은 과목으로 남은 수업을 찾아요" : "사이트 사용 방법"}</h2>
           </div>
           <button className="guide-close-button" type="button" aria-label="사용법 닫기" onClick={onClose}>
             <X aria-hidden="true" size={18} />
           </button>
         </div>
 
+        {quickGuide ? <>
+          <p className="first-visit-guide__intro">원하는 트랙을 고르고 수강 이력을 입력하면, 앞으로 어떤 과목을 더 들어야 할지 확인할 수 있어요.</p>
+          <ol className="first-visit-guide__steps">
+            <li><span aria-hidden="true">1</span><div><h3>나에게 맞는 방법으로 시작해요</h3><p>정한 트랙을 선택하세요. 아직 고민 중이라면 관심 설문이나 들은 과목으로 찾아볼 수 있어요.</p></div></li>
+            <li><span aria-hidden="true">2</span><div><h3>내 정보와 들은 과목을 알려주세요</h3><p>소속·전공 정보를 확인하고 과목을 체크해요. 수강 중인 과목과 앞으로 들을 과목은 따로 구분해요.</p></div></li>
+            <li><span aria-hidden="true">3</span><div><h3>남은 수업을 보고 계획까지 이어가요</h3><p>여러 트랙에 겹치는 과목은 한 번만 세어요. 필요하면 남은 수업을 학기별로 나눠 보관할 수 있어요.</p></div></li>
+          </ol>
+          <p className="first-visit-guide__note">입력은 이 브라우저에 저장돼요. 사이트에서 트랙을 고르거나 계획을 보관해도 학교에 신청되지는 않아요.</p>
+          <div className="first-visit-guide__actions"><button className="icon-button" type="button" data-welcome-skip onClick={onClose}>건너뛰기</button><button className="primary-button" type="button" onClick={onClose}>확인했어요</button></div>
+          <p className="first-visit-guide__again">이 안내는 ‘도움말’에서 다시 볼 수 있어요.</p>
+        </> : <>
+        <button className="icon-button" type="button" data-open-quick-guide onClick={onOpenQuickGuide}>처음 사용 안내 다시 보기</button>
         <nav className="guide-stepper" aria-label="사용 단계">
           {guideSteps.map((step, index) => (
             <button
@@ -2013,6 +2072,7 @@ function GuideDialog({
               type="button"
               key={step.title}
               onClick={() => onMoveStep(index)}
+              aria-current={index === activeStepIndex ? "step" : undefined}
             >
               <span>{index + 1}</span>
               <strong>{step.title.replace(`${index + 1}. `, "")}</strong>
@@ -2061,6 +2121,7 @@ function GuideDialog({
             {resetFailed && <p role="alert">초기화하지 못했어요. 현재 입력과 보관 기록은 그대로 유지했어요. 저장 상태를 확인한 뒤 다시 시도해 주세요.</p>}
           </div>}
         </section>
+        </>}
       </section>
     </div>
   );

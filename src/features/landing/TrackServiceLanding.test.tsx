@@ -20,7 +20,6 @@ async function renderLanding(
     resultReady: false,
     onStartSimulation: vi.fn(),
     onOpenGuide: vi.fn(),
-    onOpenStructure: vi.fn(),
     onOpenRecommendation: vi.fn(),
     ...overrides,
   };
@@ -88,7 +87,7 @@ describe("TrackServiceLanding", () => {
     await renderLanding({ onStartSimulation, onOpenGuide, onOpenRecommendation });
 
     await act(async () => button("선택한 방법으로 시작하기").click());
-    await act(async () => button("트랙제 먼저 알아보기").click());
+    await act(async () => button("트랙제와 5개 트랙 알아보기").click());
     await act(async () => document.querySelector<HTMLInputElement>('input[value="interest-survey"]')!.click());
     await act(async () => button("선택한 방법으로 시작하기").click());
 
@@ -97,17 +96,15 @@ describe("TrackServiceLanding", () => {
     expect(onOpenRecommendation).toHaveBeenCalledTimes(1);
   });
 
-  it("opens track structure from the track preview without changing the introductory guide action", async () => {
+  it("combines the two guide entries into one overview action", async () => {
     let destination = "landing";
     await renderLanding({
       onOpenGuide: () => { destination = "overview"; },
-      onOpenStructure: () => { destination = "structure"; },
     });
 
-    await act(async () => button("5개 트랙 자세히 보기").click());
-    expect(destination).toBe("structure");
-
-    await act(async () => button("트랙제 먼저 알아보기").click());
+    expect(document.querySelectorAll('.journey-home-copy button')).toHaveLength(1);
+    expect(document.querySelector('.journey-home-track-guide')).toBeNull();
+    await act(async () => button("트랙제와 5개 트랙 알아보기").click());
     expect(destination).toBe("overview");
   });
 
