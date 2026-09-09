@@ -68,4 +68,8 @@ SD-CORE-TEST-FIRST/SD-RELATED-TESTS/SD-FULL-TESTS/SD-TYPECHECK/SD-PRODUCTION-BUI
 
 ## Release
 
-운영 배포 결과는 검증 완료 후 기록한다.
+- 기능 커밋 `73cdfa680379766ebf164a9fec1dd6e14245061a`를 GitHub `codex/track-service-expansion`에 업로드했다.
+- 배포 `dpl_6oWwCdzQdYWNyyMKY7qr1JXn5ko5`는 Vercel 빌드를 통과했다. 새 주소 `https://dku-track-diagnosis-cyca444jt-startlink0504.vercel.app`에서 직접 예시 진입, 4과목12학점→두트랙8과목24학점, 예시계획, 개인 시작 후 저장 이력 생성 없음과 첫 안내 표시를 확인했다.
+- `vercel promote` 성공 후 운영 `https://dku-track-diagnosis.vercel.app/?view=example`에서 제목·단독/복수 계산·예시 계획을 다시 확인했다. 콘솔 error/warn0, 페이지 넘침0.
+- 운영 HTTP200 및 `index-CiYM-kUG.js`, `index-DLFPMhl1.css`가 새 배포 파일과 일치한다. 원문 PDF 경로와 내부 QA 문서 경로는404.
+- 최종 메일은 로컬 산출물에만 저장했고 GitHub/Vercel 업로드나 메일 발송은 하지 않았다. 학기 비교와 대체 후보의 학사 범위는 위 Remaining Risk를 유지한다.
