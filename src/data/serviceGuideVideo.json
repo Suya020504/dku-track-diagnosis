@@ -1,0 +1,166 @@
+{
+  "version": "2026-09-12",
+  "duration": 332,
+  "chapters": [
+    {
+      "id": "welcome",
+      "title": "홈에서 시작·이어서 보기",
+      "start": 0,
+      "end": 12,
+      "description": "정한 트랙, 관심 설문, 들은 과목 중 나에게 맞는 시작 방법을 골라요. 다시 방문했다면 이전 결과나 계획을 바로 확인할 수 있어요.",
+      "feature": "home"
+    },
+    {
+      "id": "track-guide",
+      "title": "트랙제와 신청 안내 살펴보기",
+      "start": 12,
+      "end": 30,
+      "description": "과목·모듈·트랙의 관계와 다섯 트랙의 구성을 읽고 신청 준비를 확인해요. 사이트에서 선택한 트랙은 학교에 별도로 신청해야 해요.",
+      "feature": "guide"
+    },
+    {
+      "id": "profile",
+      "title": "내 정보 입력하기",
+      "start": 30,
+      "end": 44,
+      "description": "소속과 전공 이수 형태, 입학연도를 확인해요. 이름이나 학번 전체를 입력할 필요는 없어요.",
+      "feature": "profile"
+    },
+    {
+      "id": "multi-track",
+      "title": "여러 트랙 함께 선택하기",
+      "start": 44,
+      "end": 58,
+      "description": "관심 있는 트랙을 하나 이상 선택해요. 여러 트랙에 포함된 공통 과목은 각 트랙에서 함께 확인해요.",
+      "feature": "known-tracks"
+    },
+    {
+      "id": "interest",
+      "title": "관심 설문으로 후보 찾기",
+      "start": 58,
+      "end": 80,
+      "description": "열 문항에 답하고 추천 이유를 읽어요. 여러 후보를 고를 수 있으며, 관심 점수와 이수 가능도는 별개의 기준이에요.",
+      "feature": "interest-survey"
+    },
+    {
+      "id": "courses",
+      "title": "과목 검색·필터·정보 확인하기",
+      "start": 80,
+      "end": 100,
+      "description": "과목명이나 학사 코드로 검색하고 학년·학기 필터로 목록을 좁혀요. 선택한 과목만 보거나 정보 아이콘에서 모듈과 코드를 확인할 수 있어요.",
+      "feature": "courses"
+    },
+    {
+      "id": "course-status",
+      "title": "완료·수강 중·계획 구분하기",
+      "start": 100,
+      "end": 114,
+      "description": "성적이 확정된 과목과 현재 듣는 과목, 앞으로 들을 과목을 구분해요. 계획 학기는 플래너의 시작 학기 기준이에요.",
+      "feature": "courses"
+    },
+    {
+      "id": "extra-input",
+      "title": "추가 전공학점·PDF 입력 알아보기",
+      "start": 114,
+      "end": 130,
+      "description": "목록 밖 이수학점은 전체 전공학점에만 반영돼요. PDF 입력은 읽은 과목을 검토한 뒤 반영하는 기능이며, 영상에서는 파일을 넣지 않고 사용 전 안내만 보여줘요.",
+      "feature": "courses"
+    },
+    {
+      "id": "history",
+      "title": "수강 이력으로 트랙 비교하기",
+      "start": 130,
+      "end": 144,
+      "description": "다섯 트랙의 채운 모듈과 남은 과목을 비교해요. 여러 트랙을 함께 고르면 겹치는 과목을 뺀 합계를 확인할 수 있어요.",
+      "feature": "history-comparison"
+    },
+    {
+      "id": "result-preview",
+      "title": "진단 결과·수강 중 미리보기",
+      "start": 144,
+      "end": 162,
+      "description": "완료 기준의 결과와 수강 중 과목을 마쳤을 때의 예상을 구분해요. 남은 모듈도 펼쳐 볼 수 있고, 미리보기가 완료 기록을 바꾸지는 않아요.",
+      "feature": "result"
+    },
+    {
+      "id": "alternatives",
+      "title": "대체 과목·전공 전체 조건 확인하기",
+      "start": 162,
+      "end": 178,
+      "description": "대체 후보는 과목 하나를 바꿀 때의 조회용 목록이에요. 트랙과 별도로 필수과목·전공학점을 확인하고 부족분을 단순 합산하지 않아요.",
+      "feature": "result"
+    },
+    {
+      "id": "discovery",
+      "title": "다른 트랙의 추가 부담 비교하기",
+      "start": 178,
+      "end": 192,
+      "description": "진단은 결과를 확인하면 끝나요. 필요하면 추가 도구를 펼쳐 다른 트랙에 필요한 과목을 먼저 비교하고 선택 화면에서 확인해요.",
+      "feature": "result"
+    },
+    {
+      "id": "term-compare",
+      "title": "학기 조건·미배치 이유 비교하기",
+      "start": 192,
+      "end": 208,
+      "description": "같은 학기와 수강량으로 각 트랙을 하나씩 비교해요. 지정 학기와 과거 개설 정보가 맞지 않으면 미배치 이유를 확인할 수 있어요.",
+      "feature": "history-comparison"
+    },
+    {
+      "id": "planner",
+      "title": "학기 계획 만들기·수정·보관하기",
+      "start": 208,
+      "end": 244,
+      "description": "겹치는 과목을 합쳐 계획을 만들고 과목별 배치 학기를 바꿔요. 조건을 수정하면 다시 계산한 뒤 보관하고, 학사 코드와 공식 시간표를 대조해요.",
+      "feature": "planning"
+    },
+    {
+      "id": "records",
+      "title": "보관한 진단·계획 다시 보기",
+      "start": 244,
+      "end": 268,
+      "description": "날짜와 종류를 보고 저장 당시의 기록을 열어요. 현재 입력은 바뀌지 않으며, 같은 브라우저에서 이어볼 수 있지만 다른 기기와 자동 동기화되지는 않아요.",
+      "feature": "records"
+    },
+    {
+      "id": "modules",
+      "title": "자료실에서 모듈·과목 검색하기",
+      "start": 268,
+      "end": 275,
+      "description": "도구의 자료실에서 모듈이나 과목을 검색하고 과목 구성·학점·학사 코드를 확인해요.",
+      "feature": "modules"
+    },
+    {
+      "id": "curriculum",
+      "title": "학년별 교육과정·과목 상세 보기",
+      "start": 275,
+      "end": 282,
+      "description": "학년을 골라 교과로드맵을 비교하고 과목을 눌러 상세를 확인해요. 교육과정 배치와 실제 개설 학기는 다를 수 있어요.",
+      "feature": "curriculum"
+    },
+    {
+      "id": "timetable",
+      "title": "요일별 시간표·분반 상세 보기",
+      "start": 282,
+      "end": 300,
+      "description": "과목을 검색하고 요일·수업방식을 좁혀요. 요일별 표와 분반 목록을 전환해 상세를 보며, 현재 개설과 수강 제한은 공식 시간표에서 확인해요.",
+      "feature": "timetable"
+    },
+    {
+      "id": "resources-help",
+      "title": "공식 자료·학과 문의 준비하기",
+      "start": 300,
+      "end": 314,
+      "description": "교육과정·시간표·학사 안내와 학과 설명 영상을 확인해요. 문의 전 소속·이수 경로와 과목을 정리하고, 학교 신청과 이수 인정은 별도로 확인해요.",
+      "feature": "resources"
+    },
+    {
+      "id": "help",
+      "title": "도움말·초기화 범위 확인하기",
+      "start": 314,
+      "end": 332,
+      "description": "도움말에서 첫 안내와 단계별 사용법을 다시 봐요. 초기화 안내에는 지워지는 범위가 나오며, 영상에서는 초기화를 취소해 기록을 보존했어요.",
+      "feature": "help"
+    }
+  ]
+}

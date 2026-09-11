@@ -8,6 +8,7 @@ debug.log
 
 .vercel
 /output/
+/design-proposals/rendered/
 /design-proposals/2026-09-09-hierarchy/video-source/fonts/
 /design-proposals/2026-09-09-hierarchy/video-source/segments/
 /design-proposals/2026-09-09-hierarchy/video-source/text/

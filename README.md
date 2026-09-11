@@ -6,7 +6,7 @@
 
 [https://dku-track-diagnosis.vercel.app](https://dku-track-diagnosis.vercel.app)
 
-최신 다중 트랙 개편의 변경·검증·배포 상태는 [2026-09-09 여정 검수](docs/research/2026-09-09-multi-track-journey-qa.md)에 정리합니다. 아래 배포 번호와 완료 수치는 해당 날짜의 이력입니다.
+최신 사용 방법 영상과 기능별 목차의 변경·검증·배포 상태는 [2026-09-12 영상 검수](docs/research/2026-09-12-complete-video-release.md)에 정리합니다. 다중 트랙 개편 이력은 [여정 검수](docs/research/2026-09-09-multi-track-journey-qa.md)를 참고하세요. 아래 배포 번호와 완료 수치는 해당 날짜의 이력입니다.
 
 후속 첫 방문 안내·접근성·디자인 검수는 [첫 방문 안내 검수](docs/research/2026-09-09-first-visit-final-qa.md)에서 확인할 수 있습니다. 현재 홈의 안내 진입은 ‘트랙제와 5개 트랙 알아보기’ 하나이며 트랙제 알아보기 화면으로 이동합니다. 로고는 홈 링크로 동작합니다.
 
@@ -22,7 +22,9 @@
 
 ### 입력 전에 사용 방법 확인하기
 
-[사용 방법 영상](https://dku-track-diagnosis.vercel.app/?view=example)에서는 최종 실제 화면과 가상 수강 이력으로 제작한 86초 자막 안내를 볼 수 있습니다. 직접 조작하는 [예시 체험](https://dku-track-diagnosis.vercel.app/?view=example&mode=interactive)은 영상 아래 보조 링크에서 엽니다. 영상과 예시는 개인 수강 기록을 변경하지 않습니다.
+[사용 방법 영상](https://dku-track-diagnosis.vercel.app/?view=example)은 2026-09-12 화면과 가상 수강 이력으로 만든 5분 32초 자막 안내입니다. 실제 조작 전후를 담은 50개 화면 장면을 편집했으며, 연속 화면 녹화는 아닙니다. 20개 기능 목차에서 원하는 시간으로 이동하거나 해당 기능을 직접 열 수 있습니다. 설문·상태별 과목 입력·복수 트랙 비교·예상 결과·학기 계획 수정·기록·자료실·도움말을 다룹니다.
+
+영상과 [가상 예시 체험](https://dku-track-diagnosis.vercel.app/?view=example&mode=interactive)은 개인 수강 기록을 바꾸지 않습니다. ‘이 기능 직접 열기’는 실제 내 기록 화면으로 연결하며, 필요한 정보가 없으면 기존 입력 안내부터 보여줍니다. PDF는 사용 전 안내까지만 시연하고 초기화는 취소합니다. 이전 86초 영상도 파일로 보존합니다.
 
 진단은 결과 확인에서 끝납니다. 결과에 다음 학기 계획을 진행 단계로 표시하지 않으며, 계획·다른 트랙 탐색·신청 안내는 기본 닫힌 추가 도구로 분리했습니다. 가이드는 제도 설명을 차례로 읽은 뒤 마지막에 서비스 시작으로 연결합니다. [시안 대조 및 검수](docs/research/2026-09-09-hierarchy-video-release.md).
 

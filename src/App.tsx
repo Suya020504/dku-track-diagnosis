@@ -24,7 +24,7 @@ import { TrackCompletionResults } from "./features/results/TrackCompletionResult
 import { TrackHistoryComparison } from "./features/recommendations/TrackHistoryComparison";
 import { TrackModulePlanner } from "./features/planning/TrackModulePlanner";
 import { ExampleExperience } from "./features/journey/ExampleExperience";
-import { VideoGuide } from "./features/journey/VideoGuide";
+import { VideoGuide, type VideoGuideFeature } from "./features/journey/VideoGuide";
 import { getMajorContext } from "./lib/majorContext";
 import { calculateTrackCompletion } from "./lib/trackCompletion";
 import { buildTrackPlanInputSignature, isTrackSemesterPlan, type TrackSemesterPlan } from "./lib/trackSemesterPlanner";
@@ -1359,6 +1359,27 @@ function App({ storage }: { storage?: Storage } = {}) {
       ? routeAfterCourseReview(savedState)
       : { view: "diagnosis", step: resolveDiagnosisStep("?view=result&step=result", savedState) },
   );
+  function openVideoFeature(feature: VideoGuideFeature, invoker: HTMLButtonElement) {
+    switch (feature) {
+      case "home": return navigateAppRoute({ view: "landing" });
+      case "guide": return navigateAppRoute({ view: "track-guide", section: "overview" });
+      case "profile": return navigateDiagnosisStep("profile");
+      case "known-tracks": return startIntent("known-tracks");
+      case "interest-survey": return startIntent("interest-survey");
+      case "courses": return goToDiagnosis();
+      case "history-comparison": return courseResultReady
+        ? navigateAppRoute({ view: "recommendation", step: "axes", axis: "progress" })
+        : goToDiagnosis();
+      case "result": return goToResult();
+      case "planning": return navigateAppRoute({ view: "plan", scope: "tracks", step: "setup" });
+      case "records": return navigateAppRoute({ view: "records" });
+      case "modules": return navigateAppRoute({ view: "resources", section: "modules" });
+      case "curriculum": return navigateAppRoute({ view: "resources", section: "curriculum" });
+      case "timetable": return navigateAppRoute({ view: "resources", section: "timetable" });
+      case "resources": return navigateAppRoute({ view: "resources", section: "official" });
+      case "help": return openGuide(invoker);
+    }
+  }
   const guideItems: GuidebookNavItem[] = [
     { id: "start", index: "01", label: "홈", available: true, onSelect: () => navigateAppRoute({ view: "landing" }) },
     { id: "tracks", index: "02", label: "트랙 가이드", available: true, onSelect: () => navigateAppRoute({ view: "track-guide", section: "overview" }) },
@@ -1520,7 +1541,7 @@ function App({ storage }: { storage?: Storage } = {}) {
 
   if (activeView === "example") return renderGuidebook(exampleMode === "interactive"
     ? <ExampleExperience headingRef={stepHeadingRef} onHome={() => navigateAppRoute({view:"landing"})} onStart={() => navigateAppRoute({view:"landing"})}/>
-    : <VideoGuide headingRef={stepHeadingRef} onHome={() => navigateAppRoute({view:"landing"})} onStart={() => navigateAppRoute({view:"landing"})} onOpenInteractive={() => navigateAppRoute({ view:"example", mode:"interactive" })}/>, []);
+    : <VideoGuide headingRef={stepHeadingRef} onHome={() => navigateAppRoute({view:"landing"})} onStart={() => navigateAppRoute({view:"landing"})} onOpenInteractive={() => navigateAppRoute({ view:"example", mode:"interactive" })} onOpenFeature={openVideoFeature}/>, []);
 
   if (activeView === "landing") {
     return renderGuidebook(

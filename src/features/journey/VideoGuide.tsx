@@ -1,37 +1,51 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { ArrowLeft, ArrowRight, Download, PlayCircle, RotateCcw } from "lucide-react";
+import serviceGuideVideo from "../../data/serviceGuideVideo.json";
 import "./video-guide.css";
 
-export const VIDEO_GUIDE_SRC = "/videos/track-service-guide.mp4";
-export const VIDEO_GUIDE_POSTER = "/videos/track-service-guide-poster.jpg";
-export const VIDEO_GUIDE_CAPTIONS = "/videos/track-service-guide.ko.vtt";
+export const VIDEO_GUIDE_SRC = "/videos/track-service-guide-20260912.mp4";
+export const VIDEO_GUIDE_POSTER = "/videos/track-service-guide-20260912.jpg";
+export const VIDEO_GUIDE_CAPTIONS = "/videos/track-service-guide-20260912.ko.vtt";
 
-export const VIDEO_GUIDE_TRANSCRIPT = [
-  { title: "진단은 결과 확인에서 끝나요", description: "실제 화면을 보며 시작부터 결과 확인까지 따라가 보세요. 계획은 필요한 사람만 따로 이용하는 도구예요." },
-  { title: "트랙제부터 알아보기", description: "트랙 가이드에서 과목, 모듈, 트랙의 관계와 5개 트랙을 살펴보세요." },
-  { title: "나에게 맞는 시작 방법 고르기", description: "트랙을 정했다면 바로 선택하세요. 아직 정하지 못했다면 관심 설문이나 지금까지 들은 과목으로 후보를 찾을 수 있어요." },
-  { title: "내 정보와 수강 이력 입력하기", description: "소속과 입학연도 등을 확인하고 들은 과목을 입력하세요. 이수 완료와 수강 중을 구분하며, 다른 시작 방법으로 옮겨도 같은 이력을 사용해요." },
-  { title: "남은 조건과 대체 과목 확인하기", description: "선택한 트랙에 필요한 추가 이수를 확인하세요. 추천 과목은 조건을 채우는 조합이며, 전부 반드시 들어야 하는 목록은 아니에요. 바꿔 들을 수 있는 과목도 확인하세요." },
-  { title: "필요한 도구만 따로 열기", description: "더 진행하지 않아도 진단은 완료된 상태예요. 계획이나 다른 트랙 탐색이 필요할 때만 ‘필요할 때 더 해보기’를 펼쳐 보세요." },
-  { title: "원할 때 학기 계획까지", description: "목표 학기와 수강량에 맞춰 남은 과목을 배치할 수 있어요. 예상 계획은 과거 개설 정보를 참고하므로 학교 시간표에서 실제 개설 여부를 확인해 주세요." },
-  { title: "내 기록으로 시작하기", description: "입력은 이 브라우저에 저장돼요. 트랙 신청과 이수 인정은 학교 안내에 따라 별도로 확인해야 해요." },
-] as const;
+export type VideoGuideFeature = "home" | "guide" | "profile" | "known-tracks" | "interest-survey" | "courses" | "history-comparison" | "result" | "planning" | "records" | "modules" | "curriculum" | "timetable" | "resources" | "help";
+type VideoGuideChapter = { id: string; title: string; start: number; end: number; description: string; feature: VideoGuideFeature };
+export const VIDEO_GUIDE_CHAPTERS = serviceGuideVideo.chapters as readonly VideoGuideChapter[];
+export const VIDEO_GUIDE_TRANSCRIPT = VIDEO_GUIDE_CHAPTERS.map(({ title, description }) => ({ title, description }));
+
+function chapterAtTime(time: number) {
+  return VIDEO_GUIDE_CHAPTERS.find(chapter => time >= chapter.start && time < chapter.end)
+    ?? (time >= serviceGuideVideo.duration ? VIDEO_GUIDE_CHAPTERS[VIDEO_GUIDE_CHAPTERS.length - 1] : VIDEO_GUIDE_CHAPTERS[0]);
+}
+
+function formatTime(seconds: number) {
+  return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+}
+
+function formatDuration(seconds: number) {
+  const rounded = Math.round(seconds);
+  return rounded < 60 ? `${rounded}초` : `${Math.floor(rounded / 60)}분 ${rounded % 60}초`;
+}
 
 type VideoGuideProps = {
   headingRef?: RefObject<HTMLHeadingElement | null>;
   onHome: () => void;
   onStart: () => void;
   onOpenInteractive: () => void;
+  onOpenFeature: (feature: VideoGuideFeature, invoker: HTMLButtonElement) => void;
 };
 
 /** A recorded explanation only: this page does not read or mutate student records. */
-export function VideoGuide({ headingRef, onHome, onStart, onOpenInteractive }: VideoGuideProps) {
+export function VideoGuide({ headingRef, onHome, onStart, onOpenInteractive, onOpenFeature }: VideoGuideProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const captionsRef = useRef<HTMLTrackElement>(null);
+  const metadataLoadedRef = useRef(false);
+  const pendingSeekRef = useRef<number | null>(null);
+  const [activeChapterId, setActiveChapterId] = useState(VIDEO_GUIDE_CHAPTERS[0].id);
   const [attempt, setAttempt] = useState(0);
   const [mediaState, setMediaState] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [captionsFailed, setCaptionsFailed] = useState(false);
   const [duration, setDuration] = useState<number>();
+  const activeChapter = VIDEO_GUIDE_CHAPTERS.find(chapter => chapter.id === activeChapterId) ?? VIDEO_GUIDE_CHAPTERS[0];
 
   useEffect(() => {
     const track = captionsRef.current;
@@ -43,7 +57,31 @@ export function VideoGuide({ headingRef, onHome, onStart, onOpenInteractive }: V
   function retry() {
     setMediaState("loading");
     setCaptionsFailed(false);
+    pendingSeekRef.current ??= activeChapter.start;
+    metadataLoadedRef.current = false;
+    setDuration(undefined);
     setAttempt(current => current + 1);
+  }
+
+  function applyPendingSeek() {
+    const video = videoRef.current;
+    const requestedTime = pendingSeekRef.current;
+    if (!video || !metadataLoadedRef.current || requestedTime === null || !Number.isFinite(video.duration) || video.duration <= 0) return;
+    // Stay within the playable range, including when the delivered file is shorter.
+    const time = Math.min(Math.max(0, requestedTime), Math.max(0, video.duration - 0.01));
+    try {
+      video.currentTime = time;
+      pendingSeekRef.current = null;
+      setActiveChapterId(chapterAtTime(time).id);
+    } catch {
+      // Some browsers accept a seek only after canplay; retain the request until then.
+    }
+  }
+
+  function selectChapter(chapter: VideoGuideChapter) {
+    pendingSeekRef.current = chapter.start;
+    setActiveChapterId(chapter.id);
+    applyPendingSeek();
   }
 
   return <main className="video-guide" aria-labelledby="video-guide-title">
@@ -51,7 +89,7 @@ export function VideoGuide({ headingRef, onHome, onStart, onOpenInteractive }: V
       <button type="button" className="video-guide__back" onClick={onHome}><ArrowLeft size={17} aria-hidden="true" />홈으로</button>
       <span className="video-guide__eyebrow"><PlayCircle size={18} aria-hidden="true" />처음 사용하는 분을 위한 안내</span>
       <h1 id="video-guide-title" ref={headingRef} tabIndex={-1}>영상으로 사용 방법을 알아보세요</h1>
-      <p>시작부터 진단 완료까지 실제 화면으로 따라가 보세요. 계획이 필요할 때 추가 도구를 여는 방법도 안내해요.</p>
+      <p>시작 방법 선택부터 과목 입력, 트랙 비교, 학기 계획과 기록까지 실제 화면으로 따라가 보세요. 필요한 장면부터 골라 볼 수도 있어요.</p>
     </header>
 
     <figure className="video-guide__player">
@@ -67,11 +105,21 @@ export function VideoGuide({ headingRef, onHome, onStart, onOpenInteractive }: V
         aria-describedby="video-guide-media-note"
         onLoadStart={() => setMediaState("loading")}
         onLoadedMetadata={() => {
+          metadataLoadedRef.current = true;
           const value = videoRef.current?.duration;
           if (value && Number.isFinite(value)) setDuration(value);
+          applyPendingSeek();
           setMediaState("ready");
         }}
-        onCanPlay={() => setMediaState("ready")}
+        onDurationChange={() => {
+          const value = videoRef.current?.duration;
+          if (value && Number.isFinite(value)) setDuration(value);
+          applyPendingSeek();
+        }}
+        onCanPlay={() => { applyPendingSeek(); setMediaState("ready"); }}
+        onTimeUpdate={event => {
+          if (pendingSeekRef.current === null) setActiveChapterId(chapterAtTime(event.currentTarget.currentTime).id);
+        }}
         onWaiting={() => setMediaState("loading")}
         onPlaying={() => setMediaState("ready")}
         onError={event => { if (event.target === event.currentTarget) setMediaState("error"); }}
@@ -80,7 +128,7 @@ export function VideoGuide({ headingRef, onHome, onStart, onOpenInteractive }: V
         이 브라우저에서는 영상을 재생하지 못해요. 아래 영상 파일 받기나 글로 읽는 사용 순서를 이용해 주세요.
       </video>
       <figcaption id="video-guide-media-note">
-        <span>음성 없이 자막으로 안내해요{duration && ` · ${Math.round(duration)}초`}</span>
+        <span>음성 없이 자막으로 안내해요{duration && ` · ${formatDuration(duration)}`}</span>
         <span>영상의 재생 버튼을 눌러 시작하세요. 전체 화면으로 확대할 수 있어요.</span>
       </figcaption>
     </figure>
@@ -97,6 +145,20 @@ export function VideoGuide({ headingRef, onHome, onStart, onOpenInteractive }: V
     <div className="video-guide__context">
       <p>영상 속 수강 이력은 설명을 위한 가상 예시예요. 영상을 보거나 예시를 살펴봐도 내 입력과 저장 기록은 바뀌지 않아요.</p>
     </div>
+
+    <details className="video-guide__chapters">
+      <summary>기능별 장면 찾기<span>{VIDEO_GUIDE_CHAPTERS.length}개 장면</span></summary>
+      <p className="video-guide__chapter-hint">장면을 누르면 해당 시간으로 이동해요. 일시정지 상태라면 재생 버튼을 눌러 이어 보세요.</p>
+      <ol aria-label="영상의 기능별 장면">{VIDEO_GUIDE_CHAPTERS.map(chapter => <li key={chapter.id}>
+        <button type="button" aria-current={chapter.id === activeChapterId ? "true" : undefined} onClick={() => selectChapter(chapter)}>
+          <span className="video-guide__chapter-time">{formatTime(chapter.start)}</span><span>{chapter.title}</span>
+        </button>
+      </li>)}</ol>
+      <div className="video-guide__chapter-action">
+        <p aria-live="polite" aria-atomic="true"><strong>{activeChapter.title}</strong>{activeChapter.description}</p>
+        <div><button type="button" onClick={event => onOpenFeature(activeChapter.feature, event.currentTarget)} aria-describedby="video-guide-open-feature-note">이 기능 직접 열기<ArrowRight size={15} aria-hidden="true" /></button><span id="video-guide-open-feature-note">내 기록으로 이용하는 화면이 열려요. 필요한 입력이 없으면 먼저 안내해요.</span></div>
+      </div>
+    </details>
 
     <details className="video-guide__transcript">
       <summary>사용 순서 글로 읽기</summary>

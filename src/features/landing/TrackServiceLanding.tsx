@@ -55,7 +55,7 @@ export function TrackServiceLanding(props: TrackServiceLandingProps) {
         <h2 id="journey-start-title">{returning ? "도움이 필요할 때" : "어디서부터 시작할까요?"}</h2>
         <p>{returning ? "사용 방법을 다시 보거나, 다른 방법으로 트랙을 찾아보세요." : "나에게 맞는 방법을 선택하세요. 수강 이력은 한 번만 입력해요."}</p>
         {props.onOpenExample && <div className="journey-home-example"><span>처음이라면, 실제 화면으로 사용 순서를 확인하세요</span><button type="button" onClick={props.onOpenExample}><PlayCircle size={19} aria-hidden="true"/>사용 방법 영상 보기<ArrowRight size={17} aria-hidden="true"/></button></div>}
-        {returning ? <details className="journey-home-other-methods"><summary>다른 방법으로 시작하기</summary><div>{entryControls}</div></details> : entryControls}
+        {returning ? <details className="journey-home-other-methods" open><summary>다른 방법으로 시작하기</summary><div>{entryControls}</div></details> : entryControls}
       </section>
     </div>
     <ol className="journey-home-steps" aria-label="트랙 확인 이용 순서">{journeySteps.map(({label,glyph},index)=><li key={label}><ServiceGlyph kind={glyph} size={24}/><strong>{label}</strong>{index<journeySteps.length-1&&<ArrowRight size={16} aria-hidden="true"/>}</li>)}</ol>

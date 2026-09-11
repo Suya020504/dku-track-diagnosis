@@ -123,13 +123,13 @@ describe("TrackServiceLanding", () => {
     expect(document.body.textContent).not.toMatch(/\d+개 과목|\d+%/);
   });
 
-  it("prioritizes the returning result action and folds alternate starting methods", async () => {
+  it("prioritizes the returning result action and opens alternate starting methods by default", async () => {
     const onResumeResult = vi.fn();
     const onPlannerAction = vi.fn();
     await renderLanding({ plannerStatus: "saved-plan", resultReady: true, onResumeResult, onPlannerAction });
 
     const alternateMethods = document.querySelector<HTMLDetailsElement>(".journey-home-other-methods")!;
-    expect(alternateMethods.open).toBe(false);
+    expect(alternateMethods.open).toBe(true);
     expect(alternateMethods.querySelector("summary")?.textContent).toBe("다른 방법으로 시작하기");
     expect(alternateMethods.contains(button("선택한 방법으로 시작하기"))).toBe(true);
     const resumeButtons = document.querySelectorAll<HTMLButtonElement>(".journey-home-resume-actions button");
@@ -148,14 +148,15 @@ describe("TrackServiceLanding", () => {
     const onEntryIntentChange = vi.fn();
     await renderLanding({ plannerStatus: "needs-courses", entryIntent: "completed-courses", onStartIntent, onEntryIntentChange });
     const details = document.querySelector<HTMLDetailsElement>(".journey-home-other-methods")!;
+    expect(details.open).toBe(true);
+    expect(document.querySelector<HTMLInputElement>('input[value="completed-courses"]')?.checked).toBe(true);
+    await act(async () => details.querySelector("summary")!.click());
+    expect(details.open).toBe(false);
     expect(document.querySelector<HTMLInputElement>('input[value="completed-courses"]')?.checked).toBe(true);
     await act(async () => details.querySelector("summary")!.click());
     expect(details.open).toBe(true);
     await act(async () => button("선택한 방법으로 시작하기").click());
     expect(onStartIntent).toHaveBeenCalledWith("completed-courses");
-    await act(async () => details.querySelector("summary")!.click());
-    expect(details.open).toBe(false);
-    expect(document.querySelector<HTMLInputElement>('input[value="completed-courses"]')?.checked).toBe(true);
     expect(onEntryIntentChange).not.toHaveBeenCalled();
   });
 
@@ -168,7 +169,7 @@ describe("TrackServiceLanding", () => {
     expect(onOpenExample).toHaveBeenCalledOnce();
     expect(onStartIntent).not.toHaveBeenCalled();
     expect(onPlannerAction).not.toHaveBeenCalled();
-    expect(document.querySelector<HTMLDetailsElement>(".journey-home-other-methods")?.open).toBe(false);
+    expect(document.querySelector<HTMLDetailsElement>(".journey-home-other-methods")?.open).toBe(true);
   });
 
   it.each(["known-tracks", "interest-survey", "completed-courses"] as const)("starts the selected %s intent without merging the paths", async (intent) => {
