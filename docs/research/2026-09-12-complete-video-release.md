@@ -47,4 +47,9 @@
 
 ## 배포
 
-최종 미디어와 브라우저 검증을 마친 뒤 커밋·배포 식별자 및 운영 결과를 아래에 추가한다.
+- 기능 소스 `a713656b5c2ef8a8795663f96cb59eeafe5fbcd2`를 GitHub의 `codex/track-service-expansion`에 푸시했다.
+- 배포 `dpl_BsraemsAW9neHM8tp7jj63unuwoS`, 새 주소 `https://dku-track-diagnosis-axh9tzhhx-startlink0504.vercel.app`가 Ready로 완료됐다. 새 주소에서332초 영상 재생과 신규 방문자의 결과 기능→소속 입력 안내를 확인한 후 운영으로 승격했다.
+- 운영 `https://dku-track-diagnosis.vercel.app/?view=example`에서20개 목차·332초 미디어를 확인했다. 마지막314초 목차부터 끝332초까지 재생 완료(ended=true, readyState4) 후0초로 돌아와 일시정지 상태를 유지했다.
+- 운영 영상 MP4 HTTP200/video/mp4/7,978,256바이트, 구간 요청206(bytes0-15/7978256), JPG200, VTT200을 확인했다. 새 JS는 `index-B83-mixS.js`, CSS는 `index-DZCcIfcm.css`다. 원격 빌드는 Vite7.3.6을 사용했고 동일 소스의 로컬 빌드는 기존 설치7.3.5로 통과했다.
+- 운영390px 화면에서 영상·목차 가로 넘침이 없었고, 홈 재방문의 다른 시작 방법이 기본 펼침이었다. 기존 운영 입력은 수정하지 않았다. 운영 페이지 콘솔 error/warn0, 비공개 원문·내부 검수·제작 스토리보드 URL404.
+- 제작 영상과 사용자용 안내는 별도 로컬 outputs 폴더에도 보관했다. 개인 메일 발송·실제 PDF 업로드·초기화·신청 제출은 하지 않았다. 후속 커밋은 이 검증 기록만 추가한다.
